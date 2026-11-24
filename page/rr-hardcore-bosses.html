@@ -1,0 +1,346 @@
+<title>Radical Red Hardcore Bosses</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one column of trainer cards in battle order; each card opens into a full team sheet. Sticky filter bar on top. */
+:root {
+  --bg: #edf1f3;
+  --surface: #ffffff;
+  --surface-2: #f5f8fa;
+  --ink: #18202a;
+  --muted: #5a6573;
+  --line: #d5dde3;
+  --accent: #b8382f;
+  --accent-ink: #ffffff;
+  --accent-soft: #f6e1df;
+  --chip: #e3e9ee;
+  --warn: #9a5b00;
+  --warn-soft: #fbeed8;
+  --up: #1f7a45;
+  --down: #b8382f;
+  --font-display: "Pixelify Sans", "Courier New", monospace;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-data: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10151b; --surface: #19212a; --surface-2: #1f2832; --ink: #e5eaf0; --muted: #96a3b1; --line: #2c3744;
+    --accent: #e8695f; --accent-ink: #1a0d0b; --accent-soft: #3a2220; --chip: #24303b; --warn: #e6a64b; --warn-soft: #3a2c16;
+    --up: #63c48f; --down: #ef7d74; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10151b; --surface: #19212a; --surface-2: #1f2832; --ink: #e5eaf0; --muted: #96a3b1; --line: #2c3744;
+  --accent: #e8695f; --accent-ink: #1a0d0b; --accent-soft: #3a2220; --chip: #24303b; --warn: #e6a64b; --warn-soft: #3a2c16;
+  --up: #63c48f; --down: #ef7d74; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 48px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 880px; margin: 0 auto; display: grid; gap: 16px; }
+header.top { padding-block: 20px 4px; display: grid; gap: 6px; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(26px, 6vw, 38px); line-height: 1.05; margin: 0; letter-spacing: 0.01em; text-wrap: balance; }
+h1 .mode { color: var(--accent); }
+.lede { margin: 0; color: var(--muted); max-width: 62ch; }
+.facts { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.facts b { color: var(--ink); font-weight: 600; }
+
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 10px; display: grid; gap: 8px; border-bottom: 1px solid var(--line); }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.search { flex: 1 1 220px; min-width: 0; font: inherit; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.search:focus-visible, select:focus-visible, .chipbtn:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+select { font: inherit; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+label.small { font-size: 13px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+.chipbtn { font: inherit; font-size: 13px; font-weight: 600; padding: 6px 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.chipbtn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.count { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+details.info { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+details.info > summary { cursor: pointer; padding: 12px 14px; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+details.info > summary::-webkit-details-marker { display: none; }
+details.info > summary::after { content: "+"; font-family: var(--font-data); color: var(--muted); }
+details.info[open] > summary::after { content: "–"; }
+.info-body { padding: 0 14px 14px; display: grid; gap: 10px; font-size: 14px; }
+.info-body p { margin: 0; max-width: 68ch; }
+.info-body ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.caps { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.caps th, .caps td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+.caps th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+.caps td.n { font-family: var(--font-data); }
+.tablewrap { overflow-x: auto; }
+.taglist { display: flex; flex-wrap: wrap; gap: 4px; }
+.tag { font-size: 12px; padding: 2px 7px; border-radius: 6px; background: var(--chip); }
+
+.list { display: grid; gap: 10px; }
+details.boss { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+details.boss.gym { border-left: 4px solid var(--accent); }
+details.boss > summary { list-style: none; cursor: pointer; padding: 12px 14px; display: grid; gap: 8px; }
+details.boss > summary::-webkit-details-marker { display: none; }
+.bhead { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.num { font-family: var(--font-data); font-size: 12px; color: var(--muted); min-width: 2.6em; }
+.bname { font-family: var(--font-display); font-weight: 700; font-size: 20px; line-height: 1.1; }
+.bclass { font-size: 13px; color: var(--muted); }
+.badges { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+.pill { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--chip); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pill.cap { background: var(--accent-soft); color: var(--accent); }
+.pill.dbl { background: var(--warn-soft); color: var(--warn); }
+.preview { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13.5px; }
+.pv { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
+.pv .lv { font-family: var(--font-data); font-size: 12px; color: var(--muted); }
+.variant { font-size: 13px; color: var(--muted); }
+.ms { font-size: 13px; color: var(--up); font-weight: 600; }
+
+.team { display: grid; gap: 1px; background: var(--line); border-top: 1px solid var(--line); }
+@media (min-width: 720px) { .team { grid-template-columns: 1fr 1fr; } }
+.mon { background: var(--surface-2); padding: 12px 14px; display: grid; gap: 8px; min-width: 0; }
+.mtop { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; }
+.mname { font-weight: 700; font-size: 16px; }
+.mlv { font-family: var(--font-data); font-size: 13px; }
+.rel { font-size: 12px; color: var(--warn); font-weight: 600; }
+.types { display: inline-flex; gap: 4px; }
+.type { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 6px; border-radius: 5px; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; font-size: 13.5px; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; min-width: 0; }
+.nat-up { color: var(--up); font-weight: 600; }
+.nat-dn { color: var(--down); font-weight: 600; }
+.moves { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.move { display: flex; align-items: stretch; gap: 7px; font-size: 13.5px; padding: 5px 7px; border-radius: 7px; background: var(--surface); border: 1px solid var(--line); min-width: 0; }
+.move .mt { width: 5px; border-radius: 3px; flex: none; }
+.move .mb { display: grid; min-width: 0; gap: 1px; }
+.move .mn { font-weight: 600; overflow-wrap: break-word; }
+.move .mp { font-family: var(--font-data); font-size: 11px; color: var(--muted); overflow-wrap: break-word; }
+.stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; font-variant-numeric: tabular-nums; }
+.stat { text-align: center; padding: 3px 0; border-radius: 6px; background: var(--surface); border: 1px solid var(--line); }
+.stat .k { display: block; font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.stat .v { font-family: var(--font-data); font-size: 13.5px; font-weight: 600; }
+.stat.up .v { color: var(--up); } .stat.dn .v { color: var(--down); }
+.stat.spe { border-color: var(--accent); }
+.note { font-size: 12.5px; color: var(--warn); }
+.statnote { font-size: 11.5px; color: var(--muted); }
+.empty { padding: 24px; text-align: center; color: var(--muted); background: var(--surface); border: 1px dashed var(--line); border-radius: 12px; }
+footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; padding-top: 8px; }
+footer p { margin: 0; max-width: 72ch; }
+@media (prefers-reduced-motion: no-preference) { details.boss[open] .team { animation: fade .18s ease-out; } @keyframes fade { from { opacity: .4; } to { opacity: 1; } } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>Radical Red <span class="mode">Hardcore</span> Bosses</h1>
+    <p class="lede">Every boss team you face in Hardcore Mode, read directly from your Radical Red 4.1 ROM. Exact species, abilities, items, natures, moves and IVs, plus each fight's level cap.</p>
+    <div class="facts" id="facts"><span>Loading boss data…</span></div>
+  </header>
+
+  <details class="info" id="rules">
+    <summary>How Hardcore boss teams work</summary>
+    <div class="info-body">
+      <ul>
+        <li><b>Separate teams.</b> In Hardcore, 153 boss battles use their own team table, not the Normal-mode teams. Normal-mode team lists online don't apply.</li>
+        <li><b>Boss EVs are zero.</b> Hardcore always turns on Minimal Grinding, which strips EVs from boss Pokémon. The stats below include that.</li>
+        <li><b>Many boss levels follow yours.</b> When a level shows <span class="rel">top −1</span>, that Pokémon's level is set from your highest-level party Pokémon when the battle starts (here, one below it). Stats on this page assume your top Pokémon is at the level cap, the hardest case.</li>
+        <li><b>Gym leaders use fixed levels</b> that match the Hardcore level cap for that fight.</li>
+        <li><b>Mega Stones and Z-Crystals</b> appear as held items. Stats shown are before any Mega Evolution.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="info" id="capsbox">
+    <summary>Level caps (Hardcore)</summary>
+    <div class="info-body">
+      <p>Your cap goes up after each of these wins. The order is the order the game counts them. The Normal column is for comparison.</p>
+      <div class="tablewrap"><table class="caps" id="capsTable"></table></div>
+    </div>
+  </details>
+
+  <details class="info" id="bans">
+    <summary>Moves your Pokémon can't learn in Hardcore</summary>
+    <div class="info-body" id="bansBody"></div>
+  </details>
+
+  <div class="bar" role="search">
+    <div class="row">
+      <input class="search" id="q" type="search" placeholder="Search trainer, Pokémon, move, item" aria-label="Search bosses" autocomplete="off">
+      <label class="small" for="fromCap">From cap
+        <select id="fromCap"></select>
+      </label>
+    </div>
+    <div class="row" id="chips">
+      <button class="chipbtn" type="button" data-cat="all" aria-pressed="true">All</button>
+      <button class="chipbtn" type="button" data-cat="gym" aria-pressed="false">Gym leaders</button>
+      <button class="chipbtn" type="button" data-cat="rival" aria-pressed="false">Rival</button>
+      <button class="chipbtn" type="button" data-cat="rocket" aria-pressed="false">Team Rocket</button>
+      <button class="chipbtn" type="button" data-cat="e4" aria-pressed="false">Elite Four</button>
+      <button class="chipbtn" type="button" data-cat="other" aria-pressed="false">Other bosses</button>
+      <span class="count" id="count"></span>
+    </div>
+  </div>
+
+  <main class="list" id="list"><div class="empty">Loading boss data…</div></main>
+
+  <footer>
+    <p><b>Source.</b> Extracted from radicalred 4.1 (FireRed base, BPRE). The game picks these teams when the Hardcore flag is set and the opponent's trainer is in its Hardcore boss table. Battle order follows that table, which runs in story order.</p>
+    <p><b>Not covered yet.</b> Regular trainers, a few special trainers whose teams are the same in every mode, and which abilities Hardcore restricts for your own Pokémon. Two level-cap milestones (after the Rocket Hideout and Silph Co. Giovanni fights) were inferred from the level data. All the other milestones were read from the battle scripts.</p>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var TYPE_COLORS = { Normal:'#a8a77a', Fire:'#ee8130', Water:'#6390f0', Electric:'#f7d02c', Grass:'#7ac74c', Ice:'#96d9d6',
+    Fighting:'#c22e28', Poison:'#a33ea1', Ground:'#e2bf65', Flying:'#a98ff3', Psychic:'#f95587', Bug:'#a6b91a', Rock:'#b6a136',
+    Ghost:'#735797', Dragon:'#6f35fc', Dark:'#705746', Steel:'#b7b7ce', Fairy:'#d685ad', '???':'#68a090' };
+  var STAT_LABELS = [['hp','HP'],['atk','Atk'],['def','Def'],['spa','SpA'],['spd','SpD'],['spe','Spe']];
+  var state = { cat: 'all', q: '', fromCap: 0 };
+  var DATA = null;
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function textOn(hex) {
+    var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    return (0.299*r + 0.587*g + 0.114*b) > 150 ? '#1b1b1b' : '#ffffff';
+  }
+  function typeChip(t) { var c = TYPE_COLORS[t] || '#888888'; return '<span class="type" style="background:' + c + ';color:' + textOn(c) + '">' + esc(t) + '</span>'; }
+  function relLabel(r) { return r === 0 ? 'your top' : 'top ' + (r > 0 ? '+' : '−') + Math.abs(r); }
+  function isMega(item, sp) { if (!item || item === 'Eviolite') return false; return /ite( ?[XY])?$/.test(item) && !/^(Eviolite)$/.test(item); }
+
+  function load(key, dflt) { try { var v = localStorage.getItem('rrhc:' + key); return v == null ? dflt : JSON.parse(v); } catch (e) { return dflt; } }
+  function save(key, v) { try { localStorage.setItem('rrhc:' + key, JSON.stringify(v)); } catch (e) {} }
+
+  function monHTML(m) {
+    var natTxt = m.up ? esc(m.na) + ' <span class="nat-up">+' + esc(m.up.toUpperCase()) + '</span> <span class="nat-dn">−' + esc(m.dn.toUpperCase()) + '</span>' : esc(m.na) + ' <span class="statnote">(neutral)</span>';
+    var lv = 'Lv ' + m.lv;
+    var rel = m.rel != null ? ' <span class="rel">' + relLabel(m.rel) + '</span>' : '';
+    var moves = m.mv.map(function (x) {
+      var c = TYPE_COLORS[x.t] || '#888888';
+      var cat = x.c === 'p' ? 'Phys' : (x.c === 'sp' ? 'Spec' : 'Status');
+      var pw = x.p ? (x.p === 1 ? 'var' : x.p) : '—';
+      var pr = x.pr ? ' · ' + (x.pr > 0 ? '+' : '') + x.pr + ' prio' : '';
+      return '<div class="move"><span class="mt" style="background:' + c + '"></span><span class="mb"><span class="mn">' + esc(x.n) + '</span><span class="mp">' + esc(x.t) + ' · ' + cat + ' · ' + pw + pr + '</span></span></div>';
+    }).join('');
+    var stats = STAT_LABELS.map(function (p) {
+      var cls = 'stat' + (m.up === p[0] ? ' up' : '') + (m.dn === p[0] ? ' dn' : '') + (p[0] === 'spe' ? ' spe' : '');
+      return '<div class="' + cls + '"><span class="k">' + p[1] + '</span><span class="v">' + m.st[p[0]] + '</span></div>';
+    }).join('');
+    var extra = [];
+    if (m.iv) extra.push('IVs ' + m.iv.join('/') + ' (HP/Atk/Def/SpA/SpD/Spe)');
+    if (m.status) extra.push('Starts the battle ' + m.status.toLowerCase());
+    if (isMega(m.it)) extra.push('Holds a Mega Stone: expect Mega Evolution');
+    if (m.it && / Z$/.test(m.it)) extra.push('Holds a Z-Crystal: one Z-Move per battle');
+    return '<div class="mon">' +
+      '<div class="mtop"><span class="mname">' + esc(m.sp) + (m.alt ? ' <span class="statnote">(alt form)</span>' : '') + '</span>' +
+        '<span class="types">' + m.ty.map(typeChip).join('') + '</span>' +
+        '<span class="mlv">' + lv + '</span>' + rel + '</div>' +
+      '<dl class="kv"><dt>Ability</dt><dd>' + esc(m.ab) + '</dd><dt>Item</dt><dd>' + (m.it ? esc(m.it) : '—') + '</dd><dt>Nature</dt><dd>' + natTxt + '</dd></dl>' +
+      '<div class="moves">' + moves + '</div>' +
+      '<div class="stats">' + stats + '</div>' +
+      '<div class="statnote">Stats at Lv ' + m.lv + (m.rel != null ? ' (if your top Pokémon is at the cap)' : '') + ', 0 EVs</div>' +
+      (extra.length ? '<div class="note">' + extra.map(esc).join(' · ') + '</div>' : '') +
+    '</div>';
+  }
+
+  function bossHTML(b) {
+    var badges = '<span class="pill cap">Cap ' + b.cap + '</span>' + (b.dbl ? '<span class="pill dbl">Double</span>' : '') + '<span class="pill">' + b.party.length + ' Pokémon</span>';
+    var preview = b.party.map(function (m) {
+      var c = TYPE_COLORS[m.ty[0]] || '#888888';
+      var lv = m.rel != null ? relLabel(m.rel) : 'Lv ' + m.lv;
+      return '<span class="pv"><span class="dot" style="background:' + c + '"></span>' + esc(m.sp) + ' <span class="lv">' + esc(lv) + '</span></span>';
+    }).join('');
+    var sub = '';
+    if (b.variant) sub = '<div class="variant">One of three versions, depending on your starter. This one has ' + esc(b.variant) + '.</div>';
+    var ms = b.ms ? '<div class="ms">Win → cap rises to ' + b.capAfter + ' (' + esc(b.ms) + ')</div>' : '';
+    return '<details class="boss ' + b.cat + '" data-i="' + b.i + '">' +
+      '<summary><div class="bhead"><span class="num">#' + (b.i + 1) + '</span><span class="bname">' + esc(b.name) + '</span><span class="bclass">' + esc(b.cls) + '</span><span class="badges">' + badges + '</span></div>' +
+      sub + '<div class="preview">' + preview + '</div>' + ms + '</summary>' +
+      '<div class="team" data-team="' + b.i + '"></div></details>';
+  }
+
+  function matches(b) {
+    if (state.cat !== 'all' && b.cat !== state.cat) return false;
+    if (b.cap < state.fromCap) return false;
+    if (!state.q) return true;
+    return b._search.indexOf(state.q) !== -1;
+  }
+
+  function render() {
+    var shown = DATA.bosses.filter(matches);
+    var list = document.getElementById('list');
+    list.innerHTML = shown.length ? shown.map(bossHTML).join('') : '<div class="empty">No bosses match. Clear the search or pick a lower cap.</div>';
+    document.getElementById('count').textContent = shown.length + ' of ' + DATA.bosses.length;
+    list.querySelectorAll('details.boss').forEach(function (d) {
+      d.addEventListener('toggle', function () {
+        var team = d.querySelector('.team');
+        if (d.open && !team.childElementCount) {
+          var b = DATA.bosses[+d.getAttribute('data-i')];
+          team.innerHTML = b.party.map(monHTML).join('');
+        }
+      });
+    });
+    var first = list.querySelector('details.boss');
+    if (first && !state.q) { first.open = true; }
+  }
+
+  function setup() {
+    var b = DATA.bosses;
+    b.forEach(function (x) {
+      var parts = [x.name, x.cls, x.variant || ''];
+      x.party.forEach(function (m) { parts.push(m.sp, m.ab, m.it || '', m.na); m.ty.forEach(function (t) { parts.push(t); }); m.mv.forEach(function (v) { parts.push(v.n); }); });
+      x._search = parts.join(' | ').toLowerCase();
+    });
+    var gyms = b.filter(function (x) { return x.cat === 'gym'; }).length;
+    var rel = 0, total = 0; b.forEach(function (x) { x.party.forEach(function (m) { total++; if (m.rel != null) rel++; }); });
+    document.getElementById('facts').innerHTML =
+      '<span><b>' + b.length + '</b> boss battles</span><span><b>' + total + '</b> Pokémon</span><span><b>' + rel + '</b> with levels set from yours</span><span><b>' + gyms + '</b> gym leader fights</span><span>' + esc(DATA.version) + '</span>';
+
+    // level caps table
+    var hc = DATA.caps.hardcore, nm = DATA.caps.normal;
+    var ms = b.filter(function (x) { return x.ms; });
+    var rows = '<tr><th>After beating</th><th>Hardcore cap</th><th>Normal</th></tr><tr><td>Start of the game</td><td class="n">' + hc[0] + '</td><td class="n">' + nm[0] + '</td></tr>';
+    ms.forEach(function (x, k) { rows += '<tr><td>' + esc(x.name) + ' — ' + esc(x.ms) + '</td><td class="n">' + hc[k+1] + '</td><td class="n">' + nm[k+1] + '</td></tr>'; });
+    rows += '<tr><td>Becoming Champion</td><td class="n">' + hc[17] + '</td><td class="n">' + nm[17] + '</td></tr>';
+    document.getElementById('capsTable').innerHTML = rows;
+
+    // bans
+    var r = DATA.restrictions;
+    document.getElementById('bansBody').innerHTML =
+      '<p>In Hardcore, your Pokémon skip these moves when they would learn them. The same check runs for level-up and the other move-teaching code. It applies to you only. Bosses still use them.</p>' +
+      '<div class="taglist">' + r.bannedMoves.map(function (n) { return '<span class="tag">' + esc(n) + '</span>'; }).join('') + '</div>' +
+      '<p><b>' + r.conditionalMoves.map(esc).join(' and ') + '</b> are banned too, except on these ' + r.conditionalAllowedSpecies.length + ' Pokémon:</p>' +
+      '<div class="taglist">' + r.conditionalAllowedSpecies.map(function (n) { return '<span class="tag">' + esc(n) + '</span>'; }).join('') + '</div>';
+
+    // cap select
+    var capSel = document.getElementById('fromCap');
+    var uniq = []; hc.forEach(function (c) { if (uniq.indexOf(c) === -1 && c < 100) uniq.push(c); });
+    capSel.innerHTML = '<option value="0">All</option>' + uniq.map(function (c) { return '<option value="' + c + '">' + c + '</option>'; }).join('');
+    state.cat = load('cat', 'all'); state.fromCap = load('fromCap', 0);
+    if (uniq.indexOf(state.fromCap) === -1) state.fromCap = 0;
+    capSel.value = String(state.fromCap);
+    document.querySelectorAll('#chips .chipbtn').forEach(function (btn) {
+      btn.setAttribute('aria-pressed', btn.getAttribute('data-cat') === state.cat ? 'true' : 'false');
+      btn.addEventListener('click', function () {
+        state.cat = btn.getAttribute('data-cat'); save('cat', state.cat);
+        document.querySelectorAll('#chips .chipbtn').forEach(function (o) { o.setAttribute('aria-pressed', o === btn ? 'true' : 'false'); });
+        render();
+      });
+    });
+    capSel.addEventListener('change', function () { state.fromCap = +capSel.value; save('fromCap', state.fromCap); render(); });
+    var t = null;
+    document.getElementById('q').addEventListener('input', function (e) {
+      clearTimeout(t); var v = e.target.value;
+      t = setTimeout(function () { state.q = v.trim().toLowerCase(); render(); }, 120);
+    });
+    render();
+  }
+
+  fetch('bosses.json').then(function (r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  }).then(function (d) { DATA = d; setup(); }).catch(function (e) {
+    document.getElementById('list').innerHTML = '<div class="empty">The boss data file didn\'t load (' + esc(e.message) + '). Reload the page to try again.</div>';
+  });
+})();
+</script>

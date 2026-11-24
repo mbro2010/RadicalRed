@@ -1,0 +1,152 @@
+[
+ {
+  "id": 0,
+  "name": "Hardy",
+  "up": null,
+  "down": null
+ },
+ {
+  "id": 1,
+  "name": "Lonely",
+  "up": "atk",
+  "down": "def"
+ },
+ {
+  "id": 2,
+  "name": "Brave",
+  "up": "atk",
+  "down": "spe"
+ },
+ {
+  "id": 3,
+  "name": "Adamant",
+  "up": "atk",
+  "down": "spa"
+ },
+ {
+  "id": 4,
+  "name": "Naughty",
+  "up": "atk",
+  "down": "spd"
+ },
+ {
+  "id": 5,
+  "name": "Bold",
+  "up": "def",
+  "down": "atk"
+ },
+ {
+  "id": 6,
+  "name": "Docile",
+  "up": null,
+  "down": null
+ },
+ {
+  "id": 7,
+  "name": "Relaxed",
+  "up": "def",
+  "down": "spe"
+ },
+ {
+  "id": 8,
+  "name": "Impish",
+  "up": "def",
+  "down": "spa"
+ },
+ {
+  "id": 9,
+  "name": "Lax",
+  "up": "def",
+  "down": "spd"
+ },
+ {
+  "id": 10,
+  "name": "Timid",
+  "up": "spe",
+  "down": "atk"
+ },
+ {
+  "id": 11,
+  "name": "Hasty",
+  "up": "spe",
+  "down": "def"
+ },
+ {
+  "id": 12,
+  "name": "Serious",
+  "up": null,
+  "down": null
+ },
+ {
+  "id": 13,
+  "name": "Jolly",
+  "up": "spe",
+  "down": "spa"
+ },
+ {
+  "id": 14,
+  "name": "Naive",
+  "up": "spe",
+  "down": "spd"
+ },
+ {
+  "id": 15,
+  "name": "Modest",
+  "up": "spa",
+  "down": "atk"
+ },
+ {
+  "id": 16,
+  "name": "Mild",
+  "up": "spa",
+  "down": "def"
+ },
+ {
+  "id": 17,
+  "name": "Quiet",
+  "up": "spa",
+  "down": "spe"
+ },
+ {
+  "id": 18,
+  "name": "Bashful",
+  "up": null,
+  "down": null
+ },
+ {
+  "id": 19,
+  "name": "Rash",
+  "up": "spa",
+  "down": "spd"
+ },
+ {
+  "id": 20,
+  "name": "Calm",
+  "up": "spd",
+  "down": "atk"
+ },
+ {
+  "id": 21,
+  "name": "Gentle",
+  "up": "spd",
+  "down": "def"
+ },
+ {
+  "id": 22,
+  "name": "Sassy",
+  "up": "spd",
+  "down": "spe"
+ },
+ {
+  "id": 23,
+  "name": "Careful",
+  "up": "spd",
+  "down": "spa"
+ },
+ {
+  "id": 24,
+  "name": "Quirky",
+  "up": null,
+  "down": null
+ }
+]

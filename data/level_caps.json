@@ -1,0 +1,109 @@
+{
+ "normal": [
+  15,
+  22,
+  27,
+  34,
+  44,
+  47,
+  56,
+  57,
+  59,
+  68,
+  73,
+  76,
+  79,
+  80,
+  81,
+  82,
+  85,
+  100
+ ],
+ "hardcore": [
+  16,
+  23,
+  28,
+  36,
+  44,
+  47,
+  56,
+  57,
+  59,
+  68,
+  73,
+  76,
+  79,
+  80,
+  81,
+  82,
+  85,
+  100
+ ],
+ "note": "Cap index = number of milestone flags set (16 milestones); after the game is cleared (flag 0x82C) index 17 = 100.",
+ "milestones": [
+  {
+   "flag": "0x820",
+   "event": "Boulder Badge (Brock)"
+  },
+  {
+   "flag": "0x201",
+   "event": "Beat Archer (trainer 46)"
+  },
+  {
+   "flag": "0x821",
+   "event": "Cascade Badge (Misty)"
+  },
+  {
+   "flag": "0x822",
+   "event": "Thunder Badge (Lt. Surge)"
+  },
+  {
+   "flag": "0x823",
+   "event": "Rainbow Badge (Erika)"
+  },
+  {
+   "flag": "0x38",
+   "event": "story flag 0x38 (not yet identified)"
+  },
+  {
+   "flag": "0x955",
+   "event": "Beat Archer (trainer 53)"
+  },
+  {
+   "flag": "0x53",
+   "event": "story flag 0x53 (not yet identified)"
+  },
+  {
+   "flag": "0x824",
+   "event": "Soul Badge (Koga)"
+  },
+  {
+   "flag": "0x825",
+   "event": "Marsh Badge (Sabrina)"
+  },
+  {
+   "flag": "0x998",
+   "event": "Beat May (trainer 61)"
+  },
+  {
+   "flag": "0x826",
+   "event": "Volcano Badge (Blaine)"
+  },
+  {
+   "flag": "0x981",
+   "event": "Beat Ariana / Giovanni (trainers 68/69)"
+  },
+  {
+   "flag": "0x982",
+   "event": "Beat Giovanni (trainer 69)"
+  },
+  {
+   "flag": "0x827",
+   "event": "Earth Badge (Giovanni)"
+  },
+  {
+   "flag": "0x991",
+   "event": "Beat Brendan (trainer 26)"
+  }
+ ]
+}

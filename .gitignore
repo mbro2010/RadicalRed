@@ -1,0 +1,15 @@
+# Never commit the game itself or saves.
+*.gba
+*.GBA
+*.zip
+*.sav
+*.sgm
+*.ups
+*.bps
+*.ips
+rom/
+# The ROM has been passed around as a .txt before; keep that out too.
+radicalred*.txt
+
+__pycache__/
+*.pyc
