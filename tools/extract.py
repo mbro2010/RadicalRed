@@ -67,7 +67,7 @@ for i in range(N_MOVES):
     b = rom[o:o+12]
     moves.append({'id': i, 'name': move_name[i], 'effect': b[0], 'power': b[1], 'type': TYPES.get(b[2], f'#{b[2]}'),
                   'accuracy': b[3], 'pp': b[4], 'effectChance': b[5], 'target': b[6],
-                  'priority': b[7] - 256 if b[7] > 127 else b[7], 'flags': b[8], 'category': SPLIT.get(b[10], b[10])})
+                  'priority': b[7] - 256 if b[7] > 127 else b[7], 'flags': b[8], 'zPower': b[9], 'category': SPLIT.get(b[10], b[10])})
 
 # ---- level caps ----
 level_caps = {
@@ -124,7 +124,7 @@ def decode_record_party(ptr, size):
         absel = (flags25 >> 4) & 3   # 0 -> hidden ability, 1 -> slot 1, 2/3 -> slot 2
         ab, abslot = ability_for(spc, 'hidden' if absel == 0 else (0 if absel == 1 else 1))
         m = {'species': species_name[spc], 'speciesId': spc, 'nature': nature_name[nature], 'natureId': nature,
-             'item': item_name(item), 'moves': [move_name[x] for x in mv if x], 'moveIds': [x for x in mv if x],
+             'item': item_name(item), 'itemId': item or None, 'moves': [move_name[x] for x in mv if x], 'moveIds': [x for x in mv if x],
              'ability': ab, 'abilitySlot': abslot, 'ivs': ivs_unpack(ivw), 'evsInRecord': evs,
              'shiny': bool(flags25 & 1), 'raw': {'b24': u8(o+24), 'b25': flags25, 'b27': u8(o+27)}}
         m.update(level_info(u8(o+26)))

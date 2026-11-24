@@ -147,6 +147,19 @@ Lists of u16 move IDs, terminated by `0xFEFE`:
 
 These lists are checked when a move is learned by level-up (`0x090A8818`) and in the other teaching paths (`0x090A8B9E`, `0x090A8EC4`), when flag `0x1034` or `0x103C` is set.
 
+## Data used by the Coach app
+
+| What | Where | Notes |
+| --- | --- | --- |
+| Type chart | `0x1146CE2` | 24×24 bytes, row = attacking type: 0 neutral, 1 immune, 5 half, 20 double. Identical to the standard Gen 6+ chart. The vanilla Gen 3 list at `0x24F050` is no longer used. |
+| Level-up learnsets | pointer table at `*(0x08043E20)` = `0x180175C` | 3-byte entries (u16 move, u8 level), ended by level `0xFF` |
+| TM/HM moves | `0x18224B8` | 128 × u16: TM01–TM120, then HM01–HM08 |
+| TM/HM compatibility | `*(0x08043C68)` = `0x13E6DB4` | 16 bytes per species, bit n = TM/HM index n (`CanMonLearnTMHM` at `0x090A54C8`) |
+| Ability descriptions | `*(0x080001C4)` = `0x1009B84` | 256 pointers; ability IDs are one byte, so names above 255 are never used |
+| Items | `0x13C0000` | 44-byte vanilla struct, indexed by item ID (750 items) |
+
+Move struct byte 9 is the Z-move power. Radical Red adds 15 abilities of its own (for example Striker, Bone Zone, Sage Power, Primal Armor and Feline Prowess) and about a dozen moves of its own (for example Soul Robbery, Dark Hole, Leech Fang and Aqua Fang). It also changes the types and stats of many existing Pokémon, so vanilla Pokédex data is wrong for it.
+
 ## Open questions
 
 - Which abilities Hardcore or Restricted Mode restricts for the player

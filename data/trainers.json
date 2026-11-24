@@ -69,6 +69,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Pyro Ball",
        "Close Combat",
@@ -114,6 +115,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Sceptilite",
+      "itemId": 554,
       "moves": [
        "Swords Dance",
        "Bullet Seed",
@@ -159,6 +161,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Yache Berry",
+      "itemId": 450,
       "moves": [
        "Shell Smash",
        "Wood Hammer",
@@ -204,6 +207,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Blazikenite",
+      "itemId": 555,
       "moves": [
        "Close Combat",
        "Flare Blitz",
@@ -249,6 +253,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Hydro Cannon",
        "Dark Hole",
@@ -294,6 +299,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Scope Lens",
+      "itemId": 198,
       "moves": [
        "Snipe Shot",
        "Ice Beam",
@@ -379,6 +385,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Light Ball",
+      "itemId": 202,
       "moves": [
        "Fake Out",
        "Aura Wheel",
@@ -424,6 +431,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Venusaurite",
+      "itemId": 533,
       "moves": [
        "Giga Drain",
        "Sludge Bomb",
@@ -469,6 +477,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Blastoisnite",
+      "itemId": 536,
       "moves": [
        "Shell Smash",
        "Ice Beam",
@@ -514,6 +523,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "CharzarditeX",
+      "itemId": 534,
       "moves": [
        "Dragon Dance",
        "Flare Blitz",
@@ -559,6 +569,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Body Slam",
        "Earthquake",
@@ -604,6 +615,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "MewtwoniteX",
+      "itemId": 546,
       "moves": [
        "Bulk Up",
        "Zen Headbutt",
@@ -686,6 +698,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": "Oran Berry",
+      "itemId": 139,
       "moves": [
        "Low Sweep",
        "Tackle",
@@ -729,6 +742,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Metronome"
       ],
@@ -768,6 +782,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": null,
+      "itemId": null,
       "moves": [
        "Swagger",
        "Protect",
@@ -906,6 +921,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "White Herb",
+      "itemId": 180,
       "moves": [
        "Acrobatics"
       ],
@@ -944,6 +960,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Venusaurite",
+      "itemId": 533,
       "moves": [
        "Tackle"
       ],
@@ -992,6 +1009,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "WeaknessPol.",
+      "itemId": 710,
       "moves": [
        "Dragon Dance",
        "Sunsteel Ram",
@@ -1074,6 +1092,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Stone Axe",
        "X-Scissor",
@@ -1118,6 +1137,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Scizorite",
+      "itemId": 550,
       "moves": [
        "Bullet Punch",
        "DualWingbeat",
@@ -1162,6 +1182,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Eviolite",
+      "itemId": 700,
       "moves": [
        "Swords Dance",
        "DualWingbeat",
@@ -1206,6 +1227,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Bug Gem",
+      "itemId": 661,
       "moves": [
        "FirstImpress",
        "U-turn",
@@ -1250,6 +1272,7 @@
       "nature": "Impish",
       "natureId": 8,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "X-Scissor",
        "Liquidation",
@@ -1294,6 +1317,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Magnet",
+      "itemId": 208,
       "moves": [
        "Thunder",
        "Bug Buzz",
@@ -2331,6 +2355,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Multi-Attack",
        "Thunder Wave",
@@ -2376,6 +2401,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Dbl IronBash",
        "Megahorn",
@@ -2421,6 +2447,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Power Herb",
+      "itemId": 679,
       "moves": [
        "Sky Attack",
        "Swords Dance",
@@ -2466,6 +2493,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Power Herb",
+      "itemId": 679,
       "moves": [
        "Meteor Beam",
        "Hydro Pump",
@@ -2511,6 +2539,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Power Herb",
+      "itemId": 679,
       "moves": [
        "Meteor Beam",
        "Shadow Ball",
@@ -2556,6 +2585,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Sandacondite",
+      "itemId": 744,
       "moves": [
        "Earthquake",
        "Body Slam",
@@ -2763,6 +2793,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Volt Switch",
        "Thunderbolt",
@@ -2808,6 +2839,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Electr. Seed",
+      "itemId": 718,
       "moves": [
        "Bulk Up",
        "Close Combat",
@@ -2853,6 +2885,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Eevium Z",
+      "itemId": 600,
       "moves": [
        "Last Resort",
        "Surf",
@@ -2898,6 +2931,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Applite",
+      "itemId": 739,
       "moves": [
        "Scale Shot",
        "Grav Apple",
@@ -3151,6 +3185,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Pursuit",
        "Brave Bird",
@@ -3196,6 +3231,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Fightinium Z",
+      "itemId": 581,
       "moves": [
        "Shift Gear",
        "Gear Grind",
@@ -3241,6 +3277,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Pyro Ball",
        "U-turn",
@@ -3286,6 +3323,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Applite",
+      "itemId": 739,
       "moves": [
        "Draco Meteor",
        "Superpower",
@@ -3631,6 +3669,7 @@
       "nature": "Impish",
       "natureId": 8,
       "item": "Rocky Helmet",
+      "itemId": 702,
       "moves": [
        "Stealth Rock",
        "Draco Hammer",
@@ -3676,6 +3715,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "WeaknessPol.",
+      "itemId": 710,
       "moves": [
        "Agility",
        "Fiery Wrath",
@@ -3721,6 +3761,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Calm Mind",
        "Surf",
@@ -3766,6 +3807,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Flyinium Z",
+      "itemId": 582,
       "moves": [
        "Swords Dance",
        "Earthquake",
@@ -3811,6 +3853,7 @@
       "nature": "Relaxed",
       "natureId": 7,
       "item": "Rocky Helmet",
+      "itemId": 702,
       "moves": [
        "Leech Seed",
        "Explosion",
@@ -3856,6 +3899,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Centiskite",
+      "itemId": 743,
       "moves": [
        "Coil",
        "Fire Lash",
@@ -4201,6 +4245,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Power Herb",
+      "itemId": 679,
       "moves": [
        "Stealth Rock",
        "Meteor Beam",
@@ -4246,6 +4291,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Nasty Plot",
        "Thunderbolt",
@@ -4291,6 +4337,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Flamethrower",
        "Aura Sphere",
@@ -4336,6 +4383,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Banettite",
+      "itemId": 566,
       "moves": [
        "Double-Edge",
        "Poltergeist",
@@ -4381,6 +4429,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Bulk Up",
        "SurgeStrikes",
@@ -4426,6 +4475,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Wicked Blow",
        "Close Combat",
@@ -4771,6 +4821,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Petaya Berry",
+      "itemId": 171,
       "moves": [
        "Sticky Web",
        "Thunder",
@@ -4816,6 +4867,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "White Herb",
+      "itemId": 180,
       "moves": [
        "Shell Smash",
        "Liquidation",
@@ -4861,6 +4913,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "WeaknessPol.",
+      "itemId": 710,
       "moves": [
        "Autotomize",
        "Air Slash",
@@ -4906,6 +4959,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Ghostium Z",
+      "itemId": 587,
       "moves": [
        "Dragon Dance",
        "Spirit Lock",
@@ -4951,6 +5005,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Salac Berry",
+      "itemId": 170,
       "moves": [
        "Bulk Up",
        "SurgeStrikes",
@@ -4996,6 +5051,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Choice Scarf",
+      "itemId": 695,
       "moves": [
        "Wicked Blow",
        "Close Combat",
@@ -5158,6 +5214,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": "Berry Juice",
+      "itemId": 44,
       "moves": [
        "Fire Spin",
        "Night Shade",
@@ -5203,6 +5260,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": "Iapapa Berry",
+      "itemId": 147,
       "moves": [
        "Belch",
        "Sludge",
@@ -5818,6 +5876,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Smooth Rock",
+      "itemId": 691,
       "moves": [
        "Explosion"
       ],
@@ -5856,6 +5915,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Super Slam"
       ],
@@ -5894,6 +5954,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Super Slam"
       ],
@@ -5932,6 +5993,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Super Slam"
       ],
@@ -5970,6 +6032,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Super Slam"
       ],
@@ -6008,6 +6071,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Super Slam"
       ],
@@ -6344,6 +6408,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Swords Dance",
        "Ice Hammer",
@@ -6389,6 +6454,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Flyinium Z",
+      "itemId": 582,
       "moves": [
        "Volt Switch",
        "Thunder",
@@ -6434,6 +6500,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Quiver Dance",
        "Hurricane",
@@ -6479,6 +6546,7 @@
       "nature": "Impish",
       "natureId": 8,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Curse",
        "Rest",
@@ -6524,6 +6592,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Bullet Punch",
        "U-turn",
@@ -6569,6 +6638,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Swampertite",
+      "itemId": 556,
       "moves": [
        "PowerUpPunch",
        "Waterfall",
@@ -6914,6 +6984,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Dragon Claw",
        "Head Smash",
@@ -6959,6 +7030,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Thick Club",
+      "itemId": 224,
       "moves": [
        "Shadow Bone",
        "Fire Punch",
@@ -7004,6 +7076,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Calm Mind",
        "Roost",
@@ -7049,6 +7122,7 @@
       "nature": "Rash",
       "natureId": 19,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Earth Power",
        "Rock Slide",
@@ -7094,6 +7168,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Hyper Voice",
        "Earth Power",
@@ -7139,6 +7214,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Sceptilite",
+      "itemId": 554,
       "moves": [
        "Swords Dance",
        "Dual Chop",
@@ -7729,6 +7805,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Ghostium Z",
+      "itemId": 587,
       "moves": [
        "Shadow Claw",
        "Play Rough",
@@ -7774,6 +7851,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Bulk Up",
        "Drain Punch",
@@ -7819,6 +7897,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Thunder Wave",
        "Multi-Attack",
@@ -7864,6 +7943,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "BlackGlasses",
+      "itemId": 206,
       "moves": [
        "U-turn",
        "Close Combat",
@@ -7909,6 +7989,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Gengarite",
+      "itemId": 541,
       "moves": [
        "Shadow Ball",
        "Sludge Wave",
@@ -7954,6 +8035,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "U-turn",
        "Power Whip",
@@ -8387,6 +8469,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Light Ball",
+      "itemId": 202,
       "moves": [
        "Thunder",
        "Hurricane",
@@ -8432,6 +8515,7 @@
       "nature": "Hasty",
       "natureId": 11,
       "item": "Blue Orb",
+      "itemId": 277,
       "moves": [
        "Earthquake",
        "Water Spout",
@@ -8477,6 +8561,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "DracoBarrage",
        "Flash Cannon",
@@ -8522,6 +8607,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Waterium Z",
+      "itemId": 590,
       "moves": [
        "DracoBarrage",
        "Hydro Pump",
@@ -8567,6 +8653,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Drednawite",
+      "itemId": 737,
       "moves": [
        "Jaw Lock",
        "Aqua Fang",
@@ -8612,6 +8699,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "SurgeStrikes",
        "Fake Out",
@@ -8753,6 +8841,7 @@
       "nature": "Calm",
       "natureId": 20,
       "item": "Sitrus Berry",
+      "itemId": 142,
       "moves": [
        "Helping Hand",
        "Moonblast",
@@ -8798,6 +8887,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Swampertite",
+      "itemId": 556,
       "moves": [
        "HiHorsepower",
        "Ice Punch",
@@ -8843,6 +8933,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Solganium Z",
+      "itemId": 612,
       "moves": [
        "Sunsteel Ram",
        "Dragon Dance",
@@ -8888,6 +8979,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Water Star",
        "Dark Pulse",
@@ -8933,6 +9025,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Lustrous Orb",
+      "itemId": 488,
       "moves": [
        "Hydro Pump",
        "Spacial Rend",
@@ -8978,6 +9071,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Choice Specs",
+      "itemId": 696,
       "moves": [
        "Seed Flare",
        "Hurricane",
@@ -9119,6 +9213,7 @@
       "nature": "Hasty",
       "natureId": 11,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Dragon Darts",
        "Spirit Lock",
@@ -9164,6 +9259,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Adamant Orb",
+      "itemId": 487,
       "moves": [
        "Roar of Time",
        "Flamethrower",
@@ -9209,6 +9305,7 @@
       "nature": "Lonely",
       "natureId": 1,
       "item": "WeaknessPol.",
+      "itemId": 710,
       "moves": [
        "DualWingbeat",
        "Fire Blast",
@@ -9254,6 +9351,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Applite",
+      "itemId": 739,
       "moves": [
        "DragonEnergy",
        "Energy Ball",
@@ -9299,6 +9397,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Lum Berry",
+      "itemId": 141,
       "moves": [
        "Dragon Dance",
        "Draco Hammer",
@@ -9344,6 +9443,7 @@
       "nature": "Hasty",
       "natureId": 11,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "U-turn",
        "Extremespeed",
@@ -9398,6 +9498,7 @@
       "nature": "Hasty",
       "natureId": 11,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Dragon Darts",
        "Spirit Lock",
@@ -9443,6 +9544,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Adamant Orb",
+      "itemId": 487,
       "moves": [
        "Roar of Time",
        "Flamethrower",
@@ -9488,6 +9590,7 @@
       "nature": "Lonely",
       "natureId": 1,
       "item": "WeaknessPol.",
+      "itemId": 710,
       "moves": [
        "DualWingbeat",
        "Fire Blast",
@@ -9533,6 +9636,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Applite",
+      "itemId": 739,
       "moves": [
        "DragonEnergy",
        "Energy Ball",
@@ -9578,6 +9682,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Lum Berry",
+      "itemId": 141,
       "moves": [
        "Dragon Dance",
        "Draco Hammer",
@@ -9623,6 +9728,7 @@
       "nature": "Hasty",
       "natureId": 11,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "U-turn",
        "Extremespeed",
@@ -9828,6 +9934,7 @@
       "nature": "Hasty",
       "natureId": 11,
       "item": "Spell Tag",
+      "itemId": 213,
       "moves": [
        "Spirit Lock",
        "Dragon Darts",
@@ -9872,6 +9979,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Body Press",
        "Dragon Pulse",
@@ -9916,6 +10024,7 @@
       "nature": "Hasty",
       "natureId": 11,
       "item": "Salamencite",
+      "itemId": 569,
       "moves": [
        "Double-Edge",
        "Aqua Tail",
@@ -10553,6 +10662,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Lopunnite",
+      "itemId": 573,
       "moves": [
        "Fake Out",
        "Double-Edge",
@@ -10598,6 +10708,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Waterium Z",
+      "itemId": 590,
       "moves": [
        "Hydro Pump",
        "Ice Beam",
@@ -10643,6 +10754,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Lum Berry",
+      "itemId": 141,
       "moves": [
        "Dragon Dance",
        "DualWingbeat",
@@ -10688,6 +10800,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Mind Blown",
        "Psyshock",
@@ -10733,6 +10846,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Power Herb",
+      "itemId": 679,
       "moves": [
        "Geomancy",
        "Moonblast",
@@ -10778,6 +10892,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Mawilite",
+      "itemId": 559,
       "moves": [
        "Iron Head",
        "Play Rough",
@@ -11124,6 +11239,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Sharp Beak",
+      "itemId": 210,
       "moves": [
        "Brave Bird",
        "Stone Edge",
@@ -11169,6 +11285,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Boomburst",
        "Thunderbolt",
@@ -11214,6 +11331,7 @@
       "nature": "Impish",
       "natureId": 8,
       "item": "Groundium Z",
+      "itemId": 584,
       "moves": [
        "1000 Arrows",
        "Extremespeed",
@@ -11259,6 +11377,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Air Balloon",
+      "itemId": 703,
       "moves": [
        "Protect",
        "Flamethrower",
@@ -11304,6 +11423,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Salamencite",
+      "itemId": 569,
       "moves": [
        "Double-Edge",
        "Flamethrower",
@@ -11349,6 +11469,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Houndoomnite",
+      "itemId": 552,
       "moves": [
        "Dark Hole",
        "Fire Blast",
@@ -11688,6 +11809,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Pidgeotite",
+      "itemId": 538,
       "moves": [
        "Hurricane",
        "Heat Wave",
@@ -11733,6 +11855,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Choice Specs",
+      "itemId": 696,
       "moves": [
        "Bug Buzz",
        "Air Slash",
@@ -11778,6 +11901,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Seed Flare",
        "Air Slash",
@@ -11823,6 +11947,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Flying Gem",
+      "itemId": 657,
       "moves": [
        "Superpower",
        "Acrobatics",
@@ -11868,6 +11993,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Lum Berry",
+      "itemId": 141,
       "moves": [
        "Brave Bird",
        "Sacred Fire",
@@ -11913,6 +12039,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Flyinium Z",
+      "itemId": 582,
       "moves": [
        "Dragon Dance",
        "Waterfall",
@@ -12010,6 +12137,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Muscle Band",
+      "itemId": 674,
       "moves": [
        "Fake Out",
        "Rock Smash",
@@ -12055,6 +12183,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Mystic Water",
+      "itemId": 209,
       "moves": [
        "Aqua Jet",
        "Aerial Ace",
@@ -12100,6 +12229,7 @@
       "nature": "Lonely",
       "natureId": 1,
       "item": "Passho Berry",
+      "itemId": 447,
       "moves": [
        "AncientPower",
        "Flame Charge",
@@ -12145,6 +12275,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Oran Berry",
+      "itemId": 139,
       "moves": [
        "PowerUpPunch",
        "Bullet Seed",
@@ -12350,6 +12481,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": "Lum Berry",
+      "itemId": 141,
       "moves": [
        "Flame Charge",
        "Pluck",
@@ -12395,6 +12527,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Berry Juice",
+      "itemId": 44,
       "moves": [
        "Volt Switch",
        "Air Slash",
@@ -12440,6 +12573,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": "Lum Berry",
+      "itemId": 141,
       "moves": [
        "Mega Drain",
        "AncientPower",
@@ -12485,6 +12619,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": "Muscle Band",
+      "itemId": 674,
       "moves": [
        "Aerial Ace",
        "Quick Attack",
@@ -12530,6 +12665,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": "Leek Stick",
+      "itemId": 225,
       "moves": [
        "Rock Smash",
        "Slam",
@@ -12728,6 +12864,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": "Shuca Berry",
+      "itemId": 453,
       "moves": [
        "AncientPower",
        "Venoshock",
@@ -12773,6 +12910,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": "Shuca Berry",
+      "itemId": 453,
       "moves": [
        "Mega Drain",
        "Poison Fang",
@@ -12818,6 +12956,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Nasty Plot",
        "Incinerate",
@@ -12863,6 +13002,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": "Berry Juice",
+      "itemId": 44,
       "moves": [
        "Bite",
        "Ice Fang",
@@ -12908,6 +13048,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": "Muscle Band",
+      "itemId": 674,
       "moves": [
        "Pursuit",
        "Pluck",
@@ -13159,6 +13300,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "X-Scissor",
        "U-turn",
@@ -13203,6 +13345,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Bullet Punch",
        "Aerial Ace",
@@ -13247,6 +13390,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Muscle Band",
+      "itemId": 674,
       "moves": [
        "Swords Dance",
        "Aerial Ace",
@@ -13291,6 +13435,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "SilverPowder",
+      "itemId": 188,
       "moves": [
        "U-turn",
        "FirstImpress",
@@ -13335,6 +13480,7 @@
       "nature": "Impish",
       "natureId": 8,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Bug Bite",
        "Waterfall",
@@ -13379,6 +13525,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Magnet",
+      "itemId": 208,
       "moves": [
        "Volt Switch",
        "Signal Beam",
@@ -13723,6 +13870,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Hydro Pump",
        "Freeze-Dry",
@@ -13767,6 +13915,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Mystic Water",
+      "itemId": 209,
       "moves": [
        "Jet Punch",
        "Waterfall",
@@ -13811,6 +13960,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Hydro Pump",
        "DracoBarrage",
@@ -13855,6 +14005,7 @@
       "nature": "Calm",
       "natureId": 20,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Body Press",
        "Elec. Shot",
@@ -13899,6 +14050,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Fightinium Z",
+      "itemId": 581,
       "moves": [
        "Nasty Plot",
        "Thunder",
@@ -13943,6 +14095,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Gyaradosite",
+      "itemId": 544,
       "moves": [
        "Dragon Dance",
        "Waterfall",
@@ -14241,6 +14394,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Torch Song",
        "Hyper Voice",
@@ -14285,6 +14439,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Normal Gem",
+      "itemId": 655,
       "moves": [
        "Charge Beam",
        "Hyper Voice",
@@ -14329,6 +14484,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Mystic Water",
+      "itemId": 209,
       "moves": [
        "Lovely Kiss",
        "Surf",
@@ -14373,6 +14529,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Normal Gem",
+      "itemId": 655,
       "moves": [
        "Brave Bird",
        "Facade",
@@ -14417,6 +14574,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Roost",
        "Air Slash",
@@ -14461,6 +14619,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Altarianite",
+      "itemId": 565,
       "moves": [
        "Calm Mind",
        "Hyper Voice",
@@ -14711,6 +14870,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Aqua Jet",
        "Liquidation",
@@ -14755,6 +14915,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Body Slam",
        "Knock Off",
@@ -14799,6 +14960,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Magnet",
+      "itemId": 208,
       "moves": [
        "Volt Switch",
        "Grass Knot",
@@ -14843,6 +15005,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Psychic",
        "Calm Mind",
@@ -14887,6 +15050,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Swords Dance",
        "Leaf Blade",
@@ -14931,6 +15095,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Flame Orb",
+      "itemId": 681,
       "moves": [
        "Drain Punch",
        "Bullet Punch",
@@ -15254,6 +15419,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "ThunderPunch",
        "Close Combat",
@@ -15299,6 +15465,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Lum Berry",
+      "itemId": 141,
       "moves": [
        "Dragon Dance",
        "Fusion Bolt",
@@ -15344,6 +15511,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Fire Gem",
+      "itemId": 664,
       "moves": [
        "Fiery Dance",
        "Sludge Wave",
@@ -15389,6 +15557,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Plasma Fists",
        "Drain Punch",
@@ -15434,6 +15603,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Calm Mind",
        "Para Charge",
@@ -15479,6 +15649,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Manectite",
+      "itemId": 562,
       "moves": [
        "Rising Volt",
        "Hidden Power",
@@ -15778,6 +15949,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Chople Berry",
+      "itemId": 451,
       "moves": [
        "Stealth Rock",
        "Wicked Blow",
@@ -15822,6 +15994,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Reaper Cloth",
+      "itemId": 92,
       "moves": [
        "Shadow Punch",
        "Shadow Sneak",
@@ -15866,6 +16039,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Spell Tag",
+      "itemId": 213,
       "moves": [
        "Nasty Plot",
        "Shadow Ball",
@@ -15910,6 +16084,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Swords Dance",
        "Shadow Sneak",
@@ -15954,6 +16129,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Swords Dance",
        "Triple Axel",
@@ -15998,6 +16174,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Gengarite",
+      "itemId": 541,
       "moves": [
        "Sludge Wave",
        "Shadow Ball",
@@ -16197,6 +16374,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Colbur Berry",
+      "itemId": 460,
       "moves": [
        "Psychic",
        "Focus Blast",
@@ -16241,6 +16419,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Ghostium Z",
+      "itemId": 587,
       "moves": [
        "Shadow Ball",
        "Make It Rain",
@@ -16285,6 +16464,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Houndoomnite",
+      "itemId": 552,
       "moves": [
        "Pursuit",
        "Fiery Wrath",
@@ -16491,6 +16671,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Sitrus Berry",
+      "itemId": 142,
       "moves": [
        "Fake Out",
        "Knock Off",
@@ -16535,6 +16716,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Throat Spray",
+      "itemId": 727,
       "moves": [
        "Hyper Voice",
        "Scald",
@@ -16579,6 +16761,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Mawilite",
+      "itemId": 559,
       "moves": [
        "Play Rough",
        "Sucker Punch",
@@ -17069,6 +17252,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Lum Berry",
+      "itemId": 141,
       "moves": [
        "Stealth Rock",
        "Close Combat",
@@ -17113,6 +17297,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "U-turn",
        "Earthquake",
@@ -17157,6 +17342,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Coil",
        "1000 Arrows",
@@ -17201,6 +17387,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Boost Energy",
+      "itemId": 614,
       "moves": [
        "Knock Off",
        "Earthquake",
@@ -17245,6 +17432,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Blood Moon",
        "Earth Power",
@@ -17289,6 +17477,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Aerodactlite",
+      "itemId": 545,
       "moves": [
        "Dragon Dance",
        "Stone Edge",
@@ -17633,6 +17822,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Shadow Ball",
        "Sludge Wave",
@@ -17678,6 +17868,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Power Herb",
+      "itemId": 679,
       "moves": [
        "Meteor Beam",
        "Sludge Wave",
@@ -17723,6 +17914,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Wild Charge",
        "Play Rough",
@@ -17768,6 +17960,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Mystic Water",
+      "itemId": 209,
       "moves": [
        "SurgeStrikes",
        "Close Combat",
@@ -17813,6 +18006,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Psychic",
        "Ice Beam",
@@ -17858,6 +18052,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Sceptilite",
+      "itemId": 554,
       "moves": [
        "Dragon Dance",
        "Dual Chop",
@@ -18203,6 +18398,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Lovely Kiss",
        "Psystrike",
@@ -18248,6 +18444,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "White Herb",
+      "itemId": 180,
       "moves": [
        "Shell Smash",
        "Icicle Spear",
@@ -18293,6 +18490,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Thunder Wave",
        "Teleport",
@@ -18338,6 +18536,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Icium Z",
+      "itemId": 594,
       "moves": [
        "Dragon Dance",
        "Icicle Crash",
@@ -18383,6 +18582,7 @@
       "nature": "Lonely",
       "natureId": 1,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Bolt Beak",
        "Icicle Crash",
@@ -18428,6 +18628,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Glalitite",
+      "itemId": 568,
       "moves": [
        "Fake Out",
        "Quick Attack",
@@ -18773,6 +18974,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Stealth Rock",
        "Earthquake",
@@ -18818,6 +19020,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Calm Mind",
        "Recover",
@@ -18863,6 +19066,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Thunder Wave",
        "Teleport",
@@ -18908,6 +19112,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Icium Z",
+      "itemId": 594,
       "moves": [
        "Dragon Dance",
        "Icicle Crash",
@@ -18953,6 +19158,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "FishiousRend",
        "Icicle Crash",
@@ -18998,6 +19204,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Glalitite",
+      "itemId": 568,
       "moves": [
        "Fake Out",
        "Quick Attack",
@@ -19343,6 +19550,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Lovely Kiss",
        "Psystrike",
@@ -19388,6 +19596,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "White Herb",
+      "itemId": 180,
       "moves": [
        "Shell Smash",
        "Icicle Spear",
@@ -19433,6 +19642,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Blizzard",
        "Teleport",
@@ -19478,6 +19688,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Icium Z",
+      "itemId": 594,
       "moves": [
        "Dragon Dance",
        "Icicle Crash",
@@ -19523,6 +19734,7 @@
       "nature": "Lonely",
       "natureId": 1,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Bolt Beak",
        "Icicle Crash",
@@ -19568,6 +19780,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Glalitite",
+      "itemId": 568,
       "moves": [
        "Fake Out",
        "Quick Attack",
@@ -19913,6 +20126,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Custap Berry",
+      "itemId": 464,
       "moves": [
        "Stone Edge",
        "Heavy Slam",
@@ -19957,6 +20171,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Flying Gem",
+      "itemId": 657,
       "moves": [
        "Double-Edge",
        "U-turn",
@@ -20001,6 +20216,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Thunderbolt",
        "Electro Ball",
@@ -20045,6 +20261,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Scald",
        "Body Press",
@@ -20089,6 +20306,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Body Slam",
        "Dark Lariat",
@@ -20133,6 +20351,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Blazikenite",
+      "itemId": 555,
       "moves": [
        "Swords Dance",
        "Flare Blitz",
@@ -20477,6 +20696,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Toxic Orb",
+      "itemId": 680,
       "moves": [
        "Stealth Rock",
        "HiHorsepower",
@@ -20522,6 +20742,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Grassy Glide",
        "Play Rough",
@@ -20567,6 +20788,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "WeaknessPol.",
+      "itemId": 710,
       "moves": [
        "Dragon Dance",
        "Sunsteel Ram",
@@ -20612,6 +20834,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Extremespeed",
        "U-turn",
@@ -20657,6 +20880,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Thunderbolt",
        "Flash Cannon",
@@ -20702,6 +20926,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Aggronite",
+      "itemId": 560,
       "moves": [
        "Curse",
        "Heavy Slam",
@@ -21047,6 +21272,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Toxic Orb",
+      "itemId": 680,
       "moves": [
        "Stealth Rock",
        "HiHorsepower",
@@ -21092,6 +21318,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Grassy Glide",
        "Play Rough",
@@ -21137,6 +21364,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "WeaknessPol.",
+      "itemId": 710,
       "moves": [
        "Dragon Dance",
        "Sunsteel Ram",
@@ -21182,6 +21410,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Extremespeed",
        "U-turn",
@@ -21227,6 +21456,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Thunderbolt",
        "Flash Cannon",
@@ -21272,6 +21502,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Aggronite",
+      "itemId": 560,
       "moves": [
        "Curse",
        "Heavy Slam",
@@ -21617,6 +21848,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Toxic Orb",
+      "itemId": 680,
       "moves": [
        "Stealth Rock",
        "HiHorsepower",
@@ -21662,6 +21894,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Grassy Glide",
        "Play Rough",
@@ -21707,6 +21940,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "WeaknessPol.",
+      "itemId": 710,
       "moves": [
        "Dragon Dance",
        "Sunsteel Ram",
@@ -21752,6 +21986,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Extremespeed",
        "U-turn",
@@ -21797,6 +22032,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Thunderbolt",
        "Flash Cannon",
@@ -21842,6 +22078,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Aggronite",
+      "itemId": 560,
       "moves": [
        "Curse",
        "Heavy Slam",
@@ -22187,6 +22424,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Flower Trick",
        "Triple Axel",
@@ -22231,6 +22469,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Leaf Storm",
        "Hidden Power",
@@ -22275,6 +22514,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Grassy Seed",
+      "itemId": 719,
       "moves": [
        "Swords Dance",
        "Close Combat",
@@ -22319,6 +22559,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Swords Dance",
        "Grassy Glide",
@@ -22363,6 +22604,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Grassy Seed",
+      "itemId": 719,
       "moves": [
        "Calm Mind",
        "Drain Kiss",
@@ -22407,6 +22649,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Ampharosite",
+      "itemId": 548,
       "moves": [
        "Volt Switch",
        "DracoBarrage",
@@ -22744,6 +22987,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Space Fury",
        "Gunk Shot",
@@ -22788,6 +23032,7 @@
       "nature": "Quiet",
       "natureId": 17,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Shadow Ball",
        "Kings Shield",
@@ -22833,6 +23078,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Corner. Mask",
+      "itemId": 621,
       "moves": [
        "Ivy Cudgel",
        "U-turn",
@@ -22878,6 +23124,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Choice Scarf",
+      "itemId": 695,
       "moves": [
        "Fire Blast",
        "Hidden Power",
@@ -22922,6 +23169,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Nasty Plot",
        "Giga Drain",
@@ -22966,6 +23214,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Machampite",
+      "itemId": 728,
       "moves": [
        "PowerUpPunch",
        "Bullet Punch",
@@ -23218,6 +23467,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Charcoal",
+      "itemId": 215,
       "moves": [
        "Weather Ball",
        "Solar Beam",
@@ -23263,6 +23513,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Solar Beam",
        "Psyshock",
@@ -23308,6 +23559,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Flyinium Z",
+      "itemId": 582,
       "moves": [
        "Earthquake",
        "Fly",
@@ -23353,6 +23605,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Houndoomnite",
+      "itemId": 552,
       "moves": [
        "Dark Hole",
        "Flamethrower",
@@ -23398,6 +23651,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Growth",
        "Solar Beam",
@@ -23651,6 +23905,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Mystic Water",
+      "itemId": 209,
       "moves": [
        "BouncyBubble",
        "Ice Beam",
@@ -23694,6 +23949,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Eevium Z",
+      "itemId": 600,
       "moves": [
        "Last Resort",
        "Psychic",
@@ -23739,6 +23995,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Coba Berry",
+      "itemId": 454,
       "moves": [
        "VictoryDance",
        "Drain Punch",
@@ -23784,6 +24041,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Mawilite",
+      "itemId": 559,
       "moves": [
        "Sucker Punch",
        "Dbl IronBash",
@@ -24129,6 +24387,7 @@
       "nature": "Sassy",
       "natureId": 22,
       "item": "Figy Berry",
+      "itemId": 143,
       "moves": [
        "Will-O-Wisp",
        "Parting Shot",
@@ -24173,6 +24432,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Heat Wave",
        "Expand Force",
@@ -24217,6 +24477,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Multi-Attack",
        "Flamethrower",
@@ -24261,6 +24522,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Flyinium Z",
+      "itemId": 582,
       "moves": [
        "Nasty Plot",
        "Fiery Wrath",
@@ -24305,6 +24567,7 @@
       "nature": "Hasty",
       "natureId": 11,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "U-turn",
        "Iron Head",
@@ -24349,6 +24612,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": null,
+      "itemId": null,
       "moves": [
        "Expand Force",
        "Soul Robbery",
@@ -24463,6 +24727,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Light Clay",
+      "itemId": 677,
       "moves": [
        "Reflect",
        "Light Screen",
@@ -24508,6 +24773,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Eviolite",
+      "itemId": 700,
       "moves": [
        "Crunch",
        "Facade",
@@ -24553,6 +24819,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Swords Dance",
        "Sucker Punch",
@@ -24598,6 +24865,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Bulk Up",
        "Drain Punch",
@@ -24643,6 +24911,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Protect",
        "Psychic",
@@ -24688,6 +24957,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Sharpedonite",
+      "itemId": 563,
       "moves": [
        "Aqua Fang",
        "Crunch",
@@ -24848,6 +25118,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Stealth Rock",
        "Spikes",
@@ -24893,6 +25164,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Foul Play",
        "Roost",
@@ -24938,6 +25210,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Seismic Toss",
        "Soft-Boiled",
@@ -24983,6 +25256,7 @@
       "nature": "Sassy",
       "natureId": 22,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Giga Drain",
        "Knock Off",
@@ -25028,6 +25302,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Scald",
        "Ice Beam",
@@ -25073,6 +25348,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Garbodorite",
+      "itemId": 731,
       "moves": [
        "Poison Jab",
        "Drain Punch",
@@ -25461,6 +25737,7 @@
       "nature": "Impish",
       "natureId": 8,
       "item": "Sitrus Berry",
+      "itemId": 142,
       "moves": [
        "Stealth Rock",
        "Sticky Web",
@@ -25505,6 +25782,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Boost Energy",
+      "itemId": 614,
       "moves": [
        "Dragon Dance",
        "Knock Off",
@@ -25549,6 +25827,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "WeaknessPol.",
+      "itemId": 710,
       "moves": [
        "Shift Gear",
        "Moonblast",
@@ -25593,6 +25872,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Necrozium Z",
+      "itemId": 532,
       "moves": [
        "Dragon Dance",
        "PhotonGeyser",
@@ -25637,6 +25917,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Power Herb",
+      "itemId": 679,
       "moves": [
        "D-Max Cannon",
        "Meteor Beam",
@@ -25681,6 +25962,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Draco Meteor",
        "Steel Beam",
@@ -26026,6 +26308,7 @@
       "nature": "Hasty",
       "natureId": 11,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Close Combat",
        "Ice Beam",
@@ -26071,6 +26354,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Origin Pulse",
        "Dark Pulse",
@@ -26116,6 +26400,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Douse Drive",
+      "itemId": 525,
       "moves": [
        "U-turn",
        "Techno Blast",
@@ -26161,6 +26446,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Thunderbolt",
        "Flash Cannon",
@@ -26206,6 +26492,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Buginium Z",
+      "itemId": 586,
       "moves": [
        "Megahorn",
        "Earthquake",
@@ -26251,6 +26538,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Pinsirite",
+      "itemId": 543,
       "moves": [
        "Megahorn",
        "Extremespeed",
@@ -26597,6 +26885,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Facade",
        "Close Combat",
@@ -26642,6 +26931,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Kasib Berry",
+      "itemId": 458,
       "moves": [
        "Body Slam",
        "Thunder Wave",
@@ -26687,6 +26977,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Choice Scarf",
+      "itemId": 695,
       "moves": [
        "Boomburst"
       ],
@@ -26726,6 +27017,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Shadow Ball",
        "Hyper Voice",
@@ -26771,6 +27063,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Facade",
        "Earthquake",
@@ -26816,6 +27109,7 @@
       "nature": "Impish",
       "natureId": 8,
       "item": "Snorlaxite",
+      "itemId": 732,
       "moves": [
        "Curse",
        "Rest",
@@ -27147,6 +27441,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Choice Specs",
+      "itemId": 696,
       "moves": [
        "Blizzard",
        "Earth Power",
@@ -27191,6 +27486,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "HiHorsepower",
        "Stone Edge",
@@ -27235,6 +27531,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Icicle Crash",
        "Knock Off",
@@ -27279,6 +27576,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Calm Mind",
        "Muddy Water",
@@ -27323,6 +27621,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Dragonium Z",
+      "itemId": 595,
       "moves": [
        "Blizzard",
        "Fusion Flare",
@@ -27367,6 +27666,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Abomasite",
+      "itemId": 576,
       "moves": [
        "Giga Drain",
        "Blizzard",
@@ -27711,6 +28011,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Fake Out",
        "Hydro Pump",
@@ -27756,6 +28057,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Boost Energy",
+      "itemId": 614,
       "moves": [
        "Hydro Pump",
        "Freeze-Dry",
@@ -27801,6 +28103,7 @@
       "nature": "Hasty",
       "natureId": 11,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "U-turn",
        "Iron Head",
@@ -27846,6 +28149,7 @@
       "nature": "Mild",
       "natureId": 16,
       "item": "Flyinium Z",
+      "itemId": 582,
       "moves": [
        "Hurricane",
        "Thunder",
@@ -27891,6 +28195,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Lustrous Orb",
+      "itemId": 488,
       "moves": [
        "DracoBarrage",
        "Hydro Pump",
@@ -27936,6 +28241,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Swampertite",
+      "itemId": 556,
       "moves": [
        "Waterfall",
        "Earthquake",
@@ -28021,6 +28327,7 @@
       "nature": "Quiet",
       "natureId": 17,
       "item": "Abomasite",
+      "itemId": 576,
       "moves": [
        "Earth Power",
        "Blizzard",
@@ -28066,6 +28373,7 @@
       "nature": "Brave",
       "natureId": 2,
       "item": "Lum Berry",
+      "itemId": 141,
       "moves": [
        "Swords Dance",
        "GlacialLance",
@@ -28111,6 +28419,7 @@
       "nature": "Quiet",
       "natureId": 17,
       "item": "Icium Z",
+      "itemId": 594,
       "moves": [
        "Blizzard",
        "DracoBarrage",
@@ -28156,6 +28465,7 @@
       "nature": "Quiet",
       "natureId": 17,
       "item": "Sitrus Berry",
+      "itemId": 142,
       "moves": [
        "DracoBarrage",
        "Shadow Ball",
@@ -28201,6 +28511,7 @@
       "nature": "Brave",
       "natureId": 2,
       "item": "Lum Berry",
+      "itemId": 141,
       "moves": [
        "Ice Shard",
        "Rock Tomb",
@@ -28246,6 +28557,7 @@
       "nature": "Brave",
       "natureId": 2,
       "item": "Heracronite",
+      "itemId": 551,
       "moves": [
        "Arm Thrust",
        "Bullet Seed",
@@ -28591,6 +28903,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Stealth Rock",
        "Pyro Ball",
@@ -28636,6 +28949,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Misty Seed",
+      "itemId": 720,
       "moves": [
        "Bulk Up",
        "Drain Punch",
@@ -28681,6 +28995,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Boost Energy",
+      "itemId": 614,
       "moves": [
        "Calm Mind",
        "Moonblast",
@@ -28726,6 +29041,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "WeaknessPol.",
+      "itemId": 710,
       "moves": [
        "Dragon Dance",
        "Sunsteel Ram",
@@ -28771,6 +29087,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Rusty Sword",
+      "itemId": 485,
       "moves": [
        "Swords Dance",
        "Giant Blade",
@@ -28816,6 +29133,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Lucarionite",
+      "itemId": 575,
       "moves": [
        "Swords Dance",
        "Close Combat",
@@ -29161,6 +29479,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Wicked Blow",
        "Close Combat",
@@ -29206,6 +29525,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Misty Seed",
+      "itemId": 720,
       "moves": [
        "Swords Dance",
        "Acrobatics",
@@ -29251,6 +29571,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Boost Energy",
+      "itemId": 614,
       "moves": [
        "Calm Mind",
        "Moonblast",
@@ -29296,6 +29617,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "WeaknessPol.",
+      "itemId": 710,
       "moves": [
        "Dragon Dance",
        "Sunsteel Ram",
@@ -29341,6 +29663,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Rusty Sword",
+      "itemId": 485,
       "moves": [
        "Swords Dance",
        "Giant Blade",
@@ -29386,6 +29709,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Medichamite",
+      "itemId": 561,
       "moves": [
        "Fake Out",
        "Close Combat",
@@ -29471,6 +29795,7 @@
       "nature": "Relaxed",
       "natureId": 7,
       "item": "Sitrus Berry",
+      "itemId": 142,
       "moves": [
        "Stealth Rock",
        "Lava Plume",
@@ -29516,6 +29841,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Choice Specs",
+      "itemId": 696,
       "moves": [
        "Solar Beam",
        "Weather Ball",
@@ -29561,6 +29887,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Flamethrower",
        "Solar Beam",
@@ -29606,6 +29933,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "HeadlongRush",
        "Flare Blitz",
@@ -29651,6 +29979,7 @@
       "nature": "Brave",
       "natureId": 2,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Fire Blast",
        "Solar Beam",
@@ -29696,6 +30025,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Garchompite",
+      "itemId": 574,
       "moves": [
        "Swords Dance",
        "Scale Shot",
@@ -30034,6 +30364,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Stealth Rock",
        "Earthquake",
@@ -30079,6 +30410,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "MewtwoniteX",
+      "itemId": 546,
       "moves": [
        "Drain Punch",
        "Expand Force",
@@ -30124,6 +30456,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "OblivionWing",
        "Dark Hole",
@@ -30169,6 +30502,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Boost Energy",
+      "itemId": 614,
       "moves": [
        "Shadow Ball",
        "Moonblast",
@@ -30214,6 +30548,7 @@
       "nature": "Hasty",
       "natureId": 11,
       "item": "Normalium Z",
+      "itemId": 580,
       "moves": [
        "Celebrate",
        "Expand Force",
@@ -30259,6 +30594,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Colbur Berry",
+      "itemId": 460,
       "moves": [
        "Drain Kiss",
        "Expand Force",
@@ -30597,6 +30933,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Stealth Rock",
        "Earthquake",
@@ -30642,6 +30979,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Boost Energy",
+      "itemId": 614,
       "moves": [
        "Shadow Ball",
        "Moonblast",
@@ -30687,6 +31025,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "MewtwoniteX",
+      "itemId": 546,
       "moves": [
        "Drain Punch",
        "Expand Force",
@@ -30732,6 +31071,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "OblivionWing",
        "Dark Hole",
@@ -30777,6 +31117,7 @@
       "nature": "Hasty",
       "natureId": 11,
       "item": "Normalium Z",
+      "itemId": 580,
       "moves": [
        "Celebrate",
        "Expand Force",
@@ -30822,6 +31163,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Colbur Berry",
+      "itemId": 460,
       "moves": [
        "Drain Kiss",
        "Expand Force",
@@ -30906,6 +31248,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Light Clay",
+      "itemId": 677,
       "moves": [
        "Freeze-Dry",
        "Moonblast",
@@ -30951,6 +31294,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Garchompite",
+      "itemId": 574,
       "moves": [
        "Swords Dance",
        "Earthquake",
@@ -30996,6 +31340,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "WeaknessPol.",
+      "itemId": 710,
       "moves": [
        "Dragon Dance",
        "PhantomForce",
@@ -31041,6 +31386,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Air Balloon",
+      "itemId": 703,
       "moves": [
        "Magma Storm",
        "Earth Power",
@@ -31086,6 +31432,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Ice Gem",
+      "itemId": 669,
       "moves": [
        "Bolt Beak",
        "Blizzard",
@@ -31131,6 +31478,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Flyinium Z",
+      "itemId": 582,
       "moves": [
        "Close Combat",
        "Brave Bird",
@@ -31476,6 +31824,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Stealth Rock",
        "Power Gem",
@@ -31521,6 +31870,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Dbl IronBash",
        "Ice Punch",
@@ -31566,6 +31916,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Pixie Plate",
+      "itemId": 506,
       "moves": [
        "Calm Mind",
        "Judgment",
@@ -31611,6 +31962,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Lum Berry",
+      "itemId": 141,
       "moves": [
        "Dragon Dance",
        "DualWingbeat",
@@ -31656,6 +32008,7 @@
       "nature": "Calm",
       "natureId": 20,
       "item": "Adamant Orb",
+      "itemId": 487,
       "moves": [
        "Roar of Time",
        "Flash Cannon",
@@ -31701,6 +32054,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Sharp Beak",
+      "itemId": 210,
       "moves": [
        "Extremespeed",
        "Flamethrower",
@@ -32046,6 +32400,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Stealth Rock",
        "Power Gem",
@@ -32091,6 +32446,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Dbl IronBash",
        "Ice Punch",
@@ -32136,6 +32492,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Pixie Plate",
+      "itemId": 506,
       "moves": [
        "Calm Mind",
        "Judgment",
@@ -32181,6 +32538,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Flyinium Z",
+      "itemId": 582,
       "moves": [
        "Dragon Dance",
        "DualWingbeat",
@@ -32226,6 +32584,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Adamant Orb",
+      "itemId": 487,
       "moves": [
        "Roar of Time",
        "Flash Cannon",
@@ -32271,6 +32630,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Sharp Beak",
+      "itemId": 210,
       "moves": [
        "Extremespeed",
        "Flamethrower",
@@ -32356,6 +32716,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Earthquake",
        "Stone Edge",
@@ -32401,6 +32762,7 @@
       "nature": "Impish",
       "natureId": 8,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Bulk Up",
        "Agility",
@@ -32446,6 +32808,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Nasty Plot",
        "Psychic",
@@ -32491,6 +32854,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Kommonium Z",
+      "itemId": 602,
       "moves": [
        "Clang Scales",
        "Close Combat",
@@ -32536,6 +32900,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "WeaknessPol.",
+      "itemId": 710,
       "moves": [
        "DracoBarrage",
        "Psyshock",
@@ -32581,6 +32946,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Toxtricitite",
+      "itemId": 734,
       "moves": [
        "Boomburst",
        "Overdrive",
@@ -32807,6 +33173,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Shuca Berry",
+      "itemId": 453,
       "moves": [
        "Grass Knot",
        "Electroweb",
@@ -32852,6 +33219,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Magnet",
+      "itemId": 208,
       "moves": [
        "Shock Wave",
        "Round",
@@ -32897,6 +33265,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": "Occa Berry",
+      "itemId": 446,
       "moves": [
        "Ice Shard",
        "Mega Drain",
@@ -33437,6 +33806,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": "Lum Berry",
+      "itemId": 141,
       "moves": [
        "Bug Bite",
        "Bullet Seed",
@@ -33482,6 +33852,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Black Sludge",
+      "itemId": 689,
       "moves": [
        "Toxic",
        "Protect",
@@ -33527,6 +33898,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": "Lum Berry",
+      "itemId": 141,
       "moves": [
        "Hidden Power",
        "Mega Drain",
@@ -33929,6 +34301,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": "Charti Berry",
+      "itemId": 457,
       "moves": [
        "Struggle Bug",
        "Electroweb",
@@ -33974,6 +34347,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Sitrus Berry",
+      "itemId": 142,
       "moves": [
        "Sleep Powder",
        "Mega Drain",
@@ -34019,6 +34393,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Rocky Helmet",
+      "itemId": 702,
       "moves": [
        "Bulldoze",
        "Bug Bite",
@@ -34220,6 +34595,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Grassy Seed",
+      "itemId": 719,
       "moves": [
        "Grassy Glide",
        "U-turn",
@@ -34265,6 +34641,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Lum Berry",
+      "itemId": 141,
       "moves": [
        "DualWingbeat",
        "Dragon Dance",
@@ -34310,6 +34687,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Blizzard",
        "Thunder",
@@ -34355,6 +34733,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Alcremite",
+      "itemId": 745,
       "moves": [
        "Calm Mind",
        "Moonblast",
@@ -34400,6 +34779,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "White Herb",
+      "itemId": 180,
       "moves": [
        "Shell Smash",
        "Cease Edge",
@@ -34445,6 +34825,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Hi Jump Kick",
        "Grassy Glide",
@@ -34686,6 +35067,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Light Ball",
+      "itemId": 202,
       "moves": [
        "Zippy Zap",
        "Hidden Power",
@@ -34731,6 +35113,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Spell Tag",
+      "itemId": 213,
       "moves": [
        "Calm Mind",
        "Air Cutter",
@@ -34776,6 +35159,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Leech Seed",
        "Protect",
@@ -34821,6 +35205,7 @@
       "nature": "Impish",
       "natureId": 8,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Toxic",
        "Covet",
@@ -35075,6 +35460,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": "Sitrus Berry",
+      "itemId": 142,
       "moves": [
        "Bad Tantrum",
        "Facade",
@@ -35120,6 +35506,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": "Eviolite",
+      "itemId": 700,
       "moves": [
        "Air Slash",
        "Thunder Wave",
@@ -35165,6 +35552,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "DeepSeaTooth",
+      "itemId": 192,
       "moves": [
        "Water Pulse",
        "Icy Wind",
@@ -35277,6 +35665,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Eviolite",
+      "itemId": 700,
       "moves": [
        "Round",
        "Drain Kiss",
@@ -35322,6 +35711,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Chople Berry",
+      "itemId": 451,
       "moves": [
        "Round",
        "AncientPower",
@@ -35367,6 +35757,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Sitrus Berry",
+      "itemId": 142,
       "moves": [
        "Round",
        "Drain Kiss",
@@ -35467,6 +35858,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "HiHorsepower",
        "Stone Edge",
@@ -35512,6 +35904,7 @@
       "nature": "Hasty",
       "natureId": 11,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Fleur Cannon",
        "Psychic",
@@ -35557,6 +35950,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Salamencite",
+      "itemId": 569,
       "moves": [
        "Double-Edge",
        "Dragon Rush",
@@ -35602,6 +35996,7 @@
       "nature": "Quiet",
       "natureId": 17,
       "item": "Ghostium Z",
+      "itemId": 587,
       "moves": [
        "Kings Shield",
        "Shadow Ball",
@@ -35647,6 +36042,7 @@
       "nature": "Hasty",
       "natureId": 11,
       "item": "White Herb",
+      "itemId": 180,
       "moves": [
        "V-create",
        "Bolt Strike",
@@ -35692,6 +36088,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Water Gem",
+      "itemId": 665,
       "moves": [
        "Hydro Pump",
        "Sacred Sword",
@@ -35847,6 +36244,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": "Lum Berry",
+      "itemId": 141,
       "moves": [
        "Water Pledge",
        "Flash Cannon",
@@ -35892,6 +36290,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Choice Scarf",
+      "itemId": 695,
       "moves": [
        "Fire Pledge",
        "Focus Blast",
@@ -36350,6 +36749,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Power Gem",
        "Giga Drain",
@@ -36395,6 +36795,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Mystic Water",
+      "itemId": 209,
       "moves": [
        "Hydro Pump",
        "Ice Beam",
@@ -36440,6 +36841,7 @@
       "nature": "Calm",
       "natureId": 20,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Scald",
        "Dragon Pulse",
@@ -36537,6 +36939,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Surf",
        "U-turn",
@@ -36582,6 +36985,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Surf",
        "Earth Power",
@@ -36627,6 +37031,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Sitrus Berry",
+      "itemId": 142,
       "moves": [
        "Surf",
        "Bug Buzz",
@@ -37000,6 +37405,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": "Oran Berry",
+      "itemId": 139,
       "moves": [
        "Rock Throw",
        "Bite",
@@ -37042,6 +37448,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": "Hard Stone",
+      "itemId": 204,
       "moves": [
        "Rock Tomb",
        "Bulldoze",
@@ -37164,6 +37571,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": "BlackGlasses",
+      "itemId": 206,
       "moves": [
        "Trailblaze",
        "Bite",
@@ -37209,6 +37617,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Black Sludge",
+      "itemId": 689,
       "moves": [
        "Toxic",
        "Substitute",
@@ -37254,6 +37663,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": "Eviolite",
+      "itemId": 700,
       "moves": [
        "Hex",
        "Will-O-Wisp",
@@ -37379,6 +37789,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Chople Berry",
+      "itemId": 451,
       "moves": [
        "Fake Out",
        "Beat Up",
@@ -37424,6 +37835,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Eviolite",
+      "itemId": 700,
       "moves": [
        "Freeze-Dry",
        "Psyshock",
@@ -37469,6 +37881,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Metal Coat",
+      "itemId": 199,
       "moves": [
        "Fake Out",
        "U-turn",
@@ -37514,6 +37927,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Expert Belt",
+      "itemId": 676,
       "moves": [
        "Thunder Fang",
        "Ice Fang",
@@ -37559,6 +37973,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Iapapa Berry",
+      "itemId": 147,
       "moves": [
        "Brick Break",
        "Play Rough",
@@ -37644,6 +38059,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Chople Berry",
+      "itemId": 451,
       "moves": [
        "Stealth Rock",
        "Stone Edge",
@@ -37689,6 +38105,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Dark Hole",
        "Nasty Plot",
@@ -37734,6 +38151,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Choice Scarf",
+      "itemId": 695,
       "moves": [
        "U-turn",
        "Double-Edge",
@@ -37779,6 +38197,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Poison Jab",
        "Close Combat",
@@ -37824,6 +38243,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Dark Hole",
        "DracoBarrage",
@@ -37869,6 +38289,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Absolite",
+      "itemId": 567,
       "moves": [
        "Night Slash",
        "Sucker Punch",
@@ -38284,6 +38705,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Clear Smog",
        "Mega Drain",
@@ -38329,6 +38751,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Aqua Fang",
        "Psychic Fang",
@@ -38374,6 +38797,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Toxic Orb",
+      "itemId": 680,
       "moves": [
        "Flame Charge",
        "Sacred Fire",
@@ -38419,6 +38843,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Silk Scarf",
+      "itemId": 217,
       "moves": [
        "Chatter",
        "Boomburst",
@@ -38501,6 +38926,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Choice Scarf",
+      "itemId": 695,
       "moves": [
        "V-create",
        "DragonAscent",
@@ -38546,6 +38972,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Choice Scarf",
+      "itemId": 695,
       "moves": [
        "Assist"
       ],
@@ -38585,6 +39012,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Eviolite",
+      "itemId": 700,
       "moves": [
        "Assist"
       ],
@@ -38624,6 +39052,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Assist"
       ],
@@ -39076,6 +39505,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Air Balloon",
+      "itemId": 703,
       "moves": [
        "Heat Wave",
        "Solar Beam",
@@ -39121,6 +39551,7 @@
       "nature": "Rash",
       "natureId": 19,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Giga Drain",
        "Sludge Bomb",
@@ -39166,6 +39597,7 @@
       "nature": "Lonely",
       "natureId": 1,
       "item": "Miracle Seed",
+      "itemId": 205,
       "moves": [
        "Solar Blade",
        "X-Scissor",
@@ -39211,6 +39643,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Pixie Plate",
+      "itemId": 506,
       "moves": [
        "Hyper Voice",
        "Weather Ball",
@@ -39596,6 +40029,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Eviolite",
+      "itemId": 700,
       "moves": [
        "Fake Out",
        "Grassy Glide",
@@ -39641,6 +40075,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Mega Drain",
        "Selfdestruct",
@@ -39686,6 +40121,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Grassy Seed",
+      "itemId": 719,
       "moves": [
        "Calm Mind",
        "Air Cutter",
@@ -39731,6 +40167,7 @@
       "nature": "Impish",
       "natureId": 8,
       "item": "Miracle Seed",
+      "itemId": 205,
       "moves": [
        "Horn Leech",
        "Brick Break",
@@ -39776,6 +40213,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Will-O-Wisp",
        "Recover",
@@ -39945,6 +40383,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "WeaknessPol.",
+      "itemId": 710,
       "moves": [
        "Flamethrower",
        "Stored Power",
@@ -39990,6 +40429,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Choice Scarf",
+      "itemId": 695,
       "moves": [
        "Brutal Swing",
        "Power Whip",
@@ -40035,6 +40475,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Flare Blitz",
        "Head Smash",
@@ -40080,6 +40521,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "WeaknessPol.",
+      "itemId": 710,
       "moves": [
        "Shadow Ball",
        "Hydro Pump",
@@ -40125,6 +40567,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Psychic",
        "Heat Wave",
@@ -40337,6 +40780,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Glare",
        "Leaf Storm",
@@ -40382,6 +40826,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Quiver Dance",
        "Fiery Dance",
@@ -40427,6 +40872,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Dark Hole",
        "Nasty Plot",
@@ -40472,6 +40918,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Groundium Z",
+      "itemId": 584,
       "moves": [
        "Earthquake",
        "Stone Edge",
@@ -40517,6 +40964,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Absolite",
+      "itemId": 567,
       "moves": [
        "Night Slash",
        "Psycho Cut",
@@ -40562,6 +41010,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Air Balloon",
+      "itemId": 703,
       "moves": [
        "Thunderbolt",
        "Sludge Wave",
@@ -40691,6 +41140,7 @@
       "nature": "Calm",
       "natureId": 20,
       "item": "Damp Rock",
+      "itemId": 693,
       "moves": [
        "Scald",
        "Roost",
@@ -40736,6 +41186,7 @@
       "nature": "Impish",
       "natureId": 8,
       "item": "Rocky Helmet",
+      "itemId": 702,
       "moves": [
        "Power Whip",
        "Body Press",
@@ -40781,6 +41232,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Weather Ball",
        "Earth Power",
@@ -40826,6 +41278,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "WeaknessPol.",
+      "itemId": 710,
       "moves": [
        "Hurricane",
        "Freeze Glare",
@@ -40871,6 +41324,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Waterium Z",
+      "itemId": 590,
       "moves": [
        "Liquidation",
        "Close Combat",
@@ -40916,6 +41370,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Calm Mind",
        "Thunder",
@@ -40968,6 +41423,7 @@
       "nature": "Calm",
       "natureId": 20,
       "item": "Damp Rock",
+      "itemId": 693,
       "moves": [
        "Scald",
        "Roost",
@@ -41013,6 +41469,7 @@
       "nature": "Impish",
       "natureId": 8,
       "item": "Rocky Helmet",
+      "itemId": 702,
       "moves": [
        "Power Whip",
        "Body Press",
@@ -41058,6 +41515,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Weather Ball",
        "Earth Power",
@@ -41103,6 +41561,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "WeaknessPol.",
+      "itemId": 710,
       "moves": [
        "Hurricane",
        "Freeze Glare",
@@ -41148,6 +41607,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Waterium Z",
+      "itemId": 590,
       "moves": [
        "Liquidation",
        "Close Combat",
@@ -41193,6 +41653,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Calm Mind",
        "Thunder",
@@ -41293,6 +41754,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "U-turn",
        "Body Slam",
@@ -41338,6 +41800,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Mewnium Z",
+      "itemId": 606,
       "moves": [
        "Psychic",
        "Flamethrower",
@@ -41383,6 +41846,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Kinglerite",
+      "itemId": 733,
       "moves": [
        "Crabhammer",
        "Iron Head",
@@ -41428,6 +41892,7 @@
       "nature": "Quiet",
       "natureId": 17,
       "item": "Griseous Orb",
+      "itemId": 489,
       "moves": [
        "Hex",
        "Draco Meteor",
@@ -41473,6 +41938,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Moonblast",
        "U-turn",
@@ -41518,6 +41984,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Blizzard",
        "Thunder",
@@ -41731,6 +42198,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Flying Gem",
+      "itemId": 657,
       "moves": [
        "Acrobatics",
        "Close Combat",
@@ -41776,6 +42244,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Fire Gem",
+      "itemId": 664,
       "moves": [
        "Head Smash",
        "Flare Blitz",
@@ -41821,6 +42290,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Rockium Z",
+      "itemId": 585,
       "moves": [
        "Stone Edge",
        "Earthquake",
@@ -41866,6 +42336,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Mind Blown",
        "Psychic",
@@ -41911,6 +42382,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Centiskite",
+      "itemId": 743,
       "moves": [
        "Flare Blitz",
        "Leech Life",
@@ -42008,6 +42480,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Pyro Ball",
        "Hi Jump Kick",
@@ -42053,6 +42526,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Salamencite",
+      "itemId": 569,
       "moves": [
        "Heat Wave",
        "Tailwind",
@@ -42098,6 +42572,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Air Slash",
        "Heat Wave",
@@ -42143,6 +42618,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Ground Gem",
+      "itemId": 659,
       "moves": [
        "HiHorsepower",
        "Iron Head",
@@ -42188,6 +42664,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Fire Gem",
+      "itemId": 664,
       "moves": [
        "Fire Blast",
        "Bug Buzz",
@@ -43127,6 +43604,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Custap Berry",
+      "itemId": 464,
       "moves": [
        "Stealth Rock",
        "Spikes",
@@ -43172,6 +43650,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Solar Blade",
        "Swords Dance",
@@ -43217,6 +43696,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Cameruptite",
+      "itemId": 564,
       "moves": [
        "Fire Blast",
        "Earth Power",
@@ -43262,6 +43742,7 @@
       "nature": "Calm",
       "natureId": 20,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Thunderbolt",
        "Fire Blast",
@@ -43307,6 +43788,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Icium Z",
+      "itemId": 594,
       "moves": [
        "HeadlongRush",
        "MountainGale",
@@ -43725,6 +44207,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Fake Out",
        "Close Combat",
@@ -43770,6 +44253,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Volt Switch",
        "Boomburst",
@@ -43815,6 +44299,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Earthquake",
        "Iron Head",
@@ -43900,6 +44385,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Head Charge",
        "Close Combat",
@@ -43945,6 +44431,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Sitrus Berry",
+      "itemId": 142,
       "moves": [
        "Chloroblast",
        "Sleep Powder",
@@ -43990,6 +44477,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "CharzarditeX",
+      "itemId": 534,
       "moves": [
        "Dragon Dance",
        "Flare Blitz",
@@ -44035,6 +44523,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Water Gem",
+      "itemId": 665,
       "moves": [
        "Dragon Dance",
        "Waterfall",
@@ -44080,6 +44569,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Fighting Gem",
+      "itemId": 656,
       "moves": [
        "Nasty Plot",
        "Psyshock",
@@ -44125,6 +44615,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Eevium Z",
+      "itemId": 600,
       "moves": [
        "Last Resort",
        "Thunderbolt",
@@ -44207,6 +44698,7 @@
       "nature": "Calm",
       "natureId": 20,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Stealth Rock",
        "Thunder Wave",
@@ -44252,6 +44744,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Mystic Water",
+      "itemId": 209,
       "moves": [
        "FishiousRend",
        "Dragon Claw",
@@ -44297,6 +44790,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Beedrillite",
+      "itemId": 537,
       "moves": [
        "U-turn",
        "Drill Run",
@@ -44342,6 +44836,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Firium Z",
+      "itemId": 589,
       "moves": [
        "Volt Switch",
        "Overheat",
@@ -44387,6 +44882,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "U-turn",
        "Hydro Pump",
@@ -44432,6 +44928,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": "Shell Bell",
+      "itemId": 219,
       "moves": [
        "Endeavor"
       ],
@@ -44568,6 +45065,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "U-turn",
        "Bug Buzz",
@@ -44613,6 +45111,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Air Balloon",
+      "itemId": 703,
       "moves": [
        "Earthquake",
        "Iron Head",
@@ -44658,6 +45157,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Earthquake",
        "Stone Edge",
@@ -44703,6 +45203,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Fire Gem",
+      "itemId": 664,
       "moves": [
        "Giga Drain",
        "Weather Ball",
@@ -44748,6 +45249,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Lopunnite",
+      "itemId": 573,
       "moves": [
        "Fake Out",
        "Return",
@@ -45101,6 +45603,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Custap Berry",
+      "itemId": 464,
       "moves": [
        "Thunder",
        "Volt Switch",
@@ -45146,6 +45649,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Eviolite",
+      "itemId": 700,
       "moves": [
        "Swords Dance",
        "Knock Off",
@@ -45191,6 +45695,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Flyinium Z",
+      "itemId": 582,
       "moves": [
        "Dragon Dance",
        "Wave Crash",
@@ -45236,6 +45741,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Flying Gem",
+      "itemId": 657,
       "moves": [
        "Hurricane",
        "Hydro Pump",
@@ -45281,6 +45787,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Flip Turn",
        "Hydro Pump",
@@ -45646,6 +46153,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Pidgeotite",
+      "itemId": 538,
       "moves": [
        "Hurricane",
        "Heat Wave",
@@ -45691,6 +46199,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Blastoisnite",
+      "itemId": 536,
       "moves": [
        "Shell Smash",
        "Water Pulse",
@@ -45736,6 +46245,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Eevium Z",
+      "itemId": 600,
       "moves": [
        "Sacred Fire",
        "Last Resort",
@@ -45781,6 +46291,7 @@
       "nature": "Hasty",
       "natureId": 11,
       "item": "Flying Gem",
+      "itemId": 657,
       "moves": [
        "Bolt Beak",
        "Brave Bird",
@@ -45826,6 +46337,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "DynamicPunch",
        "Mach Punch",
@@ -45871,6 +46383,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Sludge Wave",
        "Earth Power",
@@ -46140,6 +46653,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Stealth Rock",
        "Endeavor",
@@ -46185,6 +46699,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Flare Blitz",
        "U-turn",
@@ -46230,6 +46745,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Flying Gem",
+      "itemId": 657,
       "moves": [
        "Swords Dance",
        "Earthquake",
@@ -46275,6 +46791,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Volt Switch",
        "Weather Ball",
@@ -46320,6 +46837,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Firium Z",
+      "itemId": 589,
       "moves": [
        "Fire Blast",
        "Solar Beam",
@@ -46531,6 +47049,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Will-O-Wisp",
        "Extremespeed",
@@ -46576,6 +47095,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Fake Out",
        "Grassy Glide",
@@ -46621,6 +47141,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Leech Life",
        "Poison Jab",
@@ -46666,6 +47187,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Lopunnite",
+      "itemId": 573,
       "moves": [
        "U-turn",
        "Return",
@@ -46711,6 +47233,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Ghostium Z",
+      "itemId": 587,
       "moves": [
        "Shadow Ball",
        "Hidden Power",
@@ -46756,6 +47279,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Grassy Seed",
+      "itemId": 719,
       "moves": [
        "Calm Mind",
        "Roost",
@@ -47562,6 +48086,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Light Clay",
+      "itemId": 677,
       "moves": [
        "Aurora Veil",
        "Blizzard",
@@ -47607,6 +48132,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "White Herb",
+      "itemId": 180,
       "moves": [
        "Shell Smash",
        "Liquidation",
@@ -47652,6 +48178,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Dragonium Z",
+      "itemId": 595,
       "moves": [
        "Dragon Dance",
        "Icicle Crash",
@@ -48529,6 +49056,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Kinglerite",
+      "itemId": 733,
       "moves": [
        "Crabhammer",
        "Meteor Mash",
@@ -48574,6 +49102,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Electric Gem",
+      "itemId": 667,
       "moves": [
        "Bolt Beak",
        "Dragon Claw",
@@ -48671,6 +49200,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "1000 Arrows",
        "Extremespeed",
@@ -48716,6 +49246,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Fake Out",
        "Knock Off",
@@ -48761,6 +49292,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Rock Gem",
+      "itemId": 660,
       "moves": [
        "Head Smash",
        "HeadlongRush",
@@ -48858,6 +49390,7 @@
       "nature": "Sassy",
       "natureId": 22,
       "item": "Rindo Berry",
+      "itemId": 449,
       "moves": [
        "Stealth Rock",
        "Flip Turn",
@@ -48903,6 +49436,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Rock Gem",
+      "itemId": 660,
       "moves": [
        "Brave Bird",
        "Head Smash",
@@ -48948,6 +49482,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Scizorite",
+      "itemId": 550,
       "moves": [
        "U-turn",
        "Bullet Punch",
@@ -48993,6 +49528,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Swords Dance",
        "Earthquake",
@@ -49038,6 +49574,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Needle Arm",
        "Sucker Punch",
@@ -49883,6 +50420,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Petal Storm",
        "Safeguard",
@@ -49928,6 +50466,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Sitrus Berry",
+      "itemId": 142,
       "moves": [
        "Petal Storm",
        "Safeguard",
@@ -49973,6 +50512,7 @@
       "nature": "Calm",
       "natureId": 20,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Petal Storm",
        "Moonblast",
@@ -50070,6 +50610,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Draco Hammer",
        "Fire Punch",
@@ -50115,6 +50656,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Normal Gem",
+      "itemId": 655,
       "moves": [
        "Head Charge",
        "HiHorsepower",
@@ -50160,6 +50702,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Electrium Z",
+      "itemId": 592,
       "moves": [
        "Bolt Strike",
        "Flare Blitz",
@@ -51037,6 +51580,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Icium Z",
+      "itemId": 594,
       "moves": [
        "Blizzard",
        "Volt Switch",
@@ -51082,6 +51626,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Flying Gem",
+      "itemId": 657,
       "moves": [
        "Bulk Up",
        "Acrobatics",
@@ -51127,6 +51672,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Earth Power",
        "Blizzard",
@@ -51172,6 +51718,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Choice Specs",
+      "itemId": 696,
       "moves": [
        "Bug Buzz",
        "Air Slash",
@@ -51217,6 +51764,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Blastoisnite",
+      "itemId": 536,
       "moves": [
        "Shell Smash",
        "Blizzard",
@@ -51262,6 +51810,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Blizzard",
        "Substitute",
@@ -51730,6 +52279,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "MistyExplode",
        "Psyshock",
@@ -51775,6 +52325,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "MistyExplode",
        "Psyshock",
@@ -51820,6 +52371,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Explosion",
        "Hyper Voice",
@@ -51865,6 +52417,7 @@
       "nature": "Brave",
       "natureId": 2,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Explosion",
        "Flamethrower",
@@ -51910,6 +52463,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Explosion",
        "Multi-Attack",
@@ -51955,6 +52509,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Explosion",
        "Steam Pump",
@@ -52383,6 +52938,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Yache Berry",
+      "itemId": 450,
       "moves": [
        "U-turn",
        "Earthquake",
@@ -52428,6 +52984,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "CharzarditeX",
+      "itemId": 534,
       "moves": [
        "Dragon Dance",
        "Flare Blitz",
@@ -52473,6 +53030,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Scope Lens",
+      "itemId": 198,
       "moves": [
        "Aeroblast",
        "Fire Blast",
@@ -52518,6 +53076,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Fighting Gem",
+      "itemId": 656,
       "moves": [
        "Swords Dance",
        "Flare Blitz",
@@ -52563,6 +53122,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Growth",
        "Giga Drain",
@@ -52705,6 +53265,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Rindo Berry",
+      "itemId": 449,
       "moves": [
        "Stealth Rock",
        "Stone Edge",
@@ -52750,6 +53311,7 @@
       "nature": "Calm",
       "natureId": 20,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Solar Beam",
        "Fiery Dance",
@@ -52795,6 +53357,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Hearth. Mask",
+      "itemId": 622,
       "moves": [
        "Ivy Cudgel",
        "Power Whip",
@@ -52840,6 +53403,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Fire Gem",
+      "itemId": 664,
       "moves": [
        "Fire Lash",
        "Solar Blade",
@@ -52885,6 +53449,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Ghostium Z",
+      "itemId": 587,
       "moves": [
        "Shadow Ball",
        "DracoBarrage",
@@ -53012,6 +53577,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Sleep Powder",
        "Solar Beam",
@@ -53057,6 +53623,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Sharp Beak",
+      "itemId": 210,
       "moves": [
        "Brave Bird",
        "Head Smash",
@@ -53102,6 +53669,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Fire Gem",
+      "itemId": 664,
       "moves": [
        "Flare Blitz",
        "Close Combat",
@@ -53147,6 +53715,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Eevium Z",
+      "itemId": 600,
       "moves": [
        "Last Resort",
        "Thunderbolt",
@@ -53192,6 +53761,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Rocky Helmet",
+      "itemId": 702,
       "moves": [
        "Glare",
        "Draco Hammer",
@@ -53491,6 +54061,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Ghostium Z",
+      "itemId": 587,
       "moves": [
        "Shadow Ball",
        "Thunder",
@@ -53536,6 +54107,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Water Gem",
+      "itemId": 665,
       "moves": [
        "Waterfall",
        "Stone Axe",
@@ -53581,6 +54153,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Pinsirite",
+      "itemId": 543,
       "moves": [
        "X-Scissor",
        "Double-Edge",
@@ -53626,6 +54199,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Shell Smash",
        "Hydro Pump",
@@ -53671,6 +54245,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Flying Gem",
+      "itemId": 657,
       "moves": [
        "Thunder",
        "Weather Ball",
@@ -53753,6 +54328,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Bulldoze",
        "Thunder",
@@ -53798,6 +54374,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Sitrus Berry",
+      "itemId": 142,
       "moves": [
        "BouncyBubble",
        "Ice Beam",
@@ -53843,6 +54420,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Laprasite",
+      "itemId": 729,
       "moves": [
        "Boomburst",
        "DracoBarrage",
@@ -53888,6 +54466,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Soul Dew",
+      "itemId": 191,
       "moves": [
        "Surf",
        "DracoBarrage",
@@ -53933,6 +54512,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Flying Gem",
+      "itemId": 657,
       "moves": [
        "Hurricane",
        "Thunder",
@@ -54060,6 +54640,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Surf",
        "Hurricane",
@@ -54105,6 +54686,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Well. Mask",
+      "itemId": 623,
       "moves": [
        "Ivy Cudgel",
        "Power Whip",
@@ -54150,6 +54732,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Eviolite",
+      "itemId": 700,
       "moves": [
        "Thunder",
        "Ice Beam",
@@ -54195,6 +54778,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Air Balloon",
+      "itemId": 703,
       "moves": [
        "Elec. Shot",
        "Scald",
@@ -54240,6 +54824,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Thunder",
        "Earth Power",
@@ -54945,6 +55530,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Rocky Helmet",
+      "itemId": 702,
       "moves": [
        "Psy. Noise",
        "TachyonCut",
@@ -54990,6 +55576,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Liechi Berry",
+      "itemId": 168,
       "moves": [
        "Close Combat",
        "Poison Jab",
@@ -55035,6 +55622,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Kommonium Z",
+      "itemId": 602,
       "moves": [
        "Clang Scales",
        "Close Combat",
@@ -55080,6 +55668,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Salac Berry",
+      "itemId": 170,
       "moves": [
        "Bulk Up",
        "Drain Punch",
@@ -55125,6 +55714,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Rusty Shield",
+      "itemId": 486,
       "moves": [
        "Bulk Up",
        "Giant Bash",
@@ -55170,6 +55760,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Galladite",
+      "itemId": 577,
       "moves": [
        "Bulk Up",
        "Drain Punch",
@@ -55743,6 +56334,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Muscle Band",
+      "itemId": 674,
       "moves": [
        "PowerUpPunch",
        "Covet",
@@ -55788,6 +56380,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Wise Glasses",
+      "itemId": 675,
       "moves": [
        "Incinerate",
        "Round",
@@ -55833,6 +56426,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Oran Berry",
+      "itemId": 139,
       "moves": [
        "PowerUpPunch",
        "Aqua Jet",
@@ -55930,6 +56524,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Muscle Band",
+      "itemId": 674,
       "moves": [
        "PowerUpPunch",
        "Covet",
@@ -55975,6 +56570,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Thunder Wave",
        "Water Pulse",
@@ -56020,6 +56616,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Oran Berry",
+      "itemId": 139,
       "moves": [
        "Sleep Powder",
        "Mega Drain",
@@ -56117,6 +56714,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Muscle Band",
+      "itemId": 674,
       "moves": [
        "PowerUpPunch",
        "Covet",
@@ -56162,6 +56760,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Thunder Wave",
        "Water Pulse",
@@ -56207,6 +56806,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Muscle Band",
+      "itemId": 674,
       "moves": [
        "PowerUpPunch",
        "Fire Fang",
@@ -56446,6 +57046,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Black Belt",
+      "itemId": 207,
       "moves": [
        "Bullet Punch",
        "Knock Off",
@@ -56491,6 +57092,7 @@
       "nature": "Rash",
       "natureId": 19,
       "item": "Eevium Z",
+      "itemId": 600,
       "moves": [
        "Last Resort",
        "Round",
@@ -56536,6 +57138,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Charge Beam",
        "Drain Kiss",
@@ -56581,6 +57184,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Charcoal",
+      "itemId": 215,
       "moves": [
        "Incinerate",
        "Grass Knot",
@@ -56626,6 +57230,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Poison Barb",
+      "itemId": 211,
       "moves": [
        "Poison Jab",
        "Sucker Punch",
@@ -56671,6 +57276,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Eviolite",
+      "itemId": 700,
       "moves": [
        "Shell Smash",
        "Water Pulse",
@@ -56914,6 +57520,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Black Belt",
+      "itemId": 207,
       "moves": [
        "Drain Punch",
        "Ice Punch",
@@ -56959,6 +57566,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Charge Beam",
        "Drain Kiss",
@@ -57004,6 +57612,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Mystic Water",
+      "itemId": 209,
       "moves": [
        "Water Pulse",
        "Icy Wind",
@@ -57049,6 +57658,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Poison Barb",
+      "itemId": 211,
       "moves": [
        "Poison Jab",
        "Sucker Punch",
@@ -57094,6 +57704,7 @@
       "nature": "Lonely",
       "natureId": 1,
       "item": "Eevium Z",
+      "itemId": 600,
       "moves": [
        "Last Resort",
        "Round",
@@ -57139,6 +57750,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Eviolite",
+      "itemId": 700,
       "moves": [
        "Leech Seed",
        "Protect",
@@ -57378,6 +57990,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Black Belt",
+      "itemId": 207,
       "moves": [
        "Fake Out",
        "Bullet Punch",
@@ -57423,6 +58036,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Charge Beam",
        "Drain Kiss",
@@ -57468,6 +58082,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Miracle Seed",
+      "itemId": 205,
       "moves": [
        "Mega Drain",
        "Hidden Power",
@@ -57513,6 +58128,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Poison Barb",
+      "itemId": 211,
       "moves": [
        "Poison Jab",
        "Sucker Punch",
@@ -57558,6 +58174,7 @@
       "nature": "Lonely",
       "natureId": 1,
       "item": "Eevium Z",
+      "itemId": 600,
       "moves": [
        "Last Resort",
        "Round",
@@ -57603,6 +58220,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Eviolite",
+      "itemId": 700,
       "moves": [
        "Dragon Dance",
        "Fire Punch",
@@ -57700,6 +58318,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Spikes",
        "Triple Axel",
@@ -57745,6 +58364,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Mystic Water",
+      "itemId": 209,
       "moves": [
        "Cease Edge",
        "Razor Shell",
@@ -57790,6 +58410,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Pidgeotite",
+      "itemId": 538,
       "moves": [
        "Hurricane",
        "Focus Blast",
@@ -57835,6 +58456,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Fighting Gem",
+      "itemId": 656,
       "moves": [
        "Close Combat",
        "Flare Blitz",
@@ -57880,6 +58502,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Eevium Z",
+      "itemId": 600,
       "moves": [
        "Last Resort",
        "Sappy Seed",
@@ -57925,6 +58548,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Earthquake",
        "DracoBarrage",
@@ -59057,6 +59681,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Pyro Ball",
        "Close Combat",
@@ -59101,6 +59726,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Earth Power",
        "Sludge Wave",
@@ -59145,6 +59771,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "White Herb",
+      "itemId": 180,
       "moves": [
        "Shell Smash",
        "Earthquake",
@@ -59189,6 +59816,7 @@
       "nature": "Impish",
       "natureId": 8,
       "item": "Sitrus Berry",
+      "itemId": 142,
       "moves": [
        "Heavy Slam",
        "Body Press",
@@ -59233,6 +59861,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Flyinium Z",
+      "itemId": 582,
       "moves": [
        "Dragon Dance",
        "Waterfall",
@@ -59277,6 +59906,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Kangaskanite",
+      "itemId": 542,
       "moves": [
        "PowerUpPunch",
        "Body Slam",
@@ -59575,6 +60205,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Stone Edge",
        "Ice Shard",
@@ -59619,6 +60250,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Water Gem",
+      "itemId": 665,
       "moves": [
        "FishiousRend",
        "Psychic Fang",
@@ -59663,6 +60295,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Flyinium Z",
+      "itemId": 582,
       "moves": [
        "Dragon Dance",
        "Waterfall",
@@ -59707,6 +60340,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Iron Defense",
        "Body Press",
@@ -59751,6 +60385,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Swords Dance",
        "Earthquake",
@@ -59795,6 +60430,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Garchompite",
+      "itemId": 574,
       "moves": [
        "Swords Dance",
        "Earthquake",
@@ -60225,6 +60861,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "BlackGlasses",
+      "itemId": 206,
       "moves": [
        "Dark Pulse",
        "Water Pulse",
@@ -60270,6 +60907,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Scope Lens",
+      "itemId": 198,
       "moves": [
        "Mega Drain",
        "Cross Poison",
@@ -60315,6 +60953,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Flame Orb",
+      "itemId": 681,
       "moves": [
        "Facade",
        "Bad Tantrum",
@@ -60360,6 +60999,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Expert Belt",
+      "itemId": 676,
       "moves": [
        "Aqua Cutter",
        "Psycho Cut",
@@ -60459,6 +61099,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Sitrus Berry",
+      "itemId": 142,
       "moves": [
        "Dragon Rage",
        "Flame Wheel",
@@ -60504,6 +61145,7 @@
       "nature": "Impish",
       "natureId": 8,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Toxic",
        "Protect",
@@ -60549,6 +61191,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Rocky Helmet",
+      "itemId": 702,
       "moves": [
        "U-turn",
        "Zippy Zap",
@@ -60594,6 +61237,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Silk Scarf",
+      "itemId": 217,
       "moves": [
        "Sleep Talk",
        "Last Resort"
@@ -60687,6 +61331,7 @@
       "nature": "Calm",
       "natureId": 20,
       "item": "Colbur Berry",
+      "itemId": 460,
       "moves": [
        "Dark Void",
        "Psychic",
@@ -60732,6 +61377,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Rock Slide",
        "DualWingbeat",
@@ -60777,6 +61423,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Steel Gem",
+      "itemId": 663,
       "moves": [
        "Giga Hammer",
        "Play Rough",
@@ -60822,6 +61469,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Mystic Water",
+      "itemId": 209,
       "moves": [
        "Snipe Shot",
        "Ice Beam",
@@ -61492,6 +62140,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Shuca Berry",
+      "itemId": 453,
       "moves": [
        "Sludge Bomb",
        "StrangeSteam",
@@ -61537,6 +62186,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Normal Gem",
+      "itemId": 655,
       "moves": [
        "Double-Edge",
        "Fire Punch",
@@ -61582,6 +62232,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Miracle Seed",
+      "itemId": 205,
       "moves": [
        "Leaf Blade",
        "Close Combat",
@@ -61627,6 +62278,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Charti Berry",
+      "itemId": 457,
       "moves": [
        "Thunderbolt",
        "Frost Breath",
@@ -61739,6 +62391,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Wide Lens",
+      "itemId": 673,
       "moves": [
        "Tailwind",
        "Hurricane",
@@ -61784,6 +62437,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Cease Edge",
        "Leaf Blade",
@@ -61829,6 +62483,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Fighting Gem",
+      "itemId": 656,
       "moves": [
        "Poison Jab",
        "Drain Punch",
@@ -61874,6 +62529,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Charti Berry",
+      "itemId": 457,
       "moves": [
        "Thunderbolt",
        "Hydro Pump",
@@ -62029,6 +62685,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Wacan Berry",
+      "itemId": 448,
       "moves": [
        "Weather Ball",
        "Hurricane",
@@ -62074,6 +62731,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Waterfall",
        "Gunk Shot",
@@ -62119,6 +62777,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Choice Specs",
+      "itemId": 696,
       "moves": [
        "Moonblast",
        "Blizzard",
@@ -62164,6 +62823,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Wide Lens",
+      "itemId": 673,
       "moves": [
        "Freeze-Dry",
        "Thunder",
@@ -62209,6 +62869,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Water Gem",
+      "itemId": 665,
       "moves": [
        "Freeze-Dry",
        "Psychic Fang",
@@ -62306,6 +62967,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Spikes",
        "Thunder Wave",
@@ -62351,6 +63013,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Flame Orb",
+      "itemId": 681,
       "moves": [
        "Knock Off",
        "Facade",
@@ -62396,6 +63059,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Fighting Gem",
+      "itemId": 656,
       "moves": [
        "Bulk Up",
        "Brave Bird",
@@ -62441,6 +63105,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Black Sludge",
+      "itemId": 689,
       "moves": [
        "Dragon Pulse",
        "Sludge Wave",
@@ -62486,6 +63151,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Scope Lens",
+      "itemId": 198,
       "moves": [
        "Drill Peck",
        "Night Slash",
@@ -62613,6 +63279,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Dazzle Gleam",
        "MistyExplode",
@@ -62658,6 +63325,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Dark Pulse",
        "Fickle Beam",
@@ -62703,6 +63371,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Volt Switch",
        "Flash Cannon",
@@ -62748,6 +63417,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Earthquake",
        "Shadow Punch",
@@ -62793,6 +63463,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Calm Mind",
        "Drain Kiss",
@@ -64351,6 +65022,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Stealth Rock",
        "Explosion",
@@ -64396,6 +65068,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Thunder",
        "Hydro Pump",
@@ -64441,6 +65114,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "BlackGlasses",
+      "itemId": 206,
       "moves": [
        "Bullet Punch",
        "Drain Punch",
@@ -64486,6 +65160,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Eevium Z",
+      "itemId": 600,
       "moves": [
        "Last Resort",
        "Stored Power",
@@ -64531,6 +65206,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Head Charge",
        "Close Combat",
@@ -64576,6 +65252,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Pinsirite",
+      "itemId": 543,
       "moves": [
        "Return",
        "Quick Attack",
@@ -64873,6 +65550,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Will-O-Wisp",
        "Extremespeed",
@@ -64918,6 +65596,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Diancite",
+      "itemId": 579,
       "moves": [
        "Moonblast",
        "DiamondStorm",
@@ -64963,6 +65642,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Scope Lens",
+      "itemId": 198,
       "moves": [
        "Swords Dance",
        "Leaf Blade",
@@ -65008,6 +65688,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Pursuit",
        "Knock Off",
@@ -65053,6 +65734,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Ghostium Z",
+      "itemId": 587,
       "moves": [
        "Nasty Plot",
        "Moonblast",
@@ -65098,6 +65780,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Arm Thrust",
        "Aqua Jet",
@@ -65542,6 +66225,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Sitrus Berry",
+      "itemId": 142,
       "moves": [
        "Shed Tail",
        "Knock Off",
@@ -65587,6 +66271,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Waterium Z",
+      "itemId": 590,
       "moves": [
        "Steam Pump",
        "Flamethrower",
@@ -65632,6 +66317,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Dragon Dance",
        "Earthquake",
@@ -65677,6 +66363,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Sitrus Berry",
+      "itemId": 142,
       "moves": [
        "Nasty Plot",
        "Hurricane",
@@ -65722,6 +66409,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Kinglerite",
+      "itemId": 733,
       "moves": [
        "Crabhammer",
        "Close Combat",
@@ -65767,6 +66455,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Calm Mind",
        "Drain Kiss",
@@ -66634,6 +67323,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Surf",
        "Knock Off",
@@ -66679,6 +67369,7 @@
       "nature": "Hasty",
       "natureId": 11,
       "item": "WeaknessPol.",
+      "itemId": 710,
       "moves": [
        "Heat Wave",
        "Rock Slide",
@@ -66724,6 +67415,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Grassy Glide",
        "Drain Punch",
@@ -66769,6 +67461,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Grassy Seed",
+      "itemId": 719,
       "moves": [
        "Heavy Slam",
        "Body Press",
@@ -67068,6 +67761,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Lopunnite",
+      "itemId": 573,
       "moves": [
        "Fake Out",
        "Return",
@@ -67113,6 +67807,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Quiver Dance",
        "Sleep Powder",
@@ -67158,6 +67853,7 @@
       "nature": "Sassy",
       "natureId": 22,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Body Press",
        "Gyro Ball",
@@ -67203,6 +67899,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Aura Wheel",
        "Seed Bomb",
@@ -67248,6 +67945,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Dragonium Z",
+      "itemId": 595,
       "moves": [
        "Calm Mind",
        "DracoBarrage",
@@ -67293,6 +67991,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Choice Scarf",
+      "itemId": 695,
       "moves": [
        "Flamethrower",
        "Focus Blast",
@@ -67592,6 +68291,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Moonblast",
        "Fire Blast",
@@ -67637,6 +68337,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Body Press",
        "Liquidation",
@@ -67682,6 +68383,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Dragon Dance",
        "Drain Punch",
@@ -67727,6 +68429,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Fake Out",
        "Knock Off",
@@ -67772,6 +68475,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Boost Energy",
+      "itemId": 614,
       "moves": [
        "Earthquake",
        "Iron Head",
@@ -67817,6 +68521,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Nasty Plot",
        "Fire Blast",
@@ -68261,6 +68966,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Wide Lens",
+      "itemId": 673,
       "moves": [
        "Popu. Bomb",
        "Bullet Seed",
@@ -68306,6 +69012,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Sitrus Berry",
+      "itemId": 142,
       "moves": [
        "Fillet Away",
        "Aqua Cutter",
@@ -68351,6 +69058,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Will-O-Wisp",
        "Poltergeist",
@@ -68396,6 +69104,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Absolite",
+      "itemId": 567,
       "moves": [
        "Night Slash",
        "Sucker Punch",
@@ -68441,6 +69150,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Volt Switch",
        "Energy Ball",
@@ -68486,6 +69196,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Ghostium Z",
+      "itemId": 587,
       "moves": [
        "Calm Mind",
        "Shadow Ball",
@@ -69857,6 +70568,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Berry Juice",
+      "itemId": 44,
       "moves": [
        "Bulldoze",
        "Rock Tomb",
@@ -69901,6 +70613,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": "Eviolite",
+      "itemId": 700,
       "moves": [
        "PowerUpPunch",
        "Bullet Seed",
@@ -69945,6 +70658,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": "Lum Berry",
+      "itemId": 141,
       "moves": [
        "AncientPower",
        "Psybeam",
@@ -69989,6 +70703,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Oran Berry",
+      "itemId": 139,
       "moves": [
        "Stockpile",
        "Recover",
@@ -70033,6 +70748,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": "Iapapa Berry",
+      "itemId": 147,
       "moves": [
        "Wing Attack",
        "Rock Tomb",
@@ -70077,6 +70793,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Air Balloon",
+      "itemId": 703,
       "moves": [
        "Bulldoze",
        "Gyro Ball",
@@ -70320,6 +71037,7 @@
       "nature": "Sassy",
       "natureId": 22,
       "item": "Iapapa Berry",
+      "itemId": 147,
       "moves": [
        "Flip Turn",
        "Scald",
@@ -70364,6 +71082,7 @@
       "nature": "Mild",
       "natureId": 16,
       "item": "Sitrus Berry",
+      "itemId": 142,
       "moves": [
        "Giga Drain",
        "Scald",
@@ -70408,6 +71127,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Wacan Berry",
+      "itemId": 448,
       "moves": [
        "Scald",
        "Hurricane",
@@ -70452,6 +71172,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Black Sludge",
+      "itemId": 689,
       "moves": [
        "Poison Jab",
        "Bulldoze",
@@ -70496,6 +71217,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Mystic Water",
+      "itemId": 209,
       "moves": [
        "Scald",
        "Thunderbolt",
@@ -70540,6 +71262,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Swords Dance",
        "Drain Punch",
@@ -70824,6 +71547,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Icium Z",
+      "itemId": 594,
       "moves": [
        "Thunderbolt",
        "Blizzard",
@@ -70868,6 +71592,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Chloroblast",
        "Volt Switch",
@@ -70912,6 +71637,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Rising Volt",
        "Psyshock",
@@ -70956,6 +71682,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Electr. Seed",
+      "itemId": 718,
       "moves": [
        "Knock Off",
        "Close Combat",
@@ -71000,6 +71727,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Punch Glove",
+      "itemId": 747,
       "moves": [
        "Plasma Fists",
        "Mach Punch",
@@ -71044,6 +71772,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Ampharosite",
+      "itemId": 548,
       "moves": [
        "Volt Switch",
        "Dragon Pulse",
@@ -71328,6 +72057,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Corner. Mask",
+      "itemId": 621,
       "moves": [
        "Ivy Cudgel",
        "U-turn",
@@ -71372,6 +72102,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Grassy Seed",
+      "itemId": 719,
       "moves": [
        "Swords Dance",
        "Acrobatics",
@@ -71416,6 +72147,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Sceptilite",
+      "itemId": 554,
       "moves": [
        "Swords Dance",
        "Bullet Seed",
@@ -71460,6 +72192,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Boomburst",
        "Volt Switch",
@@ -71504,6 +72237,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Black Sludge",
+      "itemId": 689,
       "moves": [
        "Thunder Wave",
        "Sludge Bomb",
@@ -71548,6 +72282,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Swords Dance",
        "Grassy Glide",
@@ -71884,6 +72619,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "TwistedSpoon",
+      "itemId": 214,
       "moves": [
        "Psyshock",
        "Moonblast",
@@ -71928,6 +72664,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Darkinium Z",
+      "itemId": 596,
       "moves": [
        "Dark Pulse",
        "Expand Force",
@@ -71972,6 +72709,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "BlackGlasses",
+      "itemId": 206,
       "moves": [
        "Wicked Blow",
        "Earthquake",
@@ -72016,6 +72754,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Dark Pulse",
        "Flamethrower",
@@ -72060,6 +72799,7 @@
       "nature": "Rash",
       "natureId": 19,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Earth Power",
        "Poison Jab",
@@ -72104,6 +72844,7 @@
       "nature": "Rash",
       "natureId": 19,
       "item": "Toxtricitite",
+      "itemId": 734,
       "moves": [
        "Boomburst",
        "Overdrive",
@@ -72441,6 +73182,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Shuca Berry",
+      "itemId": 453,
       "moves": [
        "Earth Power",
        "Volt Switch",
@@ -72485,6 +73227,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Fighting Gem",
+      "itemId": 656,
       "moves": [
        "Ice Spinner",
        "Knock Off",
@@ -72529,6 +73272,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Water Gem",
+      "itemId": 665,
       "moves": [
        "DracoBarrage",
        "Hydro Steam",
@@ -72573,6 +73317,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Growth",
        "Solar Beam",
@@ -72617,6 +73362,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Flyinium Z",
+      "itemId": 582,
       "moves": [
        "Sacred Fire",
        "Brave Bird",
@@ -72661,6 +73407,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "CharzarditeX",
+      "itemId": 534,
       "moves": [
        "Dragon Dance",
        "Flare Blitz",
@@ -73005,6 +73752,7 @@
       "nature": "Quiet",
       "natureId": 17,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "MistyExplode",
        "Muddy Water",
@@ -73049,6 +73797,7 @@
       "nature": "Quiet",
       "natureId": 17,
       "item": "Cameruptite",
+      "itemId": 564,
       "moves": [
        "Flamethrower",
        "Earth Power",
@@ -73093,6 +73842,7 @@
       "nature": "Brave",
       "natureId": 2,
       "item": "Iapapa Berry",
+      "itemId": 147,
       "moves": [
        "Swords Dance",
        "Ice Hammer",
@@ -73137,6 +73887,7 @@
       "nature": "Quiet",
       "natureId": 17,
       "item": "Fightinium Z",
+      "itemId": 581,
       "moves": [
        "Moonblast",
        "Flash Cannon",
@@ -73181,6 +73932,7 @@
       "nature": "Brave",
       "natureId": 2,
       "item": "Boost Energy",
+      "itemId": 614,
       "moves": [
        "Drain Punch",
        "Plasma Fists",
@@ -73225,6 +73977,7 @@
       "nature": "Quiet",
       "natureId": 17,
       "item": "Mystic Water",
+      "itemId": 209,
       "moves": [
        "Water Spout",
        "Shadow Ball",
@@ -73392,6 +74145,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Psyshock",
        "Shadow Ball",
@@ -73437,6 +74191,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Leek Stick",
+      "itemId": 225,
       "moves": [
        "Sacred Sword",
        "Night Slash",
@@ -73482,6 +74237,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Sharp Beak",
+      "itemId": 210,
       "moves": [
        "Hurricane",
        "Hydro Pump",
@@ -73525,6 +74281,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Light Ball",
+      "itemId": 202,
       "moves": [
        "BouncyBubble",
        "Zippy Zap",
@@ -73570,6 +74327,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Earthquake",
        "Rock Slide",
@@ -74423,6 +75181,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Stealth Rock",
        "Explosion",
@@ -74468,6 +75227,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "WeaknessPol.",
+      "itemId": 710,
       "moves": [
        "Autotomize",
        "Air Slash",
@@ -74513,6 +75273,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Electirizer",
+      "itemId": 620,
       "moves": [
        "Mach Punch",
        "Plasma Fists",
@@ -74558,6 +75319,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Sharp Beak",
+      "itemId": 210,
       "moves": [
        "Spore",
        "Double-Edge",
@@ -74603,6 +75365,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Flare Blitz",
        "Rock Slide",
@@ -74648,6 +75411,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Blastoisnite",
+      "itemId": 536,
       "moves": [
        "Shell Smash",
        "Water Pulse",
@@ -74947,6 +75711,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Stealth Rock",
        "Explosion",
@@ -74992,6 +75757,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "WeaknessPol.",
+      "itemId": 710,
       "moves": [
        "Autotomize",
        "Air Slash",
@@ -75037,6 +75803,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Electirizer",
+      "itemId": 620,
       "moves": [
        "Mach Punch",
        "Plasma Fists",
@@ -75082,6 +75849,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "White Herb",
+      "itemId": 180,
       "moves": [
        "Shell Smash",
        "Surf",
@@ -75127,6 +75895,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Flare Blitz",
        "Rock Slide",
@@ -75172,6 +75941,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Venusaurite",
+      "itemId": 533,
       "moves": [
        "Sleep Powder",
        "Giga Drain",
@@ -75471,6 +76241,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Stealth Rock",
        "Explosion",
@@ -75516,6 +76287,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Sharp Beak",
+      "itemId": 210,
       "moves": [
        "Spore",
        "Double-Edge",
@@ -75561,6 +76333,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "WeaknessPol.",
+      "itemId": 710,
       "moves": [
        "Autotomize",
        "Air Slash",
@@ -75606,6 +76379,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Electirizer",
+      "itemId": 620,
       "moves": [
        "Mach Punch",
        "Plasma Fists",
@@ -75651,6 +76425,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "White Herb",
+      "itemId": 180,
       "moves": [
        "Shell Smash",
        "Surf",
@@ -75696,6 +76471,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "CharzarditeX",
+      "itemId": 534,
       "moves": [
        "Dragon Dance",
        "Dragon Claw",
@@ -76041,6 +76817,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Flyinium Z",
+      "itemId": 582,
       "moves": [
        "Hurricane",
        "Thunder",
@@ -76086,6 +76863,7 @@
       "nature": "Relaxed",
       "natureId": 7,
       "item": "Rocky Helmet",
+      "itemId": 702,
       "moves": [
        "Leech Seed",
        "Power Whip",
@@ -76131,6 +76909,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "WeaknessPol.",
+      "itemId": 710,
       "moves": [
        "Autotomize",
        "Iron Head",
@@ -76176,6 +76955,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Mystic Water",
+      "itemId": 209,
       "moves": [
        "Wave Crash",
        "LastRespects",
@@ -76221,6 +77001,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Thunder",
        "Hydro Pump",
@@ -76266,6 +77047,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Blastoisnite",
+      "itemId": 536,
       "moves": [
        "Shell Smash",
        "Dark Pulse",
@@ -76611,6 +77393,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Drain Punch",
        "Plasma Fists",
@@ -76656,6 +77439,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Chople Berry",
+      "itemId": 451,
       "moves": [
        "Swords Dance",
        "Iron Head",
@@ -76701,6 +77485,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Calm Mind",
        "Drain Kiss",
@@ -76746,6 +77531,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Flamethrower",
        "Shadow Ball",
@@ -76791,6 +77577,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Darkinium Z",
+      "itemId": 596,
       "moves": [
        "Nasty Plot",
        "Dark Pulse",
@@ -76836,6 +77623,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Venusaurite",
+      "itemId": 533,
       "moves": [
        "Chloroblast",
        "Sludge Bomb",
@@ -77181,6 +77969,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "CharzarditeY",
+      "itemId": 535,
       "moves": [
        "Weather Ball",
        "Solar Beam",
@@ -77226,6 +78015,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Yache Berry",
+      "itemId": 450,
       "moves": [
        "Swords Dance",
        "Scale Shot",
@@ -77271,6 +78061,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Growth",
        "Solar Beam",
@@ -77316,6 +78107,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Rusty Shield",
+      "itemId": 486,
       "moves": [
        "Body Press",
        "Bulk Up",
@@ -77361,6 +78153,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Toxic Orb",
+      "itemId": 680,
       "moves": [
        "Swords Dance",
        "Protect",
@@ -77406,6 +78199,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Calm Mind",
        "Roost",
@@ -77745,6 +78539,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Blue Orb",
+      "itemId": 277,
       "moves": [
        "Origin Pulse",
        "Ice Beam",
@@ -77790,6 +78585,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Swampertite",
+      "itemId": 556,
       "moves": [
        "Waterfall",
        "Earthquake",
@@ -77835,6 +78631,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Eter.Max Orb",
+      "itemId": 746,
       "moves": [
        "DracoBarrage",
        "Sludge Wave",
@@ -77880,6 +78677,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Necrozium Z",
+      "itemId": 532,
       "moves": [
        "Dragon Dance",
        "PhotonGeyser",
@@ -77925,6 +78723,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Normalium Z",
+      "itemId": 580,
       "moves": [
        "Swords Dance",
        "Extremespeed",
@@ -77970,6 +78769,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Boost Energy",
+      "itemId": 614,
       "moves": [
        "Hydro Pump",
        "DracoBarrage",
@@ -78309,6 +79109,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Blue Orb",
+      "itemId": 277,
       "moves": [
        "Origin Pulse",
        "Ice Beam",
@@ -78354,6 +79155,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Swampertite",
+      "itemId": 556,
       "moves": [
        "Waterfall",
        "Earthquake",
@@ -78399,6 +79201,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Boost Energy",
+      "itemId": 614,
       "moves": [
        "Hydro Pump",
        "DracoBarrage",
@@ -78444,6 +79247,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Eter.Max Orb",
+      "itemId": 746,
       "moves": [
        "DracoBarrage",
        "Sludge Wave",
@@ -78489,6 +79293,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Power Herb",
+      "itemId": 679,
       "moves": [
        "Geomancy",
        "Moonblast",
@@ -78534,6 +79339,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Steelium Z",
+      "itemId": 588,
       "moves": [
        "Swords Dance",
        "Iron Head",
@@ -78873,6 +79679,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Red Orb",
+      "itemId": 276,
       "moves": [
        "Stealth Rock",
        "Cliff Blades",
@@ -78918,6 +79725,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Dragon Dance",
        "Flare Blitz",
@@ -78963,6 +79771,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Roseli Berry",
+      "itemId": 467,
       "moves": [
        "Swords Dance",
        "Flare Blitz",
@@ -79008,6 +79817,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Groundium Z",
+      "itemId": 584,
       "moves": [
        "Calm Mind",
        "Earth Power",
@@ -79053,6 +79863,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Power Herb",
+      "itemId": 679,
       "moves": [
        "Geomancy",
        "Moonblast",
@@ -79098,6 +79909,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Eter.Max Orb",
+      "itemId": 746,
       "moves": [
        "DracoBarrage",
        "Sludge Wave",
@@ -79391,6 +80203,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Sitrus Berry",
+      "itemId": 142,
       "moves": [
        "Rising Volt",
        "BouncyBubble",
@@ -79436,6 +80249,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Light Clay",
+      "itemId": 677,
       "moves": [
        "Spirit Break",
        "Light Screen",
@@ -79481,6 +80295,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Electr. Seed",
+      "itemId": 718,
       "moves": [
        "Calm Mind",
        "Shadow Ball",
@@ -79526,6 +80341,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Electr. Seed",
+      "itemId": 718,
       "moves": [
        "Calm Mind",
        "Psyshock",
@@ -79571,6 +80387,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "White Herb",
+      "itemId": 180,
       "moves": [
        "Shell Smash",
        "Shadow Ball",
@@ -79823,6 +80640,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Eviolite",
+      "itemId": 700,
       "moves": [
        "Toxic Spikes",
        "Throat Chop",
@@ -79868,6 +80686,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Mystic Water",
+      "itemId": 209,
       "moves": [
        "Triple Dive",
        "Earthquake",
@@ -79913,6 +80732,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "No Retreat",
        "Fire Blast",
@@ -79958,6 +80778,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Giga Drain",
        "Fickle Beam",
@@ -80003,6 +80824,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Drain Kiss",
        "Heat Wave",
@@ -80085,6 +80907,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Tailwind",
        "Leaf Blade",
@@ -80130,6 +80953,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Lum Berry",
+      "itemId": 141,
       "moves": [
        "Drain Punch",
        "Poison Jab",
@@ -80175,6 +80999,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Air Balloon",
+      "itemId": 703,
       "moves": [
        "Psychic",
        "Sludge Bomb",
@@ -80220,6 +81045,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Thunder Wave",
        "Moonblast",
@@ -80265,6 +81091,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Hyper Voice",
        "Thunderbolt",
@@ -80747,6 +81574,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Stealth Rock",
        "Wicked Blow",
@@ -80792,6 +81620,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Solar Beam",
        "Hidden Power",
@@ -80837,6 +81666,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Eviolite",
+      "itemId": 700,
       "moves": [
        "Thunder Wave",
        "Seismic Toss",
@@ -80882,6 +81712,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Choice Scarf",
+      "itemId": 695,
       "moves": [
        "Fire Blast",
        "Solar Beam",
@@ -80927,6 +81758,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Altarianite",
+      "itemId": 565,
       "moves": [
        "Fire Blast",
        "Hyper Voice",
@@ -81069,6 +81901,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Fake Out",
        "Solar Blade",
@@ -81114,6 +81947,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Fire Blast",
        "DracoBarrage",
@@ -81159,6 +81993,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Eevium Z",
+      "itemId": 600,
       "moves": [
        "Last Resort",
        "Hyper Voice",
@@ -81204,6 +82039,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Air Balloon",
+      "itemId": 703,
       "moves": [
        "Magma Storm",
        "Solar Beam",
@@ -81249,6 +82085,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Alcremite",
+      "itemId": 745,
       "moves": [
        "Moonblast",
        "MysticalFire",
@@ -81710,6 +82547,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Sticky Web",
        "U-turn",
@@ -81755,6 +82593,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Silk Scarf",
+      "itemId": 217,
       "moves": [
        "Head Charge",
        "Throat Chop",
@@ -81800,6 +82639,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Expert Belt",
+      "itemId": 676,
       "moves": [
        "Water Pulse",
        "Dark Pulse",
@@ -81845,6 +82685,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Hard Stone",
+      "itemId": 204,
       "moves": [
        "PowerUpPunch",
        "Accelerock",
@@ -81890,6 +82731,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Magmarizer",
+      "itemId": 626,
       "moves": [
        "Flamethrower",
        "Aura Sphere",
@@ -82103,6 +82945,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Charti Berry",
+      "itemId": 457,
       "moves": [
        "U-turn",
        "Flare Blitz",
@@ -82148,6 +82991,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Sitrus Berry",
+      "itemId": 142,
       "moves": [
        "Belly Drum",
        "Icicle Crash",
@@ -82193,6 +83037,7 @@
       "nature": "Careful",
       "natureId": 23,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Drain Punch",
        "Mach Punch",
@@ -82238,6 +83083,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Ghostium Z",
+      "itemId": 587,
       "moves": [
        "Nasty Plot",
        "Shadow Ball",
@@ -82507,6 +83353,7 @@
       "nature": "Bashful",
       "natureId": 18,
       "item": "Miracle Seed",
+      "itemId": 205,
       "moves": [
        "Spirit Lock",
        "Grass Pledge",
@@ -82552,6 +83399,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Choice Scarf",
+      "itemId": 695,
       "moves": [
        "Grass Pledge",
        "Focus Blast",
@@ -82597,6 +83445,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Moonblast",
        "Thunderbolt",
@@ -82842,6 +83691,7 @@
       "nature": "Quiet",
       "natureId": 17,
       "item": "Iapapa Berry",
+      "itemId": 147,
       "moves": [
        "Trick Room",
        "Flamethrower",
@@ -82887,6 +83737,7 @@
       "nature": "Brave",
       "natureId": 2,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Fake Out",
        "Knock Off",
@@ -82932,6 +83783,7 @@
       "nature": "Brave",
       "natureId": 2,
       "item": "Copperajite",
+      "itemId": 738,
       "moves": [
        "Dbl IronBash",
        "Close Combat",
@@ -82977,6 +83829,7 @@
       "nature": "Relaxed",
       "natureId": 7,
       "item": "Iapapa Berry",
+      "itemId": 147,
       "moves": [
        "Will-O-Wisp",
        "Trick Room",
@@ -83022,6 +83875,7 @@
       "nature": "Quiet",
       "natureId": 17,
       "item": "Poison Barb",
+      "itemId": 211,
       "moves": [
        "Sludge Wave",
        "Flamethrower",
@@ -83067,6 +83921,7 @@
       "nature": "Quiet",
       "natureId": 17,
       "item": "Magnet",
+      "itemId": 208,
       "moves": [
        "Thunderbolt",
        "Bug Buzz",
@@ -84472,6 +85327,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Brutal Swing",
        "Aqua Jet",
@@ -84517,6 +85373,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Galladite",
+      "itemId": 577,
       "moves": [
        "Psycho Cut",
        "Sacred Sword",
@@ -84562,6 +85419,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Charcoal",
+      "itemId": 215,
       "moves": [
        "Flare Blitz",
        "Icicle Crash",
@@ -84607,6 +85465,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Earth Power",
        "Sludge Wave",
@@ -84719,6 +85578,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Scorch Sands",
        "Shadow Ball",
@@ -84764,6 +85624,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Dragon Dance",
        "Crabhammer",
@@ -84809,6 +85670,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Poisonium Z",
+      "itemId": 583,
       "moves": [
        "Thunderbolt",
        "Sludge Wave",
@@ -84854,6 +85716,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Flying Gem",
+      "itemId": 657,
       "moves": [
        "Hydro Pump",
        "Hurricane",
@@ -84899,6 +85762,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Rindo Berry",
+      "itemId": 449,
       "moves": [
        "Dragon Dance",
        "Waterfall",
@@ -85188,6 +86052,7 @@
       "nature": "Calm",
       "natureId": 20,
       "item": "Sablenite",
+      "itemId": 558,
       "moves": [
        "Recover",
        "Toxic",
@@ -85233,6 +86098,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Giga Drain",
        "Earthquake",
@@ -85278,6 +86144,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Teleport",
        "Soft-Boiled",
@@ -85323,6 +86190,7 @@
       "nature": "Impish",
       "natureId": 8,
       "item": "Black Sludge",
+      "itemId": 689,
       "moves": [
        "Toxic Spikes",
        "Scald",
@@ -85368,6 +86236,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Future Sight",
        "Psyshock",
@@ -85413,6 +86282,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Choice Band",
+      "itemId": 186,
       "moves": [
        "Wicked Blow",
        "Poison Jab",
@@ -85676,6 +86546,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Dark Gem",
+      "itemId": 671,
       "moves": [
        "Knock Off",
        "Gunk Shot",
@@ -85721,6 +86592,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Reaper Cloth",
+      "itemId": 92,
       "moves": [
        "Shadow Punch",
        "DynamicPunch",
@@ -85814,6 +86686,7 @@
       "nature": "Impish",
       "natureId": 8,
       "item": "Light Clay",
+      "itemId": 677,
       "moves": [
        "Reflect",
        "Light Screen",
@@ -85859,6 +86732,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Groundium Z",
+      "itemId": 584,
       "moves": [
        "HeadlongRush",
        "Dragon Claw",
@@ -85904,6 +86778,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Rock Gem",
+      "itemId": 660,
       "moves": [
        "Accelerock",
        "U-turn",
@@ -85986,6 +86861,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Rock Blast",
        "Icicle Spear",
@@ -86031,6 +86907,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Hurricane",
        "Psychic",
@@ -86076,6 +86953,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Sharpedonite",
+      "itemId": 563,
       "moves": [
        "Protect",
        "FishiousRend",
@@ -87214,6 +88092,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Sitrus Berry",
+      "itemId": 142,
       "moves": [
        "Hydro Pump",
        "Ice Beam",
@@ -87259,6 +88138,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Scorch Sands",
        "Moonblast",
@@ -87304,6 +88184,7 @@
       "nature": "Calm",
       "natureId": 20,
       "item": "Sitrus Berry",
+      "itemId": 142,
       "moves": [
        "Scald",
        "Ice Beam",
@@ -87401,6 +88282,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Scope Lens",
+      "itemId": 198,
       "moves": [
        "Snipe Shot",
        "Ice Beam",
@@ -87446,6 +88328,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Choice Specs",
+      "itemId": 696,
       "moves": [
        "DracoBarrage",
        "Sludge Wave",
@@ -87491,6 +88374,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Hydro Pump",
        "Thunder",
@@ -87536,6 +88420,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Hydro Pump",
        "Shadow Ball",
@@ -87648,6 +88533,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Sitrus Berry",
+      "itemId": 142,
       "moves": [
        "Waterfall",
        "Play Rough",
@@ -87693,6 +88579,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Sitrus Berry",
+      "itemId": 142,
       "moves": [
        "Snipe Shot",
        "Aura Sphere",
@@ -87738,6 +88625,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Sitrus Berry",
+      "itemId": 142,
       "moves": [
        "FirstImpress",
        "Liquidation",
@@ -87783,6 +88671,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Sitrus Berry",
+      "itemId": 142,
       "moves": [
        "Hydro Pump",
        "Ice Beam",
@@ -87865,6 +88754,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Custap Berry",
+      "itemId": 464,
       "moves": [
        "Poison Jab",
        "Throat Chop",
@@ -87910,6 +88800,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Mystic Water",
+      "itemId": 209,
       "moves": [
        "Waterfall",
        "Flip Turn",
@@ -87955,6 +88846,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Shell Smash",
        "Waterfall",
@@ -88000,6 +88892,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Drednawite",
+      "itemId": 737,
       "moves": [
        "Aqua Fang",
        "Jaw Lock",
@@ -88112,6 +89005,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Air Balloon",
+      "itemId": 703,
       "moves": [
        "Thunder",
        "Sludge Wave",
@@ -88157,6 +89051,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Choice Scarf",
+      "itemId": 695,
       "moves": [
        "Surf"
       ],
@@ -88196,6 +89091,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Choice Specs",
+      "itemId": 696,
       "moves": [
        "Surf",
        "Ice Beam",
@@ -88241,6 +89137,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Laprasite",
+      "itemId": 729,
       "moves": [
        "Boomburst",
        "Blizzard",
@@ -88383,6 +89280,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Wave Crash",
        "PhantomForce",
@@ -88428,6 +89326,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Wacan Berry",
+      "itemId": 448,
       "moves": [
        "Dragon Dance",
        "Waterfall",
@@ -88473,6 +89372,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Slowbronite",
+      "itemId": 540,
       "moves": [
        "Scald",
        "Psychic",
@@ -88518,6 +89418,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Choice Specs",
+      "itemId": 696,
       "moves": [
        "Sludge Bomb",
        "Psyshock",
@@ -88617,6 +89518,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Wicked Blow",
        "Close Combat",
@@ -88662,6 +89564,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Sitrus Berry",
+      "itemId": 142,
       "moves": [
        "Close Combat",
        "Double-Edge",
@@ -88707,6 +89610,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Flame Orb",
+      "itemId": 681,
       "moves": [
        "Drain Punch",
        "Shadow Punch",
@@ -88752,6 +89656,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Head Charge",
        "Iron Head",
@@ -88851,6 +89756,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Choice Scarf",
+      "itemId": 695,
       "moves": [
        "Wood Hammer",
        "Close Combat",
@@ -88896,6 +89802,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Thunder Wave",
        "Volt Switch",
@@ -88941,6 +89848,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Flame Orb",
+      "itemId": 681,
       "moves": [
        "Facade",
        "Drain Punch",
@@ -88986,6 +89894,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Choice Band",
+      "itemId": 186,
       "moves": [
        "Flare Blitz",
        "Earthquake",
@@ -89085,6 +89994,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Choice Scarf",
+      "itemId": 695,
       "moves": [
        "Megahorn",
        "Close Combat",
@@ -89130,6 +90040,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Medichamite",
+      "itemId": 561,
       "moves": [
        "Close Combat",
        "Zen Headbutt",
@@ -89175,6 +90086,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Dragon Dance",
        "Head Smash",
@@ -89287,6 +90199,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Sucker Punch",
        "Psycho Cut",
@@ -89332,6 +90245,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Mystic Water",
+      "itemId": 209,
       "moves": [
        "Fake Out",
        "SurgeStrikes",
@@ -89377,6 +90291,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Butterfrite",
+      "itemId": 730,
       "moves": [
        "Bug Buzz",
        "Sleep Powder",
@@ -89422,6 +90337,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Magnet",
+      "itemId": 208,
       "moves": [
        "Thunderbolt",
        "Steel Beam",
@@ -89467,6 +90383,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Mind Blown",
        "Psychic",
@@ -89594,6 +90511,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Alakazite",
+      "itemId": 539,
       "moves": [
        "Expand Force",
        "Shadow Ball",
@@ -89639,6 +90557,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Tanga Berry",
+      "itemId": 456,
       "moves": [
        "Expand Force",
        "Follow Me",
@@ -89684,6 +90603,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Earthquake",
        "Bad Tantrum",
@@ -89729,6 +90649,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Crunch",
        "Close Combat",
@@ -89828,6 +90749,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Fake Out",
        "Pyro Ball",
@@ -89873,6 +90795,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Arm Thrust",
        "Liquidation",
@@ -89918,6 +90841,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Metagrossite",
+      "itemId": 570,
       "moves": [
        "Meteor Mash",
        "Zen Headbutt",
@@ -89963,6 +90887,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Stone Edge",
        "Close Combat",
@@ -90075,6 +91000,7 @@
       "nature": "Naive",
       "natureId": 14,
       "item": "Applite",
+      "itemId": 739,
       "moves": [
        "Draco Meteor",
        "Grav Apple",
@@ -90118,6 +91044,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Rock Gem",
+      "itemId": 660,
       "moves": [
        "Head Smash",
        "Flare Blitz",
@@ -90163,6 +91090,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Earthquake",
        "Stone Edge",
@@ -90208,6 +91136,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Choice Scarf",
+      "itemId": 695,
       "moves": [
        "Flamethrower",
        "Shadow Ball",
@@ -90253,6 +91182,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Calm Mind",
        "Substitute",
@@ -90380,6 +91310,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Salac Berry",
+      "itemId": 170,
       "moves": [
        "Shell Smash",
        "Aqua Jet",
@@ -90425,6 +91356,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Liquidation",
        "Swords Dance",
@@ -90470,6 +91402,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Slowbronite",
+      "itemId": 540,
       "moves": [
        "Iron Defense",
        "Calm Mind",
@@ -90515,6 +91448,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Hydro Pump",
        "Blizzard",
@@ -90560,6 +91494,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Waterium Z",
+      "itemId": 590,
       "moves": [
        "Fire Blast",
        "Surf",
@@ -90657,6 +91592,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "WeaknessPol.",
+      "itemId": 710,
       "moves": [
        "Hydro Pump",
        "Ice Beam",
@@ -90702,6 +91638,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Close Combat",
        "Play Rough",
@@ -90747,6 +91684,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Electrium Z",
+      "itemId": 592,
       "moves": [
        "Thunder",
        "Bug Buzz",
@@ -90792,6 +91730,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Play Rough",
        "Lunge",
@@ -90837,6 +91776,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Magnet",
+      "itemId": 208,
       "moves": [
        "Extremespeed",
        "Knock Off",
@@ -90882,6 +91822,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Thunderbolt",
        "Surf",
@@ -90964,6 +91905,7 @@
       "nature": "Bold",
       "natureId": 5,
       "item": "Damp Rock",
+      "itemId": 693,
       "moves": [
        "Scald",
        "Hurricane",
@@ -91009,6 +91951,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Psychium Z",
+      "itemId": 593,
       "moves": [
        "Hydro Pump",
        "Nasty Plot",
@@ -91054,6 +91997,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Acid Armor",
        "Ice Beam",
@@ -91099,6 +92043,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Ice Gem",
+      "itemId": 669,
       "moves": [
        "Thunder",
        "Weather Ball",
@@ -91144,6 +92089,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Focus Sash",
+      "itemId": 683,
       "moves": [
        "Hurricane",
        "Boomburst",
@@ -92688,6 +93634,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Body Slam",
        "Glare",
@@ -92733,6 +93680,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Mystic Water",
+      "itemId": 209,
       "moves": [
        "Rock Slide",
        "Brave Bird",
@@ -92778,6 +93726,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Leftovers",
+      "itemId": 200,
       "moves": [
        "Thunder Wave",
        "Air Slash",
@@ -92823,6 +93772,7 @@
       "nature": "Naughty",
       "natureId": 4,
       "item": "White Herb",
+      "itemId": 180,
       "moves": [
        "Shell Smash",
        "Waterfall",
@@ -93021,6 +93971,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Choice Specs",
+      "itemId": 696,
       "moves": [
        "Bug Buzz",
        "Air Slash",
@@ -93066,6 +94017,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Hard Stone",
+      "itemId": 204,
       "moves": [
        "Head Smash",
        "Flare Blitz",
@@ -93111,6 +94063,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Altarianite",
+      "itemId": 565,
       "moves": [
        "Dragon Dance",
        "Return",
@@ -93156,6 +94109,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Life Orb",
+      "itemId": 678,
       "moves": [
        "Liquidation",
        "Aqua Jet",
@@ -93361,6 +94315,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Bullet Punch",
        "U-turn",
@@ -93406,6 +94361,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Lum Berry",
+      "itemId": 141,
       "moves": [
        "Swords Dance",
        "Scale Shot",
@@ -93451,6 +94407,7 @@
       "nature": "Adamant",
       "natureId": 3,
       "item": "Custap Berry",
+      "itemId": 464,
       "moves": [
        "HeadlongRush",
        "Stone Edge",
@@ -93496,6 +94453,7 @@
       "nature": "Timid",
       "natureId": 10,
       "item": "Manectite",
+      "itemId": 562,
       "moves": [
        "Volt Switch",
        "Hidden Power",
@@ -102117,6 +103075,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Fightinium Z",
+      "itemId": 581,
       "moves": [
        "Close Combat",
        "Flare Blitz",
@@ -102162,6 +103121,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Centiskite",
+      "itemId": 743,
       "moves": [
        "Earthquake",
        "Leech Life",
@@ -102207,6 +103167,7 @@
       "nature": "Modest",
       "natureId": 15,
       "item": "Assault Vest",
+      "itemId": 711,
       "moves": [
        "Dragon Pulse",
        "Flash Cannon",
@@ -102252,6 +103213,7 @@
       "nature": "Jolly",
       "natureId": 13,
       "item": "Flying Gem",
+      "itemId": 657,
       "moves": [
        "Swords Dance",
        "Acrobatics",

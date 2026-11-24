@@ -1,0 +1,160 @@
+<title>Radical Red Nuzlocke Coach</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: sticky header with three tabs (Team, Plan, Battle); single column of cards; editor opens as a full-screen sheet. */
+:root {
+  --bg: #edf1f3; --surface: #ffffff; --surface-2: #f5f8fa; --ink: #18202a; --muted: #5a6573; --line: #d5dde3;
+  --accent: #b8382f; --accent-ink: #ffffff; --accent-soft: #f6e1df; --chip: #e3e9ee;
+  --safe: #1f7a45; --safe-soft: #dcefe3; --ok: #2b6f8a; --ok-soft: #dcebf1; --risky: #9a5b00; --risky-soft: #fbeed8; --lose: #b8382f; --lose-soft: #f6e1df;
+  --up: #1f7a45; --down: #b8382f;
+  --font-display: "Pixelify Sans", "Courier New", monospace;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-data: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10151b; --surface: #19212a; --surface-2: #1f2832; --ink: #e5eaf0; --muted: #96a3b1; --line: #2c3744;
+    --accent: #e8695f; --accent-ink: #1a0d0b; --accent-soft: #3a2220; --chip: #24303b;
+    --safe: #63c48f; --safe-soft: #173226; --ok: #6fb7d3; --ok-soft: #16303b; --risky: #e6a64b; --risky-soft: #3a2c16; --lose: #ef7d74; --lose-soft: #3a2220;
+    --up: #63c48f; --down: #ef7d74; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10151b; --surface: #19212a; --surface-2: #1f2832; --ink: #e5eaf0; --muted: #96a3b1; --line: #2c3744;
+  --accent: #e8695f; --accent-ink: #1a0d0b; --accent-soft: #3a2220; --chip: #24303b;
+  --safe: #63c48f; --safe-soft: #173226; --ok: #6fb7d3; --ok-soft: #16303b; --risky: #e6a64b; --risky-soft: #3a2c16; --lose: #ef7d74; --lose-soft: #3a2220;
+  --up: #63c48f; --down: #ef7d74; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 56px; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 880px; margin: 0 auto; display: grid; gap: 14px; }
+header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 12px 8px; display: grid; gap: 10px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+h1 { font-family: var(--font-display); font-size: 24px; line-height: 1; margin: 0; }
+h1 .accent { color: var(--accent); }
+.status { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+.pill { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--chip); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pill.cap { background: var(--accent-soft); color: var(--accent); }
+.pill.warn { background: var(--risky-soft); color: var(--risky); }
+.tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; background: var(--chip); padding: 4px; border-radius: 12px; }
+.tabs button { border: 0; background: transparent; padding: 8px 6px; border-radius: 9px; font-weight: 600; font-size: 14px; }
+.tabs button[aria-selected="true"] { background: var(--surface); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+h2 { font-family: var(--font-display); font-size: 20px; margin: 0; text-wrap: balance; }
+h3 { font-size: 15px; margin: 0; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.grow { flex: 1 1 auto; min-width: 0; }
+.btn { border: 1px solid var(--line); background: var(--surface); padding: 8px 12px; border-radius: 10px; font-weight: 600; font-size: 14px; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.ghost { background: transparent; }
+.btn.small { padding: 5px 9px; font-size: 13px; }
+.btn:disabled { opacity: .5; cursor: default; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; display: grid; gap: 8px; min-width: 0; }
+.section { display: grid; gap: 10px; }
+.section > .head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.empty { padding: 20px; text-align: center; color: var(--muted); background: var(--surface); border: 1px dashed var(--line); border-radius: 12px; display: grid; gap: 10px; justify-items: center; }
+.banner { padding: 10px 12px; border-radius: 10px; background: var(--risky-soft); color: var(--risky); font-size: 13.5px; }
+.type { font-size: 10.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 2px 6px; border-radius: 5px; display: inline-block; }
+.types { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+.mon-head { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.mon-name { font-weight: 700; font-size: 16px; }
+.lv { font-family: var(--font-data); font-size: 13px; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; font-size: 13.5px; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; min-width: 0; }
+.moves { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.mv { display: flex; gap: 6px; align-items: stretch; font-size: 13px; padding: 4px 6px; border-radius: 7px; background: var(--surface-2); border: 1px solid var(--line); min-width: 0; }
+.mv .bar { width: 5px; border-radius: 3px; flex: none; }
+.mv .txt { display: grid; min-width: 0; }
+.mv .nm { font-weight: 600; overflow-wrap: break-word; }
+.mv .meta { font-family: var(--font-data); font-size: 11px; color: var(--muted); }
+.tag { font-size: 11.5px; padding: 1px 6px; border-radius: 6px; background: var(--chip); }
+.tag.ban { background: var(--lose-soft); color: var(--lose); font-weight: 600; }
+.verdict { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.v-safe { background: var(--safe-soft); color: var(--safe); }
+.v-ok { background: var(--ok-soft); color: var(--ok); }
+.v-risky { background: var(--risky-soft); color: var(--risky); }
+.v-lose { background: var(--lose-soft); color: var(--lose); }
+.answers { display: grid; gap: 6px; }
+.answer { display: grid; gap: 2px; padding: 8px 10px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); font-size: 13.5px; }
+.answer .top { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.num { font-family: var(--font-data); font-size: 12.5px; }
+.lineup { display: flex; gap: 6px; flex-wrap: wrap; }
+.lineup .pick { padding: 6px 10px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); font-weight: 600; font-size: 14px; }
+.lineup .pick.lead { border-color: var(--accent); }
+.tablewrap { overflow-x: auto; }
+table.grid { border-collapse: separate; border-spacing: 3px; font-size: 12px; font-variant-numeric: tabular-nums; }
+table.grid th { font-weight: 600; text-align: left; padding: 4px 6px; white-space: nowrap; }
+table.grid td { padding: 5px 6px; border-radius: 6px; text-align: center; white-space: nowrap; font-family: var(--font-data); }
+details.more > summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
+.claude-out { white-space: pre-wrap; font-size: 14px; line-height: 1.5; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chipbtn { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 10px; font-size: 13px; font-weight: 600; }
+.chipbtn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field label, .lbl { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.field input, .field select, select.inline { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); width: 100%; min-width: 0; }
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.fields .wide { grid-column: 1 / -1; }
+.ac { position: relative; }
+.ac-list { position: absolute; z-index: 30; left: 0; right: 0; top: 100%; margin-top: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.18); max-height: 280px; overflow-y: auto; }
+.ac-list button { display: flex; width: 100%; text-align: left; gap: 8px; align-items: center; justify-content: space-between; border: 0; background: transparent; padding: 8px 10px; border-bottom: 1px solid var(--line); font-size: 14px; }
+.ac-list button:last-child { border-bottom: 0; }
+.ac-list button:hover, .ac-list button:focus-visible { background: var(--surface-2); }
+.ac-list .sub { font-size: 11.5px; color: var(--muted); font-family: var(--font-data); }
+.sheet { position: fixed; inset: 0; z-index: 40; background: var(--bg); overflow-y: auto;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 12px); padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.sheet .inner { max-width: 640px; margin: 0 auto; display: grid; gap: 14px; }
+.stepper { display: inline-flex; align-items: center; gap: 2px; }
+.stepper button { width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); font-weight: 700; }
+.stepper span { min-width: 2.2em; text-align: center; font-family: var(--font-data); font-size: 13px; }
+.boosts { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; }
+.boosts .b { display: flex; align-items: center; justify-content: space-between; gap: 4px; font-size: 13px; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+table.moves-out { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.moves-out th, table.moves-out td { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.moves-out th { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+table.moves-out td.n { font-family: var(--font-data); white-space: nowrap; }
+.rec { border-left: 4px solid var(--accent); }
+.note { font-size: 12.5px; color: var(--muted); }
+.notes { display: grid; gap: 3px; font-size: 12.5px; color: var(--risky); }
+footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; padding-top: 6px; }
+footer p { margin: 0; max-width: 72ch; }
+@media (min-width: 720px) { .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Nuzlocke <span class="accent">Coach</span></h1>
+      <span class="muted small">Radical Red 4.1 · Hardcore</span>
+      <div class="status" id="status"><span class="pill">Loading…</span></div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button role="tab" id="tab-team" aria-selected="true" data-tab="team">Team</button>
+      <button role="tab" id="tab-plan" aria-selected="false" data-tab="plan">Plan</button>
+      <button role="tab" id="tab-battle" aria-selected="false" data-tab="battle">Battle</button>
+    </nav>
+  </header>
+  <main id="main"><div class="empty">Loading game data and the damage calculator…</div></main>
+  <footer>
+    <p><b>Where the numbers come from.</b> Stats, types, abilities, moves, learnsets and every boss team are read from the Radical Red 4.1 ROM. Damage uses the open-source Smogon damage calculator (Gen 9 rules) fed with those values. Risk percentages count every damage roll, multi-hit count, crit and miss, assuming the boss uses its strongest move on you each turn.</p>
+    <p><b>Limits.</b> Radical Red's own abilities and moves are modeled from their in-game descriptions and flagged when an effect isn't calculated. Move tutor moves aren't in the move suggestions yet. Double battles are treated as singles.</p>
+  </footer>
+</div>
+<div class="sheet" id="sheet" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@smogon/calc@0.12.0/dist/data/production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@smogon/calc@0.12.0/dist/production.min.js"></script>
+<script src="engine.js"></script>
+<script src="app.js"></script>
