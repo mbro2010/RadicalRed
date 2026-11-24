@@ -57,7 +57,7 @@ for (const m of moves) {
   if (!c) continue;
   outMoves.push({
     i: m.id, n: m.name, f: c.calc || m.name, c: c.calc, t: m.type, p: m.power, a: m.accuracy,
-    k: { physical: 'P', special: 'S', status: 'X' }[m.category], r: m.priority, z: m.zPower, e: m.effect,
+    k: { physical: 'P', special: 'S', status: 'X' }[m.category], r: m.priority, z: m.zPower, e: m.effect, ec: m.effectChance, tg: m.target,
     ...(c.custom ? { x: 1 } : {}),
   });
 }

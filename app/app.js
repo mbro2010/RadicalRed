@@ -10,9 +10,9 @@
   const main = $('#main');
   const sheet = $('#sheet');
 
-  let D = null, E = null;
+  let D = null, E = null, SIM = null, ADV = null;
   const S = {
-    roster: [], run: { beaten: [] }, tab: 'team', planBoss: null, example: false,
+    roster: [], run: { beaten: [], tms: [] }, tab: 'team', planBoss: null, example: false, plans: {}, planning: null,
     battle: { boss: null, them: 0, me: null, themHp: 100, meHp: 100, themBoost: {}, meBoost: {}, weather: 'auto', themStatus: '', meStatus: '' },
   };
 
@@ -76,12 +76,12 @@
           });
           roster.sort((a, b) => (a.ord || 0) - (b.ord || 0));
           if (!S.example || roster.length) { S.roster = roster; S.example = false; }
-          S.run = { beaten: Array.isArray(run.beaten) ? run.beaten.slice() : [] };
+          S.run = { beaten: Array.isArray(run.beaten) ? run.beaten.slice() : [], tms: Array.isArray(run.tms) ? run.tms.slice() : [] };
           render();
         }, err => { clearTimeout(this.timer); this.note = 'Saving to your account stopped working (' + err.code + '). Reload to try again.'; renderStatus(); });
       } else {
         this.mode = 'local';
-        try { const v = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); if (v) { S.roster = v.roster || []; S.run = v.run || { beaten: [] }; } } catch (e) { /* storage blocked */ }
+        try { const v = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); if (v) { S.roster = v.roster || []; S.run = Object.assign({ beaten: [], tms: [] }, v.run || {}); } } catch (e) { /* storage blocked */ }
         render();
       }
     },
@@ -99,7 +99,7 @@
     },
     async saveRun() {
       if (S.example) return;
-      if (this.mode === 'db') { try { await this.col.doc('run').set({ beaten: S.run.beaten }); } catch (e) { flash('Couldn’t save progress (' + e.code + ').'); } }
+      if (this.mode === 'db') { try { await this.col.doc('run').set({ beaten: S.run.beaten, tms: S.run.tms || [] }); } catch (e) { flash('Couldn’t save progress (' + e.code + ').'); } }
       else this.saveLocal();
     },
   };
@@ -146,6 +146,7 @@
       <div class="moves">${moves || '<span class="muted small">No moves entered</span>'}</div>
       ${m.box === 'dead' ? '' : `<div class="row">
         <button class="btn small" data-act="edit">Edit</button>
+        <button class="btn small primary" data-act="advice">Nature &amp; moves</button>
         <button class="btn small" data-act="move" ${m.box !== 'party' && party().length >= 6 ? 'disabled title="Your party is full"' : ''}>To ${moveTo}</button>
         <button class="btn small ghost" data-act="faint">Fainted…</button>
       </div>`}
@@ -166,8 +167,73 @@
     html += `<section class="section"><div class="head"><h2>Party</h2></div>${p.length ? p.map(monCard).join('') : '<div class="empty small">No Pokémon in your party. Move some from your box.</div>'}</section>`;
     if (box.length) html += `<section class="section"><div class="head"><h2>Box</h2></div>${box.map(monCard).join('')}</section>`;
     if (dead.length) html += `<details class="more"><summary>Fainted (${dead.length})</summary><div class="section" style="margin-top:8px">${dead.map(monCard).join('')}</div></details>`;
+    html += tmCaseHTML();
     main.innerHTML = html;
     wireTeam();
+    wireTMCase();
+  }
+  // ---------------- TM case: which TMs you own (move advice only uses these) ----------------
+  function tmCaseHTML() {
+    const owned = new Set(S.run.tms || []);
+    return `<details class="more" id="tmcase" ${S.tmOpen ? 'open' : ''}><summary>TMs you have (${owned.size})</summary>
+      <p class="note">Tick each TM when you get it. Move advice only suggests TMs you have, so it never recommends a move you can't teach yet.</p>
+      <input class="search" id="tm-filter" placeholder="Filter by move or number" style="margin:6px 0;width:100%">
+      <div class="tmgrid">${D.tms.map((id, i) => {
+        const m = E.mv(id); if (!m) return '';
+        const label = i < 120 ? `TM${String(i + 1).padStart(2, '0')}` : `HM${String(i - 119).padStart(2, '0')}`;
+        return `<label class="tm" data-q="${esc((label + ' ' + m.f).toLowerCase())}"><input type="checkbox" data-tm="${i}" ${owned.has(i) ? 'checked' : ''}><span class="num">${label}</span> <span>${esc(m.f)}</span>${E.isBanned(id, '') ? ' <span class="tag ban">banned</span>' : ''}</label>`;
+      }).join('')}</div></details>`;
+  }
+  function wireTMCase() {
+    const box = $('#tmcase'); if (!box) return;
+    box.addEventListener('toggle', () => { S.tmOpen = box.open; });
+    const f = $('#tm-filter');
+    f.addEventListener('input', () => { const q = f.value.trim().toLowerCase(); box.querySelectorAll('.tm').forEach(el => { el.hidden = q && !el.dataset.q.includes(q); }); });
+    let t = null;
+    box.querySelectorAll('[data-tm]').forEach(cb => cb.addEventListener('change', () => {
+      const i = +cb.dataset.tm; const set = new Set(S.run.tms || []);
+      if (cb.checked) set.add(i); else set.delete(i);
+      S.run.tms = [...set].sort((a, b) => a - b);
+      box.querySelector('summary').textContent = `TMs you have (${S.run.tms.length})`;
+      clearTimeout(t); t = setTimeout(() => store.saveRun(), 600);
+    }));
+  }
+  // ---------------- per-Pokemon advice: nature and when to learn what ----------------
+  function openAdvice(m) {
+    document.body.style.overflow = 'hidden';
+    sheet.hidden = false;
+    sheet.innerHTML = `<div class="inner"><div class="row"><h2 class="grow">${esc(monName(m))}: nature &amp; moves</h2><button class="btn ghost" id="adv-close">Close</button></div><div class="empty">Testing natures and movesets against your next big fights…</div></div>`;
+    const close = () => { sheet.hidden = true; sheet.innerHTML = ''; document.body.style.overflow = ''; };
+    $('#adv-close').onclick = close;
+    setTimeout(() => {
+      const spec = specOf(m);
+      const from = nextBoss();
+      const tms = S.run.tms || [];
+      const na = ADV.natureAdvice(spec, from, tms, 3);
+      const mp = ADV.movePlan(spec, from, tms, 3);
+      const best = na.best, cur = na.current;
+      const nat = i => natureText(i);
+      const bossList = na.bosses.map(i => `${D.bosses[i].n} (cap ${D.bosses[i].cap})`).join(', ');
+      const s = E.sp(m.s);
+      let html = `<div class="inner"><div class="row"><h2 class="grow">${esc(monName(m))}: nature &amp; moves</h2><button class="btn ghost" id="adv-close">Close</button></div>
+        <div class="card rec"><div class="lbl">Set its nature to</div><h3>${esc(nat(best.nat))}${best.nat === m.nat ? ' <span class="verdict v-safe">already set</span>' : ''}</h3>
+          <p class="small" style="margin:0">${esc(na.reason)}${best.nat !== m.nat && cur ? ` Compared with ${esc(D.natures[m.nat].n)}: ${na.changes.length ? esc(na.changes.slice(0, 4).join('; ')) : 'fewer close calls, no matchup flips'}.` : ''}</p>
+          <p class="note" style="margin:0">Tested against ${esc(bossList)}, at each fight's level cap with its best moves. Radical Red has a free Nature Change service, in the same menu as “Set Mon To Lvl Cap”.</p>
+          <div class="chips">${na.ranked.map(r => `<span class="tag">${esc(D.natures[r.nat].n)} ${r.total.toFixed(1)}</span>`).join('')}</div></div>`;
+      html += `<section class="section"><h2>When to learn what</h2>${mp.steps.map(st => {
+        const b = D.bosses[st.boss];
+        const adds = st.add.filter(x => !E.mv(x.id) || true);
+        return `<div class="card"><div class="mon-head"><span class="mon-name">Before ${esc(b.n)}</span><span class="pill cap">cap ${st.cap}</span></div>
+          <div class="moves">${st.set.map(x => moveChip(x.id, esc(x.how))).join('') || '<span class="muted small">No damaging moves available.</span>'}</div>
+          ${adds.length ? `<div class="small">${adds.map(x => `Learn <b>${esc(E.mv(x.id).f)}</b> ${x.how.startsWith('Lv') ? (x.alreadyPassed ? `(it learned this at ${esc(x.how)}: ask the Move Maniac, 2 Tiny Mushrooms or 1 Big Mushroom)` : `when it reaches ${esc(x.how)}`) : x.how === 'on evolution' ? '(learned on evolution or from the Move Maniac)' : `with ${esc(x.how)}`}`).join('<br>')}</div>` : '<div class="small muted">No change needed.</div>'}
+          ${st.drop.length ? `<div class="small muted">Replace: ${st.drop.map(id => esc(E.mv(id).f)).join(', ')}</div>` : ''}</div>`;
+      }).join('')}</section>`;
+      html += `<section class="section"><h2>Level-up moves still to come</h2><div class="card"><div class="moves">${mp.upcoming.length ? mp.upcoming.map(u => moveChip(u.id, `Lv ${u.lv}${u.banned ? ' · banned in Hardcore' : ''}`)).join('') : '<span class="muted small">None left.</span>'}</div>
+        <p class="note" style="margin:0">When a level-up move is offered, decide then: skipping it means paying the Move Maniac later. If ${esc(s.n)} evolves, its move list changes, so check again after evolving.</p></div></section>`;
+      html += `<p class="note">Move advice uses ${tms.length} TM${tms.length === 1 ? '' : 's'} from your TM case. Tick TMs on the Team tab as you get them.</p></div>`;
+      sheet.innerHTML = html;
+      $('#adv-close').onclick = close;
+    }, 30);
   }
   function wireTeam() {
     main.querySelectorAll('[data-act]').forEach(btn => btn.addEventListener('click', async () => {
@@ -176,6 +242,7 @@
       if (act === 'add') openEditor(null);
       else if (act === 'example') loadExample();
       else if (act === 'edit') openEditor(m);
+      else if (act === 'advice') openAdvice(m);
       else if (act === 'move') { m.box = m.box === 'party' ? 'box' : 'party'; render(); await store.saveMon(m); }
       else if (act === 'faint') {
         btn.textContent = 'Confirm: mark as fainted'; btn.dataset.act = 'faint2'; btn.classList.add('primary');
@@ -385,12 +452,9 @@
       const key = JSON.stringify([S.planBoss, roster.map(r => [r.key, r.s, r.lv, r.nat, r.ab, r.it, r.mv, r.box])]);
       if (planCache.key !== key) planCache = { key, plan: E.planBoss(S.planBoss, roster.map(r => specOf(r)), party().map(r => r.key)) };
       const P = planCache.plan;
-      const nameOf = i => monName(roster[i]);
       let out = html;
-      out += `<section class="section"><div class="head"><h2>Bring these</h2><span class="muted small">Their levels set from your top level: Lv ${P.top}</span></div>
-        <div class="card"><div class="lineup">${P.chosen.map(i => `<span class="pick ${i === P.lead ? 'lead' : ''}">${i === P.lead ? 'Lead: ' : ''}${esc(nameOf(i))}</span>`).join('')}</div>
-        <p class="note" style="margin:0">They lead with ${esc(E.sp(P.team[0].s).n)}. After each KO the boss AI picks its next Pokémon, so have an answer ready for each one.${P.teamWeather ? ` Their team sets ${esc(P.teamWeather)}; weather users are planned with it up.` : ''}</p></div></section>`;
-      out += `<section class="section"><h2>Their team and your answers</h2>${P.team.map((t, j) => {
+      out += battlePlanHTML(key, P);
+      out += `<section class="section"><h2>Their team and your answers</h2><p class="note" style="margin:0">One-on-one numbers for each of their Pokémon, with your best three answers.</p>${P.team.map((t, j) => {
         const top = P.answers[j].slice(0, 3);
         const none = top.every(a => a.m.verdict === 'lose');
         return `<div class="card">${theirSetHTML(t)}<div class="answers">${top.map(answerHTML).join('')}</div>${none ? '<div class="banner">Nothing in your team beats this one safely. Look for a Pokémon that resists its moves or outspeeds and hits it super-effectively.</div>' : ''}</div>`;
@@ -406,6 +470,70 @@
       main.innerHTML = out;
       wirePlan(P);
     }, 30);
+  }
+  // ---------------- the simulated battle plan ----------------
+  function planInputs() {
+    const roster = alive();
+    const top = Math.max(1, ...(party().length ? party() : roster).map(m => m.lv));
+    const team = E.bossTeam(S.planBoss, top).map((t, i) => Object.assign({ key: 'b' + i, label: E.sp(t.s).n }, t));
+    return { roster, specs: roster.map(r => specOf(r, { label: monName(r) })), team, top };
+  }
+  function riskBadge(r) { return verdictBadge({ verdict: r <= 1e-9 ? 'safe' : r <= 0.05 ? 'ok' : r <= 0.35 ? 'risky' : 'lose', risk: r }); }
+  function battlePlanHTML(key) {
+    const res = S.plans[key];
+    const running = S.planning && S.planning.key === key;
+    let h = `<section class="section" id="bp"><div class="head"><h2>Battle plan</h2><span class="muted small">Simulated with your Pokémon</span></div>`;
+    if (!res) {
+      h += `<div class="card"><p class="small" style="margin:0">The Coach plays this fight hundreds of times with your Pokémon and the boss's exact team. It picks your six and your lead, then writes the turn-by-turn plan: what to click, when to switch, and any sacrifice the plan needs. Takes about 10–40 seconds on a phone.</p>
+        ${running ? `<div class="progress"><span style="width:${Math.round(100 * S.planning.frac)}%"></span></div><div class="note" id="bp-status">${esc(S.planning.text || 'Starting…')}</div>` : '<div class="row"><button class="btn primary" id="bp-go">Plan this fight</button></div>'}</div></section>`;
+      return h;
+    }
+    const o = res.odds, roster = res.roster;
+    const verdict = o.pNoLoss >= 0.9 ? 'Solid plan: you win without losing anyone in almost every simulated battle.'
+      : o.pNoLoss >= 0.6 ? 'Workable, but things go wrong often enough to matter. Look at the dangers below.'
+      : o.pWin >= 0.5 ? 'You usually win, but you usually lose a Pokémon doing it.'
+      : 'Your team isn’t ready for this fight yet. Train, catch an answer to the dangers below, or rework movesets.';
+    h += `<div class="card rec"><div class="odds">
+        <div><span class="big">${Math.round(100 * o.pNoLoss)}%</span><span class="lbl">win, no losses</span></div>
+        <div><span class="big">${Math.round(100 * o.pWin)}%</span><span class="lbl">win</span></div>
+        <div><span class="big">${o.expLosses.toFixed(1)}</span><span class="lbl">Pokémon lost on average</span></div></div>
+      <p class="small" style="margin:0">${esc(verdict)}</p>
+      <div class="lbl">Bring</div><div class="lineup">${res.lineup.map(i => `<span class="pick ${i === res.lead ? 'lead' : ''}">${i === res.lead ? 'Lead: ' : ''}${esc(monName(roster[i]))}</span>`).join('')}</div>
+      <p class="note" style="margin:0">From ${o.runs} simulated battles. The boss AI is an approximation: it takes KOs, otherwise attacks hard, and sets up, statuses, heals, lays hazards or pivots when that looks good, as Radical Red's bosses do.</p>
+      <div class="row"><button class="btn small" id="bp-redo">Plan again</button></div></div>`;
+    const causes = Object.entries(o.causes).sort((a, b) => b[1] - a[1]).slice(0, 4);
+    if (causes.length) h += `<div class="card"><h3>What can go wrong</h3>${causes.map(([k, n]) => `<div class="small">${esc(k)} <span class="muted">· ${Math.round(100 * n / o.runs)}% of battles</span></div>`).join('')}</div>`;
+    const sc = res.script;
+    h += `<details class="more" open><summary>Turn by turn: the most likely way it goes</summary><ol class="script">${sc.turns.map(t => {
+      const d = t.decision;
+      const lines = t.lines.filter(l => !/^(Your|Boss) .* uses /.test(l.text) || true).map(l => `<div class="${l.kind === 'faint' ? 'ev faint' : l.kind === 'crit' ? 'ev crit' : 'ev'}">${esc(l.text)}</div>`).join('');
+      if (!d) return `<li class="turn start"><div class="t-head"><b>Start</b></div>${lines}</li>`;
+      return `<li class="turn ${t.sacrifice ? 'sac' : ''}"><div class="t-head"><b>Turn ${t.turn}</b> · your ${esc(d.you)} (${Math.round(100 * d.youHp)}%) vs their ${esc(d.foe)} (${Math.round(100 * d.foeHp)}%)</div>
+        <div class="t-do">${esc(d.action)} ${riskBadge(d.risk || 0)}</div>
+        ${t.sacrifice ? `<div class="banner">Planned sacrifice: ${esc(t.sacrifice)} is expected to faint here. Every other option was riskier for the rest of your team; its fall gives your next Pokémon a free switch-in.</div>` : ''}
+        <div class="t-lines">${lines}</div></li>`;
+    }).join('')}</ol>
+    <p class="note">${sc.winner === 'p' ? `Ends in a win on turn ${sc.totalTurns}.` : sc.winner === 'a' ? 'In this line the boss wins.' : 'This line stalls out.'} Risk on each turn is the chance that the Pokémon you have in faints before it wins its fight. When something unexpected happens (a crit, a miss, a different move), use the Battle tab: it plans the next move from wherever you are.</p></details></section>`;
+    return h;
+  }
+  async function runPlan(key) {
+    if (S.planning) return;
+    const { roster, specs, team } = planInputs();
+    S.planning = { key, frac: 0, text: 'Starting…' };
+    render();
+    try {
+      const res = await SIM.planFight(specs, team, { onProgress: (frac, text) => {
+        S.planning.frac = frac; S.planning.text = text;
+        const bar = document.querySelector('#bp .progress span'); if (bar) bar.style.width = Math.round(100 * frac) + '%';
+        const st = $('#bp-status'); if (st) st.textContent = text;
+      } });
+      S.plans[key] = Object.assign(res, { roster });
+    } catch (e) {
+      flash('Planning failed: ' + (e && e.message ? e.message : e));
+    } finally {
+      S.planning = null;
+      if (S.tab === 'plan') render();
+    }
   }
   function movesetSection(P) {
     const p = party(); if (!p.length) return '';
@@ -437,6 +565,9 @@
       render(); await store.saveRun();
     };
     if (!P) return;
+    const key = JSON.stringify([S.planBoss, alive().map(r => [r.key, r.s, r.lv, r.nat, r.ab, r.it, r.mv, r.box])]);
+    const go = $('#bp-go'); if (go) go.onclick = () => runPlan(key);
+    const redo = $('#bp-redo'); if (redo) redo.onclick = () => { delete S.plans[key]; runPlan(key); };
     const sample = await claudeSample();
     const sec = $('#claude-sec'); if (!sec) return;
     if (!sample) return;
@@ -484,6 +615,15 @@
       });
     });
     lines.push(`\nCalculator's suggested six: ${P.chosen.map(i => monName(roster[i])).join(', ')}; lead ${monName(roster[P.lead])}.`);
+    const key = JSON.stringify([S.planBoss, roster.map(r => [r.key, r.s, r.lv, r.nat, r.ab, r.it, r.mv, r.box])]);
+    const sim = S.plans[key];
+    if (sim) {
+      const o = sim.odds;
+      lines.push(`\nSimulated plan (${o.runs} battles against an approximate boss AI): win with no losses ${Math.round(100 * o.pNoLoss)}%, win ${Math.round(100 * o.pWin)}%, average losses ${o.expLosses.toFixed(1)}. Lineup: ${sim.lineup.map(i => monName(sim.roster[i])).join(', ')}; lead ${monName(sim.roster[sim.lead])}.`);
+      lines.push('Most likely line, turn by turn:');
+      for (const t of sim.script.turns) if (t.decision) lines.push(`  Turn ${t.turn}: ${t.decision.you} vs ${t.decision.foe}: ${t.decision.action} (risk ${fmtRisk(t.decision.risk || 0)})${t.sacrifice ? ' [planned sacrifice]' : ''}`);
+      lines.push('Most common ways it goes wrong: ' + Object.entries(o.causes).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k, n]) => `${k} (${Math.round(100 * n / o.runs)}%)`).join('; '));
+    }
     lines.push('\nWrite a concise game plan in plain text (no markdown tables, under 250 words): which six to bring and why, the lead, how to handle each of their Pokémon, and the two biggest dangers. Use only the numbers above and never invent damage numbers. If nothing beats one of their Pokémon safely, say so plainly and suggest what kind of Pokémon or move would fix it.');
     return lines.join('\n');
   }
@@ -537,30 +677,24 @@
       const p1 = d ? E.faintChance(E.damageDist(themSpec, meSpec, id, weather, myHP), myHP, 1) : 0;
       return { id, d, p1 };
     });
-    // options: attack with each move, or switch
-    const options = [];
-    for (const r of myRows) {
-      if (!r.d) continue;
-      const mm = E.matchup(Object.assign({}, meSpec, { mv: [r.id] }), themSpec, { weather, entry: false });
-      options.push({ label: `Use ${E.mv(r.id).f}`, risk: mm.risk, m: mm });
-    }
-    for (const o of p) {
-      if (o.key === B.me) continue;
-      const spec = specOf(o, { entry: true });
-      const hp = E.maxHP(spec);
-      const best = theirRows.filter(x => x.d).sort((a, b) => b.d.max - a.d.max)[0];
-      const threatOn = best ? E.damage(themSpec, spec, best.id, { weather, worst: true }) : null;
-      const pEntry = threatOn ? E.faintChance(E.damageDist(themSpec, spec, best.id, weather, hp), hp, 1) : 0;
-      const after = Math.max(1, 100 - (threatOn ? threatOn.maxPct : 0));
-      const mm = E.matchup(Object.assign({}, spec, { hpPct: after }), themSpec, { weather });
-      options.push({ label: `Switch to ${monName(o)}`, risk: pEntry + (1 - pEntry) * mm.risk, m: mm, entry: threatOn, pEntry });
-    }
-    options.sort((a, b) => (a.risk - b.risk) || ((a.m ? a.m.toKOthem : 99) - (b.m ? b.m.toKOthem : 99)) || ((b.m && b.m.best ? b.m.best.minPct : 0) - (a.m && a.m.best ? a.m.best.minPct : 0)));
+    // options from the same planner the Plan tab simulates with: every attack, status or healing move, and every switch
+    const mySpecs = p.map(m => specOf(m, { label: monName(m) }));
+    const bossSpecs = team.map((t, i) => Object.assign({ key: 'b' + i, label: E.sp(t.s).n }, t));
+    const live = SIM.newBattle(mySpecs, bossSpecs, {});
+    live.p.active = p.findIndex(m => m.key === B.me); live.a.active = B.them;
+    const lm = live.p.team[live.p.active], lf = live.a.team[live.a.active];
+    lm.hp = Math.max(1, Math.round(lm.maxHp * B.meHp / 100)); lf.hp = Math.max(1, Math.round(lf.maxHp * B.themHp / 100));
+    Object.assign(lm.boosts, B.meBoost); Object.assign(lf.boosts, B.themBoost);
+    lm.status = B.meStatus; lf.status = themSpec.status; lm.firstTurn = false; lf.firstTurn = false;
+    if (weather) { live.weather = weather; live.weatherTurns = 5; }
+    live.policies = { p: SIM.plannerPolicy(), a: SIM.aiPolicy(0) };
+    const options = live.policies.p.evaluate(live, 'p');
+    const theirPick = live.policies.a.choose(live, 'a', SIM.expectedDice());
     const rec = options[0];
-    html += `<section class="section"><div class="card rec"><h3>${rec ? esc(rec.label) : 'No options'}${rec ? ' ' + verdictBadge({ verdict: rec.risk <= 1e-9 ? 'safe' : rec.risk <= 0.05 ? 'ok' : rec.risk <= 0.35 ? 'risky' : 'lose', risk: rec.risk }) : ''}</h3>
-      <p class="small" style="margin:0">${mySpe > theirSpe ? 'You move first' : mySpe === theirSpe ? 'Speed tie: either can move first' : 'They move first'} (Spe ${mySpe} vs ${theirSpe}; priority moves go first).${rec && rec.entry ? ` Coming in takes up to ${pct(rec.entry.maxPct)}% from ${esc(rec.entry.moveName)}.` : ''}</p>
-      <div class="answers">${options.slice(0, 4).map(o => `<div class="answer"><div class="top"><b>${esc(o.label)}</b>${verdictBadge({ verdict: o.risk <= 1e-9 ? 'safe' : o.risk <= 0.05 ? 'ok' : o.risk <= 0.35 ? 'risky' : 'lose', risk: o.risk })}</div>${o.m && o.m.best ? `<span class="small num">${esc(o.m.best.moveName)} ${pct(o.m.best.minPct)}–${pct(o.m.best.maxPct)}%, KO in ${isFinite(o.m.toKOthem) ? o.m.toKOthem : '∞'}</span>` : ''}</div>`).join('')}</div>
-      <p class="note" style="margin:0">Risk = chance your Pokémon faints before it wins this 1-on-1 (or, for a switch, while coming in or after), if they use their strongest move each turn.</p></div></section>`;
+    html += `<section class="section"><div class="card rec"><div class="lbl">Do this</div><h3>${rec ? esc(rec.label) : 'No options'}${rec ? ' ' + riskBadge(rec.risk) : ''}</h3>
+      <p class="small" style="margin:0">${mySpe > theirSpe ? 'You move first' : mySpe === theirSpe ? 'Speed tie: either can move first' : 'They move first'} (Spe ${mySpe} vs ${theirSpe}; priority moves go first). Their most likely move: <b>${esc(E.mv(theirPick.id) ? E.mv(theirPick.id).f : '—')}</b>.${rec && rec.type === 'switch' ? ` Coming in costs about ${Math.round(rec.entryPct || 0)}% HP.` : ''}</p>
+      <div class="answers">${options.slice(0, 4).map(o => `<div class="answer"><div class="top"><b>${esc(o.label)}</b>${riskBadge(o.risk)}</div>${o.mu && o.mu.best ? `<span class="small num">${esc(o.mu.best.moveName)} ${pct(o.mu.best.minPct)}–${pct(o.mu.best.maxPct)}%, KO in ${isFinite(o.mu.toKOthem) ? o.mu.toKOthem : '∞'}</span>` : ''}</div>`).join('')}</div>
+      <p class="note" style="margin:0">Risk = chance the Pokémon you'd have in faints before it wins this matchup, counting every roll, crit, multi-hit count and miss. Options are ranked by expected losses for your whole team, so sometimes the pick is a sacrifice that sets up a free switch.</p></div></section>`;
     html += adjust;
     html += `<section class="section"><h2>Your moves</h2><div class="card"><table class="moves-out"><thead><tr><th>Move</th><th>Damage</th><th>Result</th></tr></thead><tbody>${myRows.map(r => {
       const m = E.mv(r.id);
@@ -598,12 +732,14 @@
   // ---------------- boot ----------------
   async function boot() {
     try { const t = localStorage.getItem('rrcoach:tab'); if (t) { S.tab = t; document.querySelectorAll('.tabs button').forEach(o => o.setAttribute('aria-selected', o.dataset.tab === t ? 'true' : 'false')); } } catch (e) {}
-    if (!window.calc || !window.createEngine) { main.innerHTML = '<div class="empty">The damage calculator didn’t load. Check your connection and reload.</div>'; return; }
+    if (!window.calc || !window.createEngine || !window.createSim || !window.createAdvice) { main.innerHTML = '<div class="empty">The damage calculator didn’t load. Check your connection and reload.</div>'; return; }
     try {
       const r = await fetch('rrdata.json'); if (!r.ok) throw new Error('HTTP ' + r.status);
       D = await r.json();
     } catch (e) { main.innerHTML = `<div class="empty">The game data didn’t load (${esc(e.message)}). Reload to try again.</div>`; return; }
     E = window.createEngine(window.calc, D);
+    SIM = window.createSim(E);
+    ADV = window.createAdvice(E);
     render();
     store.init();
   }

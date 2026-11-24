@@ -131,6 +131,25 @@ table.moves-out td.n { font-family: var(--font-data); white-space: nowrap; }
 footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; padding-top: 6px; }
 footer p { margin: 0; max-width: 72ch; }
 @media (min-width: 720px) { .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } }
+.progress { height: 10px; border-radius: 999px; background: var(--chip); overflow: hidden; }
+.progress span { display: block; height: 100%; background: var(--accent); transition: width .2s; }
+.odds { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.odds > div { display: grid; gap: 2px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 8px; text-align: center; }
+.odds .big { font-family: var(--font-display); font-size: 24px; line-height: 1; font-variant-numeric: tabular-nums; }
+ol.script { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
+.turn { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: grid; gap: 6px; min-width: 0; }
+.turn.sac { border-color: var(--risky); }
+.turn .t-head { font-size: 13px; color: var(--muted); }
+.turn .t-head b { color: var(--ink); }
+.turn .t-do { font-weight: 700; font-size: 15px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.t-lines { display: grid; gap: 1px; }
+.ev { font-size: 12.5px; color: var(--muted); }
+.ev.faint { color: var(--lose); font-weight: 600; }
+.ev.crit { color: var(--risky); font-weight: 600; }
+.tmgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 4px; max-height: 360px; overflow-y: auto; padding: 2px; }
+.tm { display: flex; gap: 6px; align-items: center; font-size: 13px; padding: 4px 6px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); }
+.tm .num { font-family: var(--font-data); font-size: 11.5px; color: var(--muted); }
+input.search { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; }
 </style>
 
 <div class="wrap">
@@ -149,7 +168,8 @@ footer p { margin: 0; max-width: 72ch; }
   <main id="main"><div class="empty">Loading game data and the damage calculator…</div></main>
   <footer>
     <p><b>Where the numbers come from.</b> Stats, types, abilities, moves, learnsets and every boss team are read from the Radical Red 4.1 ROM. Damage uses the open-source Smogon damage calculator (Gen 9 rules) fed with those values. Risk percentages count every damage roll, multi-hit count, crit and miss, assuming the boss uses its strongest move on you each turn.</p>
-    <p><b>Limits.</b> Radical Red's own abilities and moves are modeled from their in-game descriptions and flagged when an effect isn't calculated. Move tutor moves aren't in the move suggestions yet. Double battles are treated as singles.</p>
+    <p><b>Battle plans.</b> The Plan tab simulates the whole fight hundreds of times: damage rolls, crits, misses, speed, status, stat changes, hazards, weather, terrain, healing, berries and other key items and abilities. The boss AI is an approximation of Radical Red's: it takes KOs, otherwise attacks hard, and sets up, statuses, heals, lays hazards or pivots when that looks good.</p>
+    <p><b>Limits.</b> Radical Red's own abilities and moves are modeled from their in-game descriptions and flagged when an effect isn't calculated. Confusion, Encore, Taunt and a few rare items aren't simulated. Move tutor moves aren't in move advice yet. Double battles are treated as singles.</p>
   </footer>
 </div>
 <div class="sheet" id="sheet" hidden></div>
@@ -157,4 +177,6 @@ footer p { margin: 0; max-width: 72ch; }
 <script src="https://cdn.jsdelivr.net/npm/@smogon/calc@0.12.0/dist/data/production.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@smogon/calc@0.12.0/dist/production.min.js"></script>
 <script src="engine.js"></script>
+<script src="sim.js"></script>
+<script src="advice.js"></script>
 <script src="app.js"></script>

@@ -38,6 +38,25 @@
     return c;
   };
 
+  // ---- memoization: damage rolls don't depend on current HP except for a few abilities and moves ----
+  const HP_SENSITIVE_AB = new Set(['Blaze', 'Torrent', 'Overgrow', 'Swarm', 'Defeatist', 'Multiscale', 'Shadow Shield', 'Tera Shell', 'Berserk', 'Anger Shell']);
+  const HP_SENSITIVE_MV = /^(Eruption|Water Spout|Dragon Energy|Flail|Reversal|Brine|Wring Out|Crush Grip|Hard Press|Final Gambit|Endeavor)$/;
+  const cache = new Map();
+  function memo(key, fn) { let v = cache.get(key); if (v === undefined) { v = fn(); if (cache.size > 200000) cache.clear(); cache.set(key, v); } return v; }
+  function specKey(spec, hpRelevant) {
+    const b = spec.boosts || {};
+    return [spec.s, spec.lv, spec.nat, spec.ab, spec.it || 0, spec.iv ? spec.iv.join('.') : '', b.atk || 0, b.def || 0, b.spa || 0, b.spd || 0, b.spe || 0,
+      spec.status || (spec.st ? STATUS_CODE[spec.st] : ''), spec.firstTurn ? 1 : 0, spec.entry === false ? 0 : 1,
+      hpRelevant ? Math.round((spec.hpPct == null ? 100 : spec.hpPct) / 2) : ''].join(',');
+  }
+  const HP_TYPES = ['Fighting', 'Flying', 'Poison', 'Ground', 'Rock', 'Bug', 'Ghost', 'Steel', 'Fire', 'Water', 'Grass', 'Electric', 'Psychic', 'Ice', 'Dragon', 'Dark'];
+  /** Hidden Power's type from IVs (order hp, atk, def, spa, spd, spe). Perfect IVs give Dark. */
+  function hiddenPowerType(iv) {
+    const v = iv || [31, 31, 31, 31, 31, 31];
+    const bits = [v[0] & 1, v[1] & 1, v[2] & 1, v[5] & 1, v[3] & 1, v[4] & 1];
+    return HP_TYPES[Math.floor(bits.reduce((s, x, i) => s + (x << i), 0) * 15 / 63)];
+  }
+
   function sp(id) { return species.get(id); }
   function mv(id) { return moves.get(id); }
   function itemName(id) { return id && D.items[id] ? D.items[id].n : null; }
@@ -83,6 +102,8 @@
     if (!name) {                                   // Radical Red's own move: a neutral stand-in with its real numbers
       name = m.k === 'P' ? 'Tackle' : m.k === 'S' ? 'Swift' : 'Growl';
       Object.assign(overrides, { basePower: m.p, type: m.t, category: { P: 'Physical', S: 'Special', X: 'Status' }[m.k], priority: m.r });
+    } else if (name === 'Hidden Power') {
+      Object.assign(overrides, { type: hiddenPowerType(attackerSpec.iv), basePower: 60 });
     } else {
       const base = gen.moves.get(toID(name));
       if (base) {
@@ -104,7 +125,48 @@
   function fieldFor(weather, extra) {
     const f = { gameType: 'Singles' };
     if (weather) f.weather = weather;
-    return new C.Field(Object.assign(f, extra || {}));
+    if (extra && extra.terrain) f.terrain = extra.terrain;
+    if (extra && extra.defSide) f.defenderSide = extra.defSide;
+    if (extra && extra.atkSide) f.attackerSide = extra.atkSide;
+    return new C.Field(f);
+  }
+
+  /** Damage rolls (16 values, multi-hit totals) for one use of a move, with Radical Red's
+   *  custom ability effects applied. Memoized: safe to call in tight simulation loops. */
+  function rawRolls(attSpec, defSpec, moveId, opts) {
+    const o = opts || {};
+    const m = mv(moveId);
+    if (!m || m.k === 'X') return null;
+    const hpRel = HP_SENSITIVE_MV.test(m.f) || HP_SENSITIVE_AB.has(attSpec.ab) || HP_SENSITIVE_AB.has(defSpec.ab);
+    const ds = o.defSide || null;
+    const key = ['R', specKey(attSpec, hpRel), specKey(defSpec, hpRel), moveId, o.weather || '', o.terrain || '',
+      ds ? [ds.isReflect ? 1 : 0, ds.isLightScreen ? 1 : 0, ds.isAuroraVeil ? 1 : 0].join('') : '', o.crit ? 1 : 0, o.hits || 0].join('|');
+    return memo(key, () => {
+      const att = buildMon(attSpec), def = buildMon(defSpec);
+      const move = buildMove(moveId, attSpec, { crit: !!o.crit, maxHits: o.maxHits });
+      if (o.hits) move.hits = o.hits;
+      let res;
+      try { res = C.calculate(gen, att, def, move, fieldFor(o.weather, { terrain: o.terrain, defSide: ds })); }
+      catch (e) { return { rolls: [0], eff: 0, type: m.t, hits: 1, priority: m.r, contact: false, punch: false, notes: [] }; }
+      let rolls = rollsOf(res).slice();
+      const eff = typeEff(move.type, sp(defSpec.s).t);
+      const notes = [];
+      const scale = f => { rolls = rolls.map(x => Math.floor(x * f)); };
+      if (attSpec.ab === 'Striker' && KICK.test(m.f)) { scale(1.3); notes.push('Striker: kicking move ×1.3'); }
+      if (attSpec.ab === 'Fatal Precision' && eff > 1) { scale(1.2); notes.push('Fatal Precision: super-effective ×1.2, never misses'); }
+      if (attSpec.ab === 'ORAORAORAORA!' && move.flags && move.flags.punch) { scale(1.5); notes.push('ORAORAORAORA!: punches hit again for 50%'); }
+      if (attSpec.ab === 'Bull Rush' && attSpec.firstTurn) { scale(1.2); notes.push('Bull Rush: first turn ×1.2'); }
+      if (defSpec.ab === 'Primal Armor' && eff > 1) { scale(0.5); notes.push('Primal Armor: super-effective ×0.5'); }
+      if (attSpec.ab === 'Bone Zone' && BONE.test(m.f) && eff < 1) {
+        const stab = sp(attSpec.s).t.includes(move.type) ? 1.5 : 1;
+        const neutral = C.calculate(gen, buildMon(attSpec), buildMon(defSpec), new C.Move(gen, move.name, { overrides: { type: '???' }, hits: move.hits }), fieldFor(o.weather, { terrain: o.terrain, defSide: ds }));
+        rolls = rollsOf(neutral).map(x => Math.floor(x * stab));
+        notes.push('Bone Zone: ignores resistances and immunities (approx.)');
+      }
+      return { rolls, eff, type: move.type, hits: move.hits || 1, priority: move.priority || 0,
+        contact: !!(move.flags && move.flags.contact) || (!m.c && m.k === 'P'), punch: !!(move.flags && move.flags.punch),
+        sound: !!(move.flags && move.flags.sound), notes };
+    });
   }
 
   function rollsOf(result) {
@@ -115,32 +177,15 @@
   }
 
   /** Damage of one move. Returns HP numbers and percentages of the defender's max HP. */
-  function damage(attSpec, defSpec, moveId, { weather = null, worst = false } = {}) {
+  function damage(attSpec, defSpec, moveId, { weather = null, worst = false, terrain = null, defSide = null } = {}) {
     const m = mv(moveId);
     if (!m || m.k === 'X') return null;
-    const notes = [];
-    const att = buildMon(attSpec), def = buildMon(defSpec);
-    const field = fieldFor(weather);
-    const move = buildMove(moveId, attSpec, { maxHits: worst });
-    let res = C.calculate(gen, att, def, move, field);
-    let rolls = rollsOf(res).slice();
-    const critRes = C.calculate(gen, buildMon(attSpec), buildMon(defSpec), buildMove(moveId, attSpec, { maxHits: worst, crit: true }), field);
-    let critRolls = rollsOf(critRes).slice();
-    const moveType = move.type;
-    const eff = typeEff(moveType, sp(defSpec.s).t);
-    // Radical Red custom abilities that change damage (from their in-game descriptions)
-    const scale = f => { rolls = rolls.map(x => Math.floor(x * f)); critRolls = critRolls.map(x => Math.floor(x * f)); };
-    if (attSpec.ab === 'Striker' && KICK.test(m.f)) { scale(1.3); notes.push('Striker: kicking move ×1.3'); }
-    if (attSpec.ab === 'Fatal Precision' && eff > 1) { scale(1.2); notes.push('Fatal Precision: super-effective ×1.2, never misses'); }
-    if (attSpec.ab === 'ORAORAORAORA!' && move.flags && move.flags.punch) { scale(1.5); notes.push('ORAORAORAORA!: punches hit again for 50%'); }
-    if (attSpec.ab === 'Bull Rush' && attSpec.firstTurn) { scale(1.2); notes.push('Bull Rush: first turn ×1.2'); }
-    if (defSpec.ab === 'Primal Armor' && eff > 1) { scale(0.5); notes.push('Primal Armor: super-effective ×0.5'); }
-    if (attSpec.ab === 'Bone Zone' && BONE.test(m.f) && eff < 1) {
-      const stab = sp(attSpec.s).t.includes(moveType) ? 1.5 : 1;
-      const neutral = C.calculate(gen, buildMon(attSpec), buildMon(defSpec), new C.Move(gen, move.name, { overrides: { type: '???' }, hits: move.hits }), field);
-      rolls = rollsOf(neutral).map(x => Math.floor(x * stab));
-      notes.push('Bone Zone: ignores resistances and immunities (approx.)');
-    }
+    const base = m.c ? gen.moves.get(toID(m.c)) : null;
+    let hits = 0;
+    if (base && Array.isArray(base.multihit)) hits = attSpec.ab === 'Skill Link' ? base.multihit[1] : (worst ? base.multihit[1] : base.multihit[0]);
+    const r = rawRolls(attSpec, defSpec, moveId, { weather, terrain, defSide, hits });
+    const rc = rawRolls(attSpec, defSpec, moveId, { weather, terrain, defSide, hits, crit: true });
+    const notes = r.notes.slice();
     if (STAT_MULT[attSpec.ab] && m.k === 'S') notes.push(`${attSpec.ab}: Sp. Atk ×${STAT_MULT[attSpec.ab].spa}`);
     if (!m.c) notes.push('Radical Red move: damage from its type and power; extra effects not modeled');
     for (const [who, a] of [['attacker', attSpec.ab], ['defender', defSpec.ab]]) {
@@ -148,22 +193,23 @@
       if (info.x && !['Striker', 'Fatal Precision', 'ORAORAORAORA!', 'Bull Rush', 'Primal Armor', 'Bone Zone', 'Feline Prowess', 'Sage Power', 'Valiant Shield'].includes(a))
         notes.push(`${a} (${who}): ${info.d} Not modeled.`);
     }
-    const hp = def.maxHP();
-    const cur = def.originalCurHP || hp;
+    const hp = maxHP(defSpec);
+    const cur = defSpec.hpPct != null && defSpec.hpPct < 100 ? Math.max(1, Math.round(hp * defSpec.hpPct / 100)) : hp;
+    const rolls = r.rolls;
     const min = Math.min(...rolls), max = Math.max(...rolls);
-    let ko = { chance: 0, n: 0, text: '' };
-    try { ko = res.kochance(); } catch (e) { /* calc can't describe some moves */ }
-    // if a custom modifier changed damage, recompute the simple KO picture ourselves
-    const scaled = notes.some(n => /×|Bone Zone/.test(n));
-    const ohkoGuaranteed = min >= cur;
-    const sashed = cur === hp && (def.item === 'Focus Sash' || def.ability === 'Sturdy') && max >= cur;
+    const n = min > 0 ? Math.ceil(cur / min) : 0;
+    const koAll = rolls.filter(x => x >= cur).length / rolls.length;
+    let text = '';
+    if (min >= cur) text = 'guaranteed OHKO';
+    else if (koAll > 0) text = `${(100 * koAll).toFixed(1)}% chance to OHKO`;
+    else if (n > 0) text = `guaranteed ${n}HKO`;
+    const sashed = cur === hp && (itemName(defSpec.it) === 'Focus Sash' || defSpec.ab === 'Sturdy') && max >= cur;
     return {
-      move: m, moveName: m.f, type: moveType, eff, hp, cur,
+      move: m, moveName: m.f, type: r.type, eff: r.eff, hp, cur,
       min, max, minPct: 100 * min / hp, maxPct: 100 * max / hp,
-      critMax: Math.max(...critRolls), critMaxPct: 100 * Math.max(...critRolls) / hp,
-      hits: move.hits || 1, acc: m.a, priority: move.priority || 0,
-      ko: scaled ? { text: ohkoGuaranteed ? 'guaranteed OHKO' : '', n: ohkoGuaranteed ? 1 : 0, chance: ohkoGuaranteed ? 1 : 0 } : ko,
-      sashed, notes,
+      critMax: Math.max(...rc.rolls), critMaxPct: 100 * Math.max(...rc.rolls) / hp,
+      hits: r.hits, acc: m.a, priority: r.priority,
+      ko: { text, n: min >= cur ? 1 : n, chance: koAll }, sashed, notes,
       critChance: ALWAYS_CRIT.has(m.f) ? 1 : HIGH_CRIT.has(m.f) ? 0.125 : 1 / 24,
     };
   }
@@ -173,11 +219,14 @@
   /** Probability mass over damage dealt by one use of a move (capped at cap), including
    *  hit counts, all 16 rolls, crits and accuracy. Returns Float64Array of length cap+1. */
   function damageDist(attSpec, defSpec, moveId, weather, cap) {
+    return memo(['DD', specKey(attSpec, true), specKey(defSpec, true), moveId, weather || '', cap].join('|'), () => damageDistRaw(attSpec, defSpec, moveId, weather, cap));
+  }
+  function damageDistRaw(attSpec, defSpec, moveId, weather, cap) {
     const m = mv(moveId);
     const dist = new Float64Array(cap + 1);
     if (!m || m.k === 'X') { dist[0] = 1; return dist; }
     const base = m.c ? gen.moves.get(toID(m.c)) : null;
-    let hitsDist = { 1: 1 };
+    let hitsDist = { 0: 1 };
     if (base && Array.isArray(base.multihit)) {
       const [lo, hi] = base.multihit;
       if (attSpec.ab === 'Skill Link') hitsDist = { [hi]: 1 };
@@ -186,47 +235,42 @@
       else hitsDist = { [hi]: 1 };
     }
     const acc = m.a === 0 || attSpec.ab === 'No Guard' || defSpec.ab === 'No Guard' ? 1 : Math.min(1, m.a / 100);
-    const one = damage(attSpec, defSpec, moveId, { weather });
-    const pc = one ? one.critChance : 1 / 24;
+    const pc = ALWAYS_CRIT.has(m.f) ? 1 : HIGH_CRIT.has(m.f) ? 0.125 : 1 / 24;
     for (const [h, ph] of Object.entries(hitsDist)) {
       for (const crit of [false, true]) {
         const p = ph * (crit ? pc : 1 - pc) * acc;
         if (p <= 0) continue;
-        const att = buildMon(attSpec), def = buildMon(defSpec);
-        const mvObj = buildMove(moveId, attSpec, { crit });
-        if (base && Array.isArray(base.multihit)) mvObj.hits = +h;
-        let rolls;
-        try { rolls = rollsOf(C.calculate(gen, att, def, mvObj, fieldFor(weather))); } catch (e) { rolls = [0]; }
-        if (one && one.max > 0) {                       // apply the same custom-ability scaling as damage()
-          const raw = rollsOf(C.calculate(gen, buildMon(attSpec), buildMon(defSpec), buildMove(moveId, attSpec, {}), fieldFor(weather)));
-          const f = Math.max(...raw) > 0 ? one.max / Math.max(...raw) : 1;
-          if (Math.abs(f - 1) > 0.01 && !crit && +h === (one.hits || 1)) rolls = rolls.map(x => Math.floor(x * f));
-        }
+        const rolls = rawRolls(attSpec, defSpec, moveId, { weather, crit, hits: +h || 0 }).rolls;
         for (const r of rolls) dist[Math.min(cap, r)] += p / rolls.length;
       }
     }
     dist[0] += 1 - acc;
     return dist;
   }
-  /** Chance that n attacks drawn from dist add up to at least hp. */
+  /** Chance that n attacks drawn from dist add up to at least hp (dist is sparse: few non-zero entries). */
   function faintChance(dist, hp, n) {
     if (n <= 0) return 0;
-    let cur = new Float64Array(hp + 1); cur[0] = 1;
+    const pts = [];
+    for (let d = 0; d < dist.length; d++) if (dist[d] > 1e-12) pts.push(d, dist[d]);
+    let cur = new Map([[0, 1]]);
+    let dead = 0;
     for (let k = 0; k < n; k++) {
-      const next = new Float64Array(hp + 1);
-      for (let a = 0; a <= hp; a++) {
-        if (!cur[a]) continue;
-        if (a >= hp) { next[hp] += cur[a]; continue; }
-        for (let d = 0; d < dist.length; d++) if (dist[d]) next[Math.min(hp, a + d)] += cur[a] * dist[d];
+      const next = new Map();
+      for (const [a, pa] of cur) {
+        for (let i = 0; i < pts.length; i += 2) {
+          const v = a + pts[i], p = pa * pts[i + 1];
+          if (v >= hp) dead += p;
+          else next.set(v, (next.get(v) || 0) + p);
+        }
       }
       cur = next;
+      if (!cur.size) break;
     }
-    return cur[hp];
+    return Math.min(1, dead);
   }
 
   function speedOf(spec, weather) {
-    const p = buildMon(spec);
-    let s = p.rawStats.spe;
+    let s = rawStats(spec).spe;
     const b = (spec.boosts && spec.boosts.spe) || 0;
     s = Math.floor(s * (b >= 0 ? (2 + b) / 2 : 2 / (2 - b)));
     const item = itemName(spec.it);
@@ -248,12 +292,19 @@
     return wa || wb || null;
   }
 
-  function maxHP(spec) { return buildMon(spec).maxHP(); }
+  function maxHP(spec) { return memo('H|' + specKey(spec, false), () => buildMon(Object.assign({}, spec, { hpPct: 100 })).maxHP()); }
+  function rawStats(spec) { return memo('S|' + specKey(spec, false), () => Object.assign({}, buildMon(Object.assign({}, spec, { hpPct: 100, boosts: {} })).rawStats)); }
 
   /** One-on-one outlook between my Pokemon and theirs (both at the HP given in the specs). */
   /** entry: true (default) = both Pokemon have just come in (Intimidate, first-turn effects apply);
    *  false = a battle already in progress, boosts as given. */
-  function matchup(mine, theirs, { weather: forced, entry = true } = {}) {
+  function matchup(mine, theirs, opts) {
+    const o = opts || {};
+    const key = ['MU', specKey(mine, true), (mine.mv || []).join('.'), specKey(theirs, true), (theirs.mv || []).join('.'),
+      o.weather === undefined ? 'auto' : (o.weather || ''), o.entry === false ? 0 : 1].join('|');
+    return memo(key, () => matchupRaw(mine, theirs, o));
+  }
+  function matchupRaw(mine, theirs, { weather: forced, entry = true } = {}) {
     // Intimidate: theirs arrives after a KO (set mode) and lowers my Attack; mine lowers theirs when I switch in
     const me = Object.assign({}, mine, { boosts: Object.assign({}, mine.boosts) });
     const them = Object.assign({}, theirs, { boosts: Object.assign({}, theirs.boosts), firstTurn: entry });
@@ -405,6 +456,7 @@
     return { picked, bestPer, team, pool };
   }
 
-  return { gen, D, sp, mv, itemName, natureName, abilityInfo, buildMon, damage, damageDist, faintChance, speedOf, matchup,
-    bossTeam, planBoss, teamWeather, learnable, upcoming, isBanned, suggestMoves, maxHP, typeEff, STATUS_CODE, WEATHER_SETTERS };
+  return { C, gen, D, sp, mv, itemName, natureName, abilityInfo, buildMon, damage, damageDist, faintChance, speedOf, matchup,
+    bossTeam, planBoss, teamWeather, learnable, upcoming, isBanned, suggestMoves, maxHP, rawStats, rawRolls, typeEff, hiddenPowerType,
+    STATUS_CODE, WEATHER_SETTERS, HIGH_CRIT, ALWAYS_CRIT, STAT_MULT, clearCache: () => cache.clear() };
 });

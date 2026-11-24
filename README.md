@@ -65,10 +65,12 @@ Read from the game code (details and addresses in `NOTES.md`):
 A phone web app to use through the run:
 
 - **Team**: enter each Pokémon as you catch it (species, level, nature, ability, item, moves). The move picker lists what it can learn by level-up or TM, and flags moves Hardcore bans.
-- **Plan**: for any boss, the best six from your roster, a lead, and your top answers to each of their Pokémon. Each answer shows damage ranges, speed, and the **chance of losing your Pokémon**. That chance counts every damage roll, multi-hit count, crit and miss. The tab also has moveset ideas from level-up moves and TMs, plus an optional written game plan from Claude based on those numbers.
-- **Battle**: pick the active Pokémon and HP, and it ranks attacking with each move against switching, by risk.
+- **Plan**: for any boss, **Plan this fight** simulates the battle hundreds of times with your Pokémon and the boss's exact Hardcore team. It picks your six and your lead, and writes a turn-by-turn script: what to click, when to switch, and any planned sacrifice. It also reports the odds (win with no losses, win at all, average losses) and the most common ways things go wrong. Under the plan are one-on-one answers to each of their Pokémon, plus an optional written plan from Claude based on the simulation.
+- **Battle**: set the active Pokémon and HP mid-fight. The same planner then ranks every attack, status or healing move, and switch by expected losses for your whole team, and shows the boss's most likely move.
+- **Nature & moves** (on each Pokémon): the nature to set with Radical Red's free Nature Change service, tested against your next big fights. Also the best four moves before each of those fights, with exactly when each becomes available: level-up level, a TM you own, or the Move Maniac (2 Tiny Mushrooms or 1 Big Mushroom) for moves it already passed.
+- **TM case**: tick the TMs you own; move advice only suggests those.
 
-How it works: `engine.js` runs the open-source [Smogon damage calculator](https://github.com/smogon/damage-calc) (Gen 9 rules), fed with Radical Red's own stats, types, abilities and move data. Radical Red's custom moves are calculated from their real type, power and category. Its custom abilities are modeled from their in-game descriptions where they change damage, and flagged where they don't. The type chart the engine uses was checked against the ROM's own chart and is identical.
+How it works: `sim.js` is a turn-by-turn singles simulator. It covers damage rolls, crits, accuracy, speed and priority, status, stat changes, hazards, screens, weather, terrain, healing, pivots, recharge and charge turns, Destiny Bond, berries, and key items and abilities. Move effects are driven by the ROM's own effect IDs. The boss AI approximates Radical Red's: it takes KOs, otherwise attacks hard, and sets up, statuses, heals, lays hazards or pivots when that looks good. `advice.js` handles natures and move timing. `engine.js` runs the open-source [Smogon damage calculator](https://github.com/smogon/damage-calc) (Gen 9 rules), fed with Radical Red's own stats, types, abilities and move data. Radical Red's custom moves are calculated from their real type, power and category. Its custom abilities are modeled from their in-game descriptions where they change damage, and flagged where they don't. The type chart the engine uses was checked against the ROM's own chart and is identical.
 
 ## Roadmap
 
@@ -76,5 +78,6 @@ How it works: `engine.js` runs the open-source [Smogon damage calculator](https:
 2. ~~Damage calculator using Radical Red's own move and species data~~
 3. ~~Turn-by-turn battle advisor that minimizes the chance of losing a Pokémon~~ (first version in `app/`)
 4. Regular trainers, wild encounter tables, move tutors, and Hardcore ability restrictions
-5. Model the boss AI's move choice (today the Coach assumes their strongest move every turn)
-6. Import your team from your save file
+5. Model the boss AI exactly from the engine's AI code (today it's an approximation)
+6. Import your team from your My Boy! save file
+7. Confusion, Encore, Taunt and the remaining rare items in the simulator

@@ -1,0 +1,1068 @@
+/* Battle simulator and planner for Radical Red Hardcore boss fights (singles).
+ * Damage comes from the engine (Smogon calc fed with ROM data); move effects come from the ROM's
+ * effect IDs (FireRed numbering, extended by the engine) plus a few name tables for newer moves.
+ * The boss AI is an approximation: it takes KOs, otherwise attacks hard, and sets up, statuses,
+ * heals, lays hazards or pivots when those look good, as Radical Red's bosses visibly do. */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory;
+  else root.createSim = factory;
+})(typeof self !== 'undefined' ? self : this, function createSim(E) {
+  'use strict';
+  const D = E.D;
+  const STAGE = s => (s >= 0 ? (2 + s) / 2 : 2 / (2 - s));
+  const ACC_STAGE = s => (s >= 0 ? (3 + s) / 3 : 3 / (3 - s));
+  const STATS5 = ['atk', 'def', 'spa', 'spd', 'spe'];
+
+  // ---------------- move knowledge ----------------
+  const POWDER = new Set(['Spore', 'Sleep Powder', 'Stun Spore', 'Poison Powder', 'Cotton Spore', 'Rage Powder', 'Magic Powder']);
+  const SELF_DROP = { 'Close Combat': { def: -1, spd: -1 }, Superpower: { atk: -1, def: -1 }, 'Hammer Arm': { spe: -1 }, 'Ice Hammer': { spe: -1 },
+    'V-create': { def: -1, spd: -1, spe: -1 }, 'Clanging Scales': { def: -1 }, 'Spin Out': { spe: -2 }, 'Make It Rain': { spa: -1 },
+    'Armor Cannon': { def: -1, spd: -1 }, 'Headlong Rush': { def: -1, spd: -1 }, 'Dragon Ascent': { def: -1, spd: -1 },
+    'Hyperspace Fury': { def: -1 }, Overheat: { spa: -2 }, 'Draco Meteor': { spa: -2 }, 'Leaf Storm': { spa: -2 }, 'Fleur Cannon': { spa: -2 },
+    'Psycho Boost': { spa: -2 }, 'Scale Shot': { spe: 1, def: -1 } };
+  const FANG = { 'Fire Fang': 'brn', 'Ice Fang': 'frz', 'Thunder Fang': 'par' };
+  const SETUP = { 'Shell Smash': { atk: 2, spa: 2, spe: 2, def: -1, spd: -1 }, 'Quiver Dance': { spa: 1, spd: 1, spe: 1 }, Coil: { atk: 1, def: 1 },
+    'Shift Gear': { atk: 1, spe: 2 }, 'Victory Dance': { atk: 1, def: 1, spe: 1 }, Geomancy: { spa: 2, spd: 2, spe: 2 }, Growth: { atk: 1, spa: 1 },
+    'Dragon Dance': { atk: 1, spe: 1 }, 'Calm Mind': { spa: 1, spd: 1 }, 'Bulk Up': { atk: 1, def: 1 }, 'Fillet Away': { atk: 2, spa: 2, spe: 2 },
+    'Tidy Up': { atk: 1, spe: 1 }, 'Work Up': { atk: 1, spa: 1 }, 'Hone Claws': { atk: 1 }, 'No Retreat': { atk: 1, def: 1, spa: 1, spd: 1, spe: 1 },
+    'Clangorous Soul': { atk: 1, def: 1, spa: 1, spd: 1, spe: 1 }, 'Tail Glow': { spa: 3 }, 'Cotton Guard': { def: 3 }, Stockpile: { def: 1, spd: 1 } };
+  const EFFECT_BOOST = { 10: { atk: 1 }, 11: { def: 1 }, 12: { spe: 1 }, 13: { spa: 1 }, 14: { spd: 1 }, 50: { atk: 2 }, 51: { def: 2 }, 52: { spe: 2 },
+    53: { spa: 2 }, 54: { spd: 2 }, 206: { def: 1, spd: 1 }, 208: { atk: 1, def: 1 }, 211: { spa: 1, spd: 1 }, 212: { atk: 1, spe: 1 } };
+  const EFFECT_DROP = { 18: { atk: -1 }, 19: { def: -1 }, 20: { spe: -1 }, 21: { spa: -1 }, 22: { spd: -1 }, 58: { atk: -2 }, 59: { def: -2 },
+    60: { spe: -2 }, 61: { spa: -2 }, 62: { spd: -2 } };
+  const HIT_DROP = { 68: 'atk', 69: 'def', 70: 'spe', 71: 'spa', 72: 'spd' };
+  const HIT_SELF_UP = { 96: { spe: 1 }, 110: { spa: 1 }, 138: { def: 1 }, 139: { atk: 1 }, 140: { atk: 1, def: 1, spa: 1, spd: 1, spe: 1 }, 129: { spe: 1 } };
+  const RECHARGE = 80, CHARGE = 145, SOLAR = 151, SEMI_INV = 155, PIVOT = 127, TELEPORT = 153, FAKE_OUT = 158, SUCKER = 237;
+  const HEAL_HALF = 32, HEAL_WEATHER = 132;
+  const PROTECT_EFF = 111, HAZARD = 112;
+  const RESIST_BERRY = { 'Occa Berry': 'Fire', 'Passho Berry': 'Water', 'Wacan Berry': 'Electric', 'Rindo Berry': 'Grass', 'Yache Berry': 'Ice',
+    'Chople Berry': 'Fighting', 'Kebia Berry': 'Poison', 'Shuca Berry': 'Ground', 'Coba Berry': 'Flying', 'Payapa Berry': 'Psychic',
+    'Tanga Berry': 'Bug', 'Charti Berry': 'Rock', 'Kasib Berry': 'Ghost', 'Haban Berry': 'Dragon', 'Colbur Berry': 'Dark',
+    'Babiri Berry': 'Steel', 'Roseli Berry': 'Fairy', 'Chilan Berry': 'Normal' };
+  const CURE_BERRY = { 'Chesto Berry': 'slp', 'Cheri Berry': 'par', 'Rawst Berry': 'brn', 'Pecha Berry': 'psn', 'Aspear Berry': 'frz' };
+  const PINCH_HEAL = new Set(['Figy Berry', 'Wiki Berry', 'Mago Berry', 'Aguav Berry', 'Iapapa Berry']);
+  const PINCH_STAT = { 'Liechi Berry': 'atk', 'Ganlon Berry': 'def', 'Salac Berry': 'spe', 'Petaya Berry': 'spa', 'Apicot Berry': 'spd' };
+  const NO_INTIMIDATE = new Set(['Clear Body', 'White Smoke', 'Hyper Cutter', 'Full Metal Body', 'Inner Focus', 'Own Tempo', 'Oblivious', 'Scrappy']);
+  const NO_SECONDARY = new Set(['Shield Dust']);
+  const SLEEP_IMMUNE = new Set(['Insomnia', 'Vital Spirit', 'Sweet Veil', 'Comatose', 'Purifying Salt']);
+  const WEATHER_ROCK = { 'Damp Rock': 'Rain', 'Heat Rock': 'Sun', 'Smooth Rock': 'Sand', 'Icy Rock': 'Snow' };
+  const TERRAIN_SURGE = { 'Electric Surge': 'Electric', 'Grassy Surge': 'Grassy', 'Psychic Surge': 'Psychic', 'Misty Surge': 'Misty', 'Hadron Engine': 'Electric' };
+  const TERRAIN_SEED = { 'Electric Seed': ['Electric', 'def'], 'Grassy Seed': ['Grassy', 'def'], 'Psychic Seed': ['Psychic', 'spd'], 'Misty Seed': ['Misty', 'spd'] };
+  const ABSORB = { 'Water Absorb': ['Water', 'heal'], 'Volt Absorb': ['Electric', 'heal'], 'Dry Skin': ['Water', 'heal'], 'Earth Eater': ['Ground', 'heal'],
+    'Motor Drive': ['Electric', 'spe'], 'Lightning Rod': ['Electric', 'spa'], 'Storm Drain': ['Water', 'spa'], 'Sap Sipper': ['Grass', 'atk'],
+    'Flash Fire': ['Fire', 'none'], 'Well-Baked Body': ['Fire', 'def2'], 'Levitate': ['Ground', 'none'] };
+
+  const metaCache = new Map();
+  function meta(id) {
+    let m = metaCache.get(id);
+    if (m) return m;
+    const r = E.mv(id);
+    const base = r && r.c ? E.gen.moves.get(E.C.toID(r.c)) : null;
+    m = {
+      id, name: r ? r.f : '?', type: r ? r.t : 'Normal', power: r ? r.p : 0, acc: r ? r.a : 100, cat: r ? r.k : 'X', pri: r ? r.r : 0,
+      eff: r ? r.e : 0, ec: r ? r.ec : 0,
+      multihit: base && Array.isArray(base.multihit) ? base.multihit : null,
+      drain: base && base.drain ? base.drain : (r && r.e === 3 && r.k !== 'X' ? [1, 2] : null),
+      recoil: base && base.recoil ? base.recoil : null,
+      contact: base ? !!(base.flags && base.flags.contact) : (r && r.k === 'P'),
+      sound: base ? !!(base.flags && base.flags.sound) : false,
+      highCrit: E.HIGH_CRIT.has(r && r.f), alwaysCrit: E.ALWAYS_CRIT.has(r && r.f),
+    };
+    metaCache.set(id, m);
+    return m;
+  }
+
+  // ---------------- random numbers ----------------
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  }
+  /** "Most likely" dice for the main script: middle roll, no crit, no secondary chance, likely hits connect. */
+  function expectedDice() {
+    const d = () => 0.5; d.expected = true; return d;
+  }
+
+  // ---------------- battle state ----------------
+  function makeMon(spec, side, idx) {
+    const s = E.sp(spec.s);
+    const base = Object.assign({}, spec, { hpPct: 100, boosts: {}, entry: false, firstTurn: false });
+    const maxHp = s && s.n === 'Shedinja' ? 1 : E.maxHP(base);
+    const st = spec.status || (spec.st ? E.STATUS_CODE[spec.st] : '');
+    return {
+      side, idx, key: spec.key || (side + idx), spec: base, name: spec.label || (s ? s.n : '?'), types: s ? s.t.slice() : ['Normal'],
+      hp: maxHp, maxHp, status: st, sleep: st === 'slp' ? 2 : 0, toxic: 0, boosts: { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, acc: 0, eva: 0 },
+      item: spec.it || null, ability: spec.ab || '', fainted: false, lock: null, charging: null, invuln: false, recharge: false, destinyBond: false,
+      protect: false, protectStreak: 0, yawn: 0, seeded: false, flinch: false, unburden: false, firstTurn: true, rampage: 0, sub: 0,
+      usedPhoenix: false, disguise: spec.ab === 'Disguise', moves: (spec.mv || []).filter(id => E.mv(id)), hitThisTurn: false,
+    };
+  }
+  function newBattle(playerSpecs, bossSpecs, opts) {
+    const st = {
+      p: { team: playerSpecs.map((s, i) => makeMon(s, 'p', i)), active: 0, hazards: { sr: 0, spikes: 0, tspikes: 0, web: 0 }, screens: { reflect: 0, light: 0, veil: 0 }, tailwind: 0, safeguard: 0 },
+      a: { team: bossSpecs.map((s, i) => makeMon(s, 'a', i)), active: 0, hazards: { sr: 0, spikes: 0, tspikes: 0, web: 0 }, screens: { reflect: 0, light: 0, veil: 0 }, tailwind: 0, safeguard: 0 },
+      weather: null, weatherTurns: 0, terrain: null, terrainTurns: 0, trickRoom: 0, turn: 0, log: [], events: [], over: false, winner: null,
+      opts: opts || {},
+    };
+    st.p.active = (opts && opts.lead != null) ? opts.lead : 0;
+    return st;
+  }
+  const other = side => (side === 'p' ? 'a' : 'p');
+  const act = (st, side) => st[side].team[st[side].active];
+  const alive = (st, side) => st[side].team.filter(m => !m.fainted);
+  const bench = (st, side) => st[side].team.filter((m, i) => !m.fainted && i !== st[side].active);
+  function itemName(m) { return m.item ? E.itemName(m.item) : null; }
+  function hasType(m, t) { return m.types.includes(t); }
+  function grounded(m) { return !hasType(m, 'Flying') && m.ability !== 'Levitate' && itemName(m) !== 'Air Balloon'; }
+  function log(st, text, kind) { if (st.opts.record) st.log.push({ turn: st.turn, text, kind: kind || '' }); }
+
+  /** The engine spec of a battler right now (boosts, status, HP, item). */
+  function specNow(m) {
+    return Object.assign({}, m.spec, {
+      it: m.item, boosts: { atk: m.boosts.atk, def: m.boosts.def, spa: m.boosts.spa, spd: m.boosts.spd, spe: m.boosts.spe },
+      status: m.status, hpPct: 100 * m.hp / m.maxHp, entry: false, firstTurn: m.firstTurn && m.ability === 'Bull Rush',
+    });
+  }
+  function fieldOpts(st, defSide) {
+    const sc = st[defSide].screens;
+    return { weather: st.weather, terrain: st.terrain, defSide: (sc.reflect || sc.light || sc.veil) ? { isReflect: !!sc.reflect, isLightScreen: !!sc.light, isAuroraVeil: !!sc.veil } : null };
+  }
+  function speed(st, m) {
+    let s = E.rawStats(m.spec).spe;
+    s = Math.floor(s * STAGE(m.boosts.spe));
+    const it = itemName(m);
+    if (it === 'Choice Scarf') s = Math.floor(s * 1.5);
+    if (it === 'Iron Ball') s = Math.floor(s / 2);
+    const a = m.ability, w = st.weather || '';
+    if ((a === 'Swift Swim' && /Rain/.test(w)) || (a === 'Chlorophyll' && /Sun/.test(w)) || (a === 'Sand Rush' && w === 'Sand') ||
+        (a === 'Slush Rush' && /Snow|Hail/.test(w)) || (a === 'Surge Surfer' && st.terrain === 'Electric') || (a === 'Unburden' && m.unburden)) s *= 2;
+    if (a === 'Bull Rush' && m.firstTurn) s = Math.floor(s * 1.5);
+    if (a === 'Quick Feet' && m.status) s = Math.floor(s * 1.5);
+    else if (m.status === 'par') s = Math.floor(s / 2);
+    if (st[m.side].tailwind) s *= 2;
+    return s;
+  }
+  function priorityOf(st, m, moveId) {
+    const mm = meta(moveId);
+    let p = mm.pri;
+    if (m.ability === 'Prankster' && mm.cat === 'X') p += 1;
+    if (m.ability === 'Gale Wings' && mm.type === 'Flying' && m.hp === m.maxHp) p += 1;
+    if (m.ability === 'Triage' && (mm.drain || mm.eff === HEAL_HALF || mm.eff === HEAL_WEATHER)) p += 3;
+    if (m.ability === 'Blazing Soul' && mm.type === 'Fire' && m.hp === m.maxHp) p += 1;
+    if (mm.name === 'Grassy Glide' && st.terrain === 'Grassy') p += 1;
+    return p;
+  }
+
+  // ---------------- entering the field ----------------
+  function applyBoosts(st, m, boosts, source) {
+    let changed = false;
+    for (const [k, v] of Object.entries(boosts)) {
+      if (!v || !(k in m.boosts)) continue;
+      if (v < 0 && source === 'foe' && (['Clear Body', 'White Smoke', 'Full Metal Body'].includes(m.ability) || itemName(m) === 'Clear Amulet')) continue;
+      const before = m.boosts[k];
+      m.boosts[k] = Math.max(-6, Math.min(6, before + v));
+      if (m.boosts[k] !== before) changed = true;
+      if (v < 0 && source === 'foe' && m.boosts[k] !== before) {
+        if (m.ability === 'Defiant') m.boosts.atk = Math.min(6, m.boosts.atk + 2);
+        if (m.ability === 'Competitive') m.boosts.spa = Math.min(6, m.boosts.spa + 2);
+      }
+    }
+    if (changed && st.opts.record) log(st, `${m.name}: ${Object.entries(boosts).filter(([, v]) => v).map(([k, v]) => `${k.toUpperCase()} ${v > 0 ? '+' : ''}${v}`).join(', ')}`);
+    return changed;
+  }
+  function setWeather(st, w, m) {
+    if (st.weather === w) return;
+    st.weather = w; st.weatherTurns = (WEATHER_ROCK[itemName(m)] === w) ? 8 : 5;
+    log(st, `${w === 'Sun' ? 'The sun is harsh' : w === 'Rain' ? 'It is raining' : w === 'Sand' ? 'A sandstorm rages' : 'It is snowing'} (${m.name})`);
+  }
+  function setTerrain(st, t, m) {
+    st.terrain = t; st.terrainTurns = itemName(m) === 'Terrain Extender' ? 8 : 5;
+    for (const side of ['p', 'a']) { const x = act(st, side); if (x && !x.fainted) seedCheck(st, x); }
+  }
+  function seedCheck(st, m) {
+    const seed = TERRAIN_SEED[itemName(m)];
+    if (seed && st.terrain === seed[0]) { applyBoosts(st, m, { [seed[1]]: 1 }); consume(m); }
+  }
+  function consume(m) { m.item = null; if (m.ability === 'Unburden') m.unburden = true; }
+  function onEntry(st, side, rng) {
+    const m = act(st, side);
+    m.firstTurn = true; m.lock = null; m.charging = null; m.invuln = false; m.rampage = 0; m.protectStreak = 0; m.toxic = m.status === 'tox' ? 0 : m.toxic;
+    const hz = st[side].hazards;
+    if (itemName(m) !== 'Heavy-Duty Boots' && m.ability !== 'Magic Guard') {
+      if (hz.sr) { const dmg = Math.floor(m.maxHp * 0.125 * E.typeEff('Rock', m.types)); hurt(st, m, dmg, 'Stealth Rock'); }
+      if (hz.spikes && grounded(m)) hurt(st, m, Math.floor(m.maxHp * [0, 1 / 8, 1 / 6, 1 / 4][hz.spikes]), 'Spikes');
+    }
+    if (m.fainted) return;
+    if (hz.tspikes && grounded(m)) {
+      if (hasType(m, 'Poison')) { hz.tspikes = 0; log(st, `${m.name} absorbs the Toxic Spikes`); }
+      else if (!m.status && !hasType(m, 'Steel') && itemName(m) !== 'Heavy-Duty Boots') { m.status = hz.tspikes >= 2 ? 'tox' : 'psn'; log(st, `${m.name} is poisoned by Toxic Spikes`); }
+    }
+    if (hz.web && grounded(m) && itemName(m) !== 'Heavy-Duty Boots') applyBoosts(st, m, { spe: -1 }, 'foe');
+    const foe = act(st, other(side));
+    const a = m.ability;
+    if (a === 'Intimidate' && foe && !foe.fainted) {
+      if (NO_INTIMIDATE.has(foe.ability)) { if (foe.ability === 'Rattled') applyBoosts(st, foe, { spe: 1 }); }
+      else { applyBoosts(st, foe, { atk: -1 }, 'foe'); log(st, `${m.name}'s Intimidate`); }
+    }
+    if (E.WEATHER_SETTERS[a]) setWeather(st, E.WEATHER_SETTERS[a].replace('Heavy Rain', 'Rain').replace('Harsh Sunshine', 'Sun'), m);
+    if (TERRAIN_SURGE[a]) setTerrain(st, TERRAIN_SURGE[a], m);
+    if (a === 'Download' && foe && !foe.fainted) {
+      const fs = E.rawStats(foe.spec);
+      applyBoosts(st, m, fs.def * STAGE(foe.boosts.def) < fs.spd * STAGE(foe.boosts.spd) ? { atk: 1 } : { spa: 1 });
+    }
+    if (a === 'Valiant Shield') applyBoosts(st, m, { def: 1 });
+    seedCheck(st, m);
+  }
+  function switchIn(st, side, idx, rng, why) {
+    const out = act(st, side);
+    if (out && !out.fainted) {
+      st[side].lastOut = out.key; st[side].lastOutTurn = st.turn;
+      out.boosts = { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, acc: 0, eva: 0 };
+      out.lock = null; out.charging = null; out.invuln = false; out.seeded = false; out.yawn = 0; out.rampage = 0; out.sub = 0; out.destinyBond = false; out.stockpile = 0;
+      if (out.ability === 'Regenerator') out.hp = Math.min(out.maxHp, out.hp + Math.floor(out.maxHp / 3));
+      if (out.ability === 'Natural Cure') out.status = '';
+      if (out.status === 'tox') out.toxic = 0;
+    }
+    st[side].active = idx;
+    const m = act(st, side);
+    st.events.push({ turn: st.turn, type: 'switch', side, to: m.key, why: why || '' });
+    log(st, `${side === 'p' ? 'You send out' : 'Boss sends out'} ${m.name}`, 'switch');
+    onEntry(st, side, rng);
+  }
+
+  // ---------------- damage and effects ----------------
+  function hurt(st, m, dmg, cause) {
+    if (dmg <= 0 || m.fainted) return 0;
+    const d = Math.min(m.hp, dmg);
+    m.hp -= d;
+    if (cause && st.opts.record) log(st, `${m.name} loses ${Math.round(100 * d / m.maxHp)}% (${cause})`);
+    if (m.hp <= 0) faint(st, m, cause);
+    else berryCheck(st, m);
+    return d;
+  }
+  function heal(st, m, amt, cause) {
+    if (m.fainted || amt <= 0 || m.hp >= m.maxHp) return;
+    const before = m.hp;
+    m.hp = Math.min(m.maxHp, m.hp + Math.floor(amt));
+    if (st.opts.record && m.hp > before) log(st, `${m.name} restores ${Math.round(100 * (m.hp - before) / m.maxHp)}% (${cause})`);
+  }
+  function faint(st, m, cause) {
+    if (m.ability === 'Phoenix Down' && !m.usedPhoenix) {   // Radical Red: revives to half HP on its first faint
+      m.usedPhoenix = true; m.hp = Math.floor(m.maxHp / 2); m.status = '';
+      log(st, `${m.name} rises again with Phoenix Down!`); return;
+    }
+    m.hp = 0; m.fainted = true; m.status = '';
+    st.events.push({ turn: st.turn, type: 'faint', side: m.side, key: m.key, name: m.name, cause: cause || '' });
+    log(st, `${m.name} faints${cause ? ' (' + cause + ')' : ''}`, 'faint');
+  }
+  function berryCheck(st, m) {
+    const it = itemName(m);
+    if (!it || m.fainted) return;
+    if (it === 'Sitrus Berry' && m.hp <= m.maxHp / 2) { consume(m); heal(st, m, m.maxHp / 4, 'Sitrus Berry'); }
+    else if (it === 'Oran Berry' && m.hp <= m.maxHp / 2) { consume(m); heal(st, m, 10, 'Oran Berry'); }
+    else if (it === 'Berry Juice' && m.hp <= m.maxHp / 2) { consume(m); heal(st, m, 20, 'Berry Juice'); }
+    else if (PINCH_HEAL.has(it) && m.hp <= m.maxHp / 4) { consume(m); heal(st, m, m.maxHp / 3, it); }
+    else if (PINCH_STAT[it] && m.hp <= m.maxHp / 4) { consume(m); applyBoosts(st, m, { [PINCH_STAT[it]]: 1 }); }
+  }
+  function canStatus(st, target, status, moveName, attacker) {
+    if (target.fainted || target.status) return false;
+    if (st[target.side].safeguard && attacker && attacker.side !== target.side) return false;
+    if (target.sub && attacker && attacker.side !== target.side) return false;
+    if (st.terrain === 'Misty' && grounded(target)) return false;
+    if (status === 'brn' && (hasType(target, 'Fire') || ['Water Veil', 'Water Bubble', 'Thermal Exchange'].includes(target.ability))) return false;
+    if ((status === 'psn' || status === 'tox') && (hasType(target, 'Poison') || hasType(target, 'Steel')) && !(attacker && attacker.ability === 'Corrosion')) return false;
+    if ((status === 'psn' || status === 'tox') && ['Immunity', 'Pastel Veil'].includes(target.ability)) return false;
+    if (status === 'par' && (hasType(target, 'Electric') || target.ability === 'Limber')) return false;
+    if (status === 'par' && moveName === 'Thunder Wave' && hasType(target, 'Ground')) return false;
+    if (status === 'frz' && (hasType(target, 'Ice') || target.ability === 'Magma Armor' || /Sun/.test(st.weather || ''))) return false;
+    if (status === 'slp' && (SLEEP_IMMUNE.has(target.ability) || (st.terrain === 'Electric' && grounded(target)))) return false;
+    if (POWDER.has(moveName) && (hasType(target, 'Grass') || target.ability === 'Overcoat' || itemName(target) === 'Safety Goggles')) return false;
+    return true;
+  }
+  function inflict(st, target, status, rng, why) {
+    target.status = status;
+    if (status === 'slp') target.sleep = rng.expected ? 2 : 1 + Math.floor(rng() * 3);
+    if (status === 'tox') target.toxic = 0;
+    log(st, `${target.name} is ${{ brn: 'burned', par: 'paralyzed', psn: 'poisoned', tox: 'badly poisoned', slp: 'asleep', frz: 'frozen' }[status]}${why ? ' (' + why + ')' : ''}`);
+    const cure = itemName(target);
+    if (cure === 'Lum Berry' || CURE_BERRY[cure] === status) { consume(target); target.status = ''; target.sleep = 0; log(st, `${target.name}'s ${cure} cures it`); }
+  }
+  function roll(rng, p) { if (p >= 1) return true; if (p <= 0) return false; return rng.expected ? p >= 0.5 : rng() < p; }
+
+  function hitChance(st, user, target, mm) {
+    if (mm.acc === 0 || user.ability === 'No Guard' || target.ability === 'No Guard') return 1;
+    let acc = mm.acc;
+    const w = st.weather || '';
+    if ((mm.name === 'Thunder' || mm.name === 'Hurricane') && /Rain/.test(w)) return 1;
+    if ((mm.name === 'Thunder' || mm.name === 'Hurricane') && /Sun/.test(w)) acc = 50;
+    if (mm.name === 'Blizzard' && /Snow|Hail/.test(w)) return 1;
+    if (mm.name === 'Toxic' && hasType(user, 'Poison')) return 1;
+    if (user.ability === 'Fatal Precision' && E.typeEff(mm.type, target.types) > 1) return 1;
+    let p = acc / 100 * ACC_STAGE(user.boosts.acc - target.boosts.eva);
+    if (user.ability === 'Compound Eyes') p *= 1.3;
+    if (user.ability === 'Hustle' && mm.cat === 'P') p *= 0.8;
+    if (user.ability === 'Victory Star') p *= 1.1;
+    if (itemName(user) === 'Wide Lens') p *= 1.1;
+    if (['BrightPowder', 'Bright Powder', 'Lax Incense'].includes(itemName(target))) p *= 0.9;
+    if ((target.ability === 'Sand Veil' && w === 'Sand') || (target.ability === 'Snow Cloak' && /Snow|Hail/.test(w))) p *= 0.8;
+    return Math.min(1, p);
+  }
+  function critChance(user, target, mm) {
+    if (['Battle Armor', 'Shell Armor'].includes(target.ability)) return 0;
+    if (mm.alwaysCrit) return 1;
+    let stage = mm.highCrit ? 1 : 0;
+    const it = itemName(user);
+    if (it === 'Scope Lens' || it === 'Razor Claw') stage++;
+    if (user.ability === 'Super Luck') stage++;
+    if ((it === 'Leek' || it === 'Stick') && /Farfetch/.test(user.name)) stage += 2;
+    return [1 / 24, 1 / 8, 1 / 2, 1][Math.min(3, stage)];
+  }
+  function pickHits(rng, user, mm) {
+    if (!mm.multihit) return 0;
+    const [lo, hi] = mm.multihit;
+    if (user.ability === 'Skill Link') return hi;
+    if (lo === 2 && hi === 5) {
+      if (itemName(user) === 'Loaded Dice') return rng.expected ? 4 : (rng() < 0.5 ? 4 : 5);
+      if (rng.expected) return 3;
+      const r = rng(); return r < 0.35 ? 2 : r < 0.7 ? 3 : r < 0.85 ? 4 : 5;
+    }
+    return hi;
+  }
+
+  /** Run one move. ctx: {first: did the user move before the target this turn, targetAction} */
+  function useMove(st, side, moveId, rng, ctx) {
+    const user = act(st, side);
+    if (!user || user.fainted) return;
+    const tside = other(side);
+    let target = act(st, tside);
+    const mm0 = meta(moveId);
+    // turn-skipping conditions
+    if (user.recharge) { user.recharge = false; log(st, `${user.name} must recharge`); return; }
+    if (user.status === 'slp') {
+      if (user.sleep > 0) {
+        user.sleep--;
+        if (mm0.name === 'Sleep Talk') {
+          const others = user.moves.filter(id => meta(id).name !== 'Sleep Talk' && ![CHARGE, SEMI_INV, SOLAR].includes(meta(id).eff));
+          if (others.length) { log(st, `${user.name} uses Sleep Talk`); moveId = others[rng.expected ? 0 : Math.floor(rng() * others.length)]; }
+          else { log(st, `${user.name} is fast asleep`); return; }
+        } else { log(st, `${user.name} is fast asleep`); return; }
+      } else { user.status = ''; log(st, `${user.name} wakes up`); }
+    }
+    if (user.status === 'frz') {
+      if (roll(rng, 0.2) || /Scald|Flare Blitz|Sacred Fire|Flame Wheel|Scorching Sands|Steam Eruption|Pyro Ball|Burn Up/.test(mm0.name)) { user.status = ''; log(st, `${user.name} thaws out`); }
+      else { log(st, `${user.name} is frozen solid`); return; }
+    }
+    if (user.flinch) { log(st, `${user.name} flinches`); return; }
+    if (user.status === 'par' && !rng.expected && rng() < 0.25) { log(st, `${user.name} is fully paralyzed`); return; }
+    const mm = meta(moveId);
+    st.events.push({ turn: st.turn, type: 'move', side, user: user.key, move: moveId });
+    // Choice lock and rampage bookkeeping
+    if (/^Choice /.test(itemName(user) || '') && !user.lock) user.lock = moveId;
+    if (mm.eff === 27 && !user.rampage) user.rampage = rng.expected ? 2 : (rng() < 0.5 ? 2 : 3);
+    // two-turn moves
+    const instantCharge = itemName(user) === 'Power Herb' || (mm.eff === SOLAR && /Sun/.test(st.weather || '')) || (mm.name === 'Electro Shot' && /Rain/.test(st.weather || ''));
+    if ((mm.eff === CHARGE || mm.eff === SOLAR || mm.eff === SEMI_INV || mm.name === 'Geomancy' || mm.name === 'Sky Attack') && !user.charging) {
+      if (mm.name === 'Meteor Beam' || mm.name === 'Electro Shot') applyBoosts(st, user, { spa: 1 });
+      if (instantCharge) { if (itemName(user) === 'Power Herb') consume(user); }
+      else {
+        user.charging = moveId; user.invuln = mm.eff === SEMI_INV;
+        log(st, `${user.name} uses ${mm.name} (charging)`); return;
+      }
+    }
+    if (user.charging === moveId) { user.charging = null; user.invuln = false; }
+    log(st, `${side === 'p' ? 'Your' : 'Boss'} ${user.name} uses ${mm.name}`, 'move');
+    if (mm.eff === FAKE_OUT && !user.firstTurn) { log(st, 'But it failed'); return; }
+    if (mm.eff === SUCKER && (!ctx.targetAction || ctx.targetAction.type !== 'move' || meta(ctx.targetAction.id).cat === 'X' || !ctx.first)) { log(st, 'But it failed'); return; }
+    if (mm.name === 'Focus Punch' && user.hitThisTurn) { log(st, `${user.name} loses its focus`); return; }
+
+    // ---- status moves ----
+    if (mm.cat === 'X') return statusMove(st, user, target, mm, rng);
+
+    // ---- damaging moves ----
+    if (!target || target.fainted) { log(st, 'But there was no target'); return; }
+    if (target.protect && mm.name !== 'Feint') {
+      log(st, `${target.name} protects itself`);
+      if (mm.contact) {
+        const pt = target.protectKind;
+        if (pt === 'Spiky Shield') hurt(st, user, Math.floor(user.maxHp / 8), 'Spiky Shield');
+        if (pt === "King's Shield") applyBoosts(st, user, { atk: -1 }, 'foe');
+        if (pt === 'Baneful Bunker' && canStatus(st, user, 'psn', '', target)) inflict(st, user, 'psn', rng, 'Baneful Bunker');
+      }
+      return;
+    }
+    if (target.invuln && !(mm.name === 'Earthquake' || mm.name === 'Surf' || mm.name === 'Thunder' || mm.name === 'Hurricane')) { log(st, `${target.name} avoids the attack`); return; }
+    if (!roll(rng, hitChance(st, user, target, mm))) {
+      log(st, `${user.name}'s attack misses`, 'miss');
+      if (mm.name === 'High Jump Kick' || mm.name === 'Jump Kick' || mm.name === 'Supercell Slam') hurt(st, user, Math.floor(user.maxHp / 2), 'crash');
+      user.rampage = 0;
+      return;
+    }
+    const hits = pickHits(rng, user, mm);
+    const crit = roll(rng, critChance(user, target, mm));
+    const fo = fieldOpts(st, tside);
+    const rr = E.rawRolls(specNow(user), specNow(target), moveId, Object.assign({ crit, hits }, fo));
+    const rolls = rr.rolls;
+    let dmg = rolls[rng.expected ? 7 : Math.floor(rng() * rolls.length)] || 0;
+    // special damage
+    if (mm.name === 'Final Gambit') dmg = user.hp;
+    if (mm.name === 'Endeavor') dmg = Math.max(0, target.hp - user.hp);
+    const absorb = ABSORB[target.ability];
+    if (absorb && absorb[0] === rr.type && dmg === 0) {
+      if (absorb[1] === 'heal') heal(st, target, target.maxHp / 4, target.ability);
+      else if (absorb[1] !== 'none' && absorb[1] !== 'def2') applyBoosts(st, target, { [absorb[1]]: 1 });
+      else if (absorb[1] === 'def2') applyBoosts(st, target, { def: 2 });
+      log(st, `It doesn't affect ${target.name} (${target.ability})`);
+      user.rampage = 0;
+      return;
+    }
+    if (dmg === 0 && rr.eff === 0) { log(st, `It doesn't affect ${target.name}`); return; }
+    if (target.sub && !mm.sound && user.ability !== 'Infiltrator') {
+      target.sub -= dmg;
+      log(st, `The substitute takes the hit`);
+      if (target.sub <= 0) { target.sub = 0; log(st, `${target.name}'s substitute breaks`); }
+      return;
+    }
+    if (target.disguise) { target.disguise = false; dmg = Math.floor(target.maxHp / 8); log(st, `${target.name}'s disguise is busted`); }
+    const fullHp = target.hp === target.maxHp;
+    if (fullHp && dmg >= target.hp && hits <= 1 && (target.ability === 'Sturdy' || itemName(target) === 'Focus Sash')) {
+      dmg = target.hp - 1;
+      if (itemName(target) === 'Focus Sash') { consume(target); log(st, `${target.name} hangs on with its Focus Sash`); }
+      else log(st, `${target.name} endures with Sturdy`);
+    }
+    const before = target.hp;
+    if (crit) log(st, 'A critical hit!', 'crit');
+    if (hits > 1) log(st, `Hit ${hits} times`);
+    target.hitThisTurn = true;
+    const dealt = Math.min(target.hp, dmg);
+    target.hp -= dealt;
+    if (st.opts.record) log(st, `${target.name} loses ${Math.round(100 * dealt / target.maxHp)}% (${Math.round(100 * target.hp / target.maxHp)}% left)`, 'dmg');
+    // item and ability reactions on the target
+    const tItem = itemName(target);
+    if (tItem === 'Air Balloon') { consume(target); log(st, `${target.name}'s Air Balloon pops`); }
+    if (RESIST_BERRY[tItem] === rr.type && (rr.eff > 1 || tItem === 'Chilan Berry')) consume(target);
+    if (tItem === 'Weakness Policy' && rr.eff > 1 && target.hp > 0) { consume(target); applyBoosts(st, target, { atk: 2, spa: 2 }); }
+    if (target.hp <= 0) {
+      if (target.destinyBond) { faint(st, target, `${mm.name}`); log(st, `${user.name} is taken down by Destiny Bond`); faint(st, user, 'Destiny Bond'); return; }
+      faint(st, target, `${user.name}'s ${mm.name}${crit ? ' (critical hit)' : ''}`);
+      if (target.fainted) {
+        if (['Moxie', 'Chilling Neigh'].includes(user.ability)) applyBoosts(st, user, { atk: 1 });
+        if (user.ability === 'Grim Neigh') applyBoosts(st, user, { spa: 1 });
+        if (user.ability === 'Beast Boost') { const rs = E.rawStats(user.spec); const k = STATS5.reduce((a, b) => (rs[b] > rs[a] ? b : a), 'atk'); applyBoosts(st, user, { [k]: 1 }); }
+      }
+    } else {
+      berryCheck(st, target);
+    }
+    // contact punishment
+    if (mm.contact && !user.fainted && dealt > 0) {
+      if (tItem === 'Rocky Helmet') hurt(st, user, Math.floor(user.maxHp / 6), 'Rocky Helmet');
+      if (['Rough Skin', 'Iron Barbs'].includes(target.ability)) hurt(st, user, Math.floor(user.maxHp / 8), target.ability);
+      if (!user.fainted) {
+        if (target.ability === 'Static' && roll(rng, 0.3) && canStatus(st, user, 'par', '', target)) inflict(st, user, 'par', rng, 'Static');
+        if (target.ability === 'Flame Body' && roll(rng, 0.3) && canStatus(st, user, 'brn', '', target)) inflict(st, user, 'brn', rng, 'Flame Body');
+        if (target.ability === 'Poison Point' && roll(rng, 0.3) && canStatus(st, user, 'psn', '', target)) inflict(st, user, 'psn', rng, 'Poison Point');
+        if (['Gooey', 'Tangling Hair'].includes(target.ability)) applyBoosts(st, user, { spe: -1 }, 'foe');
+      }
+    }
+    // attacker side effects
+    if (!user.fainted && dealt > 0) {
+      if (itemName(user) === 'Life Orb' && user.ability !== 'Magic Guard' && user.ability !== 'Sheer Force') hurt(st, user, Math.floor(user.maxHp / 10), 'Life Orb');
+      if (mm.recoil && !['Rock Head', 'Magic Guard', 'Bad Company'].includes(user.ability)) hurt(st, user, Math.max(1, Math.floor(dealt * mm.recoil[0] / mm.recoil[1])), 'recoil');
+      if (mm.drain && !user.fainted) heal(st, user, Math.max(1, Math.floor(dealt * mm.drain[0] / mm.drain[1]) * (itemName(user) === 'Big Root' ? 1.3 : 1)), 'drain');
+      if (itemName(user) === 'Shell Bell') heal(st, user, Math.floor(dealt / 8), 'Shell Bell');
+    }
+    if (mm.eff === 7 || mm.name === 'Misty Explosion' || mm.name === 'Explosion' || mm.name === 'Self-Destruct') faint(st, user, mm.name);
+    if (mm.name === 'Final Gambit') faint(st, user, mm.name);
+    if (user.fainted) return;
+    // knock off
+    if (mm.eff === 188 && target.item && !target.fainted && target.ability !== 'Sticky Hold') { log(st, `${target.name}'s ${tItem} is knocked off`); consume(target); }
+    // secondary effects
+    const sheer = user.ability === 'Sheer Force';
+    const shielded = NO_SECONDARY.has(target.ability) || itemName(target) === 'Covert Cloak';
+    const chanceOf = p => Math.min(1, (user.ability === 'Serene Grace' ? 2 : 1) * p / 100);
+    if (!sheer && !target.fainted && !shielded) {
+      const ec = mm.ec || 0;
+      const statusByEff = { 2: 'psn', 4: 'brn', 5: 'frz', 6: 'par', 209: 'tox' };
+      if (statusByEff[mm.eff] && roll(rng, chanceOf(ec)) && canStatus(st, target, statusByEff[mm.eff], mm.name, user)) inflict(st, target, statusByEff[mm.eff], rng, mm.name);
+      if (mm.eff === 152 && mm.name === 'Thunder' && roll(rng, chanceOf(ec)) && canStatus(st, target, 'par', mm.name, user)) inflict(st, target, 'par', rng, mm.name);
+      if (mm.eff === 36 && roll(rng, chanceOf(20))) { const s = ['brn', 'par', 'frz'][rng.expected ? 0 : Math.floor(rng() * 3)]; if (canStatus(st, target, s, mm.name, user)) inflict(st, target, s, rng, mm.name); }
+      if (FANG[mm.name] && roll(rng, chanceOf(10)) && canStatus(st, target, FANG[mm.name], mm.name, user)) inflict(st, target, FANG[mm.name], rng, mm.name);
+      const flinchP = mm.eff === 31 ? ec : (mm.eff === FAKE_OUT ? 100 : 0) + (['King\'s Rock', 'Razor Fang'].includes(itemName(user)) && mm.eff !== 31 ? 10 : 0);
+      if (flinchP && ctx.first && target.ability !== 'Inner Focus' && roll(rng, chanceOf(flinchP))) { target.flinch = true; }
+      if (HIT_DROP[mm.eff] && roll(rng, chanceOf(ec || 100))) applyBoosts(st, target, { [HIT_DROP[mm.eff]]: mm.name === 'Acid Spray' || mm.name === 'Lumina Crash' ? -2 : -1 }, 'foe');
+    }
+    if (!sheer && HIT_SELF_UP[mm.eff] && roll(rng, chanceOf(mm.eff === 129 ? 100 : (mm.ec || 100)))) applyBoosts(st, user, HIT_SELF_UP[mm.eff]);
+    if ((mm.eff === 182 || mm.eff === 204 || SELF_DROP[mm.name]) && SELF_DROP[mm.name]) applyBoosts(st, user, SELF_DROP[mm.name], user.ability === 'Bad Company' ? 'self-blocked' : 'self');
+    else if (mm.eff === 204 && user.ability !== 'Bad Company') applyBoosts(st, user, { spa: -2 });
+    if (mm.eff === 129) { st[side].hazards = { sr: 0, spikes: 0, tspikes: 0, web: 0 }; }
+    if (mm.eff === RECHARGE) user.recharge = true;
+    if (user.rampage) { user.rampage--; if (user.rampage === 0) user.lock = null; }
+    // forced switch on the target (Dragon Tail, Circle Throw)
+    if (mm.eff === 28 && !target.fainted && bench(st, tside).length && target.ability !== 'Suction Cups') {
+      const opts = bench(st, tside);
+      const pick = opts[rng.expected ? 0 : Math.floor(rng() * opts.length)];
+      switchIn(st, tside, st[tside].team.indexOf(pick), rng, 'forced out');
+    }
+    // pivots
+    if (mm.eff === PIVOT && !user.fainted && bench(st, side).length) pivot(st, side, rng);
+  }
+
+  function statusMove(st, user, target, mm, rng) {
+    const n = mm.name, e = mm.eff;
+    const foeTargeted = !(e in EFFECT_BOOST) && !SETUP[n] && ![HEAL_HALF, HEAL_WEATHER, 37, PROTECT_EFF, HAZARD, 35, 65, 136, 137, 115, 164, 228, 239, 98, 97, 153, 124, 79, 142, 109, 176, 180, 235, 177].includes(e) || n === 'Strength Sap' || n === 'Parting Shot' || n === 'Leech Seed';
+    if (foeTargeted && target && target.protect) { log(st, `${target.name} protects itself`); return; }
+    if (foeTargeted && target && !target.fainted && !roll(rng, hitChance(st, user, target, mm))) { log(st, `${user.name}'s ${n} misses`, 'miss'); return; }
+    if (foeTargeted && target && user.ability === 'Prankster' && hasType(target, 'Dark')) { log(st, 'It does not affect Dark types'); return; }
+    if (n === 'Stockpile') { if ((user.stockpile || 0) >= 3) { log(st, 'But it failed'); return; } user.stockpile = (user.stockpile || 0) + 1; }
+    if (SETUP[n] || EFFECT_BOOST[e]) {
+      let b = SETUP[n] || EFFECT_BOOST[e];
+      if (n === 'Growth' && /Sun/.test(st.weather || '')) b = { atk: 2, spa: 2 };
+      if (n === 'Fillet Away' || n === 'Clangorous Soul') { const c = n === 'Fillet Away' ? 2 : 3; if (user.hp <= user.maxHp / c) { log(st, 'But it failed'); return; } hurt(st, user, Math.floor(user.maxHp / c), n); }
+      applyBoosts(st, user, b);
+      if (n === 'Shell Smash' && itemName(user) === 'White Herb') { user.boosts.def = Math.max(0, user.boosts.def); user.boosts.spd = Math.max(0, user.boosts.spd); consume(user); }
+      return;
+    }
+    switch (e) {
+      case 142: if (n === 'Belly Drum') { if (user.hp <= user.maxHp / 2) { log(st, 'But it failed'); return; } hurt(st, user, Math.floor(user.maxHp / 2), n); user.boosts.atk = 6; log(st, `${user.name} maxes its Attack`); } else { hurt(st, user, Math.floor(user.maxHp / 2), n); applyBoosts(st, user, SETUP[n] || { atk: 2, spa: 2, spe: 2 }); } return;
+      case 109: if (hasType(user, 'Ghost')) { hurt(st, user, Math.floor(user.maxHp / 2), 'Curse'); } else applyBoosts(st, user, { atk: 1, def: 1, spe: -1 }); return;
+      case HEAL_HALF: heal(st, user, user.maxHp / 2, n); return;
+      case HEAL_WEATHER: { const w = st.weather || ''; heal(st, user, user.maxHp * (/Sun/.test(w) ? 2 / 3 : w ? 1 / 4 : 1 / 2), n); return; }
+      case 37: if (user.hp === user.maxHp) { log(st, 'But it failed'); return; } user.hp = user.maxHp; user.status = 'slp'; user.sleep = 2; log(st, `${user.name} sleeps and restores its HP`); return;
+      case PROTECT_EFF: {
+        const p = Math.pow(1 / 3, user.protectStreak);
+        if (roll(rng, p)) { user.protect = true; user.protectKind = n; user.protectStreak++; log(st, `${user.name} protects itself`); }
+        else { user.protectStreak = 0; log(st, 'But it failed'); }
+        return;
+      }
+      case HAZARD: {
+        const hz = st[other(user.side)].hazards;
+        if (n === 'Stealth Rock') hz.sr = 1; else if (n === 'Spikes') hz.spikes = Math.min(3, hz.spikes + 1);
+        else if (n === 'Toxic Spikes') hz.tspikes = Math.min(2, hz.tspikes + 1); else if (n === 'Sticky Web') hz.web = 1;
+        log(st, `${n} is laid on ${user.side === 'a' ? 'your' : 'their'} side`); return;
+      }
+      case 35: st[user.side].screens.light = itemName(user) === 'Light Clay' ? 8 : 5; log(st, 'Light Screen goes up'); return;
+      case 65: if (n === 'Aurora Veil') st[user.side].screens.veil = itemName(user) === 'Light Clay' ? 8 : 5; else st[user.side].screens.reflect = itemName(user) === 'Light Clay' ? 8 : 5; log(st, `${n} goes up`); return;
+      case 136: setWeather(st, 'Rain', user); return;
+      case 137: setWeather(st, 'Sun', user); return;
+      case 115: setWeather(st, 'Sand', user); return;
+      case 164: setWeather(st, 'Snow', user); return;
+      case 228: st.trickRoom = st.trickRoom ? 0 : 5; log(st, st.trickRoom ? 'The dimensions are twisted (Trick Room)' : 'Trick Room ends'); return;
+      case 239: st[user.side].tailwind = 4; log(st, 'A tailwind blows'); return;
+      case 98: user.destinyBond = true; log(st, `${user.name} is trying to take its foe down with it`); return;
+      case 124: st[user.side].safeguard = 5; return;
+      case 79: if (user.hp > user.maxHp / 4 && !user.sub) { hurt(st, user, Math.floor(user.maxHp / 4), 'Substitute'); user.sub = Math.floor(user.maxHp / 4); } return;
+      case 25: for (const s of ['p', 'a']) { const x = act(st, s); if (x) x.boosts = { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, acc: 0, eva: 0 }; } return;
+      case TELEPORT: if (bench(st, user.side).length) pivot(st, user.side, rng); return;
+      case PIVOT:
+        if (n === 'Parting Shot' && target && !target.fainted) applyBoosts(st, target, { atk: -1, spa: -1 }, 'foe');
+        if (n === 'Shed Tail') { if (user.hp <= user.maxHp / 2) return; hurt(st, user, Math.ceil(user.maxHp / 2), 'Shed Tail'); }
+        if (bench(st, user.side).length) pivot(st, user.side, rng);
+        return;
+      case 28: if (target && !target.fainted && bench(st, target.side).length && target.ability !== 'Suction Cups') { const o = bench(st, target.side); switchIn(st, target.side, st[target.side].team.indexOf(o[rng.expected ? 0 : Math.floor(rng() * o.length)]), rng, 'forced out'); } return;
+      default: break;
+    }
+    if (!target || target.fainted) return;
+    if (n === 'Strength Sap') { const atk = Math.floor(E.rawStats(target.spec).atk * STAGE(target.boosts.atk)); heal(st, user, atk, n); applyBoosts(st, target, { atk: -1 }, 'foe'); return; }
+    if (e === 84 || n === 'Leech Seed') { if (!hasType(target, 'Grass') && !target.seeded) { target.seeded = true; log(st, `${target.name} is seeded`); } return; }
+    if (e === 187) { if (!target.status && !target.yawn && canStatus(st, target, 'slp', n, user)) { target.yawn = 2; log(st, `${target.name} grows drowsy`); } return; }
+    const statusMoves = { 1: 'slp', 33: 'tox', 66: 'psn', 67: 'par', 167: 'brn' };
+    if (statusMoves[e]) {
+      if (canStatus(st, target, statusMoves[e], n, user)) inflict(st, target, statusMoves[e], rng, n);
+      else log(st, 'But it failed');
+      return;
+    }
+    if (EFFECT_DROP[e]) { applyBoosts(st, target, EFFECT_DROP[e], 'foe'); return; }
+    // anything else (Celebrate, Helping Hand, Assist, Trick, ...) has no effect we model
+  }
+
+  function pivot(st, side, rng) {
+    const pol = st.policies[side];
+    const idx = pol.replace(st, side, rng, 'pivot');
+    if (idx != null && idx !== st[side].active) switchIn(st, side, idx, rng, 'pivot');
+  }
+
+  // ---------------- end of turn ----------------
+  function endOfTurn(st, rng) {
+    const w = st.weather;
+    for (const side of ['p', 'a']) {
+      const m = act(st, side);
+      if (!m || m.fainted) continue;
+      if (w === 'Sand' && !['Rock', 'Ground', 'Steel'].some(t => hasType(m, t)) && !['Sand Veil', 'Sand Rush', 'Sand Force', 'Overcoat', 'Magic Guard'].includes(m.ability) && itemName(m) !== 'Safety Goggles')
+        hurt(st, m, Math.floor(m.maxHp / 16), 'sandstorm');
+      if (m.fainted) continue;
+      const it = itemName(m);
+      if (it === 'Leftovers') heal(st, m, m.maxHp / 16, 'Leftovers');
+      if (it === 'Black Sludge') { if (hasType(m, 'Poison')) heal(st, m, m.maxHp / 16, 'Black Sludge'); else hurt(st, m, Math.floor(m.maxHp / 8), 'Black Sludge'); }
+      if (m.ability === 'Self Sufficient') heal(st, m, m.maxHp / 16, 'Self Sufficient');
+      if ((m.ability === 'Rain Dish' && w === 'Rain') || (m.ability === 'Ice Body' && w === 'Snow')) heal(st, m, m.maxHp / 16, m.ability);
+      if (m.ability === 'Dry Skin' && w === 'Rain') heal(st, m, m.maxHp / 8, 'Dry Skin');
+      if (m.ability === 'Dry Skin' && w === 'Sun') hurt(st, m, Math.floor(m.maxHp / 8), 'Dry Skin');
+      if (st.terrain === 'Grassy' && grounded(m)) heal(st, m, m.maxHp / 16, 'Grassy Terrain');
+      if (m.fainted) continue;
+      if (m.seeded) { const foe = act(st, other(side)); const d = hurt(st, m, Math.floor(m.maxHp / 8), 'Leech Seed'); if (foe && !foe.fainted) heal(st, foe, d, 'Leech Seed'); }
+      if (m.fainted) continue;
+      if (m.ability !== 'Magic Guard') {
+        if (m.status === 'brn') hurt(st, m, Math.floor(m.maxHp / 16), 'burn');
+        else if (m.status === 'psn') { if (m.ability === 'Poison Heal') heal(st, m, m.maxHp / 8, 'Poison Heal'); else hurt(st, m, Math.floor(m.maxHp / 8), 'poison'); }
+        else if (m.status === 'tox') { m.toxic++; if (m.ability === 'Poison Heal') heal(st, m, m.maxHp / 8, 'Poison Heal'); else hurt(st, m, Math.floor(m.maxHp * m.toxic / 16), 'toxic'); }
+      }
+      if (m.fainted) continue;
+      if (m.yawn) { m.yawn--; if (m.yawn === 0 && !m.status) inflict(st, m, 'slp', rng, 'Yawn'); }
+      if (m.ability === 'Speed Boost' && !m.firstTurn) applyBoosts(st, m, { spe: 1 });
+      if (!m.status && it === 'Flame Orb' && !hasType(m, 'Fire')) inflict(st, m, 'brn', rng, 'Flame Orb');
+      if (!m.status && it === 'Toxic Orb' && !hasType(m, 'Poison') && !hasType(m, 'Steel')) inflict(st, m, 'tox', rng, 'Toxic Orb');
+      berryCheck(st, m);
+    }
+    if (st.weather && --st.weatherTurns <= 0) { log(st, 'The weather clears'); st.weather = null; }
+    if (st.terrain && --st.terrainTurns <= 0) st.terrain = null;
+    if (st.trickRoom) st.trickRoom--;
+    for (const side of ['p', 'a']) {
+      const sd = st[side];
+      for (const k of ['reflect', 'light', 'veil']) if (sd.screens[k]) sd.screens[k]--;
+      if (sd.tailwind) sd.tailwind--;
+      if (sd.safeguard) sd.safeguard--;
+      for (const m of sd.team) { m.flinch = false; m.hitThisTurn = false; if (!m.protect) m.protectStreak = 0; m.protect = false; }
+      const m = act(st, side); if (m) m.firstTurn = false;
+    }
+  }
+
+  // ---------------- one turn ----------------
+  function usable(m, st) {
+    if (m.charging) return [m.charging];
+    if (m.rampage && m.lock) return [m.lock];
+    let mv = m.moves.slice();
+    if (m.lock && mv.includes(m.lock)) return [m.lock];
+    if (itemName(m) === 'Assault Vest') mv = mv.filter(id => meta(id).cat !== 'X');
+    if (!m.firstTurn) mv = mv.filter(id => meta(id).eff !== FAKE_OUT);
+    if (m.status !== 'slp') mv = mv.filter(id => meta(id).name !== 'Sleep Talk' && meta(id).name !== 'Snore');
+    return mv.length ? mv : m.moves.slice(0, 1);
+  }
+  function playTurn(st, rng) {
+    st.turn++;
+    const P = st.policies;
+    const pA = P.p.choose(st, 'p', rng);
+    const aA = P.a.choose(st, 'a', rng);
+    st.events.push({ turn: st.turn, type: 'decide', p: pA, a: aA, pm: act(st, 'p').key, am: act(st, 'a').key,
+      php: act(st, 'p').hp / act(st, 'p').maxHp, ahp: act(st, 'a').hp / act(st, 'a').maxHp });
+    // switches go first
+    if (pA.type === 'switch') switchIn(st, 'p', pA.to, rng, pA.why || 'switch');
+    if (aA.type === 'switch') switchIn(st, 'a', aA.to, rng, 'switch');
+    const order = [];
+    if (pA.type === 'move') order.push({ side: 'p', id: pA.id });
+    if (aA.type === 'move') order.push({ side: 'a', id: aA.id });
+    for (const o of order) { o.pri = priorityOf(st, act(st, o.side), o.id); o.spe = speed(st, act(st, o.side)); }
+    order.sort((x, y) => (y.pri - x.pri) || (st.trickRoom ? x.spe - y.spe : y.spe - x.spe) || (rng.expected ? (x.side === 'a' ? -1 : 1) : (rng() < 0.5 ? -1 : 1)));
+    // Custap Berry: move first within the bracket at low HP
+    order.forEach((o, i) => {
+      const m = act(st, o.side);
+      if (itemName(m) === 'Custap Berry' && m.hp <= m.maxHp / 4 && i > 0 && order[0].pri === o.pri) { consume(m); order.splice(i, 1); order.unshift(o); log(st, `${m.name}'s Custap Berry lets it move first`); }
+    });
+    for (let i = 0; i < order.length; i++) {
+      const o = order[i];
+      const m = act(st, o.side);
+      if (!m || m.fainted) continue;
+      const otherAction = o.side === 'p' ? aA : pA;
+      useMove(st, o.side, o.id, rng, { first: i === 0, targetAction: i === 0 ? otherAction : null });
+      if (alive(st, 'p').length === 0 || alive(st, 'a').length === 0) break;
+    }
+    endOfTurn(st, rng);
+    // replacements after faints (set mode: the player gets no free look before the boss sends its next Pokemon)
+    for (const side of ['a', 'p']) {
+      const m = act(st, side);
+      if (m && m.fainted && alive(st, side).length) {
+        const idx = P[side].replace(st, side, rng, 'faint');
+        switchIn(st, side, idx, rng, 'replace');
+      }
+    }
+    if (!alive(st, 'a').length) { st.over = true; st.winner = 'p'; }
+    else if (!alive(st, 'p').length) { st.over = true; st.winner = 'a'; }
+  }
+
+  // ---------------- quick evaluation helpers ----------------
+  function bestDamage(st, from, to) {
+    // expected and KO odds of each usable damaging move of `from` against `to`, right now
+    const out = [];
+    const fo = fieldOpts(st, to.side);
+    const sf = specNow(from), stg = specNow(to);
+    for (const id of usable(from, st)) {
+      const mm = meta(id);
+      if (mm.cat === 'X') continue;
+      const hits = mm.multihit ? (from.ability === 'Skill Link' ? mm.multihit[1] : 3) : 0;
+      const rr = E.rawRolls(sf, stg, id, Object.assign({ hits }, fo));
+      const acc = hitChance(st, from, to, mm);
+      const mean = rr.rolls.reduce((a, b) => a + b, 0) / rr.rolls.length;
+      let ko = rr.rolls.filter(x => x >= to.hp).length / rr.rolls.length;
+      if (to.hp === to.maxHp && (to.ability === 'Sturdy' || itemName(to) === 'Focus Sash') && !mm.multihit) ko = 0;
+      if (to.sub && !mm.sound) ko = 0;
+      out.push({ id, mean, frac: mean / to.maxHp, ko: ko * acc, acc, pri: priorityOf(st, from, id), eff: rr.eff });
+    }
+    return out;
+  }
+  const firstMover = (st, a, b, pa, pb) => (pa !== pb ? pa > pb : (st.trickRoom ? speed(st, a) < speed(st, b) : speed(st, a) > speed(st, b)));
+
+  // ---------------- the boss AI (approximation) ----------------
+  function aiPolicy(noise) {
+    return {
+      choose(st, side, rng) {
+        const me = act(st, side), foe = act(st, other(side));
+        const options = usable(me, st);
+        if (options.length === 1 && (me.charging || me.rampage || me.lock)) return { type: 'move', id: options[0] };
+        const dmg = bestDamage(st, me, foe);
+        const foeDmg = bestDamage(st, foe, me);
+        const foeBest = foeDmg.reduce((a, b) => (b.mean > a.mean ? b : a), { mean: 0, ko: 0, pri: 0 });
+        const threatened = foeBest.ko >= 0.5 && firstMover(st, foe, me, foeBest.pri, 0);
+        const canKO = dmg.filter(d => d.ko >= 0.5);
+        let best = null, bestScore = -1e9;
+        for (const id of options) {
+          const mm = meta(id);
+          let s = 0;
+          if (mm.cat !== 'X') {
+            const d = dmg.find(x => x.id === id) || { frac: 0, ko: 0, pri: 0 };
+            s = Math.min(100, d.frac * 100);
+            if (d.ko >= 0.5) s = 200 + d.ko * 20 + (d.pri > 0 && !firstMover(st, me, foe, 0, foeBest.pri) ? 30 : 0);
+            if (mm.eff === FAKE_OUT && me.firstTurn) s = Math.max(s, 120);
+            if (mm.eff === 7 && me.hp > me.maxHp / 2) s *= 0.3;
+            if (mm.eff === PIVOT && threatened && bench(st, side).length) s += 25;
+            if (mm.eff === SUCKER && !(foeDmg.length)) s *= 0.2;
+          } else {
+            const n = mm.name, e = mm.eff;
+            const safe = foeBest.frac < 0.4 * (me.hp / me.maxHp);
+            const raises = SETUP[n] || EFFECT_BOOST[e] || (e === 142 ? { atk: 6 } : null);
+            const boosted = raises ? Math.min(...Object.entries(raises).filter(([, v]) => v > 0).map(([k]) => me.boosts[k])) : 6;
+            const capped = (n === 'Stockpile' && (me.stockpile || 0) >= 3) || (e === 142 && me.hp <= me.maxHp / 2);
+            if (raises) s = (!canKO.length && safe && boosted < 2 && !capped) ? 75 : (canKO.length || capped ? -50 : 5);
+            else if ({ 1: 1, 67: 1, 167: 1, 33: 1, 66: 1 }[e]) {
+              const stt = { 1: 'slp', 67: 'par', 167: 'brn', 33: 'tox', 66: 'psn' }[e];
+              s = canStatus(st, foe, stt, n, me) && !canKO.length ? (stt === 'slp' ? 85 : 68) : -50;
+              if (stt === 'brn' && foeDmg.every(d => meta(d.id).cat !== 'P')) s -= 30;
+            } else if (e === 187) s = !foe.status && !foe.yawn && canStatus(st, foe, 'slp', n, me) ? 60 : -50;
+            else if (e === HAZARD) {
+              const hz = st[other(side)].hazards;
+              const done = (n === 'Stealth Rock' && hz.sr) || (n === 'Spikes' && hz.spikes >= 3) || (n === 'Toxic Spikes' && hz.tspikes >= 2) || (n === 'Sticky Web' && hz.web);
+              s = !done && bench(st, other(side)).length >= 1 && !canKO.length ? 72 : -50;
+            } else if (e === HEAL_HALF || e === HEAL_WEATHER || n === 'Strength Sap') s = me.hp < me.maxHp * 0.5 ? 80 : me.hp < me.maxHp * 0.7 ? 35 : -50;
+            else if (e === 37) s = me.hp < me.maxHp * 0.4 ? 70 : -50;
+            else if (e === PROTECT_EFF) s = me.protectStreak ? -50 : (foe.status === 'tox' || foe.status === 'psn' || foe.status === 'brn' || foe.seeded ? 45 : 12);
+            else if (e === 35 || e === 65) s = (n === 'Light Screen' ? st[side].screens.light : st[side].screens.reflect) ? -50 : 60;
+            else if ([136, 137, 115, 164].includes(e)) s = 40;
+            else if (e === 228) s = st.trickRoom ? -50 : (speed(st, me) < speed(st, foe) ? 65 : 10);
+            else if (e === 239) s = st[side].tailwind ? -50 : 60;
+            else if (e === 98) s = me.hp < me.maxHp / 3 && !firstMover(st, me, foe, 0, foeBest.pri) ? 80 : 5;
+            else if (e === 84) s = !hasType(foe, 'Grass') && !foe.seeded ? 55 : -50;
+            else if (e === PIVOT || e === TELEPORT) s = threatened && bench(st, side).length ? 70 : 5;
+            else if (EFFECT_DROP[e]) s = 25;
+            else s = 2;
+          }
+          s += noise && !rng.expected ? rng() * noise : 0;
+          if (s > bestScore) { bestScore = s; best = id; }
+        }
+        return { type: 'move', id: best };
+      },
+      replace(st, side, rng) {
+        // send in what matches up best against the player's active Pokemon
+        const foe = act(st, other(side));
+        let bestI = null, bestS = -1e9;
+        st[side].team.forEach((m, i) => {
+          if (m.fainted || i === st[side].active) return;
+          if (!foe || foe.fainted) { if (bestI == null) bestI = i; return; }
+          const off = bestDamage(st, m, foe).reduce((a, b) => Math.max(a, Math.min(1, b.frac) * 100 + (b.ko >= 0.5 ? 50 : 0)), 0);
+          const def = bestDamage(st, foe, m).reduce((a, b) => Math.max(a, Math.min(1, b.frac) * 100 + (b.ko >= 0.5 ? 50 : 0)), 0);
+          const s = off - def + (speed(st, m) > speed(st, foe) ? 15 : 0);
+          if (s > bestS) { bestS = s; bestI = i; }
+        });
+        return bestI;
+      },
+    };
+  }
+
+  // ---------------- the player's planner ----------------
+  /** Analytic estimate of the chance `me` faints before knocking out `foe`, from the current battle state,
+   *  if `me` keeps using `moveId` and `foe` keeps using its strongest move (via the engine's matchup). */
+  function duelRisk(st, me, foe, moveId, mePct) {
+    const ms = Object.assign(specNow(me), { mv: moveId ? [moveId] : me.moves, entry: false });
+    if (mePct != null) ms.hpPct = mePct;
+    const fs = Object.assign(specNow(foe), { mv: usable(foe, st), entry: false });
+    const mu = E.matchup(ms, fs, { weather: st.weather, entry: false });
+    return mu;
+  }
+  function plannerPolicy(opts) {
+    const o = Object.assign({ hpWeight: 0.15 }, opts || {});
+    const value = m => (o.values && o.values[m.key] != null ? o.values[m.key] : 1);
+    const memoDecisions = new Map();
+    function sig(st, side) {
+      const parts = [st.weather || '', st.terrain || '', st.trickRoom ? 1 : 0];
+      for (const s of ['p', 'a']) {
+        const t = st[s];
+        parts.push(t.active, JSON.stringify(t.hazards), t.screens.reflect ? 1 : 0, t.screens.light ? 1 : 0);
+        for (const m of t.team) parts.push(m.fainted ? 'x' : [Math.round(20 * m.hp / m.maxHp), m.status, STATS5.map(k => m.boosts[k]).join(''), m.item || 0, m.charging || 0, m.lock || 0].join(':'));
+      }
+      return side + parts.join('|');
+    }
+    // expected further losses if `foe` (at foePct) has to be handled by one of my bench Pokemon coming in for free
+    function cleanup(st, side, foe, foePct, exclude) {
+      let best = Infinity;
+      for (const b of bench(st, side)) {
+        if (b === exclude) continue;
+        const fs = Object.assign(specNow(foe), { hpPct: foePct, mv: usable(foe, st), entry: false });
+        const bs = Object.assign(specNow(b), { entry: true });
+        const mu = E.matchup(bs, fs, { weather: st.weather, entry: true });
+        best = Math.min(best, mu.risk * value(b) + o.hpWeight * (1 - mu.hpLeftPct / 100));
+      }
+      return best === Infinity ? 3 : best;   // nobody left: very bad
+    }
+    function evaluate(st, side) {
+      const me = act(st, side), foe = act(st, other(side));
+      const options = [];
+      // stay and attack
+      const moves = usable(me, st);
+      const myDmg = bestDamage(st, me, foe);
+      for (const id of moves) {
+        const mm = meta(id);
+        if (mm.cat === 'X') continue;
+        const mu = duelRisk(st, me, foe, id);
+        const d = myDmg.find(x => x.id === id);
+        const foeAfterPct = Math.max(1, 100 * (foe.hp - (d ? d.mean * Math.max(0, mu.hitsTaken) : 0)) / foe.maxHp);
+        const cost = mu.risk * (value(me) + cleanup(st, side, foe, foeAfterPct, me)) + o.hpWeight * (1 - mu.hpLeftPct / 100);
+        options.push({ type: 'move', id, cost, risk: mu.risk, mu, label: `Use ${mm.name}` });
+      }
+      // status and healing moves the player might have
+      for (const id of moves) {
+        const mm = meta(id);
+        if (mm.cat !== 'X') continue;
+        const stt = { 1: 'slp', 67: 'par', 167: 'brn', 33: 'tox', 66: 'psn' }[mm.eff];
+        const cured = itemName(foe) === 'Lum Berry' || CURE_BERRY[itemName(foe)] === stt;
+        if (stt && !cured && canStatus(st, foe, stt, mm.name, me)) {
+          // one free hit for them this turn, then the duel with them statused
+          const foeDmg = bestDamage(st, foe, me);
+          const hit = foeDmg.reduce((a, b) => (b.mean > a.mean ? b : a), { mean: 0, ko: 0 });
+          const pFaint = hit.ko;
+          const afterPct = Math.max(1, 100 * (me.hp - hit.mean) / me.maxHp);
+          const saved = foe.status; foe.status = stt;
+          const mu = duelRisk(st, me, foe, null, afterPct);
+          foe.status = saved;
+          let r = pFaint + (1 - pFaint) * mu.risk * (stt === 'slp' ? 0.4 : stt === 'par' ? 0.8 : 1);
+          r = r * (mm.acc ? mm.acc / 100 : 1) + (1 - (mm.acc ? mm.acc / 100 : 1)) * Math.min(1, pFaint * 2);
+          options.push({ type: 'move', id, cost: r * (value(me) + 0.5) + o.hpWeight * (1 - afterPct / 100), risk: r, label: `Use ${mm.name}` });
+        }
+        if ((mm.eff === HEAL_HALF || mm.eff === HEAL_WEATHER) && me.hp < me.maxHp * 0.6) {
+          const foeDmg = bestDamage(st, foe, me);
+          const hit = foeDmg.reduce((a, b) => (b.mean > a.mean ? b : a), { mean: 0, ko: 0 });
+          if (hit.mean < me.maxHp * 0.45) {
+            const afterPct = Math.min(100, 100 * (me.hp + me.maxHp / 2 - hit.mean) / me.maxHp);
+            const mu = duelRisk(st, me, foe, null, afterPct);
+            const r = hit.ko + (1 - hit.ko) * mu.risk;
+            options.push({ type: 'move', id, cost: r * value(me) + o.hpWeight * (1 - afterPct / 100) + 0.02, risk: r, label: `Use ${mm.name}` });
+          }
+        }
+      }
+      // switch: the boss already chose its move against `me`; the newcomer takes it
+      const aiMove = st.policies[other(side)].choose(st, other(side), expectedDice());
+      for (const b of bench(st, side)) {
+        let entryDmg = 0, pEntry = 0;
+        const hz = st[side].hazards;
+        if (hz.sr && itemName(b) !== 'Heavy-Duty Boots') entryDmg += Math.floor(b.maxHp * 0.125 * E.typeEff('Rock', b.types));
+        if (hz.spikes && grounded(b) && itemName(b) !== 'Heavy-Duty Boots') entryDmg += Math.floor(b.maxHp * [0, 1 / 8, 1 / 6, 1 / 4][hz.spikes]);
+        if (aiMove.type === 'move' && meta(aiMove.id).cat !== 'X') {
+          const fo = fieldOpts(st, side);
+          const rr = E.rawRolls(specNow(foe), Object.assign(specNow(b), { hpPct: 100 }), aiMove.id, Object.assign({ hits: meta(aiMove.id).multihit ? 3 : 0 }, fo));
+          const left = b.hp - entryDmg;
+          pEntry = rr.rolls.filter(x => x >= left).length / rr.rolls.length * hitChance(st, foe, b, meta(aiMove.id));
+          entryDmg += rr.rolls.reduce((a, c) => a + c, 0) / rr.rolls.length;
+        }
+        const afterPct = Math.max(1, 100 * (b.hp - entryDmg) / b.maxHp);
+        const bs = Object.assign(specNow(b), { hpPct: afterPct, entry: true });
+        const fs = Object.assign(specNow(foe), { mv: usable(foe, st), entry: false });
+        const mu = E.matchup(bs, fs, { weather: st.weather, entry: true });
+        const risk = pEntry + (1 - pEntry) * mu.risk;
+        const dealt = mu.best ? (mu.best.min + mu.best.max) / 2 * Math.max(0, mu.hitsTaken) : 0;
+        const foeAfter = Math.max(1, 100 * (foe.hp - dealt) / foe.maxHp);
+        const cost = risk * (value(b) + cleanup(st, side, foe, foeAfter, b)) + o.hpWeight * (1 - Math.min(afterPct, mu.hpLeftPct) / 100) + 0.03;
+        const bounce = st[side].lastOut === b.key && st.turn - (st[side].lastOutTurn || 0) <= 2 ? 0.25 : 0;
+        options.push({ type: 'switch', to: st[side].team.indexOf(b), cost: cost + bounce, risk, mu, label: `Switch to ${b.name}`, entryPct: 100 - afterPct });
+      }
+      // equal costs: prefer the faster knockout, then more damage
+      for (const x of options) if (x.mu && x.mu.best) x.cost += 0.001 * Math.min(10, x.mu.toKOthem) - 0.00001 * x.mu.best.minPct;
+      options.sort((x, y) => x.cost - y.cost);
+      return options;
+    }
+    return {
+      evaluate,
+      choose(st, side, rng) {
+        const me = act(st, side);
+        const forced = usable(me, st);
+        if (me.charging || (me.rampage && me.lock)) return { type: 'move', id: forced[0] };
+        const key = sig(st, side);
+        let opts = memoDecisions.get(key);
+        if (!opts) { opts = evaluate(st, side); memoDecisions.set(key, opts); }
+        const pick = opts[0] || { type: 'move', id: forced[0] };
+        const alts = st.opts.record ? opts.slice(0, 3).map(x => ({ label: x.label, risk: x.risk })) : null;
+        return pick.type === 'switch' ? { type: 'switch', to: pick.to, why: 'plan', risk: pick.risk, alts } : { type: 'move', id: pick.id, risk: pick.risk, alts };
+      },
+      replace(st, side, rng, why) {
+        const foe = act(st, other(side));
+        let bestI = null, bestC = Infinity;
+        st[side].team.forEach((b, i) => {
+          if (b.fainted || i === st[side].active) return;
+          if (!foe || foe.fainted) { if (bestI == null) bestI = i; return; }
+          const bs = Object.assign(specNow(b), { entry: true });
+          const fs = Object.assign(specNow(foe), { mv: usable(foe, st), entry: false });
+          const mu = E.matchup(bs, fs, { weather: st.weather, entry: true });
+          const c = mu.risk * value(b) + o.hpWeight * (1 - mu.hpLeftPct / 100);
+          if (c < bestC) { bestC = c; bestI = i; }
+        });
+        return bestI;
+      },
+    };
+  }
+
+  // ---------------- running battles ----------------
+  function runBattle(playerSpecs, bossSpecs, opts) {
+    const o = opts || {};
+    const st = newBattle(playerSpecs, bossSpecs, o);
+    const rng = o.expected ? expectedDice() : mulberry32(o.seed || 1);
+    st.policies = { p: o.player || plannerPolicy(o.plannerOpts), a: o.ai || aiPolicy(o.aiNoise == null ? 10 : o.aiNoise) };
+    st.events.push({ turn: 0, type: 'lead', p: act(st, 'p').key, a: act(st, 'a').key });
+    log(st, `You lead with ${act(st, 'p').name}; the boss leads with ${act(st, 'a').name}`, 'switch');
+    // entry effects: faster Pokemon's ability first, so the slower one's weather wins
+    const pFirst = speed(st, act(st, 'p')) >= speed(st, act(st, 'a'));
+    onEntry(st, pFirst ? 'p' : 'a', rng); onEntry(st, pFirst ? 'a' : 'p', rng);
+    while (!st.over && st.turn < (o.maxTurns || 80)) playTurn(st, rng);
+    if (!st.over) { st.over = true; st.winner = 'timeout'; }
+    return st;
+  }
+
+  /** Many simulated battles of one lineup: odds and the most common losses. */
+  function simulate(playerSpecs, bossSpecs, opts) {
+    const o = Object.assign({ runs: 200, seed: 7 }, opts || {});
+    const player = plannerPolicy(o.plannerOpts);
+    const res = { runs: 0, wins: 0, noLoss: 0, losses: 0, lossBy: {}, causes: {}, turns: 0, faced: {} };
+    const pl = o.player || player;
+    for (let i = 0; i < o.runs; i++) {
+      const st = runBattle(playerSpecs, bossSpecs, Object.assign({}, o, { seed: o.seed * 7919 + i * 104729, player: pl }));
+      res.runs++; res.turns += st.turn;
+      if (st.winner === 'p') res.wins++;
+      const lost = st.events.filter(e => e.type === 'faint' && e.side === 'p');
+      if (!lost.length && st.winner === 'p') res.noLoss++;
+      res.losses += lost.length;
+      for (const e of st.events) {
+        if (e.type !== 'decide') continue;
+        const f = res.faced[e.am] || (res.faced[e.am] = {});
+        const k = e.pm + '|' + (e.p.type === 'switch' ? 'switch:' + st.p.team[e.p.to].key : 'move:' + e.p.id);
+        f[k] = (f[k] || 0) + 1;
+      }
+      for (const e of lost) {
+        res.lossBy[e.key] = (res.lossBy[e.key] || 0) + 1;
+        const k = `${e.name}: ${e.cause}`;
+        res.causes[k] = (res.causes[k] || 0) + 1;
+      }
+    }
+    res.pWin = res.wins / res.runs; res.pNoLoss = res.noLoss / res.runs; res.expLosses = res.losses / res.runs; res.avgTurns = res.turns / res.runs;
+    return res;
+  }
+
+  const tick = () => new Promise(r => setTimeout(r, 0));
+  /** Same as simulate(), but yields to the page every few battles and reports progress. */
+  async function simulateAsync(playerSpecs, bossSpecs, opts, onBattle) {
+    const o = Object.assign({ runs: 200, seed: 7, chunk: 6 }, opts || {});
+    const total = { runs: 0, wins: 0, noLoss: 0, losses: 0, lossBy: {}, causes: {}, turns: 0, faced: {} };
+    const player = plannerPolicy(o.plannerOpts);
+    for (let i = 0; i < o.runs; i += o.chunk) {
+      const n = Math.min(o.chunk, o.runs - i);
+      const r = simulate(playerSpecs, bossSpecs, Object.assign({}, o, { runs: n, seed: o.seed + i * 31, player }));
+      total.runs += r.runs; total.wins += r.wins; total.noLoss += r.noLoss; total.losses += r.losses; total.turns += r.turns;
+      for (const k in r.lossBy) total.lossBy[k] = (total.lossBy[k] || 0) + r.lossBy[k];
+      for (const k in r.causes) total.causes[k] = (total.causes[k] || 0) + r.causes[k];
+      for (const a in r.faced) { const f = total.faced[a] || (total.faced[a] = {}); for (const k in r.faced[a]) f[k] = (f[k] || 0) + r.faced[a][k]; }
+      if (onBattle) onBattle(n);
+      await tick();
+    }
+    total.pWin = total.wins / total.runs; total.pNoLoss = total.noLoss / total.runs; total.expLosses = total.losses / total.runs; total.avgTurns = total.turns / total.runs;
+    return total;
+  }
+  const better = (x, y) => (x.pNoLoss - y.pNoLoss) || (y.expLosses - x.expLosses) || (x.pWin - y.pWin);
+
+  /** Pick six and a lead for one boss, then simulate the plan.
+   *  roster: player specs (alive Pokemon, each with key and label). bossSpecs: boss specs in party order.
+   *  onProgress(fraction, text) is called as work proceeds. */
+  async function planFight(roster, bossSpecs, opts) {
+    const o = Object.assign({ screenRuns: 16, leadRuns: 30, finalRuns: 200, seed: 11 }, opts || {});
+    const progress = o.onProgress || (() => {});
+    const plannerOpts = o.plannerOpts;
+    // analytic pre-ranking: how each Pokemon fares against each boss Pokemon
+    const grid = roster.map(r => bossSpecs.map(b => E.matchup(Object.assign({}, r, { entry: true }), Object.assign({}, b, { entry: true }))));
+    const score = i => grid[i].reduce((s, m) => s + ({ safe: 3, ok: 2, risky: 1, lose: 0 }[m.verdict]) - m.risk, 0);
+    let candidates;
+    if (roster.length <= 6) candidates = [roster.map((_, i) => i)];
+    else {
+      // greedy cover of the boss team, then single swaps with the strongest bench Pokemon
+      const chosen = [];
+      const covered = bossSpecs.map(() => 0);
+      while (chosen.length < 6) {
+        let bi = -1, bg = -1;
+        roster.forEach((r, i) => {
+          if (chosen.includes(i)) return;
+          const g = grid[i].reduce((s, m, j) => s + Math.max(0, ({ safe: 3, ok: 2, risky: 1, lose: 0 }[m.verdict]) - covered[j]) * 10 + (1 - m.risk), 0);
+          if (g > bg) { bg = g; bi = i; }
+        });
+        chosen.push(bi);
+        bossSpecs.forEach((b, j) => { covered[j] = Math.max(covered[j], ({ safe: 3, ok: 2, risky: 1, lose: 0 }[grid[bi][j].verdict])); });
+      }
+      const rest = roster.map((_, i) => i).filter(i => !chosen.includes(i)).sort((a, b) => score(b) - score(a)).slice(0, 2);
+      candidates = [chosen.slice()];
+      for (const r of rest) for (let k = 0; k < 6; k++) { const c = chosen.slice(); c[k] = r; candidates.push(c); }
+    }
+    const leadGuess = idxs => idxs.slice().sort((a, b) => (grid[a][0].risk - grid[b][0].risk) || (grid[b][0].hpLeftPct - grid[a][0].hpLeftPct))[0];
+    const total = candidates.length * o.screenRuns + 3 * o.leadRuns + o.finalRuns;
+    let done = 0;
+    const evalLineup = async (idxs, lead, runs) => {
+      const specs = idxs.map(i => roster[i]);
+      return simulateAsync(specs, bossSpecs, { runs, seed: o.seed, lead: idxs.indexOf(lead), plannerOpts },
+        n => { done += n; progress(done / total, `Simulated ${done} of ${total} battles`); });
+    };
+    // 1) screen lineups
+    let best = null;
+    for (const c of candidates) {
+      const r = await evalLineup(c, leadGuess(c), o.screenRuns);
+      if (!best || better(r, best.res) > 0) best = { idxs: c, res: r };
+    }
+    // 2) choose the lead among the three best analytic leads
+    const leads = best.idxs.slice().sort((a, b) => (grid[a][0].risk - grid[b][0].risk) || (grid[b][0].hpLeftPct - grid[a][0].hpLeftPct)).slice(0, 3);
+    let bestLead = null;
+    for (const l of leads) {
+      const r = await evalLineup(best.idxs, l, o.leadRuns);
+      if (!bestLead || better(r, bestLead.res) > 0) bestLead = { lead: l, res: r };
+    }
+    // 3) final odds with more battles
+    const final = await evalLineup(best.idxs, bestLead.lead, o.finalRuns);
+    // 4) the most likely run, turn by turn
+    const specs = best.idxs.map(i => roster[i]);
+    const scriptState = runBattle(specs, bossSpecs, { expected: true, record: true, lead: best.idxs.indexOf(bestLead.lead), plannerOpts, maxTurns: 60 });
+    progress(1, 'Done');
+    return { lineup: best.idxs, lead: bestLead.lead, odds: final, script: scriptOf(scriptState), grid };
+  }
+
+  /** Turn the recorded "most likely" battle into steps a player can follow. */
+  function scriptOf(st) {
+    const turns = [];
+    let cur = null;
+    const name = (side, key) => { const m = st[side].team.find(x => x.key === key); return m ? m.name : key; };
+    for (const l of st.log) {
+      if (!cur || cur.turn !== l.turn) { cur = { turn: l.turn, lines: [], decision: null }; turns.push(cur); }
+      cur.lines.push(l);
+    }
+    for (const e of st.events) {
+      if (e.type !== 'decide') continue;
+      const t = turns.find(x => x.turn === e.turn);
+      if (!t) continue;
+      const action = e.p.type === 'switch' ? `Switch to ${st.p.team[e.p.to].name}` : `Use ${meta(e.p.id).name}`;
+      t.decision = { you: name('p', e.pm), foe: name('a', e.am), action, risk: e.p.risk, alts: e.p.alts, youHp: e.php, foeHp: e.ahp };
+    }
+    const faints = st.events.filter(e => e.type === 'faint' && e.side === 'p').map(e => {
+      const t = turns.find(x => x.turn === e.turn);
+      const planned = t && t.decision && t.decision.risk >= 0.5 && t.decision.you === e.name;
+      if (planned) t.sacrifice = e.name;
+      return { turn: e.turn, name: e.name, cause: e.cause, planned };
+    });
+    return { winner: st.winner, turns, faints, totalTurns: st.turn };
+  }
+
+  return { meta, makeMon, newBattle, runBattle, simulate, simulateAsync, planFight, scriptOf, plannerPolicy, aiPolicy, speed, mulberry32, expectedDice, specNow, act };
+});
