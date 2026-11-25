@@ -1,0 +1,3061 @@
+[
+{
+"group": 0,
+"num": 0,
+"mapsec": 196,
+"name": "Celadon Dept.",
+"type": 8
+},
+{
+"group": 0,
+"num": 1,
+"mapsec": 196,
+"name": "Celadon Dept.",
+"type": 8
+},
+{
+"group": 0,
+"num": 2,
+"mapsec": 196,
+"name": "Celadon Dept.",
+"type": 8
+},
+{
+"group": 0,
+"num": 3,
+"mapsec": 196,
+"name": "Celadon Dept.",
+"type": 8
+},
+{
+"group": 0,
+"num": 4,
+"mapsec": 196,
+"name": "Celadon Dept.",
+"type": 8
+},
+{
+"group": 1,
+"num": 0,
+"mapsec": 126,
+"name": "Viridian Forest",
+"type": 3
+},
+{
+"group": 1,
+"num": 1,
+"mapsec": 127,
+"name": "Mt. Moon",
+"type": 4
+},
+{
+"group": 1,
+"num": 2,
+"mapsec": 127,
+"name": "Mt. Moon",
+"type": 4
+},
+{
+"group": 1,
+"num": 3,
+"mapsec": 127,
+"name": "Mt. Moon",
+"type": 4
+},
+{
+"group": 1,
+"num": 4,
+"mapsec": 128,
+"name": "S.S. Anne",
+"type": 8
+},
+{
+"group": 1,
+"num": 5,
+"mapsec": 128,
+"name": "S.S. Anne",
+"type": 8
+},
+{
+"group": 1,
+"num": 6,
+"mapsec": 128,
+"name": "S.S. Anne",
+"type": 8
+},
+{
+"group": 1,
+"num": 7,
+"mapsec": 128,
+"name": "S.S. Anne",
+"type": 8
+},
+{
+"group": 1,
+"num": 8,
+"mapsec": 128,
+"name": "S.S. Anne",
+"type": 8
+},
+{
+"group": 1,
+"num": 9,
+"mapsec": 128,
+"name": "S.S. Anne",
+"type": 8
+},
+{
+"group": 1,
+"num": 10,
+"mapsec": 128,
+"name": "S.S. Anne",
+"type": 8
+},
+{
+"group": 1,
+"num": 11,
+"mapsec": 128,
+"name": "S.S. Anne",
+"type": 8
+},
+{
+"group": 1,
+"num": 12,
+"mapsec": 128,
+"name": "S.S. Anne",
+"type": 8
+},
+{
+"group": 1,
+"num": 13,
+"mapsec": 128,
+"name": "S.S. Anne",
+"type": 8
+},
+{
+"group": 1,
+"num": 14,
+"mapsec": 128,
+"name": "S.S. Anne",
+"type": 8
+},
+{
+"group": 1,
+"num": 15,
+"mapsec": 128,
+"name": "S.S. Anne",
+"type": 8
+},
+{
+"group": 1,
+"num": 16,
+"mapsec": 128,
+"name": "S.S. Anne",
+"type": 8
+},
+{
+"group": 1,
+"num": 17,
+"mapsec": 128,
+"name": "S.S. Anne",
+"type": 8
+},
+{
+"group": 1,
+"num": 18,
+"mapsec": 128,
+"name": "S.S. Anne",
+"type": 8
+},
+{
+"group": 1,
+"num": 19,
+"mapsec": 128,
+"name": "S.S. Anne",
+"type": 8
+},
+{
+"group": 1,
+"num": 20,
+"mapsec": 128,
+"name": "S.S. Anne",
+"type": 8
+},
+{
+"group": 1,
+"num": 21,
+"mapsec": 128,
+"name": "S.S. Anne",
+"type": 8
+},
+{
+"group": 1,
+"num": 22,
+"mapsec": 128,
+"name": "S.S. Anne",
+"type": 8
+},
+{
+"group": 1,
+"num": 23,
+"mapsec": 128,
+"name": "S.S. Anne",
+"type": 8
+},
+{
+"group": 1,
+"num": 24,
+"mapsec": 128,
+"name": "S.S. Anne",
+"type": 8
+},
+{
+"group": 1,
+"num": 25,
+"mapsec": 128,
+"name": "S.S. Anne",
+"type": 8
+},
+{
+"group": 1,
+"num": 26,
+"mapsec": 128,
+"name": "S.S. Anne",
+"type": 8
+},
+{
+"group": 1,
+"num": 27,
+"mapsec": 128,
+"name": "S.S. Anne",
+"type": 8
+},
+{
+"group": 1,
+"num": 28,
+"mapsec": 128,
+"name": "S.S. Anne",
+"type": 8
+},
+{
+"group": 1,
+"num": 29,
+"mapsec": 128,
+"name": "S.S. Anne",
+"type": 8
+},
+{
+"group": 1,
+"num": 30,
+"mapsec": 129,
+"name": "Underground Path",
+"type": 8
+},
+{
+"group": 1,
+"num": 31,
+"mapsec": 129,
+"name": "Underground Path",
+"type": 8
+},
+{
+"group": 1,
+"num": 32,
+"mapsec": 129,
+"name": "Underground Path",
+"type": 8
+},
+{
+"group": 1,
+"num": 33,
+"mapsec": 130,
+"name": "Underground Path",
+"type": 8
+},
+{
+"group": 1,
+"num": 34,
+"mapsec": 130,
+"name": "Underground Path",
+"type": 8
+},
+{
+"group": 1,
+"num": 35,
+"mapsec": 130,
+"name": "Underground Path",
+"type": 8
+},
+{
+"group": 1,
+"num": 36,
+"mapsec": 131,
+"name": "Diglett's Cave",
+"type": 4
+},
+{
+"group": 1,
+"num": 37,
+"mapsec": 131,
+"name": "Diglett's Cave",
+"type": 4
+},
+{
+"group": 1,
+"num": 38,
+"mapsec": 131,
+"name": "Diglett's Cave",
+"type": 4
+},
+{
+"group": 1,
+"num": 39,
+"mapsec": 132,
+"name": "Victory Road",
+"type": 4
+},
+{
+"group": 1,
+"num": 40,
+"mapsec": 132,
+"name": "Victory Road",
+"type": 4
+},
+{
+"group": 1,
+"num": 41,
+"mapsec": 132,
+"name": "Victory Road",
+"type": 4
+},
+{
+"group": 1,
+"num": 42,
+"mapsec": 133,
+"name": "Rocket Hideout",
+"type": 8
+},
+{
+"group": 1,
+"num": 43,
+"mapsec": 133,
+"name": "Rocket Hideout",
+"type": 8
+},
+{
+"group": 1,
+"num": 44,
+"mapsec": 133,
+"name": "Rocket Hideout",
+"type": 8
+},
+{
+"group": 1,
+"num": 45,
+"mapsec": 133,
+"name": "Rocket Hideout",
+"type": 8
+},
+{
+"group": 1,
+"num": 46,
+"mapsec": 133,
+"name": "Rocket Hideout",
+"type": 8
+},
+{
+"group": 1,
+"num": 47,
+"mapsec": 134,
+"name": "Silph Co.",
+"type": 8
+},
+{
+"group": 1,
+"num": 48,
+"mapsec": 134,
+"name": "Silph Co.",
+"type": 8
+},
+{
+"group": 1,
+"num": 49,
+"mapsec": 134,
+"name": "Silph Co.",
+"type": 8
+},
+{
+"group": 1,
+"num": 50,
+"mapsec": 134,
+"name": "Silph Co.",
+"type": 8
+},
+{
+"group": 1,
+"num": 51,
+"mapsec": 134,
+"name": "Silph Co.",
+"type": 8
+},
+{
+"group": 1,
+"num": 52,
+"mapsec": 134,
+"name": "Silph Co.",
+"type": 8
+},
+{
+"group": 1,
+"num": 53,
+"mapsec": 134,
+"name": "Silph Co.",
+"type": 8
+},
+{
+"group": 1,
+"num": 54,
+"mapsec": 134,
+"name": "Silph Co.",
+"type": 8
+},
+{
+"group": 1,
+"num": 55,
+"mapsec": 134,
+"name": "Silph Co.",
+"type": 8
+},
+{
+"group": 1,
+"num": 56,
+"mapsec": 134,
+"name": "Silph Co.",
+"type": 8
+},
+{
+"group": 1,
+"num": 57,
+"mapsec": 134,
+"name": "Silph Co.",
+"type": 8
+},
+{
+"group": 1,
+"num": 58,
+"mapsec": 134,
+"name": "Silph Co.",
+"type": 8
+},
+{
+"group": 1,
+"num": 59,
+"mapsec": 135,
+"name": "Pok\u00e9mon Mansion",
+"type": 8
+},
+{
+"group": 1,
+"num": 60,
+"mapsec": 135,
+"name": "Pok\u00e9mon Mansion",
+"type": 8
+},
+{
+"group": 1,
+"num": 61,
+"mapsec": 135,
+"name": "Pok\u00e9mon Mansion",
+"type": 8
+},
+{
+"group": 1,
+"num": 62,
+"mapsec": 135,
+"name": "Pok\u00e9mon Mansion",
+"type": 8
+},
+{
+"group": 1,
+"num": 63,
+"mapsec": 136,
+"name": "Safari Zone",
+"type": 3
+},
+{
+"group": 1,
+"num": 64,
+"mapsec": 136,
+"name": "Safari Zone",
+"type": 3
+},
+{
+"group": 1,
+"num": 65,
+"mapsec": 136,
+"name": "Safari Zone",
+"type": 3
+},
+{
+"group": 1,
+"num": 66,
+"mapsec": 136,
+"name": "Safari Zone",
+"type": 3
+},
+{
+"group": 1,
+"num": 67,
+"mapsec": 136,
+"name": "Safari Zone",
+"type": 8
+},
+{
+"group": 1,
+"num": 68,
+"mapsec": 136,
+"name": "Safari Zone",
+"type": 8
+},
+{
+"group": 1,
+"num": 69,
+"mapsec": 136,
+"name": "Safari Zone",
+"type": 8
+},
+{
+"group": 1,
+"num": 70,
+"mapsec": 136,
+"name": "Safari Zone",
+"type": 8
+},
+{
+"group": 1,
+"num": 71,
+"mapsec": 136,
+"name": "Safari Zone",
+"type": 8
+},
+{
+"group": 1,
+"num": 72,
+"mapsec": 141,
+"name": "Cerulean Cave",
+"type": 4
+},
+{
+"group": 1,
+"num": 73,
+"mapsec": 141,
+"name": "Cerulean Cave",
+"type": 4
+},
+{
+"group": 1,
+"num": 74,
+"mapsec": 141,
+"name": "Cerulean Cave",
+"type": 4
+},
+{
+"group": 1,
+"num": 75,
+"mapsec": 137,
+"name": "Pok\u00e9mon League",
+"type": 8
+},
+{
+"group": 1,
+"num": 76,
+"mapsec": 137,
+"name": "Pok\u00e9mon League",
+"type": 8
+},
+{
+"group": 1,
+"num": 77,
+"mapsec": 137,
+"name": "Pok\u00e9mon League",
+"type": 8
+},
+{
+"group": 1,
+"num": 78,
+"mapsec": 137,
+"name": "Pok\u00e9mon League",
+"type": 8
+},
+{
+"group": 1,
+"num": 79,
+"mapsec": 137,
+"name": "Pok\u00e9mon League",
+"type": 8
+},
+{
+"group": 1,
+"num": 80,
+"mapsec": 137,
+"name": "Pok\u00e9mon League",
+"type": 8
+},
+{
+"group": 1,
+"num": 81,
+"mapsec": 138,
+"name": "Rock Tunnel",
+"type": 4
+},
+{
+"group": 1,
+"num": 82,
+"mapsec": 138,
+"name": "Rock Tunnel",
+"type": 4
+},
+{
+"group": 1,
+"num": 83,
+"mapsec": 139,
+"name": "Seafoam Islands",
+"type": 4
+},
+{
+"group": 1,
+"num": 84,
+"mapsec": 139,
+"name": "Seafoam Islands",
+"type": 4
+},
+{
+"group": 1,
+"num": 85,
+"mapsec": 139,
+"name": "Seafoam Islands",
+"type": 4
+},
+{
+"group": 1,
+"num": 86,
+"mapsec": 139,
+"name": "Seafoam Islands",
+"type": 4
+},
+{
+"group": 1,
+"num": 87,
+"mapsec": 139,
+"name": "Seafoam Islands",
+"type": 4
+},
+{
+"group": 1,
+"num": 88,
+"mapsec": 140,
+"name": "Pok\u00e9mon Tower",
+"type": 8
+},
+{
+"group": 1,
+"num": 89,
+"mapsec": 140,
+"name": "Pok\u00e9mon Tower",
+"type": 8
+},
+{
+"group": 1,
+"num": 90,
+"mapsec": 140,
+"name": "Pok\u00e9mon Tower",
+"type": 8
+},
+{
+"group": 1,
+"num": 91,
+"mapsec": 140,
+"name": "Pok\u00e9mon Tower",
+"type": 8
+},
+{
+"group": 1,
+"num": 92,
+"mapsec": 140,
+"name": "Pok\u00e9mon Tower",
+"type": 8
+},
+{
+"group": 1,
+"num": 93,
+"mapsec": 140,
+"name": "Pok\u00e9mon Tower",
+"type": 8
+},
+{
+"group": 1,
+"num": 94,
+"mapsec": 140,
+"name": "Pok\u00e9mon Tower",
+"type": 8
+},
+{
+"group": 1,
+"num": 95,
+"mapsec": 142,
+"name": "Power Plant",
+"type": 8
+},
+{
+"group": 1,
+"num": 96,
+"mapsec": 175,
+"name": "Mt. Ember",
+"type": 4
+},
+{
+"group": 1,
+"num": 97,
+"mapsec": 175,
+"name": "Mt. Ember",
+"type": 3
+},
+{
+"group": 1,
+"num": 98,
+"mapsec": 175,
+"name": "Mt. Ember",
+"type": 4
+},
+{
+"group": 1,
+"num": 99,
+"mapsec": 175,
+"name": "Mt. Ember",
+"type": 4
+},
+{
+"group": 1,
+"num": 100,
+"mapsec": 175,
+"name": "Mt. Ember",
+"type": 4
+},
+{
+"group": 1,
+"num": 101,
+"mapsec": 175,
+"name": "Mt. Ember",
+"type": 4
+},
+{
+"group": 1,
+"num": 102,
+"mapsec": 175,
+"name": "Mt. Ember",
+"type": 4
+},
+{
+"group": 1,
+"num": 103,
+"mapsec": 175,
+"name": "Mt. Ember",
+"type": 4
+},
+{
+"group": 1,
+"num": 104,
+"mapsec": 175,
+"name": "Mt. Ember",
+"type": 4
+},
+{
+"group": 1,
+"num": 105,
+"mapsec": 175,
+"name": "Mt. Ember",
+"type": 4
+},
+{
+"group": 1,
+"num": 106,
+"mapsec": 175,
+"name": "Mt. Ember",
+"type": 4
+},
+{
+"group": 1,
+"num": 107,
+"mapsec": 175,
+"name": "Mt. Ember",
+"type": 4
+},
+{
+"group": 1,
+"num": 108,
+"mapsec": 175,
+"name": "Mt. Ember",
+"type": 4
+},
+{
+"group": 1,
+"num": 109,
+"mapsec": 176,
+"name": "Berry Forest",
+"type": 3
+},
+{
+"group": 1,
+"num": 110,
+"mapsec": 177,
+"name": "Icefall Cave",
+"type": 4
+},
+{
+"group": 1,
+"num": 111,
+"mapsec": 177,
+"name": "Icefall Cave",
+"type": 4
+},
+{
+"group": 1,
+"num": 112,
+"mapsec": 177,
+"name": "Icefall Cave",
+"type": 4
+},
+{
+"group": 1,
+"num": 113,
+"mapsec": 177,
+"name": "Icefall Cave",
+"type": 4
+},
+{
+"group": 1,
+"num": 114,
+"mapsec": 178,
+"name": "Rocket Warehouse",
+"type": 8
+},
+{
+"group": 1,
+"num": 115,
+"mapsec": 180,
+"name": "Dotted Hole",
+"type": 4
+},
+{
+"group": 1,
+"num": 116,
+"mapsec": 180,
+"name": "Dotted Hole",
+"type": 4
+},
+{
+"group": 1,
+"num": 117,
+"mapsec": 180,
+"name": "Dotted Hole",
+"type": 4
+},
+{
+"group": 1,
+"num": 118,
+"mapsec": 180,
+"name": "Dotted Hole",
+"type": 4
+},
+{
+"group": 1,
+"num": 119,
+"mapsec": 180,
+"name": "Dotted Hole",
+"type": 4
+},
+{
+"group": 1,
+"num": 120,
+"mapsec": 180,
+"name": "Dotted Hole",
+"type": 4
+},
+{
+"group": 1,
+"num": 121,
+"mapsec": 182,
+"name": "Pattern Bush",
+"type": 3
+},
+{
+"group": 1,
+"num": 122,
+"mapsec": 183,
+"name": "Altering Cave",
+"type": 4
+},
+{
+"group": 1,
+"num": 123,
+"mapsec": 138,
+"name": "Rock Tunnel",
+"type": 4
+},
+{
+"group": 1,
+"num": 124,
+"mapsec": 139,
+"name": "Seafoam Islands",
+"type": 4
+},
+{
+"group": 1,
+"num": 125,
+"mapsec": 140,
+"name": "Pok\u00e9mon Tower",
+"type": 8
+},
+{
+"group": 1,
+"num": 126,
+"mapsec": 140,
+"name": "Pok\u00e9mon Tower",
+"type": 8
+},
+{
+"group": 1,
+"num": 127,
+"mapsec": 126,
+"name": "Viridian Forest",
+"type": 3
+},
+{
+"group": 1,
+"num": 128,
+"mapsec": 134,
+"name": "Silph Co.",
+"type": 8
+},
+{
+"group": 1,
+"num": 129,
+"mapsec": 134,
+"name": "Silph Co.",
+"type": 8
+},
+{
+"group": 2,
+"num": 0,
+"mapsec": 174,
+"name": "Navel Rock",
+"type": 3
+},
+{
+"group": 2,
+"num": 1,
+"mapsec": 179,
+"name": "Trainer Tower",
+"type": 8
+},
+{
+"group": 2,
+"num": 2,
+"mapsec": 179,
+"name": "Trainer Tower",
+"type": 8
+},
+{
+"group": 2,
+"num": 3,
+"mapsec": 179,
+"name": "Trainer Tower",
+"type": 8
+},
+{
+"group": 2,
+"num": 4,
+"mapsec": 179,
+"name": "Trainer Tower",
+"type": 8
+},
+{
+"group": 2,
+"num": 5,
+"mapsec": 179,
+"name": "Trainer Tower",
+"type": 8
+},
+{
+"group": 2,
+"num": 6,
+"mapsec": 179,
+"name": "Trainer Tower",
+"type": 8
+},
+{
+"group": 2,
+"num": 7,
+"mapsec": 179,
+"name": "Trainer Tower",
+"type": 8
+},
+{
+"group": 2,
+"num": 8,
+"mapsec": 179,
+"name": "Trainer Tower",
+"type": 8
+},
+{
+"group": 2,
+"num": 9,
+"mapsec": 179,
+"name": "Trainer Tower",
+"type": 8
+},
+{
+"group": 2,
+"num": 10,
+"mapsec": 179,
+"name": "Trainer Tower",
+"type": 8
+},
+{
+"group": 2,
+"num": 11,
+"mapsec": 179,
+"name": "Trainer Tower",
+"type": 8
+},
+{
+"group": 2,
+"num": 12,
+"mapsec": 181,
+"name": "Lost Cave",
+"type": 4
+},
+{
+"group": 2,
+"num": 13,
+"mapsec": 181,
+"name": "Lost Cave",
+"type": 4
+},
+{
+"group": 2,
+"num": 14,
+"mapsec": 181,
+"name": "Lost Cave",
+"type": 4
+},
+{
+"group": 2,
+"num": 15,
+"mapsec": 181,
+"name": "Lost Cave",
+"type": 4
+},
+{
+"group": 2,
+"num": 16,
+"mapsec": 181,
+"name": "Lost Cave",
+"type": 4
+},
+{
+"group": 2,
+"num": 17,
+"mapsec": 181,
+"name": "Lost Cave",
+"type": 4
+},
+{
+"group": 2,
+"num": 18,
+"mapsec": 181,
+"name": "Lost Cave",
+"type": 4
+},
+{
+"group": 2,
+"num": 19,
+"mapsec": 181,
+"name": "Lost Cave",
+"type": 4
+},
+{
+"group": 2,
+"num": 20,
+"mapsec": 181,
+"name": "Lost Cave",
+"type": 4
+},
+{
+"group": 2,
+"num": 21,
+"mapsec": 181,
+"name": "Lost Cave",
+"type": 4
+},
+{
+"group": 2,
+"num": 22,
+"mapsec": 181,
+"name": "Lost Cave",
+"type": 4
+},
+{
+"group": 2,
+"num": 23,
+"mapsec": 181,
+"name": "Lost Cave",
+"type": 4
+},
+{
+"group": 2,
+"num": 24,
+"mapsec": 181,
+"name": "Lost Cave",
+"type": 4
+},
+{
+"group": 2,
+"num": 25,
+"mapsec": 181,
+"name": "Lost Cave",
+"type": 4
+},
+{
+"group": 2,
+"num": 26,
+"mapsec": 181,
+"name": "Lost Cave",
+"type": 4
+},
+{
+"group": 2,
+"num": 27,
+"mapsec": 188,
+"name": "Oak's Lab",
+"type": 4
+},
+{
+"group": 2,
+"num": 28,
+"mapsec": 189,
+"name": "Liptoo Chamber",
+"type": 4
+},
+{
+"group": 2,
+"num": 29,
+"mapsec": 190,
+"name": "Weepth Chamber",
+"type": 4
+},
+{
+"group": 2,
+"num": 30,
+"mapsec": 191,
+"name": "Dilford Chamber",
+"type": 4
+},
+{
+"group": 2,
+"num": 31,
+"mapsec": 192,
+"name": "Scufib Chamber",
+"type": 4
+},
+{
+"group": 2,
+"num": 32,
+"mapsec": 193,
+"name": "Rixy Chamber",
+"type": 4
+},
+{
+"group": 2,
+"num": 33,
+"mapsec": 194,
+"name": "Viapois Chamber",
+"type": 4
+},
+{
+"group": 2,
+"num": 34,
+"mapsec": 185,
+"name": "Three Isle Path",
+"type": 4
+},
+{
+"group": 2,
+"num": 35,
+"mapsec": 186,
+"name": "Tanoby Key",
+"type": 4
+},
+{
+"group": 2,
+"num": 36,
+"mapsec": 174,
+"name": "Navel Rock",
+"type": 4
+},
+{
+"group": 2,
+"num": 37,
+"mapsec": 174,
+"name": "Navel Rock",
+"type": 4
+},
+{
+"group": 2,
+"num": 38,
+"mapsec": 174,
+"name": "Navel Rock",
+"type": 4
+},
+{
+"group": 2,
+"num": 39,
+"mapsec": 174,
+"name": "Navel Rock",
+"type": 4
+},
+{
+"group": 2,
+"num": 40,
+"mapsec": 174,
+"name": "Navel Rock",
+"type": 4
+},
+{
+"group": 2,
+"num": 41,
+"mapsec": 174,
+"name": "Navel Rock",
+"type": 4
+},
+{
+"group": 2,
+"num": 42,
+"mapsec": 174,
+"name": "Navel Rock",
+"type": 4
+},
+{
+"group": 2,
+"num": 43,
+"mapsec": 174,
+"name": "Navel Rock",
+"type": 4
+},
+{
+"group": 2,
+"num": 44,
+"mapsec": 174,
+"name": "Navel Rock",
+"type": 4
+},
+{
+"group": 2,
+"num": 45,
+"mapsec": 174,
+"name": "Navel Rock",
+"type": 4
+},
+{
+"group": 2,
+"num": 46,
+"mapsec": 174,
+"name": "Navel Rock",
+"type": 4
+},
+{
+"group": 2,
+"num": 47,
+"mapsec": 174,
+"name": "Navel Rock",
+"type": 4
+},
+{
+"group": 2,
+"num": 48,
+"mapsec": 174,
+"name": "Navel Rock",
+"type": 4
+},
+{
+"group": 2,
+"num": 49,
+"mapsec": 174,
+"name": "Navel Rock",
+"type": 4
+},
+{
+"group": 2,
+"num": 50,
+"mapsec": 174,
+"name": "Navel Rock",
+"type": 4
+},
+{
+"group": 2,
+"num": 51,
+"mapsec": 174,
+"name": "Navel Rock",
+"type": 4
+},
+{
+"group": 2,
+"num": 52,
+"mapsec": 174,
+"name": "Navel Rock",
+"type": 4
+},
+{
+"group": 2,
+"num": 53,
+"mapsec": 174,
+"name": "Navel Rock",
+"type": 4
+},
+{
+"group": 2,
+"num": 54,
+"mapsec": 174,
+"name": "Navel Rock",
+"type": 4
+},
+{
+"group": 2,
+"num": 55,
+"mapsec": 174,
+"name": "Navel Rock",
+"type": 4
+},
+{
+"group": 2,
+"num": 56,
+"mapsec": 187,
+"name": "Birth Island",
+"type": 3
+},
+{
+"group": 2,
+"num": 57,
+"mapsec": 195,
+"name": "Ember Spa",
+"type": 4
+},
+{
+"group": 2,
+"num": 58,
+"mapsec": 187,
+"name": "Birth Island",
+"type": 8
+},
+{
+"group": 2,
+"num": 59,
+"mapsec": 174,
+"name": "Navel Rock",
+"type": 8
+},
+{
+"group": 2,
+"num": 60,
+"mapsec": 134,
+"name": "Silph Co.",
+"type": 8
+},
+{
+"group": 2,
+"num": 61,
+"mapsec": 134,
+"name": "Silph Co.",
+"type": 8
+},
+{
+"group": 2,
+"num": 62,
+"mapsec": 135,
+"name": "Pok\u00e9mon Mansion",
+"type": 8
+},
+{
+"group": 2,
+"num": 63,
+"mapsec": 135,
+"name": "Pok\u00e9mon Mansion",
+"type": 8
+},
+{
+"group": 2,
+"num": 64,
+"mapsec": 136,
+"name": "Safari Zone",
+"type": 3
+},
+{
+"group": 3,
+"num": 0,
+"mapsec": 88,
+"name": "Pallet Town",
+"type": 1
+},
+{
+"group": 3,
+"num": 1,
+"mapsec": 89,
+"name": "Viridian City",
+"type": 1
+},
+{
+"group": 3,
+"num": 2,
+"mapsec": 90,
+"name": "Pewter City",
+"type": 1
+},
+{
+"group": 3,
+"num": 3,
+"mapsec": 91,
+"name": "Cerulean City",
+"type": 1
+},
+{
+"group": 3,
+"num": 4,
+"mapsec": 92,
+"name": "Lavender Town",
+"type": 1
+},
+{
+"group": 3,
+"num": 5,
+"mapsec": 93,
+"name": "Vermilion City",
+"type": 1
+},
+{
+"group": 3,
+"num": 6,
+"mapsec": 94,
+"name": "Celadon City",
+"type": 1
+},
+{
+"group": 3,
+"num": 7,
+"mapsec": 95,
+"name": "Fuchsia City",
+"type": 1
+},
+{
+"group": 3,
+"num": 8,
+"mapsec": 96,
+"name": "Cinnabar Island",
+"type": 1
+},
+{
+"group": 3,
+"num": 9,
+"mapsec": 97,
+"name": "Indigo Plateau",
+"type": 1
+},
+{
+"group": 3,
+"num": 10,
+"mapsec": 98,
+"name": "Saffron City",
+"type": 1
+},
+{
+"group": 3,
+"num": 11,
+"mapsec": 98,
+"name": "Saffron City",
+"type": 1
+},
+{
+"group": 3,
+"num": 12,
+"mapsec": 143,
+"name": "One Island",
+"type": 1
+},
+{
+"group": 3,
+"num": 13,
+"mapsec": 144,
+"name": "Two Island",
+"type": 1
+},
+{
+"group": 3,
+"num": 14,
+"mapsec": 145,
+"name": "Three Island",
+"type": 1
+},
+{
+"group": 3,
+"num": 15,
+"mapsec": 146,
+"name": "Four Island",
+"type": 1
+},
+{
+"group": 3,
+"num": 16,
+"mapsec": 147,
+"name": "Five Island",
+"type": 1
+},
+{
+"group": 3,
+"num": 17,
+"mapsec": 148,
+"name": "Seven Island",
+"type": 1
+},
+{
+"group": 3,
+"num": 18,
+"mapsec": 149,
+"name": "Six Island",
+"type": 1
+},
+{
+"group": 3,
+"num": 19,
+"mapsec": 101,
+"name": "Route 1",
+"type": 3
+},
+{
+"group": 3,
+"num": 20,
+"mapsec": 102,
+"name": "Route 2",
+"type": 3
+},
+{
+"group": 3,
+"num": 21,
+"mapsec": 103,
+"name": "Route 3",
+"type": 3
+},
+{
+"group": 3,
+"num": 22,
+"mapsec": 104,
+"name": "Route 4",
+"type": 3
+},
+{
+"group": 3,
+"num": 23,
+"mapsec": 105,
+"name": "Route 5",
+"type": 3
+},
+{
+"group": 3,
+"num": 24,
+"mapsec": 106,
+"name": "Route 6",
+"type": 3
+},
+{
+"group": 3,
+"num": 25,
+"mapsec": 107,
+"name": "Route 7",
+"type": 3
+},
+{
+"group": 3,
+"num": 26,
+"mapsec": 108,
+"name": "Route 8",
+"type": 3
+},
+{
+"group": 3,
+"num": 27,
+"mapsec": 109,
+"name": "Route 9",
+"type": 3
+},
+{
+"group": 3,
+"num": 28,
+"mapsec": 110,
+"name": "Route 10",
+"type": 3
+},
+{
+"group": 3,
+"num": 29,
+"mapsec": 111,
+"name": "Route 11",
+"type": 3
+},
+{
+"group": 3,
+"num": 30,
+"mapsec": 112,
+"name": "Route 12",
+"type": 3
+},
+{
+"group": 3,
+"num": 31,
+"mapsec": 113,
+"name": "Route 13",
+"type": 3
+},
+{
+"group": 3,
+"num": 32,
+"mapsec": 114,
+"name": "Route 14",
+"type": 3
+},
+{
+"group": 3,
+"num": 33,
+"mapsec": 115,
+"name": "Route 15",
+"type": 3
+},
+{
+"group": 3,
+"num": 34,
+"mapsec": 116,
+"name": "Route 16",
+"type": 3
+},
+{
+"group": 3,
+"num": 35,
+"mapsec": 117,
+"name": "Route 17",
+"type": 3
+},
+{
+"group": 3,
+"num": 36,
+"mapsec": 118,
+"name": "Route 18",
+"type": 3
+},
+{
+"group": 3,
+"num": 37,
+"mapsec": 119,
+"name": "Route 19",
+"type": 3
+},
+{
+"group": 3,
+"num": 38,
+"mapsec": 120,
+"name": "Route 20",
+"type": 3
+},
+{
+"group": 3,
+"num": 39,
+"mapsec": 121,
+"name": "Route 21",
+"type": 3
+},
+{
+"group": 3,
+"num": 40,
+"mapsec": 121,
+"name": "Route 21",
+"type": 3
+},
+{
+"group": 3,
+"num": 41,
+"mapsec": 122,
+"name": "Route 22",
+"type": 3
+},
+{
+"group": 3,
+"num": 42,
+"mapsec": 123,
+"name": "Route 23",
+"type": 3
+},
+{
+"group": 3,
+"num": 43,
+"mapsec": 124,
+"name": "Route 24",
+"type": 3
+},
+{
+"group": 3,
+"num": 44,
+"mapsec": 125,
+"name": "Route 25",
+"type": 3
+},
+{
+"group": 3,
+"num": 45,
+"mapsec": 150,
+"name": "Kindle Road",
+"type": 3
+},
+{
+"group": 3,
+"num": 46,
+"mapsec": 151,
+"name": "Treasure Beach",
+"type": 3
+},
+{
+"group": 3,
+"num": 47,
+"mapsec": 152,
+"name": "Cape Brink",
+"type": 3
+},
+{
+"group": 3,
+"num": 48,
+"mapsec": 153,
+"name": "Bond Bridge",
+"type": 3
+},
+{
+"group": 3,
+"num": 49,
+"mapsec": 154,
+"name": "Three Isle Port",
+"type": 3
+},
+{
+"group": 3,
+"num": 50,
+"mapsec": 155,
+"name": "Sevii Isle 6",
+"type": 3
+},
+{
+"group": 3,
+"num": 51,
+"mapsec": 156,
+"name": "Sevii Isle 7",
+"type": 3
+},
+{
+"group": 3,
+"num": 52,
+"mapsec": 157,
+"name": "Oak's Lab",
+"type": 3
+},
+{
+"group": 3,
+"num": 53,
+"mapsec": 158,
+"name": "Sevii Isle 9",
+"type": 3
+},
+{
+"group": 3,
+"num": 54,
+"mapsec": 159,
+"name": "Resort Gorgeous",
+"type": 3
+},
+{
+"group": 3,
+"num": 55,
+"mapsec": 160,
+"name": "Water Labyrinth",
+"type": 3
+},
+{
+"group": 3,
+"num": 56,
+"mapsec": 161,
+"name": "Five Isle Meadow",
+"type": 3
+},
+{
+"group": 3,
+"num": 57,
+"mapsec": 162,
+"name": "Memorial Pillar",
+"type": 3
+},
+{
+"group": 3,
+"num": 58,
+"mapsec": 163,
+"name": "Outcast Island",
+"type": 3
+},
+{
+"group": 3,
+"num": 59,
+"mapsec": 164,
+"name": "Green Path",
+"type": 3
+},
+{
+"group": 3,
+"num": 60,
+"mapsec": 165,
+"name": "Water Path",
+"type": 3
+},
+{
+"group": 3,
+"num": 61,
+"mapsec": 166,
+"name": "Ruin Valley",
+"type": 3
+},
+{
+"group": 3,
+"num": 62,
+"mapsec": 167,
+"name": "Trainer Tower",
+"type": 3
+},
+{
+"group": 3,
+"num": 63,
+"mapsec": 168,
+"name": "Canyon Entrance",
+"type": 3
+},
+{
+"group": 3,
+"num": 64,
+"mapsec": 169,
+"name": "Sevault Canyon",
+"type": 3
+},
+{
+"group": 3,
+"num": 65,
+"mapsec": 170,
+"name": "Tanoby Ruins",
+"type": 3
+},
+{
+"group": 4,
+"num": 0,
+"mapsec": 88,
+"name": "Pallet Town",
+"type": 8
+},
+{
+"group": 4,
+"num": 1,
+"mapsec": 88,
+"name": "Pallet Town",
+"type": 8
+},
+{
+"group": 4,
+"num": 2,
+"mapsec": 88,
+"name": "Pallet Town",
+"type": 8
+},
+{
+"group": 4,
+"num": 3,
+"mapsec": 88,
+"name": "Pallet Town",
+"type": 8
+},
+{
+"group": 5,
+"num": 0,
+"mapsec": 89,
+"name": "Viridian City",
+"type": 8
+},
+{
+"group": 5,
+"num": 1,
+"mapsec": 89,
+"name": "Viridian City",
+"type": 8
+},
+{
+"group": 5,
+"num": 2,
+"mapsec": 89,
+"name": "Viridian City",
+"type": 8
+},
+{
+"group": 5,
+"num": 3,
+"mapsec": 89,
+"name": "Viridian City",
+"type": 8
+},
+{
+"group": 5,
+"num": 4,
+"mapsec": 89,
+"name": "Viridian City",
+"type": 8
+},
+{
+"group": 5,
+"num": 5,
+"mapsec": 89,
+"name": "Viridian City",
+"type": 8
+},
+{
+"group": 6,
+"num": 0,
+"mapsec": 90,
+"name": "Pewter City",
+"type": 8
+},
+{
+"group": 6,
+"num": 1,
+"mapsec": 90,
+"name": "Pewter City",
+"type": 8
+},
+{
+"group": 6,
+"num": 2,
+"mapsec": 90,
+"name": "Pewter City",
+"type": 8
+},
+{
+"group": 6,
+"num": 3,
+"mapsec": 90,
+"name": "Pewter City",
+"type": 8
+},
+{
+"group": 6,
+"num": 4,
+"mapsec": 90,
+"name": "Pewter City",
+"type": 8
+},
+{
+"group": 6,
+"num": 5,
+"mapsec": 90,
+"name": "Pewter City",
+"type": 8
+},
+{
+"group": 6,
+"num": 6,
+"mapsec": 90,
+"name": "Pewter City",
+"type": 8
+},
+{
+"group": 6,
+"num": 7,
+"mapsec": 90,
+"name": "Pewter City",
+"type": 8
+},
+{
+"group": 7,
+"num": 0,
+"mapsec": 91,
+"name": "Cerulean City",
+"type": 8
+},
+{
+"group": 7,
+"num": 1,
+"mapsec": 91,
+"name": "Cerulean City",
+"type": 8
+},
+{
+"group": 7,
+"num": 2,
+"mapsec": 91,
+"name": "Cerulean City",
+"type": 8
+},
+{
+"group": 7,
+"num": 3,
+"mapsec": 91,
+"name": "Cerulean City",
+"type": 8
+},
+{
+"group": 7,
+"num": 4,
+"mapsec": 91,
+"name": "Cerulean City",
+"type": 8
+},
+{
+"group": 7,
+"num": 5,
+"mapsec": 91,
+"name": "Cerulean City",
+"type": 8
+},
+{
+"group": 7,
+"num": 6,
+"mapsec": 91,
+"name": "Cerulean City",
+"type": 8
+},
+{
+"group": 7,
+"num": 7,
+"mapsec": 91,
+"name": "Cerulean City",
+"type": 8
+},
+{
+"group": 7,
+"num": 8,
+"mapsec": 91,
+"name": "Cerulean City",
+"type": 8
+},
+{
+"group": 7,
+"num": 9,
+"mapsec": 91,
+"name": "Cerulean City",
+"type": 8
+},
+{
+"group": 8,
+"num": 0,
+"mapsec": 92,
+"name": "Lavender Town",
+"type": 8
+},
+{
+"group": 8,
+"num": 1,
+"mapsec": 92,
+"name": "Lavender Town",
+"type": 8
+},
+{
+"group": 8,
+"num": 2,
+"mapsec": 92,
+"name": "Lavender Town",
+"type": 8
+},
+{
+"group": 8,
+"num": 3,
+"mapsec": 92,
+"name": "Lavender Town",
+"type": 8
+},
+{
+"group": 8,
+"num": 4,
+"mapsec": 92,
+"name": "Lavender Town",
+"type": 8
+},
+{
+"group": 8,
+"num": 5,
+"mapsec": 92,
+"name": "Lavender Town",
+"type": 8
+},
+{
+"group": 9,
+"num": 0,
+"mapsec": 93,
+"name": "Vermilion City",
+"type": 8
+},
+{
+"group": 9,
+"num": 1,
+"mapsec": 93,
+"name": "Vermilion City",
+"type": 8
+},
+{
+"group": 9,
+"num": 2,
+"mapsec": 93,
+"name": "Vermilion City",
+"type": 8
+},
+{
+"group": 9,
+"num": 3,
+"mapsec": 93,
+"name": "Vermilion City",
+"type": 8
+},
+{
+"group": 9,
+"num": 4,
+"mapsec": 93,
+"name": "Vermilion City",
+"type": 8
+},
+{
+"group": 9,
+"num": 5,
+"mapsec": 93,
+"name": "Vermilion City",
+"type": 8
+},
+{
+"group": 9,
+"num": 6,
+"mapsec": 93,
+"name": "Vermilion City",
+"type": 8
+},
+{
+"group": 9,
+"num": 7,
+"mapsec": 93,
+"name": "Vermilion City",
+"type": 8
+},
+{
+"group": 10,
+"num": 0,
+"mapsec": 94,
+"name": "Celadon City",
+"type": 8
+},
+{
+"group": 10,
+"num": 1,
+"mapsec": 94,
+"name": "Celadon City",
+"type": 8
+},
+{
+"group": 10,
+"num": 2,
+"mapsec": 94,
+"name": "Celadon City",
+"type": 8
+},
+{
+"group": 10,
+"num": 3,
+"mapsec": 94,
+"name": "Celadon City",
+"type": 8
+},
+{
+"group": 10,
+"num": 4,
+"mapsec": 94,
+"name": "Celadon City",
+"type": 8
+},
+{
+"group": 10,
+"num": 5,
+"mapsec": 94,
+"name": "Celadon City",
+"type": 8
+},
+{
+"group": 10,
+"num": 6,
+"mapsec": 94,
+"name": "Celadon City",
+"type": 8
+},
+{
+"group": 10,
+"num": 7,
+"mapsec": 94,
+"name": "Celadon City",
+"type": 8
+},
+{
+"group": 10,
+"num": 8,
+"mapsec": 94,
+"name": "Celadon City",
+"type": 8
+},
+{
+"group": 10,
+"num": 9,
+"mapsec": 94,
+"name": "Celadon City",
+"type": 8
+},
+{
+"group": 10,
+"num": 10,
+"mapsec": 94,
+"name": "Celadon City",
+"type": 8
+},
+{
+"group": 10,
+"num": 11,
+"mapsec": 94,
+"name": "Celadon City",
+"type": 8
+},
+{
+"group": 10,
+"num": 12,
+"mapsec": 94,
+"name": "Celadon City",
+"type": 8
+},
+{
+"group": 10,
+"num": 13,
+"mapsec": 94,
+"name": "Celadon City",
+"type": 8
+},
+{
+"group": 10,
+"num": 14,
+"mapsec": 94,
+"name": "Celadon City",
+"type": 8
+},
+{
+"group": 10,
+"num": 15,
+"mapsec": 94,
+"name": "Celadon City",
+"type": 8
+},
+{
+"group": 10,
+"num": 16,
+"mapsec": 94,
+"name": "Celadon City",
+"type": 8
+},
+{
+"group": 10,
+"num": 17,
+"mapsec": 94,
+"name": "Celadon City",
+"type": 8
+},
+{
+"group": 10,
+"num": 18,
+"mapsec": 94,
+"name": "Celadon City",
+"type": 8
+},
+{
+"group": 10,
+"num": 19,
+"mapsec": 94,
+"name": "Celadon City",
+"type": 8
+},
+{
+"group": 11,
+"num": 0,
+"mapsec": 95,
+"name": "Fuchsia City",
+"type": 8
+},
+{
+"group": 11,
+"num": 1,
+"mapsec": 95,
+"name": "Fuchsia City",
+"type": 8
+},
+{
+"group": 11,
+"num": 2,
+"mapsec": 95,
+"name": "Fuchsia City",
+"type": 8
+},
+{
+"group": 11,
+"num": 3,
+"mapsec": 95,
+"name": "Fuchsia City",
+"type": 8
+},
+{
+"group": 11,
+"num": 4,
+"mapsec": 95,
+"name": "Fuchsia City",
+"type": 8
+},
+{
+"group": 11,
+"num": 5,
+"mapsec": 95,
+"name": "Fuchsia City",
+"type": 8
+},
+{
+"group": 11,
+"num": 6,
+"mapsec": 95,
+"name": "Fuchsia City",
+"type": 8
+},
+{
+"group": 11,
+"num": 7,
+"mapsec": 95,
+"name": "Fuchsia City",
+"type": 8
+},
+{
+"group": 11,
+"num": 8,
+"mapsec": 95,
+"name": "Fuchsia City",
+"type": 8
+},
+{
+"group": 11,
+"num": 9,
+"mapsec": 95,
+"name": "Fuchsia City",
+"type": 8
+},
+{
+"group": 12,
+"num": 0,
+"mapsec": 96,
+"name": "Cinnabar Island",
+"type": 8
+},
+{
+"group": 12,
+"num": 1,
+"mapsec": 96,
+"name": "Cinnabar Island",
+"type": 8
+},
+{
+"group": 12,
+"num": 2,
+"mapsec": 96,
+"name": "Cinnabar Island",
+"type": 8
+},
+{
+"group": 12,
+"num": 3,
+"mapsec": 96,
+"name": "Cinnabar Island",
+"type": 8
+},
+{
+"group": 12,
+"num": 4,
+"mapsec": 96,
+"name": "Cinnabar Island",
+"type": 8
+},
+{
+"group": 12,
+"num": 5,
+"mapsec": 96,
+"name": "Cinnabar Island",
+"type": 8
+},
+{
+"group": 12,
+"num": 6,
+"mapsec": 96,
+"name": "Cinnabar Island",
+"type": 8
+},
+{
+"group": 12,
+"num": 7,
+"mapsec": 96,
+"name": "Cinnabar Island",
+"type": 8
+},
+{
+"group": 13,
+"num": 0,
+"mapsec": 97,
+"name": "Indigo Plateau",
+"type": 8
+},
+{
+"group": 13,
+"num": 1,
+"mapsec": 97,
+"name": "Indigo Plateau",
+"type": 8
+},
+{
+"group": 14,
+"num": 0,
+"mapsec": 98,
+"name": "Saffron City",
+"type": 8
+},
+{
+"group": 14,
+"num": 1,
+"mapsec": 98,
+"name": "Saffron City",
+"type": 8
+},
+{
+"group": 14,
+"num": 2,
+"mapsec": 98,
+"name": "Saffron City",
+"type": 8
+},
+{
+"group": 14,
+"num": 3,
+"mapsec": 98,
+"name": "Saffron City",
+"type": 8
+},
+{
+"group": 14,
+"num": 4,
+"mapsec": 98,
+"name": "Saffron City",
+"type": 8
+},
+{
+"group": 14,
+"num": 5,
+"mapsec": 98,
+"name": "Saffron City",
+"type": 8
+},
+{
+"group": 14,
+"num": 6,
+"mapsec": 98,
+"name": "Saffron City",
+"type": 8
+},
+{
+"group": 14,
+"num": 7,
+"mapsec": 98,
+"name": "Saffron City",
+"type": 8
+},
+{
+"group": 14,
+"num": 8,
+"mapsec": 98,
+"name": "Saffron City",
+"type": 8
+},
+{
+"group": 14,
+"num": 9,
+"mapsec": 98,
+"name": "Saffron City",
+"type": 8
+},
+{
+"group": 15,
+"num": 0,
+"mapsec": 102,
+"name": "Route 2",
+"type": 8
+},
+{
+"group": 15,
+"num": 1,
+"mapsec": 102,
+"name": "Route 2",
+"type": 8
+},
+{
+"group": 15,
+"num": 2,
+"mapsec": 102,
+"name": "Route 2",
+"type": 8
+},
+{
+"group": 15,
+"num": 3,
+"mapsec": 102,
+"name": "Route 2",
+"type": 8
+},
+{
+"group": 16,
+"num": 0,
+"mapsec": 104,
+"name": "Route 4",
+"type": 8
+},
+{
+"group": 16,
+"num": 1,
+"mapsec": 104,
+"name": "Route 4",
+"type": 8
+},
+{
+"group": 17,
+"num": 0,
+"mapsec": 105,
+"name": "Route 5",
+"type": 8
+},
+{
+"group": 17,
+"num": 1,
+"mapsec": 105,
+"name": "Route 5",
+"type": 8
+},
+{
+"group": 18,
+"num": 0,
+"mapsec": 106,
+"name": "Route 6",
+"type": 8
+},
+{
+"group": 18,
+"num": 1,
+"mapsec": 106,
+"name": "Route 6",
+"type": 8
+},
+{
+"group": 19,
+"num": 0,
+"mapsec": 107,
+"name": "Route 7",
+"type": 8
+},
+{
+"group": 20,
+"num": 0,
+"mapsec": 108,
+"name": "Route 8",
+"type": 8
+},
+{
+"group": 21,
+"num": 0,
+"mapsec": 110,
+"name": "Route 10",
+"type": 8
+},
+{
+"group": 21,
+"num": 1,
+"mapsec": 110,
+"name": "Route 10",
+"type": 8
+},
+{
+"group": 22,
+"num": 0,
+"mapsec": 111,
+"name": "Route 11",
+"type": 8
+},
+{
+"group": 22,
+"num": 1,
+"mapsec": 111,
+"name": "Route 11",
+"type": 8
+},
+{
+"group": 23,
+"num": 0,
+"mapsec": 112,
+"name": "Route 12",
+"type": 8
+},
+{
+"group": 23,
+"num": 1,
+"mapsec": 112,
+"name": "Route 12",
+"type": 8
+},
+{
+"group": 23,
+"num": 2,
+"mapsec": 112,
+"name": "Route 12",
+"type": 8
+},
+{
+"group": 24,
+"num": 0,
+"mapsec": 115,
+"name": "Route 15",
+"type": 8
+},
+{
+"group": 24,
+"num": 1,
+"mapsec": 115,
+"name": "Route 15",
+"type": 8
+},
+{
+"group": 25,
+"num": 0,
+"mapsec": 116,
+"name": "Route 16",
+"type": 8
+},
+{
+"group": 25,
+"num": 1,
+"mapsec": 116,
+"name": "Route 16",
+"type": 8
+},
+{
+"group": 25,
+"num": 2,
+"mapsec": 116,
+"name": "Route 16",
+"type": 8
+},
+{
+"group": 26,
+"num": 0,
+"mapsec": 118,
+"name": "Route 18",
+"type": 8
+},
+{
+"group": 26,
+"num": 1,
+"mapsec": 118,
+"name": "Route 18",
+"type": 8
+},
+{
+"group": 27,
+"num": 0,
+"mapsec": 119,
+"name": "Route 19",
+"type": 8
+},
+{
+"group": 28,
+"num": 0,
+"mapsec": 122,
+"name": "Route 22",
+"type": 8
+},
+{
+"group": 29,
+"num": 0,
+"mapsec": 123,
+"name": "Route 23",
+"type": 8
+},
+{
+"group": 30,
+"num": 0,
+"mapsec": 125,
+"name": "Route 25",
+"type": 8
+},
+{
+"group": 31,
+"num": 0,
+"mapsec": 148,
+"name": "Seven Island",
+"type": 8
+},
+{
+"group": 31,
+"num": 1,
+"mapsec": 148,
+"name": "Seven Island",
+"type": 8
+},
+{
+"group": 31,
+"num": 2,
+"mapsec": 148,
+"name": "Seven Island",
+"type": 8
+},
+{
+"group": 31,
+"num": 3,
+"mapsec": 148,
+"name": "Seven Island",
+"type": 8
+},
+{
+"group": 31,
+"num": 4,
+"mapsec": 148,
+"name": "Seven Island",
+"type": 8
+},
+{
+"group": 31,
+"num": 5,
+"mapsec": 148,
+"name": "Seven Island",
+"type": 8
+},
+{
+"group": 31,
+"num": 6,
+"mapsec": 148,
+"name": "Seven Island",
+"type": 8
+},
+{
+"group": 32,
+"num": 0,
+"mapsec": 143,
+"name": "One Island",
+"type": 8
+},
+{
+"group": 32,
+"num": 1,
+"mapsec": 143,
+"name": "One Island",
+"type": 8
+},
+{
+"group": 32,
+"num": 2,
+"mapsec": 143,
+"name": "One Island",
+"type": 8
+},
+{
+"group": 32,
+"num": 3,
+"mapsec": 143,
+"name": "One Island",
+"type": 8
+},
+{
+"group": 32,
+"num": 4,
+"mapsec": 143,
+"name": "One Island",
+"type": 8
+},
+{
+"group": 33,
+"num": 0,
+"mapsec": 144,
+"name": "Two Island",
+"type": 8
+},
+{
+"group": 33,
+"num": 1,
+"mapsec": 144,
+"name": "Two Island",
+"type": 8
+},
+{
+"group": 33,
+"num": 2,
+"mapsec": 144,
+"name": "Two Island",
+"type": 8
+},
+{
+"group": 33,
+"num": 3,
+"mapsec": 144,
+"name": "Two Island",
+"type": 8
+},
+{
+"group": 33,
+"num": 4,
+"mapsec": 144,
+"name": "Two Island",
+"type": 8
+},
+{
+"group": 34,
+"num": 0,
+"mapsec": 145,
+"name": "Three Island",
+"type": 8
+},
+{
+"group": 34,
+"num": 1,
+"mapsec": 145,
+"name": "Three Island",
+"type": 8
+},
+{
+"group": 34,
+"num": 2,
+"mapsec": 145,
+"name": "Three Island",
+"type": 8
+},
+{
+"group": 34,
+"num": 3,
+"mapsec": 145,
+"name": "Three Island",
+"type": 8
+},
+{
+"group": 34,
+"num": 4,
+"mapsec": 145,
+"name": "Three Island",
+"type": 8
+},
+{
+"group": 34,
+"num": 5,
+"mapsec": 145,
+"name": "Three Island",
+"type": 8
+},
+{
+"group": 34,
+"num": 6,
+"mapsec": 145,
+"name": "Three Island",
+"type": 8
+},
+{
+"group": 34,
+"num": 7,
+"mapsec": 145,
+"name": "Three Island",
+"type": 8
+},
+{
+"group": 35,
+"num": 0,
+"mapsec": 146,
+"name": "Four Island",
+"type": 8
+},
+{
+"group": 35,
+"num": 1,
+"mapsec": 146,
+"name": "Four Island",
+"type": 8
+},
+{
+"group": 35,
+"num": 2,
+"mapsec": 146,
+"name": "Four Island",
+"type": 8
+},
+{
+"group": 35,
+"num": 3,
+"mapsec": 146,
+"name": "Four Island",
+"type": 8
+},
+{
+"group": 35,
+"num": 4,
+"mapsec": 146,
+"name": "Four Island",
+"type": 8
+},
+{
+"group": 35,
+"num": 5,
+"mapsec": 146,
+"name": "Four Island",
+"type": 8
+},
+{
+"group": 35,
+"num": 6,
+"mapsec": 146,
+"name": "Four Island",
+"type": 8
+},
+{
+"group": 35,
+"num": 7,
+"mapsec": 146,
+"name": "Four Island",
+"type": 8
+},
+{
+"group": 36,
+"num": 0,
+"mapsec": 147,
+"name": "Five Island",
+"type": 8
+},
+{
+"group": 36,
+"num": 1,
+"mapsec": 147,
+"name": "Five Island",
+"type": 8
+},
+{
+"group": 36,
+"num": 2,
+"mapsec": 147,
+"name": "Five Island",
+"type": 8
+},
+{
+"group": 36,
+"num": 3,
+"mapsec": 147,
+"name": "Five Island",
+"type": 8
+},
+{
+"group": 36,
+"num": 4,
+"mapsec": 147,
+"name": "Five Island",
+"type": 8
+},
+{
+"group": 37,
+"num": 0,
+"mapsec": 149,
+"name": "Six Island",
+"type": 8
+},
+{
+"group": 37,
+"num": 1,
+"mapsec": 149,
+"name": "Six Island",
+"type": 8
+},
+{
+"group": 37,
+"num": 2,
+"mapsec": 149,
+"name": "Six Island",
+"type": 8
+},
+{
+"group": 37,
+"num": 3,
+"mapsec": 149,
+"name": "Six Island",
+"type": 8
+},
+{
+"group": 37,
+"num": 4,
+"mapsec": 149,
+"name": "Six Island",
+"type": 8
+},
+{
+"group": 38,
+"num": 0,
+"mapsec": 154,
+"name": "Three Isle Port",
+"type": 8
+},
+{
+"group": 39,
+"num": 0,
+"mapsec": 159,
+"name": "Resort Gorgeous",
+"type": 8
+},
+{
+"group": 40,
+"num": 0,
+"mapsec": 152,
+"name": "Cape Brink",
+"type": 8
+},
+{
+"group": 41,
+"num": 0,
+"mapsec": 165,
+"name": "Water Path",
+"type": 8
+},
+{
+"group": 41,
+"num": 1,
+"mapsec": 165,
+"name": "Water Path",
+"type": 8
+},
+{
+"group": 42,
+"num": 0,
+"mapsec": 169,
+"name": "Sevault Canyon",
+"type": 8
+}
+]

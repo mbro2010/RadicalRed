@@ -197,6 +197,9 @@
       else if (!m.status && !hasType(m, 'Steel') && itemName(m) !== 'Heavy-Duty Boots') { m.status = hz.tspikes >= 2 ? 'tox' : 'psn'; log(st, `${m.name} is poisoned by Toxic Spikes`); }
     }
     if (hz.web && grounded(m) && itemName(m) !== 'Heavy-Duty Boots') applyBoosts(st, m, { spe: -1 }, 'foe');
+    abilityOnEntry(st, side, m);
+  }
+  function abilityOnEntry(st, side, m) {
     const foe = act(st, other(side));
     const a = m.ability;
     if (a === 'Intimidate' && foe && !foe.fainted) {
@@ -382,7 +385,13 @@
       }
     }
     if (user.charging === moveId) { user.charging = null; user.invuln = false; }
-    log(st, `${side === 'p' ? 'Your' : 'Boss'} ${user.name} uses ${mm.name}`, 'move');
+    const zk = ctx.z ? zKind(st, user, moveId) : null;
+    if (zk) {
+      st[side].zUsed = true;
+      log(st, `${side === 'p' ? 'Your' : 'Boss'} ${user.name} unleashes its Z-Move (Z-${mm.name})!`, 'move');
+      st.events.push({ turn: st.turn, type: 'zmove', side, user: user.key, move: moveId });
+      if (zk === 'evoboost') { user.lastMove = moveId; applyBoosts(st, user, { atk: 2, def: 2, spa: 2, spd: 2, spe: 2 }); return; }
+    } else log(st, `${side === 'p' ? 'Your' : 'Boss'} ${user.name} uses ${mm.name}`, 'move');
     user.lastMove = moveId;
     if (mm.cat === 'X' && user.taunt) { log(st, `${user.name} can't use ${mm.name} after the taunt`); return; }
     if (mm.eff === FAKE_OUT && !user.firstTurn) { log(st, 'But it failed'); return; }
@@ -394,7 +403,7 @@
 
     // ---- damaging moves ----
     if (!target || target.fainted) { log(st, 'But there was no target'); return; }
-    if (target.protect && mm.name !== 'Feint') {
+    if (target.protect && mm.name !== 'Feint' && !zk) {
       log(st, `${target.name} protects itself`);
       if (mm.contact) {
         const pt = target.protectKind;
@@ -405,18 +414,19 @@
       return;
     }
     if (target.invuln && !(mm.name === 'Earthquake' || mm.name === 'Surf' || mm.name === 'Thunder' || mm.name === 'Hurricane')) { log(st, `${target.name} avoids the attack`); return; }
-    if (!roll(rng, hitChance(st, user, target, mm))) {
+    if (!zk && !roll(rng, hitChance(st, user, target, mm))) {
       log(st, `${user.name}'s attack misses`, 'miss');
       if (mm.name === 'High Jump Kick' || mm.name === 'Jump Kick' || mm.name === 'Supercell Slam') hurt(st, user, Math.floor(user.maxHp / 2), 'crash');
       user.rampage = 0;
       return;
     }
-    const hits = pickHits(rng, user, mm);
+    const hits = zk ? 1 : pickHits(rng, user, mm);
     const crit = roll(rng, critChance(user, target, mm));
     const fo = fieldOpts(st, tside);
-    const rr = E.rawRolls(specNow(user), specNow(target), moveId, Object.assign({ crit, hits }, fo));
+    const rr = E.rawRolls(specNow(user), specNow(target), moveId, Object.assign({ crit, hits, z: !!zk }, fo));
     const rolls = rr.rolls;
     let dmg = rolls[rng.expected ? 7 : Math.floor(rng() * rolls.length)] || 0;
+    if (zk && target.protect) { dmg = Math.floor(dmg / 4); log(st, `${target.name} couldn't fully protect itself`); }
     // special damage
     if (mm.name === 'Final Gambit') dmg = user.hp;
     if (mm.name === 'Endeavor') dmg = Math.max(0, target.hp - user.hp);
@@ -490,6 +500,7 @@
     // knock off
     if (mm.eff === 188 && target.item && !target.fainted && target.ability !== 'Sticky Hold') { log(st, `${target.name}'s ${tItem} is knocked off`); consume(target); }
     // secondary effects
+    if (zk) { if (mm.eff === RECHARGE) user.recharge = false; return; }
     const sheer = user.ability === 'Sheer Force';
     const shielded = NO_SECONDARY.has(target.ability) || itemName(target) === 'Covert Cloak';
     const chanceOf = p => Math.min(1, (user.ability === 'Serene Grace' ? 2 : 1) * p / 100);
@@ -610,6 +621,40 @@
     if (hz.spikes && grounded(m)) d += Math.floor(m.maxHp * [0, 1 / 8, 1 / 6, 1 / 4][hz.spikes]);
     return d;
   }
+  const Z_TYPES = { Normalium: 'Normal', Firium: 'Fire', Waterium: 'Water', Electrium: 'Electric', Grassium: 'Grass', Icium: 'Ice',
+    Fightinium: 'Fighting', Poisonium: 'Poison', Groundium: 'Ground', Flyinium: 'Flying', Psychium: 'Psychic', Buginium: 'Bug', Rockium: 'Rock',
+    Ghostium: 'Ghost', Dragonium: 'Dragon', Darkinium: 'Dark', Steelium: 'Steel', Fairium: 'Fairy' };
+  /** The Z-Move a battler could use with this move right now: 'type' (a typed Z-crystal), 'evoboost' (Eevium Z with Last Resort) or null. */
+  function zKind(st, m, moveId) {
+    if (st[m.side].zUsed) return null;
+    const it = itemName(m) || '';
+    const mm = meta(moveId);
+    if (it === 'Eevium Z' && mm.name === 'Last Resort' && /^Eevee/.test(E.sp(m.spec.s).n)) return 'evoboost';
+    const t = Z_TYPES[(it.match(/^(\w+) Z$/) || [])[1]];
+    return t && mm.cat !== 'X' && mm.type === t && (E.mv(moveId) || {}).z ? 'type' : null;
+  }
+  /** Mega Evolution: the battler's stone matches one of its Mega forms (from the ROM's evolution table). */
+  function megaTarget(m) {
+    const list = (D.mega || {})[m.spec.s];
+    if (!list || !m.item) return null;
+    const hit = list.find(([item]) => item && item === m.item);
+    return hit ? hit[1] : null;
+  }
+  function megaEvolve(st, side) {
+    const m = act(st, side);
+    const to = megaTarget(m);
+    if (!to || st[side].megaUsed) return;
+    const s = E.sp(to);
+    if (!s) return;
+    st[side].megaUsed = true;
+    const ab = (s.a || []).find(Boolean) || m.ability;
+    m.spec = Object.assign({}, m.spec, { s: to, ab });
+    m.types = s.t.slice(); m.ability = ab;
+    log(st, `${m.name} Mega Evolves into ${s.n}!`, 'switch');
+    m.name = s.n;
+    st.events.push({ turn: st.turn, type: 'mega', side, key: m.key, to });
+    abilityOnEntry(st, side, m);
+  }
   function pivot(st, side, rng) {
     const pol = st.policies[side];
     const idx = pol.replace(st, side, rng, 'pivot');
@@ -689,9 +734,10 @@
     // switches go first
     if (pA.type === 'switch') switchIn(st, 'p', pA.to, rng, pA.why || 'switch');
     if (aA.type === 'switch') switchIn(st, 'a', aA.to, rng, 'switch');
+    for (const [side, A] of [['p', pA], ['a', aA]]) if (A.type === 'move' && !act(st, side).fainted && megaTarget(act(st, side))) megaEvolve(st, side);
     const order = [];
-    if (pA.type === 'move') order.push({ side: 'p', id: pA.id });
-    if (aA.type === 'move') order.push({ side: 'a', id: aA.id });
+    if (pA.type === 'move') order.push({ side: 'p', id: pA.id, z: !!pA.z });
+    if (aA.type === 'move') order.push({ side: 'a', id: aA.id, z: !!aA.z });
     for (const o of order) { o.pri = priorityOf(st, act(st, o.side), o.id); o.spe = speed(st, act(st, o.side)); }
     order.sort((x, y) => (y.pri - x.pri) || (st.trickRoom ? x.spe - y.spe : y.spe - x.spe) || (rng.expected ? (x.side === 'a' ? -1 : 1) : (rng() < 0.5 ? -1 : 1)));
     // Custap Berry: move first within the bracket at low HP
@@ -704,7 +750,7 @@
       const m = act(st, o.side);
       if (!m || m.fainted) continue;
       const otherAction = o.side === 'p' ? aA : pA;
-      useMove(st, o.side, o.id, rng, { first: i === 0, targetAction: i === 0 ? otherAction : null });
+      useMove(st, o.side, o.id, rng, { first: i === 0, targetAction: i === 0 ? otherAction : null, z: o.z && !!zKind(st, m, o.id) });
       if (alive(st, 'p').length === 0 || alive(st, 'a').length === 0) break;
     }
     endOfTurn(st, rng);
@@ -960,7 +1006,7 @@
   // ---------------- the boss AI, ported from the engine (ai.js) ----------------
   const AI = (typeof createAI === 'function' ? createAI : require('./ai.js'))({
     E, meta, usable, act, other, bench, alive, speed, priorityOf, canStatus, hitChance, specNow, fieldOpts, itemName, hasType, grounded,
-    hazardDamage, expectedDice, SETUP, EFFECT_BOOST, EFFECT_DROP });
+    hazardDamage, expectedDice, SETUP, EFFECT_BOOST, EFFECT_DROP, zKind, SELF_DROP });
   function bossPolicy(opts) { return AI.policy(opts); }
 
   // ---------------- running battles ----------------
@@ -1114,5 +1160,5 @@
     return { winner: st.winner, turns, faints, totalTurns: st.turn };
   }
 
-  return { meta, makeMon, newBattle, runBattle, simulate, simulateAsync, planFight, scriptOf, plannerPolicy, aiPolicy, bossPolicy, AI, speed, mulberry32, expectedDice, specNow, act };
+  return { meta, makeMon, newBattle, runBattle, simulate, simulateAsync, planFight, scriptOf, plannerPolicy, aiPolicy, bossPolicy, AI, megaTarget, zKind, speed, mulberry32, expectedDice, specNow, act };
 });

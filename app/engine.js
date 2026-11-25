@@ -118,12 +118,15 @@
     return p;
   }
 
-  function buildMove(id, attackerSpec, { maxHits = false, crit = false } = {}) {
+  function buildMove(id, attackerSpec, { maxHits = false, crit = false, z = false } = {}) {
     const m = mv(id);
     const opts = { isCrit: crit };
     let name = m.c;
     const overrides = {};
-    if (!name) {                                   // Radical Red's own move: a neutral stand-in with its real numbers
+    if (z && m.z) {                                // Z-Move: one hit at the ROM's Z-power, same type and category
+      name = m.k === 'P' ? 'Tackle' : 'Swift';
+      Object.assign(overrides, { basePower: m.z, type: m.t === '???' ? 'Normal' : m.t, category: m.k === 'P' ? 'Physical' : 'Special', priority: 0 });
+    } else if (!name) {                                   // Radical Red's own move: a neutral stand-in with its real numbers
       name = m.k === 'P' ? 'Tackle' : m.k === 'S' ? 'Swift' : 'Growl';
       Object.assign(overrides, { basePower: m.p, type: m.t, category: { P: 'Physical', S: 'Special', X: 'Status' }[m.k], priority: m.r });
     } else if (name === 'Hidden Power') {
@@ -164,11 +167,11 @@
     const hpRel = HP_SENSITIVE_MV.test(m.f) ? true : (HP_SENSITIVE_AB.has(attSpec.ab) || HP_SENSITIVE_AB.has(defSpec.ab)) ? 'roll' : false;
     const ds = o.defSide || null;
     const key = ['R', specKey(attSpec, hpRel), specKey(defSpec, hpRel), moveId, o.weather || '', o.terrain || '',
-      ds ? [ds.isReflect ? 1 : 0, ds.isLightScreen ? 1 : 0, ds.isAuroraVeil ? 1 : 0].join('') : '', o.crit ? 1 : 0, o.hits || 0].join('|');
+      ds ? [ds.isReflect ? 1 : 0, ds.isLightScreen ? 1 : 0, ds.isAuroraVeil ? 1 : 0].join('') : '', o.crit ? 1 : 0, o.hits || 0, o.z ? 'Z' : ''].join('|');
     return memo(key, () => {
       const att = buildMon(attSpec), def = buildMon(defSpec);
-      const move = buildMove(moveId, attSpec, { crit: !!o.crit, maxHits: o.maxHits });
-      if (o.hits) move.hits = o.hits;
+      const move = buildMove(moveId, attSpec, { crit: !!o.crit, maxHits: o.maxHits, z: !!o.z });
+      if (o.hits && !o.z) move.hits = o.hits;
       let res;
       try { res = C.calculate(gen, att, def, move, fieldFor(o.weather, { terrain: o.terrain, defSide: ds })); }
       catch (e) { return { rolls: [0], eff: 0, type: m.t, hits: 1, priority: m.r, contact: false, punch: false, notes: [] }; }

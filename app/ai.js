@@ -103,15 +103,17 @@
       if (!sp) { sp = Object.freeze(m === act(st, m.side) ? specNow(m) : Object.assign(specNow(m), { boosts: zero })); specs.set(m, sp); }
       return sp;
     };
+    let zSet = null;   // moves the AI would turn into Z-Moves this turn
     function dmg(from, to, id) {
-      const k = from.key + '>' + to.key + ':' + id;
+      const z = !!(zSet && from === me && zSet.has(id));
+      const k = from.key + '>' + to.key + ':' + id + (z ? 'Z' : '');
       let v = cache.get(k);
       if (v != null) return v;
       const mm = meta(id);
       v = 0;
       if (mm.cat !== 'X' && to && !to.fainted) {
-        const hits = mm.multihit ? (from.ability === 'Skill Link' ? mm.multihit[1] : 3) : 0;
-        const rr = E.rawRolls(specOf(from), specOf(to), id, Object.assign({ hits, crit: mm.alwaysCrit }, fieldOpts(st, to.side)));
+        const hits = z ? 0 : mm.multihit ? (from.ability === 'Skill Link' ? mm.multihit[1] : 3) : 0;
+        const rr = E.rawRolls(specOf(from), specOf(to), id, Object.assign({ hits, crit: mm.alwaysCrit && !z, z }, fieldOpts(st, to.side)));
         if (rr && rr.rolls && rr.rolls.length && rr.eff !== 0) v = rr.rolls[Math.min(8, rr.rolls.length - 1)];
       }
       cache.set(k, v);
@@ -137,8 +139,8 @@
     const canKO = (from, to) => attacks(from).some(id => kos(from, to, id, 1));
     const can2HKO = (from, to) => attacks(from).some(id => kos(from, to, id, 2));
     const acc = (from, to, id) => {
-      const mm = meta(id);
-      return Math.round(100 * hitChance(st, from, to, mm));
+      if (zSet && from === me && zSet.has(id)) return 100;   // Z-Moves never miss
+      return Math.round(100 * hitChance(st, from, to, meta(id)));
     };
     /** The engine's strongest move (CalcStrongestMove): most damage, capped at the target's HP; ties go to priority, then accuracy. */
     function strongest(from, to) {
@@ -154,10 +156,23 @@
       }
       return best;
     }
-    const myStrongest = strongest(me, foe);
     const foeStrongest = strongest(foe, me);
     // the move the AI expects the player to use: their strongest attack, else their first move
     const predicted = foeStrongest || (moves(foe)[0] || null);
+    // CalcShouldAIUseZMove: a Z-Move unless the plain move already knocks out (and more foes remain), never into a
+    // Substitute, a Disguise or a predicted Protect; moves with a charge or recharge turn always become Z-Moves
+    for (const id of usable(me, st)) {
+      const zk = H.zKind(st, me, id);
+      if (!zk) continue;
+      if (zk === 'evoboost') { (zSet = zSet || new Set()).add(id); continue; }
+      const mm = meta(id);
+      if ((foe.sub && !mm.sound) || foe.disguise || (predicted && meta(predicted).eff === 111)) continue;
+      const always = [80, 155, 75, 145, 151, 246].includes(mm.eff);
+      const plainKOs = kos(me, foe, id, 1) && acc(me, foe, id) >= 90 && alive(st, foe.side).length >= 2 && !mm.recoil && mm.eff !== 204 && !(H.SELF_DROP[mm.name]);
+      if (always || !plainKOs) (zSet = zSet || new Set()).add(id);
+    }
+    if (zSet) cache.clear();
+    const myStrongest = strongest(me, foe);
     const firstVs = (a, b, aMove, bMove) => {
       const pa = aMove ? priorityOf(st, a, aMove) : 0, pb = bMove ? priorityOf(st, b, bMove) : 0;
       if (pa !== pb) return pa > pb;
@@ -166,7 +181,7 @@
     };
     const hitsFirst = id => firstVs(me, foe, id, predicted);
     const c = {
-      st, side, rng, me, foe, dmg, kos, canKO, can2HKO, acc, strongest, myStrongest, foeStrongest, predicted, firstVs, hitsFirst, moves, attacks,
+      st, side, rng, me, foe, dmg, kos, canKO, zSet, can2HKO, acc, strongest, myStrongest, foeStrongest, predicted, firstVs, hitsFirst, moves, attacks,
       cls: fightingStyle(st, me),
       meSpe: speed(st, me), foeSpe: speed(st, foe),
       foeKOsMe: !!predicted && meta(predicted).cat !== 'X' && kos(foe, me, predicted, 1),
@@ -412,6 +427,8 @@
       }
     } else if (st0 === 'psn' || st0 === 'tox') {
       if (!badIdeaToStatus(c, st0)) add(statusBonus(c, me.moves.some(x => ['Venoshock', 'Barb Barrage'].includes(meta(x).name)) || me.ability === 'Merciless' ? 2 : 1), 'poison');
+    } else if (c.zSet && c.zSet.has(id) && n === 'Last Resort') {
+      add(statBonus(c, id, 'all', 6, 3), 'Z-Last Resort (Extreme Evoboost)');
     } else if (e === 160 || n === 'Stockpile') {
       if (me.moves.some(x => meta(x).eff === 162 || meta(x).eff === 161)) add(statusBonus(c, 2), 'Stockpile (has Swallow or Spit Up)');
       else if (me.ability !== 'Contrary') {
@@ -732,7 +749,7 @@
         const best = scores.filter(s => s.score === top);
         const pick = best.length === 1 || rng.expected ? best[0] : best[Math.floor(rng() * best.length)];
         if (!peek) { me.aiDesperate = !!(c.desperate && c.desperate.has(pick.id)); me.absorbCooldown = false; }
-        const res = { type: 'move', id: pick.id };
+        const res = { type: 'move', id: pick.id, z: !!(c.zSet && c.zSet.has(pick.id)) };
         if (explain || o.explain) { res.scores = scores; res.style = c.cls; res.ties = best.length; }
         return res;
       },

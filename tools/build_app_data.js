@@ -78,6 +78,8 @@ outAbilities['As One'] = { c: 'As One (Glastrier)', d: abilityText['As One'] || 
 
 // ---------- items ----------
 const outItems = {};
+const itemIdByName = {};
+for (const [id, name] of Object.entries(items)) if (name && !(name in itemIdByName)) itemIdByName[name] = +id;
 for (const [id, name] of Object.entries(items)) {
   if (!name || /^Free Space|^\?+$/.test(name)) continue;
   outItems[id] = { n: name, c: calc.items[id] || null };
@@ -125,6 +127,90 @@ for (const b of bosses) if (b.cat === 'rival') {
   b.v = (outSpecies.find(s => s.i === last.s) || {}).n;
 }
 
+// ---------- evolutions and Mega Evolution ----------
+const evolutions = read('evolutions.json');
+const outEvo = {}, outMega = {};
+for (const [sid, list] of Object.entries(evolutions)) {
+  for (const e of list) {
+    if (e.method === 0xFE) { (outMega[sid] = outMega[sid] || []).push([e.unknown === 0 ? e.param : 0, e.target, e.unknown === 0 ? 0 : e.param]); continue; }
+    if (e.method === 0xFD) continue;   // Gigantamax: not in this game's battles
+    (outEvo[sid] = outEvo[sid] || []).push([e.target, e.method, e.param, e.how]);
+  }
+}
+
+// ---------- wild encounters by area, in story order ----------
+const STORY = ['Pallet Town', 'Route 1', 'Viridian City', 'Route 22', 'Route 2', 'Viridian Forest', 'Pewter City', 'Route 3', 'Mt. Moon',
+  'Route 4', 'Cerulean City', 'Route 24', 'Route 25', 'Route 5', 'Route 6', 'Vermilion City', 'S.S. Anne', 'Route 11', "Diglett's Cave",
+  'Route 9', 'Route 10', 'Rock Tunnel', 'Power Plant', 'Lavender Town', 'Route 8', 'Route 7', 'Celadon City', 'Pokémon Tower',
+  'Route 12', 'Route 13', 'Route 14', 'Route 15', 'Route 16', 'Route 17', 'Route 18', 'Fuchsia City', 'Safari Zone', 'Saffron City',
+  'Route 19', 'Route 20', 'Seafoam Islands', 'Cinnabar Island', 'Pokémon Mansion', 'Route 21', 'One Island', 'Treasure Beach',
+  'Kindle Road', 'Mt. Ember', 'Cape Brink', 'Two Island', 'Three Island', 'Bond Bridge', 'Berry Forest', 'Route 23', 'Victory Road',
+  'Four Island', 'Icefall Cave', 'Five Island', 'Five Isle Meadow', 'Memorial Pillar', 'Water Labyrinth', 'Resort Gorgeous', 'Lost Cave',
+  'Six Island', 'Water Path', 'Ruin Valley', 'Green Path', 'Outcast Island', 'Altering Cave', 'Pattern Bush', 'Seven Island',
+  'Canyon Entrance', 'Sevault Canyon', 'Tanoby Ruins', 'Cerulean Cave'];
+const encounters = read('encounters.json');
+function merge(info, kind) {
+  // one row per species (and rod), chances added up, level range widened
+  const rows = new Map();
+  for (const x of info.slots) {
+    if (!x.s) continue;
+    const key = x.s + (x.rod ? '|' + x.rod : '');
+    const r = rows.get(key);
+    if (r) { r[1] = Math.min(r[1], x.min); r[2] = Math.max(r[2], x.max); r[3] += x.pct; }
+    else rows.set(key, kind === 'fish' ? [x.s, x.min, x.max, x.pct, x.rod] : [x.s, x.min, x.max, x.pct]);
+  }
+  return [...rows.values()].sort((a, b) => (a[4] || '').localeCompare(b[4] || '') || b[3] - a[3]);
+}
+const outAreas = [];
+for (const [name, maps] of Object.entries(encounters)) {
+  if (name === "Oak's Lab") continue;   // a renamed Tanoby chamber slot (Unown only), not a place you can reach
+  const parts = maps.map(m => {
+    const k = {};
+    for (const [kind, t] of Object.entries(m.methods)) {
+      k[kind] = {};
+      for (const [when, info] of Object.entries(t)) if (info) k[kind][when] = merge(info, kind);
+    }
+    return { g: m.group, m: m.num, k };
+  });
+  let minLv = 100;
+  for (const p of parts) for (const t of Object.values(p.k)) for (const rows of Object.values(t)) for (const r of rows) minLv = Math.min(minLv, r[1]);
+  outAreas.push({ n: name, parts, minLv });
+}
+outAreas.sort((a, b) => {
+  const ia = STORY.indexOf(a.n), ib = STORY.indexOf(b.n);
+  if (ia >= 0 && ib >= 0) return ia - ib;
+  if (ia >= 0) return -1;
+  if (ib >= 0) return 1;
+  return a.minLv - b.minLv || a.n.localeCompare(b.n);
+});
+
+// ---------- regular trainers on each area ----------
+const locations = read('trainer_locations.json');
+const bossIds = new Set(order);
+function defaultMoves(sid, lv) {
+  const L = outLearn[sid];
+  if (!L) return [];
+  const known = [];
+  for (const [l, mv] of L.l) if (l <= lv && !known.includes(mv)) { known.push(mv); if (known.length > 4) known.shift(); }
+  return known;
+}
+const outTrainers = {};
+for (const [tid, places] of Object.entries(locations)) {
+  const t = trainers[tid];
+  if (!t || bossIds.has(+tid)) continue;
+  const ov = (t.alwaysOverride || [])[0];
+  const party = ov ? ov.party.map(m => ({ s: m.speciesId, lv: m.level ?? null, rel: m.relativeToPlayerMax ?? null, nat: m.natureId, ab: m.ability, it: m.itemId || null, mv: m.moveIds,
+      iv: [m.ivs.hp, m.ivs.atk, m.ivs.def, m.ivs.spa, m.ivs.spd, m.ivs.spe] }))
+    : t.party.map(m => {
+      const sp = m.spread || {};
+      return { s: m.speciesId, lv: m.level, nat: sp.natureId ?? null, ab: m.ability || null, it: m.itemId || (m.item && itemIdByName[m.item]) || null,
+        mv: m.moveIds && m.moveIds.length ? m.moveIds : defaultMoves(m.speciesId, m.level),
+        iv: m.ivs ? [m.ivs.hp, m.ivs.atk, m.ivs.def, m.ivs.spa, m.ivs.spd, m.ivs.spe] : null,
+        ev: sp.evs ? [sp.evs.hp, sp.evs.atk, sp.evs.def, sp.evs.spa, sp.evs.spd, sp.evs.spe] : null };
+    });
+  outTrainers[tid] = { n: t.name, cls: t.class, dbl: (ov ? ov.double : t.double) ? 1 : 0, a: places, party };
+}
+
 const out = {
   version: 'Radical Red 4.1', calcVersion: '@smogon/calc 0.12.0 (gen 9 mechanics)',
   natures: natures.map(n => ({ n: n.name, u: n.up, d: n.down })),
@@ -136,7 +222,9 @@ const out = {
     condSpecies: restrictions.conditionalAllowedSpecies,
   },
   bosses, caps: { hardcore: HC, normal: caps.normal },
+  evo: outEvo, mega: outMega, areas: outAreas, trainers: outTrainers,
 };
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, JSON.stringify(out));
+console.log(`areas ${outAreas.length}, route trainers ${Object.keys(outTrainers).length}, species with evolutions ${Object.keys(outEvo).length}, Mega forms ${Object.keys(outMega).length}`);
 console.log(`species ${outSpecies.length}, moves ${outMoves.length}, abilities ${Object.keys(outAbilities).length}, items ${Object.keys(outItems).length}, bosses ${bosses.length}, milestones ${done}, ${(fs.statSync(OUT).size / 1024).toFixed(0)} KB`);

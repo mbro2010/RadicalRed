@@ -1,0 +1,6427 @@
+{
+"1": [
+{
+"method": 4,
+"param": 16,
+"target": 2,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"2": [
+{
+"method": 4,
+"param": 36,
+"target": 3,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"3": [
+{
+"method": 254,
+"param": 533,
+"target": 869,
+"unknown": 0,
+"how": "Mega Evolution with Venusaurite"
+}
+],
+"4": [
+{
+"method": 4,
+"param": 16,
+"target": 5,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"5": [
+{
+"method": 4,
+"param": 36,
+"target": 6,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"6": [
+{
+"method": 254,
+"param": 534,
+"target": 870,
+"unknown": 0,
+"how": "Mega Evolution with CharzarditeX"
+},
+{
+"method": 254,
+"param": 535,
+"target": 871,
+"unknown": 0,
+"how": "Mega Evolution with CharzarditeY"
+}
+],
+"7": [
+{
+"method": 4,
+"param": 16,
+"target": 8,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"8": [
+{
+"method": 4,
+"param": 36,
+"target": 9,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"9": [
+{
+"method": 254,
+"param": 536,
+"target": 872,
+"unknown": 0,
+"how": "Mega Evolution with Blastoisnite"
+}
+],
+"10": [
+{
+"method": 4,
+"param": 7,
+"target": 11,
+"unknown": 0,
+"how": "Level 7"
+}
+],
+"11": [
+{
+"method": 4,
+"param": 10,
+"target": 12,
+"unknown": 0,
+"how": "Level 10"
+}
+],
+"12": [
+{
+"method": 254,
+"param": 730,
+"target": 1233,
+"unknown": 0,
+"how": "Mega Evolution with Butterfrite"
+}
+],
+"13": [
+{
+"method": 4,
+"param": 7,
+"target": 14,
+"unknown": 0,
+"how": "Level 7"
+}
+],
+"14": [
+{
+"method": 4,
+"param": 10,
+"target": 15,
+"unknown": 0,
+"how": "Level 10"
+}
+],
+"15": [
+{
+"method": 254,
+"param": 537,
+"target": 873,
+"unknown": 0,
+"how": "Mega Evolution with Beedrillite"
+}
+],
+"16": [
+{
+"method": 4,
+"param": 16,
+"target": 17,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"17": [
+{
+"method": 4,
+"param": 36,
+"target": 18,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"18": [
+{
+"method": 254,
+"param": 538,
+"target": 874,
+"unknown": 0,
+"how": "Mega Evolution with Pidgeotite"
+}
+],
+"19": [
+{
+"method": 4,
+"param": 16,
+"target": 20,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"21": [
+{
+"method": 4,
+"param": 20,
+"target": 22,
+"unknown": 0,
+"how": "Level 20"
+}
+],
+"23": [
+{
+"method": 4,
+"param": 22,
+"target": 24,
+"unknown": 0,
+"how": "Level 22"
+}
+],
+"25": [
+{
+"method": 7,
+"param": 96,
+"target": 26,
+"unknown": 0,
+"how": "item: ThunderStone"
+},
+{
+"method": 7,
+"param": 99,
+"target": 1022,
+"unknown": 0,
+"how": "item: Shiny Stone"
+}
+],
+"27": [
+{
+"method": 4,
+"param": 22,
+"target": 28,
+"unknown": 0,
+"how": "Level 22"
+}
+],
+"29": [
+{
+"method": 4,
+"param": 16,
+"target": 30,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"30": [
+{
+"method": 7,
+"param": 94,
+"target": 31,
+"unknown": 0,
+"how": "item: Moon Stone"
+}
+],
+"32": [
+{
+"method": 4,
+"param": 16,
+"target": 33,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"33": [
+{
+"method": 7,
+"param": 94,
+"target": 34,
+"unknown": 0,
+"how": "item: Moon Stone"
+}
+],
+"35": [
+{
+"method": 7,
+"param": 94,
+"target": 36,
+"unknown": 0,
+"how": "item: Moon Stone"
+}
+],
+"37": [
+{
+"method": 7,
+"param": 95,
+"target": 38,
+"unknown": 0,
+"how": "item: Fire Stone"
+}
+],
+"39": [
+{
+"method": 7,
+"param": 94,
+"target": 40,
+"unknown": 0,
+"how": "item: Moon Stone"
+}
+],
+"41": [
+{
+"method": 4,
+"param": 22,
+"target": 42,
+"unknown": 0,
+"how": "Level 22"
+}
+],
+"42": [
+{
+"method": 1,
+"param": 0,
+"target": 169,
+"unknown": 0,
+"how": "friendship"
+}
+],
+"43": [
+{
+"method": 4,
+"param": 16,
+"target": 44,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"44": [
+{
+"method": 7,
+"param": 93,
+"target": 182,
+"unknown": 0,
+"how": "item: Sun Stone"
+},
+{
+"method": 7,
+"param": 98,
+"target": 45,
+"unknown": 0,
+"how": "item: Leaf Stone"
+}
+],
+"46": [
+{
+"method": 4,
+"param": 23,
+"target": 47,
+"unknown": 0,
+"how": "Level 23"
+}
+],
+"48": [
+{
+"method": 4,
+"param": 27,
+"target": 49,
+"unknown": 0,
+"how": "Level 27"
+}
+],
+"50": [
+{
+"method": 4,
+"param": 22,
+"target": 51,
+"unknown": 0,
+"how": "Level 22"
+}
+],
+"52": [
+{
+"method": 4,
+"param": 28,
+"target": 53,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"54": [
+{
+"method": 4,
+"param": 27,
+"target": 55,
+"unknown": 0,
+"how": "Level 27"
+}
+],
+"56": [
+{
+"method": 4,
+"param": 28,
+"target": 57,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"57": [
+{
+"method": 26,
+"param": 325,
+"target": 937,
+"unknown": 0,
+"how": "knows move: Shadow Punch"
+},
+{
+"method": 4,
+"param": 45,
+"target": 937,
+"unknown": 0,
+"how": "Level 45"
+}
+],
+"58": [
+{
+"method": 7,
+"param": 95,
+"target": 59,
+"unknown": 0,
+"how": "item: Fire Stone"
+}
+],
+"60": [
+{
+"method": 4,
+"param": 25,
+"target": 61,
+"unknown": 0,
+"how": "Level 25"
+}
+],
+"61": [
+{
+"method": 7,
+"param": 97,
+"target": 62,
+"unknown": 0,
+"how": "item: Water Stone"
+},
+{
+"method": 6,
+"param": 187,
+"target": 186,
+"unknown": 0,
+"how": "trade holding item: King's Rock"
+},
+{
+"method": 7,
+"param": 187,
+"target": 186,
+"unknown": 0,
+"how": "item: King's Rock"
+}
+],
+"63": [
+{
+"method": 4,
+"param": 16,
+"target": 64,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"64": [
+{
+"method": 7,
+"param": 87,
+"target": 65,
+"unknown": 0,
+"how": "item: Link Cable"
+},
+{
+"method": 5,
+"param": 0,
+"target": 65,
+"unknown": 0,
+"how": "trade"
+}
+],
+"65": [
+{
+"method": 254,
+"param": 539,
+"target": 875,
+"unknown": 0,
+"how": "Mega Evolution with Alakazite"
+}
+],
+"66": [
+{
+"method": 4,
+"param": 28,
+"target": 67,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"67": [
+{
+"method": 7,
+"param": 87,
+"target": 68,
+"unknown": 0,
+"how": "item: Link Cable"
+},
+{
+"method": 5,
+"param": 0,
+"target": 68,
+"unknown": 0,
+"how": "trade"
+}
+],
+"68": [
+{
+"method": 254,
+"param": 728,
+"target": 1236,
+"unknown": 0,
+"how": "Mega Evolution with Machampite"
+}
+],
+"69": [
+{
+"method": 4,
+"param": 21,
+"target": 70,
+"unknown": 0,
+"how": "Level 21"
+}
+],
+"70": [
+{
+"method": 7,
+"param": 98,
+"target": 71,
+"unknown": 0,
+"how": "item: Leaf Stone"
+}
+],
+"72": [
+{
+"method": 4,
+"param": 28,
+"target": 73,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"74": [
+{
+"method": 4,
+"param": 23,
+"target": 75,
+"unknown": 0,
+"how": "Level 23"
+}
+],
+"75": [
+{
+"method": 7,
+"param": 87,
+"target": 76,
+"unknown": 0,
+"how": "item: Link Cable"
+},
+{
+"method": 5,
+"param": 0,
+"target": 76,
+"unknown": 0,
+"how": "trade"
+}
+],
+"77": [
+{
+"method": 4,
+"param": 28,
+"target": 78,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"79": [
+{
+"method": 4,
+"param": 37,
+"target": 80,
+"unknown": 0,
+"how": "Level 37"
+},
+{
+"method": 6,
+"param": 187,
+"target": 199,
+"unknown": 0,
+"how": "trade holding item: King's Rock"
+},
+{
+"method": 7,
+"param": 187,
+"target": 199,
+"unknown": 0,
+"how": "item: King's Rock"
+}
+],
+"80": [
+{
+"method": 254,
+"param": 540,
+"target": 876,
+"unknown": 0,
+"how": "Mega Evolution with Slowbronite"
+}
+],
+"81": [
+{
+"method": 4,
+"param": 30,
+"target": 82,
+"unknown": 0,
+"how": "Level 30"
+}
+],
+"82": [
+{
+"method": 7,
+"param": 96,
+"target": 515,
+"unknown": 0,
+"how": "item: ThunderStone"
+}
+],
+"84": [
+{
+"method": 4,
+"param": 31,
+"target": 85,
+"unknown": 0,
+"how": "Level 31"
+}
+],
+"86": [
+{
+"method": 4,
+"param": 34,
+"target": 87,
+"unknown": 0,
+"how": "Level 34"
+}
+],
+"88": [
+{
+"method": 4,
+"param": 40,
+"target": 89,
+"unknown": 0,
+"how": "Level 40"
+}
+],
+"90": [
+{
+"method": 7,
+"param": 97,
+"target": 91,
+"unknown": 0,
+"how": "item: Water Stone"
+}
+],
+"92": [
+{
+"method": 4,
+"param": 23,
+"target": 93,
+"unknown": 0,
+"how": "Level 23"
+}
+],
+"93": [
+{
+"method": 7,
+"param": 87,
+"target": 94,
+"unknown": 0,
+"how": "item: Link Cable"
+},
+{
+"method": 5,
+"param": 0,
+"target": 94,
+"unknown": 0,
+"how": "trade"
+}
+],
+"94": [
+{
+"method": 254,
+"param": 541,
+"target": 877,
+"unknown": 0,
+"how": "Mega Evolution with Gengarite"
+}
+],
+"95": [
+{
+"method": 7,
+"param": 199,
+"target": 208,
+"unknown": 0,
+"how": "item: Metal Coat"
+},
+{
+"method": 6,
+"param": 199,
+"target": 208,
+"unknown": 0,
+"how": "trade holding item: Metal Coat"
+}
+],
+"96": [
+{
+"method": 4,
+"param": 26,
+"target": 97,
+"unknown": 0,
+"how": "Level 26"
+}
+],
+"98": [
+{
+"method": 4,
+"param": 28,
+"target": 99,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"99": [
+{
+"method": 254,
+"param": 733,
+"target": 1238,
+"unknown": 0,
+"how": "Mega Evolution with Kinglerite"
+}
+],
+"100": [
+{
+"method": 4,
+"param": 28,
+"target": 101,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"102": [
+{
+"method": 7,
+"param": 98,
+"target": 103,
+"unknown": 0,
+"how": "item: Leaf Stone"
+},
+{
+"method": 7,
+"param": 93,
+"target": 1037,
+"unknown": 0,
+"how": "item: Sun Stone"
+}
+],
+"104": [
+{
+"method": 23,
+"param": 28,
+"target": 105,
+"unknown": 0,
+"how": "Level 28 during the day"
+},
+{
+"method": 22,
+"param": 28,
+"target": 1039,
+"unknown": 0,
+"how": "Level 28 at night"
+}
+],
+"108": [
+{
+"method": 26,
+"param": 205,
+"target": 516,
+"unknown": 0,
+"how": "knows move: Rollout"
+},
+{
+"method": 4,
+"param": 35,
+"target": 516,
+"unknown": 0,
+"how": "Level 35"
+}
+],
+"109": [
+{
+"method": 23,
+"param": 35,
+"target": 110,
+"unknown": 0,
+"how": "Level 35 during the day"
+},
+{
+"method": 22,
+"param": 35,
+"target": 1215,
+"unknown": 0,
+"how": "Level 35 at night"
+}
+],
+"111": [
+{
+"method": 4,
+"param": 42,
+"target": 112,
+"unknown": 0,
+"how": "Level 42"
+}
+],
+"112": [
+{
+"method": 7,
+"param": 87,
+"target": 517,
+"unknown": 0,
+"how": "item: Link Cable"
+},
+{
+"method": 6,
+"param": 88,
+"target": 517,
+"unknown": 0,
+"how": "trade holding item: Protector"
+}
+],
+"113": [
+{
+"method": 1,
+"param": 0,
+"target": 242,
+"unknown": 0,
+"how": "friendship"
+}
+],
+"114": [
+{
+"method": 26,
+"param": 246,
+"target": 518,
+"unknown": 0,
+"how": "knows move: AncientPower"
+},
+{
+"method": 4,
+"param": 45,
+"target": 518,
+"unknown": 0,
+"how": "Level 45"
+}
+],
+"115": [
+{
+"method": 254,
+"param": 542,
+"target": 878,
+"unknown": 0,
+"how": "Mega Evolution with Kangaskanite"
+}
+],
+"116": [
+{
+"method": 4,
+"param": 32,
+"target": 117,
+"unknown": 0,
+"how": "Level 32"
+}
+],
+"117": [
+{
+"method": 7,
+"param": 176,
+"target": 230,
+"unknown": 0,
+"how": "item: Prism Scale"
+},
+{
+"method": 6,
+"param": 201,
+"target": 230,
+"unknown": 0,
+"how": "trade holding item: Dragon Scale"
+}
+],
+"118": [
+{
+"method": 4,
+"param": 33,
+"target": 119,
+"unknown": 0,
+"how": "Level 33"
+}
+],
+"120": [
+{
+"method": 7,
+"param": 97,
+"target": 121,
+"unknown": 0,
+"how": "item: Water Stone"
+}
+],
+"123": [
+{
+"method": 7,
+"param": 199,
+"target": 212,
+"unknown": 0,
+"how": "item: Metal Coat"
+},
+{
+"method": 6,
+"param": 199,
+"target": 212,
+"unknown": 0,
+"how": "trade holding item: Metal Coat"
+},
+{
+"method": 7,
+"param": 187,
+"target": 1273,
+"unknown": 0,
+"how": "item: King's Rock"
+}
+],
+"125": [
+{
+"method": 7,
+"param": 87,
+"target": 519,
+"unknown": 0,
+"how": "item: Link Cable"
+},
+{
+"method": 6,
+"param": 87,
+"target": 519,
+"unknown": 0,
+"how": "trade holding item: Link Cable"
+}
+],
+"126": [
+{
+"method": 7,
+"param": 87,
+"target": 520,
+"unknown": 0,
+"how": "item: Link Cable"
+},
+{
+"method": 6,
+"param": 90,
+"target": 520,
+"unknown": 0,
+"how": "trade holding item: Magmarizer"
+}
+],
+"127": [
+{
+"method": 254,
+"param": 543,
+"target": 879,
+"unknown": 0,
+"how": "Mega Evolution with Pinsirite"
+}
+],
+"129": [
+{
+"method": 4,
+"param": 20,
+"target": 130,
+"unknown": 0,
+"how": "Level 20"
+}
+],
+"130": [
+{
+"method": 254,
+"param": 544,
+"target": 880,
+"unknown": 0,
+"how": "Mega Evolution with Gyaradosite"
+}
+],
+"131": [
+{
+"method": 254,
+"param": 729,
+"target": 1239,
+"unknown": 0,
+"how": "Mega Evolution with Laprasite"
+}
+],
+"133": [
+{
+"method": 2,
+"param": 0,
+"target": 196,
+"unknown": 0,
+"how": "friendship (day)"
+},
+{
+"method": 3,
+"param": 0,
+"target": 197,
+"unknown": 0,
+"how": "friendship (night)"
+},
+{
+"method": 7,
+"param": 95,
+"target": 136,
+"unknown": 0,
+"how": "item: Fire Stone"
+},
+{
+"method": 7,
+"param": 96,
+"target": 135,
+"unknown": 0,
+"how": "item: ThunderStone"
+},
+{
+"method": 7,
+"param": 97,
+"target": 134,
+"unknown": 0,
+"how": "item: Water Stone"
+},
+{
+"method": 7,
+"param": 98,
+"target": 523,
+"unknown": 0,
+"how": "item: Leaf Stone"
+},
+{
+"method": 7,
+"param": 102,
+"target": 524,
+"unknown": 0,
+"how": "item: Ice Stone"
+},
+{
+"method": 17,
+"param": 23,
+"target": 808,
+"unknown": 0,
+"how": "knows a Fairy-type move"
+}
+],
+"137": [
+{
+"method": 7,
+"param": 87,
+"target": 233,
+"unknown": 0,
+"how": "item: Link Cable"
+},
+{
+"method": 6,
+"param": 218,
+"target": 233,
+"unknown": 0,
+"how": "trade holding item: Upgrade"
+}
+],
+"138": [
+{
+"method": 4,
+"param": 34,
+"target": 139,
+"unknown": 0,
+"how": "Level 34"
+}
+],
+"140": [
+{
+"method": 4,
+"param": 34,
+"target": 141,
+"unknown": 0,
+"how": "Level 34"
+}
+],
+"142": [
+{
+"method": 254,
+"param": 545,
+"target": 881,
+"unknown": 0,
+"how": "Mega Evolution with Aerodactlite"
+}
+],
+"143": [
+{
+"method": 254,
+"param": 732,
+"target": 1241,
+"unknown": 0,
+"how": "Mega Evolution with Snorlaxite"
+}
+],
+"147": [
+{
+"method": 4,
+"param": 30,
+"target": 148,
+"unknown": 0,
+"how": "Level 30"
+}
+],
+"148": [
+{
+"method": 4,
+"param": 55,
+"target": 149,
+"unknown": 0,
+"how": "Level 55"
+}
+],
+"150": [
+{
+"method": 254,
+"param": 546,
+"target": 882,
+"unknown": 0,
+"how": "Mega Evolution with MewtwoniteX"
+},
+{
+"method": 254,
+"param": 547,
+"target": 883,
+"unknown": 0,
+"how": "Mega Evolution with MewtwoniteY"
+}
+],
+"152": [
+{
+"method": 4,
+"param": 16,
+"target": 153,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"153": [
+{
+"method": 4,
+"param": 32,
+"target": 154,
+"unknown": 0,
+"how": "Level 32"
+}
+],
+"155": [
+{
+"method": 4,
+"param": 16,
+"target": 156,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"156": [
+{
+"method": 22,
+"param": 36,
+"target": 1299,
+"unknown": 0,
+"how": "Level 36 at night"
+},
+{
+"method": 23,
+"param": 36,
+"target": 157,
+"unknown": 0,
+"how": "Level 36 during the day"
+}
+],
+"158": [
+{
+"method": 4,
+"param": 16,
+"target": 159,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"159": [
+{
+"method": 4,
+"param": 36,
+"target": 160,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"161": [
+{
+"method": 4,
+"param": 15,
+"target": 162,
+"unknown": 0,
+"how": "Level 15"
+}
+],
+"163": [
+{
+"method": 4,
+"param": 16,
+"target": 164,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"165": [
+{
+"method": 4,
+"param": 16,
+"target": 166,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"167": [
+{
+"method": 4,
+"param": 16,
+"target": 168,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"170": [
+{
+"method": 4,
+"param": 27,
+"target": 171,
+"unknown": 0,
+"how": "Level 27"
+}
+],
+"172": [
+{
+"method": 1,
+"param": 0,
+"target": 25,
+"unknown": 0,
+"how": "friendship"
+}
+],
+"173": [
+{
+"method": 1,
+"param": 0,
+"target": 35,
+"unknown": 0,
+"how": "friendship"
+}
+],
+"174": [
+{
+"method": 1,
+"param": 0,
+"target": 39,
+"unknown": 0,
+"how": "friendship"
+}
+],
+"175": [
+{
+"method": 1,
+"param": 0,
+"target": 176,
+"unknown": 0,
+"how": "friendship"
+}
+],
+"176": [
+{
+"method": 7,
+"param": 99,
+"target": 521,
+"unknown": 0,
+"how": "item: Shiny Stone"
+}
+],
+"177": [
+{
+"method": 4,
+"param": 25,
+"target": 178,
+"unknown": 0,
+"how": "Level 25"
+}
+],
+"179": [
+{
+"method": 4,
+"param": 15,
+"target": 180,
+"unknown": 0,
+"how": "Level 15"
+}
+],
+"180": [
+{
+"method": 4,
+"param": 30,
+"target": 181,
+"unknown": 0,
+"how": "Level 30"
+}
+],
+"181": [
+{
+"method": 254,
+"param": 548,
+"target": 884,
+"unknown": 0,
+"how": "Mega Evolution with Ampharosite"
+}
+],
+"183": [
+{
+"method": 4,
+"param": 18,
+"target": 184,
+"unknown": 0,
+"how": "Level 18"
+}
+],
+"187": [
+{
+"method": 4,
+"param": 16,
+"target": 188,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"188": [
+{
+"method": 4,
+"param": 27,
+"target": 189,
+"unknown": 0,
+"how": "Level 27"
+}
+],
+"190": [
+{
+"method": 26,
+"param": 438,
+"target": 477,
+"unknown": 0,
+"how": "knows move: Double Hit"
+},
+{
+"method": 4,
+"param": 34,
+"target": 477,
+"unknown": 0,
+"how": "Level 34"
+}
+],
+"191": [
+{
+"method": 7,
+"param": 93,
+"target": 192,
+"unknown": 0,
+"how": "item: Sun Stone"
+}
+],
+"193": [
+{
+"method": 26,
+"param": 246,
+"target": 522,
+"unknown": 0,
+"how": "knows move: AncientPower"
+},
+{
+"method": 4,
+"param": 45,
+"target": 522,
+"unknown": 0,
+"how": "Level 45"
+}
+],
+"194": [
+{
+"method": 4,
+"param": 20,
+"target": 195,
+"unknown": 0,
+"how": "Level 20"
+}
+],
+"198": [
+{
+"method": 7,
+"param": 100,
+"target": 483,
+"unknown": 0,
+"how": "item: Dusk Stone"
+}
+],
+"200": [
+{
+"method": 7,
+"param": 100,
+"target": 482,
+"unknown": 0,
+"how": "item: Dusk Stone"
+}
+],
+"203": [
+{
+"method": 26,
+"param": 783,
+"target": 868,
+"unknown": 0,
+"how": "knows move: Twin Beam"
+},
+{
+"method": 4,
+"param": 45,
+"target": 868,
+"unknown": 0,
+"how": "Level 45"
+}
+],
+"204": [
+{
+"method": 4,
+"param": 28,
+"target": 205,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"206": [
+{
+"method": 26,
+"param": 768,
+"target": 1100,
+"unknown": 0,
+"how": "knows move: Hyper Drill"
+},
+{
+"method": 4,
+"param": 45,
+"target": 1100,
+"unknown": 0,
+"how": "Level 45"
+}
+],
+"207": [
+{
+"method": 7,
+"param": 100,
+"target": 525,
+"unknown": 0,
+"how": "item: Dusk Stone"
+}
+],
+"208": [
+{
+"method": 254,
+"param": 549,
+"target": 885,
+"unknown": 0,
+"how": "Mega Evolution with Steelixite"
+}
+],
+"209": [
+{
+"method": 4,
+"param": 23,
+"target": 210,
+"unknown": 0,
+"how": "Level 23"
+}
+],
+"212": [
+{
+"method": 254,
+"param": 550,
+"target": 886,
+"unknown": 0,
+"how": "Mega Evolution with Scizorite"
+}
+],
+"214": [
+{
+"method": 254,
+"param": 551,
+"target": 887,
+"unknown": 0,
+"how": "Mega Evolution with Heracronite"
+}
+],
+"215": [
+{
+"method": 7,
+"param": 100,
+"target": 514,
+"unknown": 0,
+"how": "item: Dusk Stone"
+}
+],
+"216": [
+{
+"method": 4,
+"param": 28,
+"target": 217,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"217": [
+{
+"method": 4,
+"param": 48,
+"target": 1302,
+"unknown": 0,
+"how": "Level 48"
+}
+],
+"218": [
+{
+"method": 4,
+"param": 23,
+"target": 219,
+"unknown": 0,
+"how": "Level 23"
+}
+],
+"220": [
+{
+"method": 4,
+"param": 28,
+"target": 221,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"221": [
+{
+"method": 26,
+"param": 246,
+"target": 526,
+"unknown": 0,
+"how": "knows move: AncientPower"
+},
+{
+"method": 4,
+"param": 45,
+"target": 526,
+"unknown": 0,
+"how": "Level 45"
+}
+],
+"223": [
+{
+"method": 4,
+"param": 25,
+"target": 224,
+"unknown": 0,
+"how": "Level 25"
+}
+],
+"228": [
+{
+"method": 4,
+"param": 23,
+"target": 229,
+"unknown": 0,
+"how": "Level 23"
+}
+],
+"229": [
+{
+"method": 254,
+"param": 552,
+"target": 888,
+"unknown": 0,
+"how": "Mega Evolution with Houndoomnite"
+}
+],
+"231": [
+{
+"method": 4,
+"param": 25,
+"target": 232,
+"unknown": 0,
+"how": "Level 25"
+}
+],
+"233": [
+{
+"method": 7,
+"param": 100,
+"target": 527,
+"unknown": 0,
+"how": "item: Dusk Stone"
+},
+{
+"method": 6,
+"param": 91,
+"target": 527,
+"unknown": 0,
+"how": "trade holding item: Dubious Disc"
+}
+],
+"234": [
+{
+"method": 4,
+"param": 44,
+"target": 1270,
+"unknown": 0,
+"how": "Level 44"
+}
+],
+"236": [
+{
+"method": 8,
+"param": 20,
+"target": 106,
+"unknown": 0,
+"how": "Level 20, Attack > Defense"
+},
+{
+"method": 9,
+"param": 20,
+"target": 237,
+"unknown": 0,
+"how": "Level 20, Attack = Defense"
+},
+{
+"method": 10,
+"param": 20,
+"target": 107,
+"unknown": 0,
+"how": "Level 20, Attack < Defense"
+}
+],
+"238": [
+{
+"method": 4,
+"param": 27,
+"target": 124,
+"unknown": 0,
+"how": "Level 27"
+}
+],
+"239": [
+{
+"method": 4,
+"param": 27,
+"target": 125,
+"unknown": 0,
+"how": "Level 27"
+}
+],
+"240": [
+{
+"method": 4,
+"param": 27,
+"target": 126,
+"unknown": 0,
+"how": "Level 27"
+}
+],
+"246": [
+{
+"method": 4,
+"param": 30,
+"target": 247,
+"unknown": 0,
+"how": "Level 30"
+}
+],
+"247": [
+{
+"method": 4,
+"param": 55,
+"target": 248,
+"unknown": 0,
+"how": "Level 55"
+}
+],
+"248": [
+{
+"method": 254,
+"param": 553,
+"target": 889,
+"unknown": 0,
+"how": "Mega Evolution with Tyranitarite"
+}
+],
+"277": [
+{
+"method": 4,
+"param": 16,
+"target": 278,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"278": [
+{
+"method": 4,
+"param": 36,
+"target": 279,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"279": [
+{
+"method": 254,
+"param": 554,
+"target": 890,
+"unknown": 0,
+"how": "Mega Evolution with Sceptilite"
+}
+],
+"280": [
+{
+"method": 4,
+"param": 16,
+"target": 281,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"281": [
+{
+"method": 4,
+"param": 36,
+"target": 282,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"282": [
+{
+"method": 254,
+"param": 555,
+"target": 891,
+"unknown": 0,
+"how": "Mega Evolution with Blazikenite"
+}
+],
+"283": [
+{
+"method": 4,
+"param": 16,
+"target": 284,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"284": [
+{
+"method": 4,
+"param": 36,
+"target": 285,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"285": [
+{
+"method": 254,
+"param": 556,
+"target": 892,
+"unknown": 0,
+"how": "Mega Evolution with Swampertite"
+}
+],
+"286": [
+{
+"method": 4,
+"param": 16,
+"target": 287,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"288": [
+{
+"method": 4,
+"param": 16,
+"target": 289,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"290": [
+{
+"method": 11,
+"param": 7,
+"target": 291,
+"unknown": 0,
+"how": "Level 7 (Silcoon)"
+},
+{
+"method": 12,
+"param": 7,
+"target": 293,
+"unknown": 0,
+"how": "Level 7 (Cascoon)"
+}
+],
+"291": [
+{
+"method": 4,
+"param": 10,
+"target": 292,
+"unknown": 0,
+"how": "Level 10"
+}
+],
+"293": [
+{
+"method": 4,
+"param": 10,
+"target": 294,
+"unknown": 0,
+"how": "Level 10"
+}
+],
+"295": [
+{
+"method": 4,
+"param": 14,
+"target": 296,
+"unknown": 0,
+"how": "Level 14"
+}
+],
+"296": [
+{
+"method": 7,
+"param": 97,
+"target": 297,
+"unknown": 0,
+"how": "item: Water Stone"
+}
+],
+"298": [
+{
+"method": 4,
+"param": 14,
+"target": 299,
+"unknown": 0,
+"how": "Level 14"
+}
+],
+"299": [
+{
+"method": 7,
+"param": 98,
+"target": 300,
+"unknown": 0,
+"how": "item: Leaf Stone"
+}
+],
+"301": [
+{
+"method": 13,
+"param": 16,
+"target": 302,
+"unknown": 0,
+"how": "Level 16 (Ninjask)"
+},
+{
+"method": 14,
+"param": 16,
+"target": 303,
+"unknown": 0,
+"how": "Level 16 (Shedinja)"
+}
+],
+"304": [
+{
+"method": 4,
+"param": 22,
+"target": 305,
+"unknown": 0,
+"how": "Level 22"
+}
+],
+"306": [
+{
+"method": 4,
+"param": 23,
+"target": 307,
+"unknown": 0,
+"how": "Level 23"
+}
+],
+"309": [
+{
+"method": 4,
+"param": 25,
+"target": 310,
+"unknown": 0,
+"how": "Level 25"
+}
+],
+"311": [
+{
+"method": 4,
+"param": 22,
+"target": 312,
+"unknown": 0,
+"how": "Level 22"
+}
+],
+"313": [
+{
+"method": 4,
+"param": 40,
+"target": 314,
+"unknown": 0,
+"how": "Level 40"
+}
+],
+"315": [
+{
+"method": 7,
+"param": 94,
+"target": 316,
+"unknown": 0,
+"how": "item: Moon Stone"
+}
+],
+"318": [
+{
+"method": 4,
+"param": 36,
+"target": 319,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"320": [
+{
+"method": 7,
+"param": 199,
+"target": 529,
+"unknown": 0,
+"how": "item: Metal Coat"
+}
+],
+"322": [
+{
+"method": 254,
+"param": 558,
+"target": 894,
+"unknown": 0,
+"how": "Mega Evolution with Sablenite"
+}
+],
+"323": [
+{
+"method": 4,
+"param": 30,
+"target": 324,
+"unknown": 0,
+"how": "Level 30"
+}
+],
+"326": [
+{
+"method": 4,
+"param": 28,
+"target": 327,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"328": [
+{
+"method": 7,
+"param": 176,
+"target": 329,
+"unknown": 0,
+"how": "item: Prism Scale"
+},
+{
+"method": 6,
+"param": 176,
+"target": 329,
+"unknown": 0,
+"how": "trade holding item: Prism Scale"
+}
+],
+"330": [
+{
+"method": 4,
+"param": 30,
+"target": 331,
+"unknown": 0,
+"how": "Level 30"
+}
+],
+"331": [
+{
+"method": 254,
+"param": 563,
+"target": 899,
+"unknown": 0,
+"how": "Mega Evolution with Sharpedonite"
+}
+],
+"332": [
+{
+"method": 4,
+"param": 34,
+"target": 333,
+"unknown": 0,
+"how": "Level 34"
+}
+],
+"333": [
+{
+"method": 4,
+"param": 44,
+"target": 334,
+"unknown": 0,
+"how": "Level 44"
+}
+],
+"335": [
+{
+"method": 4,
+"param": 24,
+"target": 336,
+"unknown": 0,
+"how": "Level 24"
+}
+],
+"337": [
+{
+"method": 4,
+"param": 26,
+"target": 338,
+"unknown": 0,
+"how": "Level 26"
+}
+],
+"338": [
+{
+"method": 254,
+"param": 562,
+"target": 898,
+"unknown": 0,
+"how": "Mega Evolution with Manectite"
+}
+],
+"339": [
+{
+"method": 4,
+"param": 33,
+"target": 340,
+"unknown": 0,
+"how": "Level 33"
+}
+],
+"340": [
+{
+"method": 254,
+"param": 564,
+"target": 900,
+"unknown": 0,
+"how": "Mega Evolution with Cameruptite"
+}
+],
+"341": [
+{
+"method": 4,
+"param": 32,
+"target": 342,
+"unknown": 0,
+"how": "Level 32"
+}
+],
+"342": [
+{
+"method": 4,
+"param": 44,
+"target": 343,
+"unknown": 0,
+"how": "Level 44"
+}
+],
+"344": [
+{
+"method": 4,
+"param": 28,
+"target": 345,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"346": [
+{
+"method": 4,
+"param": 42,
+"target": 347,
+"unknown": 0,
+"how": "Level 42"
+},
+{
+"method": 7,
+"param": 101,
+"target": 531,
+"unknown": 254,
+"how": "item: Dawn Stone"
+}
+],
+"347": [
+{
+"method": 254,
+"param": 568,
+"target": 904,
+"unknown": 0,
+"how": "Mega Evolution with Glalitite"
+}
+],
+"350": [
+{
+"method": 1,
+"param": 0,
+"target": 183,
+"unknown": 0,
+"how": "friendship"
+}
+],
+"351": [
+{
+"method": 4,
+"param": 32,
+"target": 352,
+"unknown": 0,
+"how": "Level 32"
+}
+],
+"355": [
+{
+"method": 254,
+"param": 559,
+"target": 895,
+"unknown": 0,
+"how": "Mega Evolution with Mawilite"
+}
+],
+"356": [
+{
+"method": 4,
+"param": 37,
+"target": 357,
+"unknown": 0,
+"how": "Level 37"
+}
+],
+"357": [
+{
+"method": 254,
+"param": 561,
+"target": 897,
+"unknown": 0,
+"how": "Mega Evolution with Medichamite"
+}
+],
+"358": [
+{
+"method": 4,
+"param": 35,
+"target": 359,
+"unknown": 0,
+"how": "Level 35"
+}
+],
+"359": [
+{
+"method": 254,
+"param": 565,
+"target": 901,
+"unknown": 0,
+"how": "Mega Evolution with Altarianite"
+}
+],
+"360": [
+{
+"method": 4,
+"param": 15,
+"target": 202,
+"unknown": 0,
+"how": "Level 15"
+}
+],
+"361": [
+{
+"method": 4,
+"param": 37,
+"target": 362,
+"unknown": 0,
+"how": "Level 37"
+}
+],
+"362": [
+{
+"method": 7,
+"param": 87,
+"target": 530,
+"unknown": 0,
+"how": "item: Link Cable"
+},
+{
+"method": 6,
+"param": 92,
+"target": 530,
+"unknown": 0,
+"how": "trade holding item: Reaper Cloth"
+}
+],
+"363": [
+{
+"method": 7,
+"param": 99,
+"target": 460,
+"unknown": 0,
+"how": "item: Shiny Stone"
+}
+],
+"364": [
+{
+"method": 4,
+"param": 16,
+"target": 365,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"365": [
+{
+"method": 4,
+"param": 36,
+"target": 366,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"367": [
+{
+"method": 4,
+"param": 26,
+"target": 368,
+"unknown": 0,
+"how": "Level 26"
+}
+],
+"370": [
+{
+"method": 4,
+"param": 20,
+"target": 371,
+"unknown": 0,
+"how": "Level 20"
+}
+],
+"371": [
+{
+"method": 4,
+"param": 36,
+"target": 372,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"373": [
+{
+"method": 7,
+"param": 97,
+"target": 374,
+"unknown": 0,
+"how": "item: Water Stone"
+},
+{
+"method": 7,
+"param": 93,
+"target": 375,
+"unknown": 0,
+"how": "item: Sun Stone"
+},
+{
+"method": 6,
+"param": 192,
+"target": 374,
+"unknown": 0,
+"how": "trade holding item: DeepSeaTooth"
+},
+{
+"method": 6,
+"param": 193,
+"target": 375,
+"unknown": 0,
+"how": "trade holding item: DeepSeaScale"
+}
+],
+"376": [
+{
+"method": 254,
+"param": 567,
+"target": 903,
+"unknown": 0,
+"how": "Mega Evolution with Absolite"
+}
+],
+"377": [
+{
+"method": 4,
+"param": 36,
+"target": 378,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"378": [
+{
+"method": 254,
+"param": 566,
+"target": 902,
+"unknown": 0,
+"how": "Mega Evolution with Banettite"
+}
+],
+"382": [
+{
+"method": 4,
+"param": 32,
+"target": 383,
+"unknown": 0,
+"how": "Level 32"
+}
+],
+"383": [
+{
+"method": 4,
+"param": 42,
+"target": 384,
+"unknown": 0,
+"how": "Level 42"
+}
+],
+"384": [
+{
+"method": 254,
+"param": 560,
+"target": 896,
+"unknown": 0,
+"how": "Mega Evolution with Aggronite"
+}
+],
+"388": [
+{
+"method": 4,
+"param": 30,
+"target": 389,
+"unknown": 0,
+"how": "Level 30"
+}
+],
+"390": [
+{
+"method": 4,
+"param": 30,
+"target": 391,
+"unknown": 0,
+"how": "Level 30"
+}
+],
+"392": [
+{
+"method": 4,
+"param": 20,
+"target": 393,
+"unknown": 0,
+"how": "Level 20"
+}
+],
+"393": [
+{
+"method": 4,
+"param": 30,
+"target": 394,
+"unknown": 0,
+"how": "Level 30"
+},
+{
+"method": 7,
+"param": 101,
+"target": 528,
+"unknown": 0,
+"how": "item: Dawn Stone"
+}
+],
+"394": [
+{
+"method": 254,
+"param": 557,
+"target": 893,
+"unknown": 0,
+"how": "Mega Evolution with Gardevoirite"
+}
+],
+"395": [
+{
+"method": 4,
+"param": 30,
+"target": 396,
+"unknown": 0,
+"how": "Level 30"
+}
+],
+"396": [
+{
+"method": 4,
+"param": 50,
+"target": 397,
+"unknown": 0,
+"how": "Level 50"
+}
+],
+"397": [
+{
+"method": 254,
+"param": 569,
+"target": 905,
+"unknown": 0,
+"how": "Mega Evolution with Salamencite"
+}
+],
+"398": [
+{
+"method": 4,
+"param": 20,
+"target": 399,
+"unknown": 0,
+"how": "Level 20"
+}
+],
+"399": [
+{
+"method": 4,
+"param": 45,
+"target": 400,
+"unknown": 0,
+"how": "Level 45"
+}
+],
+"400": [
+{
+"method": 254,
+"param": 570,
+"target": 906,
+"unknown": 0,
+"how": "Mega Evolution with Metagrossite"
+}
+],
+"404": [
+{
+"method": 254,
+"param": 277,
+"target": 910,
+"unknown": 1,
+"how": "Mega Evolution (knows Magic Coat)"
+}
+],
+"405": [
+{
+"method": 254,
+"param": 276,
+"target": 909,
+"unknown": 1,
+"how": "Mega Evolution (knows Superpower)"
+}
+],
+"406": [
+{
+"method": 254,
+"param": 559,
+"target": 911,
+"unknown": 2,
+"how": "Mega Evolution (knows DragonAscent)"
+}
+],
+"407": [
+{
+"method": 254,
+"param": 571,
+"target": 907,
+"unknown": 0,
+"how": "Mega Evolution with Latiasite"
+}
+],
+"408": [
+{
+"method": 254,
+"param": 572,
+"target": 908,
+"unknown": 0,
+"how": "Mega Evolution with Latiosite"
+}
+],
+"440": [
+{
+"method": 4,
+"param": 16,
+"target": 441,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"441": [
+{
+"method": 4,
+"param": 36,
+"target": 442,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"443": [
+{
+"method": 4,
+"param": 16,
+"target": 444,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"444": [
+{
+"method": 4,
+"param": 36,
+"target": 445,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"446": [
+{
+"method": 4,
+"param": 16,
+"target": 447,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"447": [
+{
+"method": 4,
+"param": 36,
+"target": 448,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"449": [
+{
+"method": 4,
+"param": 14,
+"target": 450,
+"unknown": 0,
+"how": "Level 14"
+}
+],
+"450": [
+{
+"method": 4,
+"param": 34,
+"target": 451,
+"unknown": 0,
+"how": "Level 34"
+}
+],
+"452": [
+{
+"method": 4,
+"param": 15,
+"target": 453,
+"unknown": 0,
+"how": "Level 15"
+}
+],
+"454": [
+{
+"method": 4,
+"param": 10,
+"target": 455,
+"unknown": 0,
+"how": "Level 10"
+}
+],
+"456": [
+{
+"method": 4,
+"param": 15,
+"target": 457,
+"unknown": 0,
+"how": "Level 15"
+}
+],
+"457": [
+{
+"method": 4,
+"param": 30,
+"target": 458,
+"unknown": 0,
+"how": "Level 30"
+}
+],
+"459": [
+{
+"method": 2,
+"param": 0,
+"target": 363,
+"unknown": 0,
+"how": "friendship (day)"
+}
+],
+"461": [
+{
+"method": 4,
+"param": 30,
+"target": 462,
+"unknown": 0,
+"how": "Level 30"
+}
+],
+"463": [
+{
+"method": 4,
+"param": 30,
+"target": 464,
+"unknown": 0,
+"how": "Level 30"
+}
+],
+"465": [
+{
+"method": 21,
+"param": 16,
+"target": 466,
+"unknown": 0,
+"how": "Level 16 (female)"
+},
+{
+"method": 20,
+"param": 16,
+"target": 467,
+"unknown": 0,
+"how": "Level 16 (male)"
+}
+],
+"468": [
+{
+"method": 21,
+"param": 21,
+"target": 469,
+"unknown": 0,
+"how": "Level 21 (female)"
+}
+],
+"471": [
+{
+"method": 4,
+"param": 26,
+"target": 472,
+"unknown": 0,
+"how": "Level 26"
+}
+],
+"473": [
+{
+"method": 4,
+"param": 25,
+"target": 474,
+"unknown": 0,
+"how": "Level 25"
+}
+],
+"475": [
+{
+"method": 4,
+"param": 30,
+"target": 476,
+"unknown": 0,
+"how": "Level 30"
+}
+],
+"478": [
+{
+"method": 4,
+"param": 28,
+"target": 479,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"480": [
+{
+"method": 1,
+"param": 0,
+"target": 481,
+"unknown": 0,
+"how": "friendship"
+}
+],
+"481": [
+{
+"method": 254,
+"param": 573,
+"target": 912,
+"unknown": 0,
+"how": "Mega Evolution with Lopunnite"
+}
+],
+"484": [
+{
+"method": 4,
+"param": 28,
+"target": 485,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"486": [
+{
+"method": 3,
+"param": 0,
+"target": 411,
+"unknown": 0,
+"how": "friendship (night)"
+}
+],
+"487": [
+{
+"method": 4,
+"param": 28,
+"target": 488,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"489": [
+{
+"method": 4,
+"param": 33,
+"target": 490,
+"unknown": 0,
+"how": "Level 33"
+}
+],
+"491": [
+{
+"method": 26,
+"param": 102,
+"target": 185,
+"unknown": 0,
+"how": "knows move: Mimic"
+},
+{
+"method": 4,
+"param": 34,
+"target": 185,
+"unknown": 0,
+"how": "Level 34"
+}
+],
+"492": [
+{
+"method": 26,
+"param": 102,
+"target": 122,
+"unknown": 0,
+"how": "knows move: Mimic"
+},
+{
+"method": 4,
+"param": 35,
+"target": 122,
+"unknown": 0,
+"how": "Level 35"
+},
+{
+"method": 7,
+"param": 102,
+"target": 1216,
+"unknown": 0,
+"how": "item: Ice Stone"
+}
+],
+"493": [
+{
+"method": 7,
+"param": 99,
+"target": 113,
+"unknown": 0,
+"how": "item: Shiny Stone"
+}
+],
+"496": [
+{
+"method": 4,
+"param": 24,
+"target": 497,
+"unknown": 0,
+"how": "Level 24"
+}
+],
+"497": [
+{
+"method": 4,
+"param": 48,
+"target": 498,
+"unknown": 0,
+"how": "Level 48"
+}
+],
+"498": [
+{
+"method": 254,
+"param": 574,
+"target": 913,
+"unknown": 0,
+"how": "Mega Evolution with Garchompite"
+}
+],
+"499": [
+{
+"method": 4,
+"param": 30,
+"target": 143,
+"unknown": 0,
+"how": "Level 30"
+}
+],
+"500": [
+{
+"method": 23,
+"param": 30,
+"target": 501,
+"unknown": 0,
+"how": "Level 30 during the day"
+}
+],
+"501": [
+{
+"method": 254,
+"param": 575,
+"target": 914,
+"unknown": 0,
+"how": "Mega Evolution with Lucarionite"
+}
+],
+"502": [
+{
+"method": 4,
+"param": 34,
+"target": 503,
+"unknown": 0,
+"how": "Level 34"
+}
+],
+"504": [
+{
+"method": 4,
+"param": 40,
+"target": 505,
+"unknown": 0,
+"how": "Level 40"
+}
+],
+"506": [
+{
+"method": 4,
+"param": 37,
+"target": 507,
+"unknown": 0,
+"how": "Level 37"
+}
+],
+"509": [
+{
+"method": 4,
+"param": 23,
+"target": 510,
+"unknown": 0,
+"how": "Level 23"
+}
+],
+"511": [
+{
+"method": 4,
+"param": 30,
+"target": 226,
+"unknown": 0,
+"how": "Level 30"
+},
+{
+"method": 27,
+"param": 223,
+"target": 226,
+"unknown": 0,
+"how": "level up with Remoraid in the party"
+}
+],
+"512": [
+{
+"method": 4,
+"param": 36,
+"target": 513,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"513": [
+{
+"method": 254,
+"param": 576,
+"target": 915,
+"unknown": 0,
+"how": "Mega Evolution with Abomasite"
+}
+],
+"528": [
+{
+"method": 254,
+"param": 577,
+"target": 916,
+"unknown": 0,
+"how": "Mega Evolution with Galladite"
+}
+],
+"536": [
+{
+"method": 254,
+"param": 487,
+"target": 919,
+"unknown": 1,
+"how": "Mega Evolution (knows Dark Void)"
+}
+],
+"548": [
+{
+"method": 4,
+"param": 16,
+"target": 549,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"549": [
+{
+"method": 4,
+"param": 36,
+"target": 550,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"551": [
+{
+"method": 4,
+"param": 16,
+"target": 552,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"552": [
+{
+"method": 4,
+"param": 36,
+"target": 553,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"554": [
+{
+"method": 4,
+"param": 16,
+"target": 555,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"555": [
+{
+"method": 22,
+"param": 36,
+"target": 1300,
+"unknown": 0,
+"how": "Level 36 at night"
+},
+{
+"method": 23,
+"param": 36,
+"target": 556,
+"unknown": 0,
+"how": "Level 36 during the day"
+}
+],
+"557": [
+{
+"method": 4,
+"param": 16,
+"target": 558,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"559": [
+{
+"method": 4,
+"param": 16,
+"target": 560,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"560": [
+{
+"method": 4,
+"param": 32,
+"target": 561,
+"unknown": 0,
+"how": "Level 32"
+}
+],
+"562": [
+{
+"method": 4,
+"param": 20,
+"target": 563,
+"unknown": 0,
+"how": "Level 20"
+}
+],
+"564": [
+{
+"method": 7,
+"param": 98,
+"target": 565,
+"unknown": 0,
+"how": "item: Leaf Stone"
+}
+],
+"566": [
+{
+"method": 7,
+"param": 95,
+"target": 567,
+"unknown": 0,
+"how": "item: Fire Stone"
+}
+],
+"568": [
+{
+"method": 7,
+"param": 97,
+"target": 569,
+"unknown": 0,
+"how": "item: Water Stone"
+}
+],
+"570": [
+{
+"method": 7,
+"param": 94,
+"target": 571,
+"unknown": 0,
+"how": "item: Moon Stone"
+}
+],
+"572": [
+{
+"method": 4,
+"param": 16,
+"target": 573,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"573": [
+{
+"method": 4,
+"param": 28,
+"target": 574,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"575": [
+{
+"method": 4,
+"param": 27,
+"target": 576,
+"unknown": 0,
+"how": "Level 27"
+}
+],
+"577": [
+{
+"method": 4,
+"param": 23,
+"target": 578,
+"unknown": 0,
+"how": "Level 23"
+}
+],
+"578": [
+{
+"method": 7,
+"param": 87,
+"target": 579,
+"unknown": 0,
+"how": "item: Link Cable"
+},
+{
+"method": 5,
+"param": 0,
+"target": 579,
+"unknown": 0,
+"how": "trade"
+}
+],
+"580": [
+{
+"method": 1,
+"param": 0,
+"target": 581,
+"unknown": 0,
+"how": "friendship"
+}
+],
+"582": [
+{
+"method": 4,
+"param": 31,
+"target": 583,
+"unknown": 0,
+"how": "Level 31"
+}
+],
+"584": [
+{
+"method": 254,
+"param": 578,
+"target": 917,
+"unknown": 0,
+"how": "Mega Evolution with Audinite"
+}
+],
+"585": [
+{
+"method": 4,
+"param": 25,
+"target": 586,
+"unknown": 0,
+"how": "Level 25"
+}
+],
+"586": [
+{
+"method": 7,
+"param": 87,
+"target": 587,
+"unknown": 0,
+"how": "item: Link Cable"
+},
+{
+"method": 5,
+"param": 0,
+"target": 587,
+"unknown": 0,
+"how": "trade"
+}
+],
+"588": [
+{
+"method": 4,
+"param": 23,
+"target": 589,
+"unknown": 0,
+"how": "Level 23"
+}
+],
+"589": [
+{
+"method": 4,
+"param": 36,
+"target": 590,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"593": [
+{
+"method": 4,
+"param": 16,
+"target": 594,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"594": [
+{
+"method": 1,
+"param": 0,
+"target": 595,
+"unknown": 0,
+"how": "friendship"
+}
+],
+"596": [
+{
+"method": 4,
+"param": 22,
+"target": 597,
+"unknown": 0,
+"how": "Level 22"
+}
+],
+"597": [
+{
+"method": 4,
+"param": 30,
+"target": 598,
+"unknown": 0,
+"how": "Level 30"
+}
+],
+"599": [
+{
+"method": 7,
+"param": 93,
+"target": 600,
+"unknown": 0,
+"how": "item: Sun Stone"
+}
+],
+"601": [
+{
+"method": 7,
+"param": 93,
+"target": 602,
+"unknown": 0,
+"how": "item: Sun Stone"
+},
+{
+"method": 7,
+"param": 98,
+"target": 1303,
+"unknown": 0,
+"how": "item: Leaf Stone"
+}
+],
+"603": [
+{
+"method": 20,
+"param": 44,
+"target": 1268,
+"unknown": 0,
+"how": "Level 44 (male)"
+},
+{
+"method": 21,
+"param": 44,
+"target": 1306,
+"unknown": 0,
+"how": "Level 44 (female)"
+}
+],
+"604": [
+{
+"method": 4,
+"param": 28,
+"target": 605,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"605": [
+{
+"method": 4,
+"param": 40,
+"target": 606,
+"unknown": 0,
+"how": "Level 40"
+}
+],
+"607": [
+{
+"method": 4,
+"param": 35,
+"target": 608,
+"unknown": 0,
+"how": "Level 35"
+}
+],
+"610": [
+{
+"method": 4,
+"param": 34,
+"target": 611,
+"unknown": 0,
+"how": "Level 34"
+}
+],
+"612": [
+{
+"method": 4,
+"param": 36,
+"target": 613,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"615": [
+{
+"method": 4,
+"param": 34,
+"target": 616,
+"unknown": 0,
+"how": "Level 34"
+}
+],
+"617": [
+{
+"method": 4,
+"param": 34,
+"target": 618,
+"unknown": 0,
+"how": "Level 34"
+}
+],
+"619": [
+{
+"method": 4,
+"param": 34,
+"target": 620,
+"unknown": 0,
+"how": "Level 34"
+}
+],
+"621": [
+{
+"method": 4,
+"param": 28,
+"target": 622,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"622": [
+{
+"method": 254,
+"param": 731,
+"target": 1242,
+"unknown": 0,
+"how": "Mega Evolution with Garbodorite"
+}
+],
+"623": [
+{
+"method": 4,
+"param": 30,
+"target": 624,
+"unknown": 0,
+"how": "Level 30"
+}
+],
+"625": [
+{
+"method": 7,
+"param": 99,
+"target": 626,
+"unknown": 0,
+"how": "item: Shiny Stone"
+}
+],
+"627": [
+{
+"method": 4,
+"param": 28,
+"target": 628,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"628": [
+{
+"method": 4,
+"param": 36,
+"target": 629,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"630": [
+{
+"method": 4,
+"param": 28,
+"target": 631,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"631": [
+{
+"method": 4,
+"param": 41,
+"target": 632,
+"unknown": 0,
+"how": "Level 41"
+}
+],
+"633": [
+{
+"method": 4,
+"param": 28,
+"target": 634,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"635": [
+{
+"method": 4,
+"param": 35,
+"target": 636,
+"unknown": 0,
+"how": "Level 35"
+}
+],
+"636": [
+{
+"method": 4,
+"param": 44,
+"target": 637,
+"unknown": 0,
+"how": "Level 44"
+}
+],
+"638": [
+{
+"method": 4,
+"param": 28,
+"target": 639,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"641": [
+{
+"method": 7,
+"param": 87,
+"target": 642,
+"unknown": 0,
+"how": "item: Link Cable"
+},
+{
+"method": 5,
+"param": 0,
+"target": 642,
+"unknown": 0,
+"how": "trade"
+}
+],
+"643": [
+{
+"method": 4,
+"param": 36,
+"target": 644,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"645": [
+{
+"method": 4,
+"param": 40,
+"target": 646,
+"unknown": 0,
+"how": "Level 40"
+}
+],
+"648": [
+{
+"method": 4,
+"param": 32,
+"target": 649,
+"unknown": 0,
+"how": "Level 32"
+}
+],
+"650": [
+{
+"method": 4,
+"param": 40,
+"target": 651,
+"unknown": 0,
+"how": "Level 40"
+}
+],
+"652": [
+{
+"method": 4,
+"param": 38,
+"target": 653,
+"unknown": 0,
+"how": "Level 38"
+}
+],
+"653": [
+{
+"method": 4,
+"param": 49,
+"target": 654,
+"unknown": 0,
+"how": "Level 49"
+}
+],
+"655": [
+{
+"method": 4,
+"param": 36,
+"target": 656,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"656": [
+{
+"method": 7,
+"param": 96,
+"target": 657,
+"unknown": 0,
+"how": "item: ThunderStone"
+}
+],
+"658": [
+{
+"method": 4,
+"param": 34,
+"target": 659,
+"unknown": 0,
+"how": "Level 34"
+}
+],
+"660": [
+{
+"method": 4,
+"param": 34,
+"target": 661,
+"unknown": 0,
+"how": "Level 34"
+}
+],
+"661": [
+{
+"method": 7,
+"param": 100,
+"target": 662,
+"unknown": 0,
+"how": "item: Dusk Stone"
+}
+],
+"663": [
+{
+"method": 4,
+"param": 36,
+"target": 664,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"664": [
+{
+"method": 4,
+"param": 44,
+"target": 665,
+"unknown": 0,
+"how": "Level 44"
+}
+],
+"666": [
+{
+"method": 4,
+"param": 36,
+"target": 667,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"669": [
+{
+"method": 7,
+"param": 87,
+"target": 670,
+"unknown": 0,
+"how": "item: Link Cable"
+},
+{
+"method": 5,
+"param": 0,
+"target": 670,
+"unknown": 0,
+"how": "trade"
+}
+],
+"672": [
+{
+"method": 4,
+"param": 28,
+"target": 673,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"675": [
+{
+"method": 4,
+"param": 34,
+"target": 676,
+"unknown": 0,
+"how": "Level 34"
+}
+],
+"677": [
+{
+"method": 4,
+"param": 36,
+"target": 678,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"678": [
+{
+"method": 4,
+"param": 50,
+"target": 936,
+"unknown": 0,
+"how": "Level 50"
+}
+],
+"680": [
+{
+"method": 22,
+"param": 36,
+"target": 1269,
+"unknown": 0,
+"how": "Level 36 at night"
+},
+{
+"method": 23,
+"param": 36,
+"target": 681,
+"unknown": 0,
+"how": "Level 36 during the day"
+}
+],
+"682": [
+{
+"method": 4,
+"param": 45,
+"target": 683,
+"unknown": 0,
+"how": "Level 45"
+}
+],
+"686": [
+{
+"method": 4,
+"param": 44,
+"target": 687,
+"unknown": 0,
+"how": "Level 44"
+}
+],
+"687": [
+{
+"method": 4,
+"param": 59,
+"target": 688,
+"unknown": 0,
+"how": "Level 59"
+}
+],
+"689": [
+{
+"method": 4,
+"param": 59,
+"target": 690,
+"unknown": 0,
+"how": "Level 59"
+}
+],
+"704": [
+{
+"method": 4,
+"param": 40,
+"target": 705,
+"unknown": 0,
+"how": "Level 40"
+}
+],
+"707": [
+{
+"method": 21,
+"param": 16,
+"target": 709,
+"unknown": 0,
+"how": "Level 16 (female)"
+},
+{
+"method": 20,
+"param": 16,
+"target": 467,
+"unknown": 0,
+"how": "Level 16 (male)"
+}
+],
+"708": [
+{
+"method": 21,
+"param": 16,
+"target": 710,
+"unknown": 0,
+"how": "Level 16 (female)"
+},
+{
+"method": 20,
+"param": 16,
+"target": 467,
+"unknown": 0,
+"how": "Level 16 (male)"
+}
+],
+"711": [
+{
+"method": 4,
+"param": 32,
+"target": 712,
+"unknown": 0,
+"how": "Level 32"
+}
+],
+"736": [
+{
+"method": 20,
+"param": 44,
+"target": 1268,
+"unknown": 0,
+"how": "Level 44 (male)"
+},
+{
+"method": 21,
+"param": 44,
+"target": 1306,
+"unknown": 0,
+"how": "Level 44 (female)"
+}
+],
+"738": [
+{
+"method": 4,
+"param": 28,
+"target": 741,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"739": [
+{
+"method": 4,
+"param": 28,
+"target": 742,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"740": [
+{
+"method": 4,
+"param": 28,
+"target": 743,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"744": [
+{
+"method": 4,
+"param": 34,
+"target": 745,
+"unknown": 0,
+"how": "Level 34"
+}
+],
+"758": [
+{
+"method": 4,
+"param": 16,
+"target": 759,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"759": [
+{
+"method": 4,
+"param": 36,
+"target": 760,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"761": [
+{
+"method": 4,
+"param": 16,
+"target": 762,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"762": [
+{
+"method": 4,
+"param": 36,
+"target": 763,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"764": [
+{
+"method": 4,
+"param": 16,
+"target": 765,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"765": [
+{
+"method": 4,
+"param": 36,
+"target": 766,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"767": [
+{
+"method": 4,
+"param": 20,
+"target": 768,
+"unknown": 0,
+"how": "Level 20"
+}
+],
+"769": [
+{
+"method": 4,
+"param": 17,
+"target": 770,
+"unknown": 0,
+"how": "Level 17"
+}
+],
+"770": [
+{
+"method": 4,
+"param": 35,
+"target": 771,
+"unknown": 0,
+"how": "Level 35"
+}
+],
+"772": [
+{
+"method": 4,
+"param": 9,
+"target": 773,
+"unknown": 0,
+"how": "Level 9"
+}
+],
+"773": [
+{
+"method": 4,
+"param": 12,
+"target": 774,
+"unknown": 0,
+"how": "Level 12"
+}
+],
+"775": [
+{
+"method": 4,
+"param": 28,
+"target": 776,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"777": [
+{
+"method": 4,
+"param": 16,
+"target": 778,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"778": [
+{
+"method": 7,
+"param": 99,
+"target": 779,
+"unknown": 0,
+"how": "item: Shiny Stone"
+}
+],
+"780": [
+{
+"method": 4,
+"param": 28,
+"target": 781,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"782": [
+{
+"method": 18,
+"param": 32,
+"target": 783,
+"unknown": 17,
+"how": "Level 17 with a 32-type Pokemon in the party"
+}
+],
+"785": [
+{
+"method": 20,
+"param": 23,
+"target": 786,
+"unknown": 0,
+"how": "Level 23 (male)"
+},
+{
+"method": 21,
+"param": 23,
+"target": 832,
+"unknown": 0,
+"how": "Level 23 (female)"
+}
+],
+"787": [
+{
+"method": 4,
+"param": 35,
+"target": 788,
+"unknown": 0,
+"how": "Level 35"
+}
+],
+"788": [
+{
+"method": 7,
+"param": 100,
+"target": 789,
+"unknown": 0,
+"how": "item: Dusk Stone"
+}
+],
+"790": [
+{
+"method": 7,
+"param": 99,
+"target": 791,
+"unknown": 0,
+"how": "item: Shiny Stone"
+},
+{
+"method": 6,
+"param": 99,
+"target": 791,
+"unknown": 0,
+"how": "trade holding item: Shiny Stone"
+}
+],
+"792": [
+{
+"method": 7,
+"param": 99,
+"target": 793,
+"unknown": 0,
+"how": "item: Shiny Stone"
+},
+{
+"method": 6,
+"param": 178,
+"target": 793,
+"unknown": 0,
+"how": "trade holding item: Whip Dream"
+}
+],
+"794": [
+{
+"method": 4,
+"param": 30,
+"target": 795,
+"unknown": 0,
+"how": "Level 30"
+}
+],
+"796": [
+{
+"method": 4,
+"param": 35,
+"target": 797,
+"unknown": 0,
+"how": "Level 35"
+}
+],
+"798": [
+{
+"method": 4,
+"param": 44,
+"target": 799,
+"unknown": 0,
+"how": "Level 44"
+}
+],
+"800": [
+{
+"method": 4,
+"param": 34,
+"target": 801,
+"unknown": 0,
+"how": "Level 34"
+}
+],
+"802": [
+{
+"method": 7,
+"param": 93,
+"target": 803,
+"unknown": 0,
+"how": "item: Sun Stone"
+}
+],
+"804": [
+{
+"method": 23,
+"param": 39,
+"target": 805,
+"unknown": 0,
+"how": "Level 39 during the day"
+}
+],
+"806": [
+{
+"method": 22,
+"param": 39,
+"target": 807,
+"unknown": 0,
+"how": "Level 39 at night"
+}
+],
+"812": [
+{
+"method": 7,
+"param": 199,
+"target": 1297,
+"unknown": 0,
+"how": "item: Metal Coat"
+},
+{
+"method": 4,
+"param": 40,
+"target": 813,
+"unknown": 0,
+"how": "Level 40"
+}
+],
+"813": [
+{
+"method": 16,
+"param": 50,
+"target": 814,
+"unknown": 0,
+"how": "Level 50 in rain or fog"
+}
+],
+"816": [
+{
+"method": 7,
+"param": 87,
+"target": 817,
+"unknown": 0,
+"how": "item: Link Cable"
+},
+{
+"method": 5,
+"param": 0,
+"target": 817,
+"unknown": 0,
+"how": "trade"
+}
+],
+"818": [
+{
+"method": 7,
+"param": 87,
+"target": 819,
+"unknown": 0,
+"how": "item: Link Cable"
+},
+{
+"method": 5,
+"param": 0,
+"target": 819,
+"unknown": 0,
+"how": "trade"
+}
+],
+"820": [
+{
+"method": 7,
+"param": 102,
+"target": 1309,
+"unknown": 0,
+"how": "item: Ice Stone"
+},
+{
+"method": 4,
+"param": 36,
+"target": 821,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"822": [
+{
+"method": 4,
+"param": 36,
+"target": 823,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"827": [
+{
+"method": 254,
+"param": 579,
+"target": 918,
+"unknown": 0,
+"how": "Mega Evolution with Diancite"
+}
+],
+"835": [
+{
+"method": 4,
+"param": 34,
+"target": 836,
+"unknown": 0,
+"how": "Level 34"
+}
+],
+"840": [
+{
+"method": 4,
+"param": 23,
+"target": 841,
+"unknown": 0,
+"how": "Level 23"
+}
+],
+"841": [
+{
+"method": 4,
+"param": 36,
+"target": 842,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"843": [
+{
+"method": 4,
+"param": 16,
+"target": 844,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"844": [
+{
+"method": 4,
+"param": 32,
+"target": 845,
+"unknown": 0,
+"how": "Level 32"
+}
+],
+"846": [
+{
+"method": 21,
+"param": 16,
+"target": 849,
+"unknown": 0,
+"how": "Level 16 (female)"
+},
+{
+"method": 20,
+"param": 16,
+"target": 847,
+"unknown": 0,
+"how": "Level 16 (male)"
+}
+],
+"850": [
+{
+"method": 4,
+"param": 45,
+"target": 852,
+"unknown": 0,
+"how": "Level 45"
+}
+],
+"851": [
+{
+"method": 4,
+"param": 45,
+"target": 852,
+"unknown": 0,
+"how": "Level 45"
+}
+],
+"853": [
+{
+"method": 7,
+"param": 87,
+"target": 856,
+"unknown": 0,
+"how": "item: Link Cable"
+},
+{
+"method": 5,
+"param": 0,
+"target": 856,
+"unknown": 0,
+"how": "trade"
+}
+],
+"854": [
+{
+"method": 7,
+"param": 87,
+"target": 857,
+"unknown": 0,
+"how": "item: Link Cable"
+},
+{
+"method": 5,
+"param": 0,
+"target": 857,
+"unknown": 0,
+"how": "trade"
+}
+],
+"855": [
+{
+"method": 7,
+"param": 87,
+"target": 858,
+"unknown": 0,
+"how": "item: Link Cable"
+},
+{
+"method": 5,
+"param": 0,
+"target": 858,
+"unknown": 0,
+"how": "trade"
+}
+],
+"859": [
+{
+"method": 22,
+"param": 30,
+"target": 860,
+"unknown": 0,
+"how": "Level 30 at night"
+}
+],
+"861": [
+{
+"method": 7,
+"param": 96,
+"target": 862,
+"unknown": 0,
+"how": "item: ThunderStone"
+}
+],
+"863": [
+{
+"method": 4,
+"param": 38,
+"target": 864,
+"unknown": 0,
+"how": "Level 38"
+}
+],
+"866": [
+{
+"method": 4,
+"param": 36,
+"target": 867,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"869": [
+{
+"method": 254,
+"param": 0,
+"target": 3,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"870": [
+{
+"method": 254,
+"param": 0,
+"target": 6,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"871": [
+{
+"method": 254,
+"param": 0,
+"target": 6,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"872": [
+{
+"method": 254,
+"param": 0,
+"target": 9,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"873": [
+{
+"method": 254,
+"param": 0,
+"target": 15,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"874": [
+{
+"method": 254,
+"param": 0,
+"target": 18,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"875": [
+{
+"method": 254,
+"param": 0,
+"target": 65,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"876": [
+{
+"method": 254,
+"param": 0,
+"target": 80,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"877": [
+{
+"method": 254,
+"param": 0,
+"target": 94,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"878": [
+{
+"method": 254,
+"param": 0,
+"target": 115,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"879": [
+{
+"method": 254,
+"param": 0,
+"target": 127,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"880": [
+{
+"method": 254,
+"param": 0,
+"target": 130,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"881": [
+{
+"method": 254,
+"param": 0,
+"target": 142,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"882": [
+{
+"method": 254,
+"param": 0,
+"target": 150,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"883": [
+{
+"method": 254,
+"param": 0,
+"target": 150,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"884": [
+{
+"method": 254,
+"param": 0,
+"target": 181,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"885": [
+{
+"method": 254,
+"param": 0,
+"target": 208,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"886": [
+{
+"method": 254,
+"param": 0,
+"target": 212,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"887": [
+{
+"method": 254,
+"param": 0,
+"target": 214,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"888": [
+{
+"method": 254,
+"param": 0,
+"target": 229,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"889": [
+{
+"method": 254,
+"param": 0,
+"target": 248,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"890": [
+{
+"method": 254,
+"param": 0,
+"target": 279,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"891": [
+{
+"method": 254,
+"param": 0,
+"target": 282,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"892": [
+{
+"method": 254,
+"param": 0,
+"target": 285,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"893": [
+{
+"method": 254,
+"param": 0,
+"target": 394,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"894": [
+{
+"method": 254,
+"param": 0,
+"target": 322,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"895": [
+{
+"method": 254,
+"param": 0,
+"target": 355,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"896": [
+{
+"method": 254,
+"param": 0,
+"target": 384,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"897": [
+{
+"method": 254,
+"param": 0,
+"target": 357,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"898": [
+{
+"method": 254,
+"param": 0,
+"target": 338,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"899": [
+{
+"method": 254,
+"param": 0,
+"target": 331,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"900": [
+{
+"method": 254,
+"param": 0,
+"target": 340,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"901": [
+{
+"method": 254,
+"param": 0,
+"target": 359,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"902": [
+{
+"method": 254,
+"param": 0,
+"target": 378,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"903": [
+{
+"method": 254,
+"param": 0,
+"target": 376,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"904": [
+{
+"method": 254,
+"param": 0,
+"target": 347,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"905": [
+{
+"method": 254,
+"param": 0,
+"target": 397,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"906": [
+{
+"method": 254,
+"param": 0,
+"target": 400,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"907": [
+{
+"method": 254,
+"param": 0,
+"target": 407,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"908": [
+{
+"method": 254,
+"param": 0,
+"target": 408,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"909": [
+{
+"method": 254,
+"param": 0,
+"target": 405,
+"unknown": 1,
+"how": "Mega Evolution (knows -)"
+}
+],
+"910": [
+{
+"method": 254,
+"param": 0,
+"target": 404,
+"unknown": 1,
+"how": "Mega Evolution (knows -)"
+}
+],
+"911": [
+{
+"method": 254,
+"param": 0,
+"target": 406,
+"unknown": 2,
+"how": "Mega Evolution (knows -)"
+}
+],
+"912": [
+{
+"method": 254,
+"param": 0,
+"target": 481,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"913": [
+{
+"method": 254,
+"param": 0,
+"target": 498,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"914": [
+{
+"method": 254,
+"param": 0,
+"target": 501,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"915": [
+{
+"method": 254,
+"param": 0,
+"target": 513,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"916": [
+{
+"method": 254,
+"param": 0,
+"target": 528,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"917": [
+{
+"method": 254,
+"param": 0,
+"target": 584,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"918": [
+{
+"method": 254,
+"param": 0,
+"target": 827,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"919": [
+{
+"method": 254,
+"param": 0,
+"target": 536,
+"unknown": 1,
+"how": "Mega Evolution (knows -)"
+}
+],
+"921": [
+{
+"method": 4,
+"param": 16,
+"target": 922,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"922": [
+{
+"method": 4,
+"param": 36,
+"target": 923,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"924": [
+{
+"method": 4,
+"param": 16,
+"target": 925,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"925": [
+{
+"method": 4,
+"param": 36,
+"target": 926,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"927": [
+{
+"method": 4,
+"param": 16,
+"target": 928,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"928": [
+{
+"method": 4,
+"param": 36,
+"target": 929,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"930": [
+{
+"method": 4,
+"param": 20,
+"target": 931,
+"unknown": 0,
+"how": "Level 20"
+}
+],
+"932": [
+{
+"method": 4,
+"param": 22,
+"target": 933,
+"unknown": 0,
+"how": "Level 22"
+}
+],
+"938": [
+{
+"method": 7,
+"param": 93,
+"target": 935,
+"unknown": 0,
+"how": "item: Sun Stone"
+},
+{
+"method": 7,
+"param": 94,
+"target": 934,
+"unknown": 0,
+"how": "item: Moon Stone"
+}
+],
+"939": [
+{
+"method": 4,
+"param": 16,
+"target": 940,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"940": [
+{
+"method": 22,
+"param": 36,
+"target": 941,
+"unknown": 0,
+"how": "Level 36 at night"
+},
+{
+"method": 23,
+"param": 36,
+"target": 1301,
+"unknown": 0,
+"how": "Level 36 during the day"
+}
+],
+"942": [
+{
+"method": 4,
+"param": 16,
+"target": 943,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"943": [
+{
+"method": 4,
+"param": 36,
+"target": 944,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"945": [
+{
+"method": 4,
+"param": 16,
+"target": 946,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"946": [
+{
+"method": 4,
+"param": 36,
+"target": 947,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"948": [
+{
+"method": 4,
+"param": 14,
+"target": 949,
+"unknown": 0,
+"how": "Level 14"
+}
+],
+"949": [
+{
+"method": 4,
+"param": 28,
+"target": 950,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"951": [
+{
+"method": 23,
+"param": 16,
+"target": 952,
+"unknown": 0,
+"how": "Level 16 during the day"
+}
+],
+"953": [
+{
+"method": 4,
+"param": 20,
+"target": 954,
+"unknown": 0,
+"how": "Level 20"
+}
+],
+"954": [
+{
+"method": 7,
+"param": 96,
+"target": 955,
+"unknown": 0,
+"how": "item: ThunderStone"
+}
+],
+"956": [
+{
+"method": 4,
+"param": 30,
+"target": 957,
+"unknown": 0,
+"how": "Level 30"
+}
+],
+"959": [
+{
+"method": 4,
+"param": 25,
+"target": 960,
+"unknown": 0,
+"how": "Level 25"
+}
+],
+"961": [
+{
+"method": 28,
+"param": 25,
+"target": 1082,
+"unknown": 4372,
+"how": "level at a time of day"
+},
+{
+"method": 28,
+"param": 25,
+"target": 962,
+"unknown": 1041,
+"how": "level at a time of day"
+},
+{
+"method": 28,
+"param": 25,
+"target": 1046,
+"unknown": 5144,
+"how": "level at a time of day"
+},
+{
+"method": 28,
+"param": 25,
+"target": 1046,
+"unknown": 4,
+"how": "level at a time of day"
+}
+],
+"964": [
+{
+"method": 4,
+"param": 38,
+"target": 965,
+"unknown": 0,
+"how": "Level 38"
+}
+],
+"966": [
+{
+"method": 4,
+"param": 30,
+"target": 967,
+"unknown": 0,
+"how": "Level 30"
+}
+],
+"968": [
+{
+"method": 4,
+"param": 22,
+"target": 969,
+"unknown": 0,
+"how": "Level 22"
+}
+],
+"970": [
+{
+"method": 23,
+"param": 34,
+"target": 971,
+"unknown": 0,
+"how": "Level 34 during the day"
+}
+],
+"972": [
+{
+"method": 4,
+"param": 24,
+"target": 973,
+"unknown": 0,
+"how": "Level 24"
+}
+],
+"974": [
+{
+"method": 21,
+"param": 33,
+"target": 975,
+"unknown": 0,
+"how": "Level 33 (female)"
+}
+],
+"976": [
+{
+"method": 4,
+"param": 27,
+"target": 977,
+"unknown": 0,
+"how": "Level 27"
+}
+],
+"978": [
+{
+"method": 4,
+"param": 18,
+"target": 979,
+"unknown": 0,
+"how": "Level 18"
+}
+],
+"979": [
+{
+"method": 26,
+"param": 23,
+"target": 980,
+"unknown": 0,
+"how": "knows move: Stomp"
+},
+{
+"method": 4,
+"param": 45,
+"target": 980,
+"unknown": 0,
+"how": "Level 45"
+}
+],
+"984": [
+{
+"method": 4,
+"param": 30,
+"target": 985,
+"unknown": 0,
+"how": "Level 30"
+}
+],
+"986": [
+{
+"method": 4,
+"param": 42,
+"target": 987,
+"unknown": 0,
+"how": "Level 42"
+}
+],
+"989": [
+{
+"method": 1,
+"param": 0,
+"target": 990,
+"unknown": 0,
+"how": "friendship"
+}
+],
+"999": [
+{
+"method": 4,
+"param": 35,
+"target": 1000,
+"unknown": 0,
+"how": "Level 35"
+}
+],
+"1000": [
+{
+"method": 4,
+"param": 45,
+"target": 1001,
+"unknown": 0,
+"how": "Level 45"
+}
+],
+"1006": [
+{
+"method": 4,
+"param": 43,
+"target": 1007,
+"unknown": 0,
+"how": "Level 43"
+}
+],
+"1007": [
+{
+"method": 23,
+"param": 64,
+"target": 1008,
+"unknown": 0,
+"how": "Level 64 during the day"
+},
+{
+"method": 22,
+"param": 64,
+"target": 1009,
+"unknown": 0,
+"how": "Level 64 at night"
+}
+],
+"1020": [
+{
+"method": 22,
+"param": 16,
+"target": 1021,
+"unknown": 0,
+"how": "Level 16 at night"
+}
+],
+"1023": [
+{
+"method": 7,
+"param": 102,
+"target": 1024,
+"unknown": 0,
+"how": "item: Ice Stone"
+}
+],
+"1025": [
+{
+"method": 7,
+"param": 102,
+"target": 1026,
+"unknown": 0,
+"how": "item: Ice Stone"
+}
+],
+"1027": [
+{
+"method": 4,
+"param": 22,
+"target": 1028,
+"unknown": 0,
+"how": "Level 22"
+}
+],
+"1029": [
+{
+"method": 4,
+"param": 28,
+"target": 1030,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"1031": [
+{
+"method": 4,
+"param": 23,
+"target": 1032,
+"unknown": 0,
+"how": "Level 23"
+}
+],
+"1032": [
+{
+"method": 7,
+"param": 87,
+"target": 1033,
+"unknown": 0,
+"how": "item: Link Cable"
+},
+{
+"method": 5,
+"param": 0,
+"target": 1033,
+"unknown": 0,
+"how": "trade"
+}
+],
+"1034": [
+{
+"method": 4,
+"param": 40,
+"target": 1035,
+"unknown": 0,
+"how": "Level 40"
+}
+],
+"1036": [
+{
+"method": 7,
+"param": 98,
+"target": 1037,
+"unknown": 0,
+"how": "item: Leaf Stone"
+}
+],
+"1074": [
+{
+"method": 26,
+"param": 370,
+"target": 1075,
+"unknown": 0,
+"how": "knows move: Dragon Pulse"
+}
+],
+"1079": [
+{
+"method": 254,
+"param": 532,
+"target": 1081,
+"unknown": 3,
+"how": "Mega Evolution (knows Heavy Slam)"
+}
+],
+"1080": [
+{
+"method": 254,
+"param": 532,
+"target": 1081,
+"unknown": 3,
+"how": "Mega Evolution (knows Heavy Slam)"
+}
+],
+"1081": [
+{
+"method": 254,
+"param": 0,
+"target": 1079,
+"unknown": 3,
+"how": "Mega Evolution (knows -)"
+},
+{
+"method": 254,
+"param": 0,
+"target": 1080,
+"unknown": 3,
+"how": "Mega Evolution (knows -)"
+}
+],
+"1083": [
+{
+"method": 7,
+"param": 199,
+"target": 1084,
+"unknown": 0,
+"how": "item: Metal Coat"
+}
+],
+"1102": [
+{
+"method": 4,
+"param": 16,
+"target": 1103,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"1103": [
+{
+"method": 4,
+"param": 36,
+"target": 1104,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"1105": [
+{
+"method": 4,
+"param": 16,
+"target": 1106,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"1106": [
+{
+"method": 4,
+"param": 36,
+"target": 1107,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"1108": [
+{
+"method": 4,
+"param": 16,
+"target": 1109,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"1109": [
+{
+"method": 4,
+"param": 36,
+"target": 1110,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"1111": [
+{
+"method": 4,
+"param": 23,
+"target": 1112,
+"unknown": 0,
+"how": "Level 23"
+}
+],
+"1113": [
+{
+"method": 4,
+"param": 16,
+"target": 1114,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"1114": [
+{
+"method": 4,
+"param": 38,
+"target": 1115,
+"unknown": 0,
+"how": "Level 38"
+}
+],
+"1116": [
+{
+"method": 4,
+"param": 10,
+"target": 1117,
+"unknown": 0,
+"how": "Level 10"
+}
+],
+"1117": [
+{
+"method": 4,
+"param": 27,
+"target": 1118,
+"unknown": 0,
+"how": "Level 27"
+}
+],
+"1118": [
+{
+"method": 254,
+"param": 740,
+"target": 1248,
+"unknown": 0,
+"how": "Mega Evolution with Orbeetlite"
+}
+],
+"1119": [
+{
+"method": 4,
+"param": 18,
+"target": 1120,
+"unknown": 0,
+"how": "Level 18"
+}
+],
+"1121": [
+{
+"method": 4,
+"param": 20,
+"target": 1122,
+"unknown": 0,
+"how": "Level 20"
+}
+],
+"1123": [
+{
+"method": 4,
+"param": 24,
+"target": 1124,
+"unknown": 0,
+"how": "Level 24"
+}
+],
+"1125": [
+{
+"method": 4,
+"param": 22,
+"target": 1126,
+"unknown": 0,
+"how": "Level 22"
+}
+],
+"1126": [
+{
+"method": 254,
+"param": 737,
+"target": 1249,
+"unknown": 0,
+"how": "Mega Evolution with Drednawite"
+}
+],
+"1127": [
+{
+"method": 4,
+"param": 25,
+"target": 1128,
+"unknown": 0,
+"how": "Level 25"
+}
+],
+"1129": [
+{
+"method": 4,
+"param": 16,
+"target": 1130,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"1130": [
+{
+"method": 4,
+"param": 34,
+"target": 1131,
+"unknown": 0,
+"how": "Level 34"
+}
+],
+"1131": [
+{
+"method": 254,
+"param": 735,
+"target": 1250,
+"unknown": 0,
+"how": "Mega Evolution with Coalossite"
+}
+],
+"1132": [
+{
+"method": 7,
+"param": 98,
+"target": 1133,
+"unknown": 0,
+"how": "item: Leaf Stone"
+},
+{
+"method": 7,
+"param": 93,
+"target": 1134,
+"unknown": 0,
+"how": "item: Sun Stone"
+},
+{
+"method": 4,
+"param": 30,
+"target": 1363,
+"unknown": 0,
+"how": "Level 30"
+}
+],
+"1133": [
+{
+"method": 254,
+"param": 739,
+"target": 1251,
+"unknown": 0,
+"how": "Mega Evolution with Applite"
+}
+],
+"1134": [
+{
+"method": 254,
+"param": 739,
+"target": 1252,
+"unknown": 0,
+"how": "Mega Evolution with Applite"
+}
+],
+"1135": [
+{
+"method": 4,
+"param": 36,
+"target": 1136,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"1136": [
+{
+"method": 254,
+"param": 744,
+"target": 1253,
+"unknown": 0,
+"how": "Mega Evolution with Sandacondite"
+}
+],
+"1138": [
+{
+"method": 4,
+"param": 26,
+"target": 1139,
+"unknown": 0,
+"how": "Level 26"
+}
+],
+"1140": [
+{
+"method": 30,
+"param": 30,
+"target": 1141,
+"unknown": 0,
+"how": "3 critical hits in one battle"
+},
+{
+"method": 31,
+"param": 30,
+"target": 1192,
+"unknown": 0,
+"how": "Level 30 (high-key nature)"
+}
+],
+"1141": [
+{
+"method": 254,
+"param": 734,
+"target": 1254,
+"unknown": 0,
+"how": "Mega Evolution with Toxtricitite"
+}
+],
+"1142": [
+{
+"method": 4,
+"param": 28,
+"target": 1143,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"1143": [
+{
+"method": 254,
+"param": 743,
+"target": 1256,
+"unknown": 0,
+"how": "Mega Evolution with Centiskite"
+}
+],
+"1144": [
+{
+"method": 26,
+"param": 269,
+"target": 1145,
+"unknown": 0,
+"how": "knows move: Taunt"
+},
+{
+"method": 4,
+"param": 36,
+"target": 1145,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"1146": [
+{
+"method": 7,
+"param": 94,
+"target": 1147,
+"unknown": 0,
+"how": "item: Moon Stone"
+}
+],
+"1148": [
+{
+"method": 4,
+"param": 28,
+"target": 1149,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"1149": [
+{
+"method": 4,
+"param": 42,
+"target": 1150,
+"unknown": 0,
+"how": "Level 42"
+}
+],
+"1151": [
+{
+"method": 4,
+"param": 27,
+"target": 1152,
+"unknown": 0,
+"how": "Level 27"
+}
+],
+"1152": [
+{
+"method": 4,
+"param": 36,
+"target": 1153,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"1160": [
+{
+"method": 7,
+"param": 99,
+"target": 1161,
+"unknown": 0,
+"how": "item: Shiny Stone"
+}
+],
+"1161": [
+{
+"method": 254,
+"param": 745,
+"target": 1259,
+"unknown": 0,
+"how": "Mega Evolution with Alcremite"
+}
+],
+"1164": [
+{
+"method": 3,
+"param": 0,
+"target": 1165,
+"unknown": 0,
+"how": "friendship (night)"
+}
+],
+"1170": [
+{
+"method": 4,
+"param": 34,
+"target": 1171,
+"unknown": 0,
+"how": "Level 34"
+}
+],
+"1171": [
+{
+"method": 254,
+"param": 738,
+"target": 1260,
+"unknown": 0,
+"how": "Mega Evolution with Copperajite"
+}
+],
+"1176": [
+{
+"method": 4,
+"param": 50,
+"target": 1369,
+"unknown": 0,
+"how": "Level 50"
+}
+],
+"1177": [
+{
+"method": 4,
+"param": 50,
+"target": 1178,
+"unknown": 0,
+"how": "Level 50"
+}
+],
+"1178": [
+{
+"method": 4,
+"param": 60,
+"target": 1179,
+"unknown": 0,
+"how": "Level 60"
+}
+],
+"1182": [
+{
+"method": 254,
+"param": 746,
+"target": 1206,
+"unknown": 1,
+"how": "Mega Evolution (knows SparklySwirl)"
+}
+],
+"1183": [
+{
+"method": 7,
+"param": 100,
+"target": 1184,
+"unknown": 0,
+"how": "item: Dusk Stone"
+},
+{
+"method": 7,
+"param": 97,
+"target": 1207,
+"unknown": 0,
+"how": "item: Water Stone"
+}
+],
+"1192": [
+{
+"method": 254,
+"param": 734,
+"target": 1254,
+"unknown": 0,
+"how": "Mega Evolution with Toxtricitite"
+}
+],
+"1195": [
+{
+"method": 4,
+"param": 35,
+"target": 1196,
+"unknown": 0,
+"how": "Level 35"
+}
+],
+"1196": [
+{
+"method": 4,
+"param": 54,
+"target": 1197,
+"unknown": 0,
+"how": "Level 54"
+}
+],
+"1198": [
+{
+"method": 4,
+"param": 28,
+"target": 1199,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"1200": [
+{
+"method": 4,
+"param": 23,
+"target": 1186,
+"unknown": 0,
+"how": "Level 23"
+}
+],
+"1206": [
+{
+"method": 254,
+"param": 0,
+"target": 1182,
+"unknown": 1,
+"how": "Mega Evolution (knows -)"
+}
+],
+"1208": [
+{
+"method": 4,
+"param": 28,
+"target": 1155,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"1209": [
+{
+"method": 4,
+"param": 28,
+"target": 1210,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"1211": [
+{
+"method": 4,
+"param": 37,
+"target": 1212,
+"unknown": 0,
+"how": "Level 37"
+},
+{
+"method": 7,
+"param": 187,
+"target": 1220,
+"unknown": 0,
+"how": "item: King's Rock"
+}
+],
+"1213": [
+{
+"method": 4,
+"param": 30,
+"target": 1157,
+"unknown": 0,
+"how": "Level 30"
+}
+],
+"1216": [
+{
+"method": 4,
+"param": 42,
+"target": 1158,
+"unknown": 0,
+"how": "Level 42"
+}
+],
+"1221": [
+{
+"method": 4,
+"param": 38,
+"target": 1156,
+"unknown": 0,
+"how": "Level 38"
+}
+],
+"1222": [
+{
+"method": 4,
+"param": 16,
+"target": 1223,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"1223": [
+{
+"method": 22,
+"param": 35,
+"target": 1154,
+"unknown": 0,
+"how": "Level 35 at night"
+}
+],
+"1225": [
+{
+"method": 7,
+"param": 102,
+"target": 1226,
+"unknown": 0,
+"how": "item: Ice Stone"
+}
+],
+"1228": [
+{
+"method": 4,
+"param": 35,
+"target": 1159,
+"unknown": 0,
+"how": "Level 35"
+}
+],
+"1233": [
+{
+"method": 254,
+"param": 0,
+"target": 12,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"1236": [
+{
+"method": 254,
+"param": 0,
+"target": 68,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"1238": [
+{
+"method": 254,
+"param": 0,
+"target": 99,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"1239": [
+{
+"method": 254,
+"param": 0,
+"target": 131,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"1241": [
+{
+"method": 254,
+"param": 0,
+"target": 143,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"1242": [
+{
+"method": 254,
+"param": 0,
+"target": 622,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"1248": [
+{
+"method": 254,
+"param": 0,
+"target": 1118,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"1249": [
+{
+"method": 254,
+"param": 0,
+"target": 1126,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"1250": [
+{
+"method": 254,
+"param": 0,
+"target": 1131,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"1251": [
+{
+"method": 254,
+"param": 0,
+"target": 1133,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"1252": [
+{
+"method": 254,
+"param": 0,
+"target": 1134,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"1253": [
+{
+"method": 254,
+"param": 0,
+"target": 1136,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"1254": [
+{
+"method": 254,
+"param": 0,
+"target": 1141,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"1256": [
+{
+"method": 254,
+"param": 0,
+"target": 1143,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"1259": [
+{
+"method": 254,
+"param": 0,
+"target": 1161,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"1260": [
+{
+"method": 254,
+"param": 0,
+"target": 1171,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"1271": [
+{
+"method": 7,
+"param": 95,
+"target": 1272,
+"unknown": 0,
+"how": "item: Fire Stone"
+}
+],
+"1274": [
+{
+"method": 4,
+"param": 27,
+"target": 1275,
+"unknown": 0,
+"how": "Level 27"
+}
+],
+"1276": [
+{
+"method": 4,
+"param": 31,
+"target": 1277,
+"unknown": 0,
+"how": "Level 31"
+}
+],
+"1278": [
+{
+"method": 4,
+"param": 28,
+"target": 1279,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"1280": [
+{
+"method": 4,
+"param": 30,
+"target": 1281,
+"unknown": 0,
+"how": "Level 30"
+}
+],
+"1283": [
+{
+"method": 4,
+"param": 30,
+"target": 1284,
+"unknown": 0,
+"how": "Level 30"
+},
+{
+"method": 27,
+"param": 223,
+"target": 1284,
+"unknown": 0,
+"how": "level up with Remoraid in the party"
+}
+],
+"1285": [
+{
+"method": 7,
+"param": 176,
+"target": 1286,
+"unknown": 0,
+"how": "item: Prism Scale"
+},
+{
+"method": 6,
+"param": 176,
+"target": 1286,
+"unknown": 0,
+"how": "trade holding item: Prism Scale"
+}
+],
+"1287": [
+{
+"method": 4,
+"param": 34,
+"target": 1288,
+"unknown": 0,
+"how": "Level 34"
+}
+],
+"1289": [
+{
+"method": 4,
+"param": 28,
+"target": 1290,
+"unknown": 0,
+"how": "Level 28"
+}
+],
+"1290": [
+{
+"method": 254,
+"param": 743,
+"target": 1291,
+"unknown": 0,
+"how": "Mega Evolution with Centiskite"
+}
+],
+"1291": [
+{
+"method": 254,
+"param": 0,
+"target": 1290,
+"unknown": 0,
+"how": "Mega Evolution with 0"
+}
+],
+"1295": [
+{
+"method": 7,
+"param": 98,
+"target": 1296,
+"unknown": 0,
+"how": "item: Leaf Stone"
+}
+],
+"1297": [
+{
+"method": 16,
+"param": 50,
+"target": 1298,
+"unknown": 0,
+"how": "Level 50 in rain or fog"
+}
+],
+"1304": [
+{
+"method": 4,
+"param": 47,
+"target": 1305,
+"unknown": 0,
+"how": "Level 47"
+}
+],
+"1307": [
+{
+"method": 4,
+"param": 36,
+"target": 1308,
+"unknown": 0,
+"how": "Level 36"
+}
+],
+"1314": [
+{
+"method": 4,
+"param": 15,
+"target": 1315,
+"unknown": 0,
+"how": "Level 15"
+}
+],
+"1316": [
+{
+"method": 4,
+"param": 23,
+"target": 1317,
+"unknown": 0,
+"how": "Level 23"
+}
+],
+"1318": [
+{
+"method": 4,
+"param": 16,
+"target": 1319,
+"unknown": 0,
+"how": "Level 16"
+}
+],
+"1320": [
+{
+"method": 4,
+"param": 34,
+"target": 1321,
+"unknown": 0,
+"how": "Level 34"
+}
+],
+"1324": [
+{
+"method": 4,
+"param": 23,
+"target": 1325,
+"unknown": 0,
+"how": "Level 23"
+}
+],
+"1325": [
+{
+"method": 4,
+"param": 35,
+"target": 1326,
+"unknown": 0,
+"how": "Level 35"
+}
+],
+"1327": [
+{
+"method": 7,
+"param": 95,
+"target": 1328,
+"unknown": 0,
+"how": "item: Fire Stone"
+}
+],
+"1330": [
+{
+"method": 4,
+"param": 25,
+"target": 1331,
+"unknown": 0,
+"how": "Level 25"
+}
+],
+"1332": [
+{
+"method": 7,
+"param": 102,
+"target": 1333,
+"unknown": 0,
+"how": "item: Ice Stone"
+}
+],
+"1335": [
+{
+"method": 4,
+"param": 25,
+"target": 1336,
+"unknown": 0,
+"how": "Level 25"
+}
+],
+"1340": [
+{
+"method": 4,
+"param": 23,
+"target": 1341,
+"unknown": 0,
+"how": "Level 23"
+}
+],
+"1341": [
+{
+"method": 4,
+"param": 38,
+"target": 1342,
+"unknown": 0,
+"how": "Level 38"
+}
+],
+"1343": [
+{
+"method": 4,
+"param": 35,
+"target": 1344,
+"unknown": 0,
+"how": "Level 35"
+}
+],
+"1345": [
+{
+"method": 4,
+"param": 27,
+"target": 1346,
+"unknown": 0,
+"how": "Level 27"
+}
+],
+"1347": [
+{
+"method": 4,
+"param": 26,
+"target": 1348,
+"unknown": 0,
+"how": "Level 26"
+}
+],
+"1349": [
+{
+"method": 4,
+"param": 23,
+"target": 1350,
+"unknown": 0,
+"how": "Level 23"
+}
+],
+"1351": [
+{
+"method": 4,
+"param": 27,
+"target": 1352,
+"unknown": 0,
+"how": "Level 27"
+}
+],
+"1361": [
+{
+"method": 7,
+"param": 98,
+"target": 1362,
+"unknown": 0,
+"how": "item: Leaf Stone"
+}
+],
+"1363": [
+{
+"method": 4,
+"param": 44,
+"target": 1371,
+"unknown": 0,
+"how": "Level 44"
+}
+]
+}
