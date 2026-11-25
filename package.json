@@ -5,7 +5,9 @@
   "license": "MIT",
   "scripts": {
     "map-names": "node tools/map_names.js data",
-    "app-data": "node tools/build_app_data.js data app/rrdata.json"
+    "app-data": "node tools/build_app_data.js data app/rrdata.json",
+    "test": "node tests/run.js",
+    "starter-tiers": "node tools/starter_tiers.js data app/rrdata.json app/starters.json"
   },
   "devDependencies": {
     "@smogon/calc": "0.12.0"

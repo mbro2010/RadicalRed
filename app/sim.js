@@ -1160,5 +1160,5 @@
     return { winner: st.winner, turns, faints, totalTurns: st.turn };
   }
 
-  return { meta, makeMon, newBattle, runBattle, simulate, simulateAsync, planFight, scriptOf, plannerPolicy, aiPolicy, bossPolicy, AI, megaTarget, zKind, speed, mulberry32, expectedDice, specNow, act };
+  return { meta, makeMon, newBattle, runBattle, simulate, simulateAsync, planFight, scriptOf, plannerPolicy, aiPolicy, bossPolicy, AI, megaTarget, zKind, usable, speed, mulberry32, expectedDice, specNow, act };
 });
