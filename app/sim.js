@@ -1258,16 +1258,20 @@
   function bossPolicy(opts) { return AI.policy(opts); }
 
   // ---------------- running battles ----------------
+  /** The leads come out: the lead event, then entry effects with the faster Pokemon's ability first (so the slower one's weather wins). */
+  function begin(st, rng) {
+    const names = side => actives(st, side).map(m => m.name).join(' and ');
+    st.events.push({ turn: 0, type: 'lead', p: act(st, 'p').key, a: act(st, 'a').key, pAll: actives(st, 'p').map(m => m.key), aAll: actives(st, 'a').map(m => m.key) });
+    log(st, `You lead with ${names('p')}; the boss leads with ${names('a')}`, 'switch');
+    for (const m of actives(st, 'p').concat(actives(st, 'a')).sort((x, y) => speed(st, y) - speed(st, x))) onEntry(st, m.side, rng, m.slot);
+    return st;
+  }
   function runBattle(playerSpecs, bossSpecs, opts) {
     const o = opts || {};
     const st = newBattle(playerSpecs, bossSpecs, o);
     const rng = o.expected ? expectedDice() : mulberry32(o.seed || 1);
     st.policies = { p: o.player || (st.size > 1 ? doublesPlanner(o.plannerOpts) : plannerPolicy(o.plannerOpts)), a: o.ai || bossPolicy() };
-    const names = side => actives(st, side).map(m => m.name).join(' and ');
-    st.events.push({ turn: 0, type: 'lead', p: act(st, 'p').key, a: act(st, 'a').key, pAll: actives(st, 'p').map(m => m.key), aAll: actives(st, 'a').map(m => m.key) });
-    log(st, `You lead with ${names('p')}; the boss leads with ${names('a')}`, 'switch');
-    // entry effects: faster Pokemon's ability first, so the slower one's weather wins
-    for (const m of actives(st, 'p').concat(actives(st, 'a')).sort((x, y) => speed(st, y) - speed(st, x))) onEntry(st, m.side, rng, m.slot);
+    begin(st, rng);
     while (!st.over && st.turn < (o.maxTurns || 80)) playTurn(st, rng);
     if (!st.over) { st.over = true; st.winner = 'timeout'; }
     return st;
@@ -1430,5 +1434,5 @@
     return { winner: st.winner, turns, faints, totalTurns: st.turn };
   }
 
-  return { meta, makeMon, newBattle, runBattle, simulate, simulateAsync, planFight, scriptOf, plannerPolicy, doublesPlanner, aiPolicy, bossPolicy, AI, megaTarget, zKind, usable, actives, cloneState, playTurn, speed, mulberry32, expectedDice, specNow, act };
+  return { meta, makeMon, newBattle, runBattle, simulate, simulateAsync, planFight, scriptOf, plannerPolicy, doublesPlanner, aiPolicy, bossPolicy, AI, megaTarget, zKind, usable, actives, cloneState, playTurn, begin, switchIn, speed, mulberry32, expectedDice, specNow, act };
 });

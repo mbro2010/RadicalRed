@@ -98,7 +98,7 @@
           if (!S.example || roster.length) { S.roster = roster; S.example = false; }
           S.run = { beaten: Array.isArray(run.beaten) ? run.beaten.slice() : [], tms: Array.isArray(run.tms) ? run.tms.slice() : [],
             enc: run.enc && typeof run.enc === 'object' ? Object.assign({}, run.enc) : {}, dupes: run.dupes !== false, checks: Array.isArray(run.checks) ? run.checks.slice(-50) : [], tutors: !!run.tutors,
-            no: run.no || (history.length + 1), started: run.started || null, starter: run.starter || null };
+            no: run.no || (history.length + 1), started: run.started || null, starter: run.starter || null, aiChecks: run.aiChecks || null };
           ADV.setOptions({ tutors: S.run.tutors });
           render();
         }, err => { clearTimeout(this.timer); this.note = 'Saving to your account stopped working (' + err.code + '). Reload to try again.'; renderStatus(); });
@@ -131,7 +131,7 @@
     async saveRun() {
       if (S.example) return;
       if (!S.run.started && S.roster.length) S.run.started = Math.min(...S.roster.map(m => m.ord || Date.now()));
-      if (this.mode === 'db') { try { await this.col.doc('run').set({ beaten: S.run.beaten, tms: S.run.tms || [], enc: S.run.enc || {}, dupes: S.run.dupes !== false, checks: (S.run.checks || []).slice(-50), tutors: !!S.run.tutors,
+      if (this.mode === 'db') { try { await this.col.doc('run').set({ beaten: S.run.beaten, tms: S.run.tms || [], enc: S.run.enc || {}, dupes: S.run.dupes !== false, checks: (S.run.checks || []).slice(-50), tutors: !!S.run.tutors, aiChecks: S.run.aiChecks || null,
         no: S.run.no || 1, started: S.run.started || null, starter: S.run.starter || null }); } catch (e) { flash('Couldn’t save progress (' + e.code + ').'); } }
       else this.saveLocal();
     },
@@ -505,7 +505,7 @@
     const roster = alive();
     let html = `<section class="section">
       <div class="field"><label for="plan-boss">Boss</label><select id="plan-boss" class="inline">${bossOptions(S.planBoss)}</select></div>
-      <div class="row small"><span class="pill cap">Cap ${b.cap}</span>${b.ms ? `<span class="pill">Win: cap rises to ${b.capAfter}</span>` : ''}${b.dbl ? '<span class="pill warn">Double battle, planned as singles</span>' : ''}
+      <div class="row small"><span class="pill cap">Cap ${b.cap}</span>${b.ms ? `<span class="pill">Win: cap rises to ${b.capAfter}</span>` : ''}${b.dbl ? '<span class="pill warn">Double battle</span>' : ''}
         <span class="grow"></span><button class="btn small" id="plan-beaten" ${S.example ? 'disabled' : ''}>${S.run.beaten.includes(b.i) ? 'Mark as not beaten' : 'Mark as beaten'}</button></div>
     </section>`;
     if (!roster.length) {
@@ -565,8 +565,9 @@
         <div><span class="big">${Math.round(100 * o.pWin)}%</span><span class="lbl">win</span></div>
         <div><span class="big">${o.expLosses.toFixed(1)}</span><span class="lbl">Pokémon lost on average</span></div></div>
       <p class="small" style="margin:0">${esc(verdict)}</p>
-      <div class="lbl">Bring</div><div class="lineup">${res.lineup.map(i => `<span class="pick ${i === res.lead ? 'lead' : ''}">${i === res.lead ? 'Lead: ' : ''}${esc(monName(roster[i]))}</span>`).join('')}</div>
-      <p class="note" style="margin:0">From ${o.runs} simulated battles. The boss AI is an approximation: it takes KOs, otherwise attacks hard, and sets up, statuses, heals, lays hazards or pivots when that looks good, as Radical Red's bosses do.</p>
+      <div class="lbl">Bring${res.doubles ? ' (double battle: your first two lead)' : ''}</div><div class="lineup">${res.lineup.map(i => { const isLead = [].concat(res.lead).includes(i); return `<span class="pick ${isLead ? 'lead' : ''}">${icon(roster[i].s)}${isLead ? 'Lead: ' : ''}${esc(monName(roster[i]))}</span>`; }).join('')}</div>
+      ${res.doubles ? '<p class="small" style="margin:0">Put the two leads first in your party. Each turn below lists both of your moves and who to aim them at.</p>' : ''}
+      <p class="note" style="margin:0">From ${o.runs} simulated battles against the boss AI ported from Radical Red's engine: the same move scores, fighting styles, targeting and switching rules.</p>
       <div class="row"><button class="btn small" id="bp-redo">Plan again</button></div></div>`;
     const causes = Object.entries(o.causes).sort((a, b) => b[1] - a[1]).slice(0, 4);
     if (causes.length) h += `<div class="card"><h3>What can go wrong</h3>${causes.map(([k, n]) => `<div class="small">${esc(k)} <span class="muted">· ${Math.round(100 * n / o.runs)}% of battles</span></div>`).join('')}</div>`;
@@ -576,12 +577,39 @@
       const lines = t.lines.filter(l => !/^(Your|Boss) .* uses /.test(l.text) || true).map(l => `<div class="${l.kind === 'faint' ? 'ev faint' : l.kind === 'crit' ? 'ev crit' : 'ev'}">${esc(l.text)}</div>`).join('');
       if (!d) return `<li class="turn start"><div class="t-head"><b>Start</b></div>${lines}</li>`;
       return `<li class="turn ${t.sacrifice ? 'sac' : ''}"><div class="t-head"><b>Turn ${t.turn}</b> · your ${esc(d.you)} (${Math.round(100 * d.youHp)}%) vs their ${esc(d.foe)} (${Math.round(100 * d.foeHp)}%)</div>
-        <div class="t-do">${esc(d.action)} ${riskBadge(d.risk || 0)}</div>
+        ${d.lines ? `<div class="t-do" style="display:grid;gap:2px">${d.lines.map(l => `<span>${esc(l)}</span>`).join('')}</div>` : `<div class="t-do">${esc(d.action)} ${riskBadge(d.risk || 0)}</div>`}
         ${t.sacrifice ? `<div class="banner">Planned sacrifice: ${esc(t.sacrifice)} is expected to faint here. Every other option was riskier for the rest of your team; its fall gives your next Pokémon a free switch-in.</div>` : ''}
         <div class="t-lines">${lines}</div></li>`;
     }).join('')}</ol>
     <p class="note">${sc.winner === 'p' ? `Ends in a win on turn ${sc.totalTurns}.` : sc.winner === 'a' ? 'In this line the boss wins.' : 'This line stalls out.'} Risk on each turn is the chance that the Pokémon you have in faints before it wins its fight. When something unexpected happens (a crit, a miss, a different move), use the Battle tab: it plans the next move from wherever you are.</p></details></section>`;
     return h;
+  }
+  // ---------------- planning in a background worker (falls back to the page if workers are blocked) ----------------
+  let planWorker = null, workerBroken = false, workerSeq = 0;
+  function planInBackground(specs, team, opts) {
+    const { onProgress, ...rest } = opts || {};
+    const onPage = () => SIM.planFight(specs, team, opts);
+    if (workerBroken || typeof Worker === 'undefined') return onPage();
+    return new Promise(resolve => {
+      try { if (!planWorker) planWorker = new Worker('worker.js'); } catch (e) { workerBroken = true; resolve(onPage()); return; }
+      const id = ++workerSeq;
+      let started = false, done = false;
+      const fallback = () => {
+        if (done) return; done = true; workerBroken = true;
+        try { planWorker.terminate(); } catch (e) { /* already gone */ }
+        planWorker = null; resolve(onPage());
+      };
+      const timer = setTimeout(() => { if (!started) fallback(); }, 25000);
+      planWorker.onmessage = ev => {
+        const m = ev.data; if (!m || m.id !== id || done) return;
+        started = true;
+        if (m.error) { clearTimeout(timer); fallback(); }
+        else if (m.result) { clearTimeout(timer); done = true; resolve(m.result); }
+        else if (onProgress) onProgress(m.progress, m.text);
+      };
+      planWorker.onerror = () => { clearTimeout(timer); fallback(); };
+      planWorker.postMessage({ id, specs, team, opts: rest });
+    });
   }
   async function runPlan(key) {
     if (S.planning) return;
@@ -589,7 +617,7 @@
     S.planning = { key, frac: 0, text: 'Starting…' };
     render();
     try {
-      const res = await SIM.planFight(specs, team, { onProgress: (frac, text) => {
+      const res = await planInBackground(specs, team, { doubles: !!D.bosses[S.planBoss].dbl, onProgress: (frac, text) => {
         S.planning.frac = frac; S.planning.text = text;
         const bar = document.querySelector('#bp .progress span'); if (bar) bar.style.width = Math.round(100 * frac) + '%';
         const st = $('#bp-status'); if (st) st.textContent = text;
@@ -686,7 +714,7 @@
     const sim = S.plans[key];
     if (sim) {
       const o = sim.odds;
-      lines.push(`\nSimulated plan (${o.runs} battles against an approximate boss AI): win with no losses ${Math.round(100 * o.pNoLoss)}%, win ${Math.round(100 * o.pWin)}%, average losses ${o.expLosses.toFixed(1)}. Lineup: ${sim.lineup.map(i => monName(sim.roster[i])).join(', ')}; lead ${monName(sim.roster[sim.lead])}.`);
+      lines.push(`\nSimulated plan (${o.runs} battles against the boss AI ported from the game's engine${sim.doubles ? ', double battle' : ''}): win with no losses ${Math.round(100 * o.pNoLoss)}%, win ${Math.round(100 * o.pWin)}%, average losses ${o.expLosses.toFixed(1)}. Lineup: ${sim.lineup.map(i => monName(sim.roster[i])).join(', ')}; lead ${[].concat(sim.lead).map(i => monName(sim.roster[i])).join(' and ')}.`);
       lines.push('Most likely line, turn by turn:');
       for (const t of sim.script.turns) if (t.decision) lines.push(`  Turn ${t.turn}: ${t.decision.you} vs ${t.decision.foe}: ${t.decision.action} (risk ${fmtRisk(t.decision.risk || 0)})${t.sacrifice ? ' [planned sacrifice]' : ''}`);
       lines.push('Most common ways it goes wrong: ' + Object.entries(o.causes).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k, n]) => `${k} (${Math.round(100 * n / o.runs)}%)`).join('; '));
@@ -696,15 +724,221 @@
   }
 
   // ---------------- BATTLE ----------------
+  // ---------------- BATTLE: live mode, turn by turn, with the AI check ----------------
+  function renderBattle() {
+    const mode = S.battleMode || 'live';
+    const head = `<div class="row"><span class="seg" role="group" aria-label="Battle mode"><button data-bmode="live" aria-pressed="${mode === 'live'}">Live battle</button><button data-bmode="whatif" aria-pressed="${mode !== 'live'}">Quick check</button></span>
+      <span class="note">${mode === 'live' ? 'Play the fight turn by turn: the Coach keeps track and re-plans.' : 'Any one-on-one, set up by hand.'}</span></div>`;
+    if (mode === 'live') renderLive(head); else renderWhatIf(head);
+    main.querySelectorAll('[data-bmode]').forEach(b => b.onclick = () => { S.battleMode = b.dataset.bmode; render(); });
+  }
+  const pctOf = m => Math.round(100 * m.hp / m.maxHp);
+  function liveStart(bi, lead) {
+    const b = D.bosses[bi];
+    const doubles = !!b.dbl;
+    const mine = party().length ? party() : alive();
+    const specs = mine.map(m => specOf(m, { label: monName(m) }));
+    const top = Math.max(...mine.map(m => m.lv));
+    const bossSpecs = E.bossTeam(bi, top).map((t, i) => Object.assign({ key: 'b' + i, label: E.sp(t.s).n }, t));
+    const st = SIM.newBattle(specs, bossSpecs, { doubles, lead, record: true });
+    st.policies = { p: doubles ? SIM.doublesPlanner() : SIM.plannerPolicy(), a: SIM.bossPolicy() };
+    SIM.begin(st, SIM.expectedDice());
+    S.live = { bi, doubles, st, step: 'choose', turns: [], checks: [], next: null, pred: null };
+  }
+  function actionLabel(st, side, a) {
+    if (!a) return '—';
+    if (a.type === 'switch') return `switch to ${st[side].team[a.to].name}`;
+    const m = E.mv(a.id);
+    const t = a.target && st.size > 1 && (m || {}).tg === 0 ? (SIM.actives(st, a.target.side).find(x => x.slot === a.target.slot) || {}).name : null;
+    return `${a.z ? 'Z-' : ''}${m ? m.f : '?'}${t ? ' on ' + t : ''}`;
+  }
+  /** Options for one battler: its usable moves (and Z-Move), switches, and targets in doubles. */
+  function actionSelect(st, side, slot, chosen, idp) {
+    const m = SIM.actives(st, side).find(x => x.slot === slot);
+    const opts = [];
+    const moves = side === 'p' ? SIM.usable(m, st) : m.moves;
+    for (const id of moves) {
+      const mv = E.mv(id); if (!mv) continue;
+      opts.push([`m:${id}`, mv.f]);
+      if (side === 'p' && SIM.zKind(st, m, id) === 'type') opts.push([`z:${id}`, `Z-${mv.f} (Z-Move)`]);
+    }
+    st[side].team.forEach((x, i) => { if (!x.fainted && !st[side].slots.includes(i)) opts.push([`s:${i}`, `Switch to ${x.name}`]); });
+    const cur = chosen ? (chosen.type === 'switch' ? `s:${chosen.to}` : `${chosen.z ? 'z' : 'm'}:${chosen.id}`) : '';
+    const foes = SIM.actives(st, side === 'p' ? 'a' : 'p');
+    const tSel = st.size > 1 && foes.length > 1 ? `<select class="inline" id="${idp}-t" style="width:auto">${foes.map(f => `<option value="${f.slot}" ${chosen && chosen.target && chosen.target.slot === f.slot ? 'selected' : ''}>on ${esc(f.name)}</option>`).join('')}</select>` : '';
+    return `<div class="row" style="gap:6px">${icon(m.spec.s)}<b class="small" style="min-width:5.5em">${esc(m.name)}</b><select class="inline" id="${idp}" style="width:auto;max-width:100%" data-hastarget="${tSel ? 1 : 0}">${opts.map(([v, l]) => `<option value="${v}" ${v === cur ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>${tSel}</div>`;
+  }
+  function readAction(st, side, slot, idp) {
+    const v = ($('#' + idp) || {}).value || '';
+    const [k, x] = v.split(':');
+    if (k === 's') return { type: 'switch', to: +x, why: 'switch' };
+    const foeSide = side === 'p' ? 'a' : 'p';
+    const tEl = $('#' + idp + '-t');
+    const foes = SIM.actives(st, foeSide);
+    const tslot = tEl ? +tEl.value : (foes[0] ? foes[0].slot : 0);
+    return { type: 'move', id: +x, z: k === 'z', target: { side: foeSide, slot: tslot } };
+  }
+  function renderLive(head) {
+    const pp = party().length ? party() : alive();
+    if (!pp.length) { main.innerHTML = head + '<div class="empty">Add your Pokémon on the Party tab first.</div>'; return; }
+    if (!S.live) {
+      const bi = S.battle.boss != null ? S.battle.boss : (S.planBoss != null ? S.planBoss : nextBoss());
+      const b = D.bosses[bi];
+      const n = b.dbl ? 2 : 1;
+      main.innerHTML = head + `<section class="section"><div class="card rec">
+        <div class="field"><label for="lv-boss">Fight</label><select id="lv-boss" class="inline">${bossOptions(bi)}</select></div>
+        <div class="lbl">${b.dbl ? 'Your two leads (double battle)' : 'Your lead'}</div>
+        <div class="chips">${pp.map((m, i) => `<button class="chipbtn" data-lead="${i}" aria-pressed="${(S.liveLead || [0, 1].slice(0, n)).includes(i)}">${icon(m.s)}${esc(monName(m))}</button>`).join('')}</div>
+        <p class="small" style="margin:0">Each turn the Coach recommends your move${n > 1 ? 's' : ''} and shows what the boss AI will most likely do. Then tell it what actually happened: it fills in its prediction, so usually you only nudge the HP bars. It re-plans from there, and it keeps score of how often the boss AI did what it predicted.</p>
+        <div class="row"><button class="btn primary" id="lv-start">Start the battle</button></div></div></section>`;
+      $('#lv-boss').onchange = e => { S.battle.boss = +e.target.value; S.liveLead = null; render(); };
+      main.querySelectorAll('[data-lead]').forEach(btn => btn.onclick = () => {
+        const i = +btn.dataset.lead; let cur = (S.liveLead || [0, 1].slice(0, n)).slice();
+        cur = cur.includes(i) ? cur.filter(x => x !== i) : cur.concat(i).slice(-n);
+        S.liveLead = cur.length ? cur : [i]; render();
+      });
+      $('#lv-start').onclick = () => { const lead = (S.liveLead || [0, 1]).slice(0, n); liveStart(bi, n > 1 ? lead : lead[0]); render(); };
+      return;
+    }
+    const L = S.live, st = L.st, b = D.bosses[L.bi];
+    const slotRow = side => SIM.actives(st, side).map(m => `<div class="side">${front(m.spec.s, side === 'p' ? 'flip' : '')}<div class="plate"><b>${esc(m.name)}</b><span class="small">Lv ${m.spec.lv}${m.status ? ' · ' + esc(m.status.toUpperCase()) : ''}</span>${hpBar(pctOf(m))}</div></div>`).join('');
+    const arena = st.size > 1
+      ? `<div class="arena" style="grid-template-columns:1fr 1fr">${slotRow('a')}</div><div class="arena" style="grid-template-columns:1fr 1fr">${slotRow('p')}</div>`
+      : `<div class="arena">${slotRow('p')}${slotRow('a')}</div>`;
+    let html = head + `<section class="section"><div class="row"><h2 class="grow">vs ${esc(b.n)} · turn ${st.turn + 1}</h2><button class="btn small ghost" id="lv-end">End battle</button></div>${arena}`;
+    if (st.over) {
+      const won = st.winner === 'p';
+      const fallen = st.p.team.filter(m => m.fainted);
+      const n = L.checks.length, ok = L.checks.filter(c => c.ok).length;
+      html += `<div class="card rec"><h3>${won ? 'You won!' : 'The battle is over.'}</h3>
+        <p class="small" style="margin:0">The boss AI did what the Coach predicted ${ok} of ${n} time${n === 1 ? '' : 's'}.</p>
+        ${fallen.length ? `<p class="small" style="margin:0">Fainted: ${fallen.map(m => esc(m.name)).join(', ')}.</p>` : ''}
+        <div class="row">${won && !S.run.beaten.includes(L.bi) && !b.route ? `<button class="btn primary" id="lv-beaten">Mark ${esc(b.n)} as beaten</button>` : ''}
+          ${fallen.length && !S.example ? `<button class="btn" id="lv-dead">Mark ${fallen.length} fainted Pokémon as dead</button>` : ''}
+          <button class="btn ghost" id="lv-close">Close</button></div></div>`;
+    } else if (L.step === 'choose') {
+      // recommendation and the AI's likely move
+      let recs, pred, alts = '';
+      if (L.doubles) {
+        const d = st.policies.p.decide(st, 'p');
+        recs = d.acts; pred = d.ai;
+        alts = d.alts.slice(1).map(x => `<div class="small muted">or: ${x.combo.map(a => esc(actionLabel(st, 'p', a))).join(' + ')}</div>`).join('');
+      } else {
+        const opts = st.policies.p.evaluate(st, 'p');
+        recs = opts[0] ? [opts[0].type === 'switch' ? { type: 'switch', to: opts[0].to } : { type: 'move', id: opts[0].id, z: !!opts[0].z }] : [];
+        pred = [st.policies.a.choose(st, 'a', SIM.expectedDice(), true, true)];
+        alts = opts.slice(1, 3).map(x => `<div class="small muted">or: ${esc(x.label)} ${riskBadge(x.risk)}</div>`).join('');
+      }
+      L.pred = pred;
+      const mine = SIM.actives(st, 'p'), theirs = SIM.actives(st, 'a');
+      html += `<div class="card rec"><div class="lbl">Do this</div>
+        ${mine.map((m, k) => `<h3>${esc(m.name)}: ${esc(actionLabel(st, 'p', recs[k]))}</h3>`).join('')}${alts}
+        <p class="small" style="margin:0">The boss AI will most likely use: ${theirs.map((m, k) => `<b>${esc(m.name)}</b>: ${esc(actionLabel(st, 'a', pred[k]))}`).join('; ')}.</p></div>
+        <div class="card"><div class="lbl">What happened this turn?</div>
+          <div class="small muted">You used</div>${mine.map(m => actionSelect(st, 'p', m.slot, recs[mine.indexOf(m)], 'lvp' + m.slot)).join('')}
+          <div class="small muted">They used</div>${theirs.map(m => actionSelect(st, 'a', m.slot, pred[theirs.indexOf(m)], 'lva' + m.slot)).join('')}
+          <div class="row"><button class="btn primary" id="lv-play">Play the turn</button><span class="note">Pick a different move if the boss did something else: that's how the AI check learns.</span></div></div>`;
+    } else if (L.step === 'check') {
+      const nx = L.next;
+      const row = (side, m) => `<div class="row" style="gap:6px;flex-wrap:nowrap">${icon(m.spec.s)}<span class="grow small"><b>${esc(m.name)}</b></span>
+        <input type="number" min="0" max="100" inputmode="numeric" data-hp="${side}:${m.idx}" value="${pctOf(m)}" style="width:4.5em;padding:6px;border-radius:8px;border:1px solid var(--line);background:var(--surface)"><span class="small">%</span>
+        <select class="inline" data-stat="${side}:${m.idx}" style="width:auto">${[['', 'OK'], ['par', 'PAR'], ['brn', 'BRN'], ['psn', 'PSN'], ['tox', 'TOX'], ['slp', 'SLP'], ['frz', 'FRZ']].map(([k, l]) => `<option value="${k}" ${m.status === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>`;
+      const onField = side => nx[side].slots.map(i => nx[side].team[i]).filter(Boolean);
+      const changed = side => nx[side].team.filter(m => m.fainted && !st[side].team[m.idx].fainted || (!m.fainted && st[side].slots.includes(m.idx)));
+      void changed;
+      const slotPick = side => nx.size > 1 || nx[side].team.some(m => !m.fainted && !nx[side].slots.includes(m.idx)) ? nx[side].slots.map((idx, k) => `<div class="row small" style="gap:6px"><span>${side === 'p' ? 'Your' : 'Their'} ${nx.size > 1 ? (k ? 'right' : 'left') + ' ' : ''}Pokémon now:</span>
+          <select class="inline" data-slot="${side}:${k}" style="width:auto">${nx[side].team.map((m, i) => `<option value="${i}" ${i === idx ? 'selected' : ''} ${m.fainted && i !== idx ? 'disabled' : ''}>${esc(m.name)}${m.fainted ? ' (fainted)' : ''}</option>`).join('')}</select></div>`).join('') : '';
+      html += `<div class="card"><div class="lbl">Check the result</div>
+        <p class="small" style="margin:0">This is what the Coach expects after that turn (middle damage rolls). Fix anything that's different in your game: HP as the bar shows it, status, and who's out.</p>
+        ${L.lastLines.length ? `<div class="t-lines">${L.lastLines.map(l => `<div class="${l.kind === 'faint' ? 'ev faint' : 'ev'}">${esc(l.text)}</div>`).join('')}</div>` : ''}
+        <div class="small muted">Yours</div>${onField('p').map(m => row('p', m)).join('')}${slotPick('p')}
+        <div class="small muted">Theirs</div>${onField('a').map(m => row('a', m)).join('')}${slotPick('a')}
+        <div class="row"><button class="btn primary" id="lv-confirm">Confirm and plan the next turn</button><button class="btn ghost" id="lv-back">Back</button></div></div>`;
+    }
+    const n = L.checks.length, ok = L.checks.filter(c => c.ok).length;
+    if (n) html += `<p class="note">AI check this fight: ${ok} of ${n} boss moves predicted.${L.checks.filter(c => !c.ok).slice(-2).map(c => ` Turn ${c.turn}: ${esc(c.mon)} used ${esc(c.actual)}, not ${esc(c.predicted)}.`).join('')}</p>`;
+    html += `</section>`;
+    main.innerHTML = html;
+    wireLive();
+  }
+  function wireLive() {
+    const L = S.live; if (!L) return;
+    const st = L.st;
+    const end = $('#lv-end'); if (end) end.onclick = () => { if (end.dataset.armed) { S.live = null; render(); } else { end.dataset.armed = '1'; end.textContent = 'Confirm: end it'; end.classList.add('primary'); } };
+    const close = $('#lv-close'); if (close) close.onclick = () => { S.live = null; render(); };
+    const beaten = $('#lv-beaten'); if (beaten) beaten.onclick = async () => { S.run.beaten.push(L.bi); await store.saveRun(); beaten.remove(); flash('Marked as beaten.'); };
+    const dead = $('#lv-dead'); if (dead) dead.onclick = async () => {
+      const b = D.bosses[L.bi];
+      for (const x of st.p.team.filter(m => m.fainted)) { const m = S.roster.find(r => r.key === x.key); if (m && m.box !== 'dead') { m.box = 'dead'; m.died = { at: Date.now(), before: b.n }; await store.saveMon(m); } }
+      dead.remove(); flash('Marked as fainted.');
+    };
+    main.querySelectorAll('select[data-hastarget="1"]').forEach(sel => {
+      const t = $('#' + sel.id + '-t');
+      const sync = () => { if (t) t.hidden = sel.value.startsWith('s:'); };
+      sel.addEventListener('change', sync); sync();
+    });
+    const play = $('#lv-play');
+    if (play) play.onclick = () => {
+      const mine = SIM.actives(st, 'p'), theirs = SIM.actives(st, 'a');
+      const myActs = mine.map(m => readAction(st, 'p', m.slot, 'lvp' + m.slot));
+      const theirActs = theirs.map(m => readAction(st, 'a', m.slot, 'lva' + m.slot));
+      // the AI check: did the boss do what the ported AI predicted?
+      theirs.forEach((m, k) => {
+        const p = (L.pred || [])[k], a = theirActs[k];
+        if (!p) return;
+        const same = p.type === a.type && (a.type === 'switch' ? p.to === a.to : p.id === a.id);
+        const c = { turn: st.turn + 1, boss: D.bosses[L.bi].n, mon: m.name, predicted: actionLabel(st, 'a', p), actual: actionLabel(st, 'a', a), ok: same, at: Date.now() };
+        L.checks.push(c);
+        const AC = S.run.aiChecks || (S.run.aiChecks = { n: 0, ok: 0, misses: [] });
+        AC.n++; if (same) AC.ok++; else AC.misses = AC.misses.concat([c]).slice(-60);
+      });
+      if (!S.example) store.saveRun();
+      // play it out with those actions to predict the result
+      const nx = SIM.cloneState(st);
+      nx.opts.record = true;
+      const fixed = (acts, base) => ({ chooseAll: () => acts, choose: (s2, side, rng, e, pk, slot) => acts[SIM.actives(s2, side).findIndex(x => x.slot === slot)] || acts[0],
+        replace: (s2, side, rng, why, slot) => base.replace(s2, side, rng, why, slot) });
+      nx.policies = { p: fixed(myActs, st.policies.p), a: fixed(theirActs, st.policies.a) };
+      const before = nx.log.length;
+      SIM.playTurn(nx, SIM.expectedDice());
+      L.lastLines = nx.log.slice(before);
+      L.next = nx; L.step = 'check';
+      render();
+    };
+    const back = $('#lv-back'); if (back) back.onclick = () => { L.step = 'choose'; L.next = null; render(); };
+    const conf = $('#lv-confirm');
+    if (conf) conf.onclick = () => {
+      const nx = L.next;
+      // who is in each slot now
+      main.querySelectorAll('[data-slot]').forEach(sel => {
+        const [side, k] = sel.dataset.slot.split(':'); const idx = +sel.value;
+        if (nx[side].slots[+k] !== idx && !nx[side].team[idx].fainted) { nx[side].slots[+k] = idx; nx[side].team[idx].slot = +k; nx[side].team[idx].firstTurn = true; }
+      });
+      main.querySelectorAll('[data-hp]').forEach(inp => {
+        const [side, i] = inp.dataset.hp.split(':'); const m = nx[side].team[+i];
+        const pc = Math.max(0, Math.min(100, +inp.value));
+        if (pc !== pctOf(m)) { m.hp = Math.round(m.maxHp * pc / 100); if (pc > 0 && m.hp === 0) m.hp = 1; }
+        if (m.hp <= 0 && !m.fainted) { m.hp = 0; m.fainted = true; }
+        if (m.hp > 0 && m.fainted) m.fainted = false;
+      });
+      main.querySelectorAll('[data-stat]').forEach(sel => { const [side, i] = sel.dataset.stat.split(':'); const m = nx[side].team[+i]; if (!m.fainted) m.status = sel.value; });
+      nx.policies = st.policies;
+      if (!SIM.actives(nx, 'a').length && !nx.a.team.some(m => !m.fainted)) { nx.over = true; nx.winner = 'p'; }
+      else if (!nx.p.team.some(m => !m.fainted)) { nx.over = true; nx.winner = 'a'; }
+      else { nx.over = false; nx.winner = null; }
+      L.st = nx; L.next = null; L.step = 'choose';
+      render(); window.scrollTo(0, 0);
+    };
+  }
   function stepper(side, stat, val) {
     return `<div class="b"><span>${STAT_LABEL[stat]}</span><span class="stepper"><button type="button" data-boost="${side}:${stat}:-1" aria-label="Lower ${STAT_LABEL[stat]}">−</button><span>${val > 0 ? '+' + val : val}</span><button type="button" data-boost="${side}:${stat}:1" aria-label="Raise ${STAT_LABEL[stat]}">+</button></span></div>`;
   }
-  function renderBattle() {
+  function renderWhatIf(head) {
     const B = S.battle;
     if (B.boss == null) B.boss = S.planBoss != null ? S.planBoss : nextBoss();
     const p = party().length ? party() : alive();
     if (!p.length) {
-      main.innerHTML = `<div class="empty">Add your Pokémon on the Team tab first.<button class="btn" id="bt-ex">Try an example team</button></div>`;
+      main.innerHTML = head + `<div class="empty">Add your Pokémon on the Party tab first.<button class="btn" id="bt-ex">Try an example team</button></div>`;
       $('#bt-ex').onclick = loadExample; return;
     }
     if (!B.me || !p.some(m => m.key === B.me)) B.me = p[0].key;
@@ -784,7 +1018,7 @@
     }).join('')}</tbody></table>
     <p class="note" style="margin:0">Damage shown is the most a move can do (top roll, most hits). The KO column counts every roll, hit count, crit and miss.</p></div></section>`;
     html += realityHTML(meSpec, themSpec, weather, meM);
-    main.innerHTML = html;
+    main.innerHTML = head + html;
     wireBattle();
     wireReality(meSpec, themSpec, weather, meM);
   }
@@ -1196,7 +1430,8 @@
     await store.saveHist(h);
     const keys = S.roster.map(m => m.key);
     S.roster = [];
-    S.run = { beaten: [], tms: [], enc: {}, dupes: S.run.dupes !== false, checks: [], tutors: !!S.run.tutors, no: no + 1, started: null, starter: null };
+    S.run = { beaten: [], tms: [], enc: {}, dupes: S.run.dupes !== false, checks: [], tutors: !!S.run.tutors, no: no + 1, started: null, starter: null, aiChecks: S.run.aiChecks || null };
+    S.live = null;
     S.plans = {}; planCache = { key: '', plan: null }; S.planBoss = null; S.tierPick = null;
     S.battle = { boss: null, them: 0, me: null, themHp: 100, meHp: 100, themBoost: {}, meBoost: {}, weather: 'auto', themStatus: '', meStatus: '' };
     for (const k of keys) await store.deleteMon(k);
