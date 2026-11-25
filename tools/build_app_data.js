@@ -179,6 +179,9 @@ for (const [name, maps] of Object.entries(encounters)) {
   for (const p of parts) for (const t of Object.values(p.k)) for (const rows of Object.values(t)) for (const r of rows) minLv = Math.min(minLv, r[1]);
   outAreas.push({ n: name, parts, minLv });
 }
+// areas with gifts or items but no wild Pokemon (Silph Co., department stores, gyms) are listed too
+const findsAreas = fs.existsSync(path.join(D, 'finds.json')) ? Object.keys(read('finds.json').areas) : [];
+for (const n of findsAreas) if (!outAreas.some(a => a.n === n)) outAreas.push({ n, parts: [], minLv: 100, fo: 1 });
 outAreas.sort((a, b) => {
   const ia = STORY.indexOf(a.n), ib = STORY.indexOf(b.n);
   if (ia >= 0 && ib >= 0) return ia - ib;
@@ -214,6 +217,26 @@ for (const [tid, places] of Object.entries(locations)) {
   outTrainers[tid] = { n: t.name, cls: t.class, dbl: (ov ? ov.double : t.double) ? 1 : 0, a: places, party };
 }
 
+// ---------- gifts, static encounters, items, shops, and where each TM is ----------
+const finds = fs.existsSync(path.join(D, 'finds.json')) ? read('finds.json') : { areas: {}, mart: [] };
+const tmIndexOfItem = {};
+for (const [id, name] of Object.entries(items)) {
+  const m = /^(TM|HM)(\d+)$/.exec(name || '');
+  if (m) tmIndexOfItem[id] = m[1] === 'TM' ? +m[2] - 1 : 119 + +m[2];
+}
+const outFinds = {}, tmWhere = {};
+const addTM = (id, area, how) => { const t = tmIndexOfItem[id]; if (t == null) return; const list = tmWhere[t] = tmWhere[t] || []; if (!list.some(x => x[0] === area)) list.push([area, how]); };
+for (const [area, a] of Object.entries(finds.areas)) {
+  outFinds[area] = {
+    i: a.items.map(([id, qty, how]) => [id, qty, how[0]]),
+    g: a.gifts.filter(g => outSpecies.some(x => x.i === g.s)).map(g => [g.kind[0], g.s, g.lv || null]),
+    sh: a.shops,
+  };
+  for (const [id, , how] of a.items) addTM(id, area, how === 'hidden' ? 'hidden' : how === 'given' ? 'gift' : 'found');
+  for (const shop of a.shops) for (const id of shop) addTM(id, area, 'shop');
+}
+for (const id of finds.mart) addTM(id, 'Poké Marts', 'shop');
+
 const out = {
   version: 'Radical Red 4.1', calcVersion: '@smogon/calc 0.12.0 (gen 9 mechanics)',
   natures: natures.map(n => ({ n: n.name, u: n.up, d: n.down })),
@@ -225,7 +248,7 @@ const out = {
     condSpecies: restrictions.conditionalAllowedSpecies,
   },
   bosses, caps: { hardcore: HC, normal: caps.normal },
-  evo: outEvo, mega: outMega, areas: outAreas, trainers: outTrainers,
+  evo: outEvo, mega: outMega, areas: outAreas, trainers: outTrainers, finds: outFinds, mart: finds.mart, tmWhere,
 };
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, JSON.stringify(out));

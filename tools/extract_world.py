@@ -203,7 +203,7 @@ def trainers_in_script(off, depth=0, seen=None):
         if op == 0x5C:
             typ, tid = rom[o + 1], u16(o + 2)
             found.append(tid)
-            o += 2 + BATTLE_LEN.get(typ, 12) - 1
+            o += 2 + BATTLE_LEN.get(typ, 12)
             continue
         if op in (0x04, 0x05) and depth < 3:
             p = u32(o + 1)

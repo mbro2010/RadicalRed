@@ -38,6 +38,16 @@
     const c = SPR.frontCols;
     return `<span class="spr ${cls || ''}" style="--x:${e.f % c};--y:${Math.floor(e.f / c)};--fcols:${c}" aria-hidden="true"></span>`;
   }
+  const tmName = t => (t < 120 ? `TM${String(t + 1).padStart(2, '0')}` : `HM${String(t - 119).padStart(2, '0')}`);
+  const tmOfItem = id => { const m = /^(TM|HM)(\d+)$/.exec(E.itemName(id) || ''); return m ? (m[1] === 'TM' ? +m[2] - 1 : 119 + +m[2]) : null; };
+  const HOW_LABEL = { found: 'found', hidden: 'hidden', gift: 'given', shop: 'sold' };
+  function tmWhere(t, max) {
+    const list = (D.tmWhere || {})[t] || [];
+    if (!list.length) return '';
+    const shown = list.slice(0, max || 3).map(([a, how]) => `${a}${how && how !== 'found' ? ' (' + (HOW_LABEL[how] || how) + ')' : ''}`);
+    return shown.join(', ') + (list.length > shown.length ? ` +${list.length - shown.length}` : '');
+  }
+  const NOTABLE_ITEM = /ite$|ite [XY]$| Z$|Stone$|^(Leftovers|Life Orb|Choice |Focus Sash|Eviolite|Assault Vest|Rocky Helmet|Expert Belt|Muscle Band|Wise Glasses|Light Clay|Heavy-Duty Boots|Black Sludge|Air Balloon|Weakness Policy|Sitrus Berry|Lum Berry|Scope Lens|Razor Claw|King's Rock|Quick Claw|Shell Bell|Mystic Water|Charcoal|Miracle Seed|Magnet|Never-Melt Ice|Black Belt|Poison Barb|Soft Sand|Sharp Beak|Twisted Spoon|SilverPowder|Hard Stone|Spell Tag|Dragon Fang|BlackGlasses|Metal Coat|Silk Scarf|Pixie Plate|Loaded Dice|Punch Glove|Mega Ring|Ability|Exp\. Share|Covert Cloak|Clear Amulet)/;
   function hpBar(p) { p = Math.max(0, Math.min(100, p)); return `<div class="hp"><span>HP</span><div class="track"><i class="${p <= 20 ? 'lo' : p <= 50 ? 'mid' : ''}" style="width:${p}%"></i></div></div>`; }
   function pct(x) { return x >= 99.95 ? '100' : x.toFixed(x < 10 ? 1 : 0); }
   function fmtRisk(r) { if (r <= 0) return '0%'; if (r < 0.001) return '<0.1%'; return (100 * r).toFixed(r < 0.1 ? 1 : 0) + '%'; }
@@ -220,7 +230,7 @@
       <div class="tmgrid">${D.tms.map((id, i) => {
         const m = E.mv(id); if (!m) return '';
         const label = i < 120 ? `TM${String(i + 1).padStart(2, '0')}` : `HM${String(i - 119).padStart(2, '0')}`;
-        return `<label class="tm" data-q="${esc((label + ' ' + m.f).toLowerCase())}"><input type="checkbox" data-tm="${i}" ${owned.has(i) ? 'checked' : ''}><span class="num">${label}</span> <span>${esc(m.f)}</span>${E.isBanned(id, '') ? ' <span class="tag ban">banned</span>' : ''}</label>`;
+        return `<label class="tm" data-q="${esc((label + ' ' + m.f).toLowerCase())}"><input type="checkbox" data-tm="${i}" ${owned.has(i) ? 'checked' : ''}><span class="num">${label}</span> <span>${esc(m.f)}${tmWhere(i) ? `<span class="note" style="display:block">${esc(tmWhere(i))}</span>` : ''}</span>${E.isBanned(id, '') ? ' <span class="tag ban">banned</span>' : ''}</label>`;
       }).join('')}</div></details>`;
   }
   function wireTMCase() {
@@ -279,6 +289,11 @@
       }).join('')}</section>`;
       html += `<section class="section"><h2>Level-up moves still to come</h2><div class="card"><div class="moves">${mp.upcoming.length ? mp.upcoming.map(u => moveChip(u.id, `Lv ${u.lv}${u.banned ? ' · banned in Hardcore' : ''}`)).join('') : '<span class="muted small">None left.</span>'}</div>
         <p class="note" style="margin:0">When a level-up move is offered, decide then: skipping it means paying the Move Maniac later. If ${esc(s.n)} evolves, its move list changes, so check again after evolving.</p></div></section>`;
+      const allTM = ADV.movePlan(spec, from, D.tms.map((_, i) => i), 3);
+      const wanted = new Map();
+      for (const stp of allTM.steps) for (const x of stp.set) if (x.tm != null && !tms.includes(x.tm) && !wanted.has(x.tm)) wanted.set(x.tm, { id: x.id, boss: D.bosses[stp.boss].n });
+      if (wanted.size) html += `<section class="section"><h2>TMs worth getting</h2><div class="card">${[...wanted.entries()].map(([t, x]) => `<div class="small"><b>${tmName(t)} ${esc(E.mv(x.id).f)}</b> would make its best set for ${esc(x.boss)}${tmWhere(t) ? ` · <span class="muted">${esc(tmWhere(t))}</span>` : ' · <span class="muted">location not found in the map scripts</span>'}</div>`).join('')}
+        <p class="note" style="margin:0">Where each TM is, read from the maps' scripts: items on the ground, hidden items, gifts and shops.</p></div></section>`;
       html += `<p class="note">Move advice uses ${tms.length} TM${tms.length === 1 ? '' : 's'} from your TM case. Tick TMs on the Team tab as you get them.</p></div>`;
       sheet.innerHTML = html;
       $('#adv-close').onclick = close;
@@ -639,7 +654,7 @@
       const tmOnly = tm.picked.filter(x => /^[TH]M/.test(x.how));
       return `<div class="card"><div class="mon-head"><span class="mon-name">${esc(monName(m))}</span><span class="lv">Lv ${m.lv}</span></div>
         <div class="lbl">Best from level-up moves (Move Relearner)</div><div class="moves">${list(now)}</div>
-        ${tmOnly.length ? `<div class="lbl">If you have the TM</div><div class="moves">${tmOnly.map(x => moveChip(x.id, x.how)).join('')}</div>` : ''}</div>`;
+        ${tmOnly.length ? `<div class="lbl">If you have the TM</div><div class="moves">${tmOnly.map(x => { const t = /^TM(\d+)/.test(x.how) ? +x.how.slice(2) - 1 : /^HM(\d+)/.test(x.how) ? 119 + +x.how.slice(2) : null; return moveChip(x.id, x.how + (t != null && tmWhere(t, 2) ? ' · ' + tmWhere(t, 2) : '')); }).join('')}</div>` : ''}</div>`;
     }).join('')}<p class="note">Picked to cover the most of this boss team with guaranteed damage, accuracy included. Hardcore-banned moves are left out.</p></div></details>`;
   }
   function claudeSection() {
@@ -1157,21 +1172,40 @@
           <div><div class="nm">${esc(b.cls)} ${esc(b.n)}${b.dbl ? ' <span class="tag">double</span>' : ''}</div>
           <div class="team-icons">${b.party.map(m => `<span class="t">${icon(m.s) || esc(E.sp(m.s).n)}<span>${m.lv != null ? 'Lv ' + m.lv : 'top' + (m.rel ? (m.rel > 0 ? '+' : '−') + Math.abs(m.rel) : '')}</span></span>`).join('')}</div></div>
           <button class="btn small" data-plan="${b.i}">Plan</button></div>`).join('')}</div>`;
+      const fd = (D.finds || {})[a.n];
+      if (fd) {
+        const seen = new Set();
+        const gifts = fd.g.filter(([k, sid, lv]) => { const key = k + (E.sp(sid) || {}).n + lv; if (seen.has(key) || !E.sp(sid)) return false; seen.add(key); return true; });
+        const KIND = { g: 'gift', s: 'one-time encounter', e: 'egg' };
+        if (gifts.length) body += `<div class="lbl">Gifts and one-time encounters</div><div class="enc">${gifts.slice(0, 20).map(([k, sid, lv]) => `<div class="enc-row">${icon(sid)}<div><div class="nm">${esc(E.sp(sid).n)} ${typesHTML(E.sp(sid).t)}</div><div class="meta">${KIND[k] || k}${lv ? ' · Lv ' + lv : ''}</div></div>
+            <button class="btn small" data-gift="${sid}" data-lv="${lv || 5}" data-area="${esc(a.n)}">Add</button></div>`).join('')}</div>`;
+        const owned = new Set(S.run.tms || []);
+        const tmsHere = [...new Set(fd.i.map(([id]) => tmOfItem(id)).filter(t => t != null))];
+        const notable = [...new Set(fd.i.filter(([id]) => tmOfItem(id) == null && NOTABLE_ITEM.test(E.itemName(id) || '')).map(([id]) => E.itemName(id)))];
+        const rest = fd.i.filter(([id]) => tmOfItem(id) == null && !NOTABLE_ITEM.test(E.itemName(id) || ''));
+        if (tmsHere.length || notable.length || rest.length) body += `<div class="lbl">Items here</div><div class="chips">${tmsHere.map(t => `<button class="chipbtn" data-tmown="${t}" aria-pressed="${owned.has(t)}" title="Tap when you have it">${tmName(t)} ${esc(E.mv(D.tms[t]) ? E.mv(D.tms[t]).f : '')}</button>`).join('')}${notable.map(n => `<span class="tag">${esc(n)}</span>`).join(' ')}</div>
+          ${rest.length ? `<details><summary class="small muted">${rest.length} other item${rest.length > 1 ? 's' : ''}</summary><div class="small muted">${[...new Set(rest.map(([id]) => E.itemName(id)))].map(esc).join(', ')}</div></details>` : ''}
+          ${tmsHere.length ? '<div class="note">Tap a TM once you have it: it goes into your TM case and move advice starts using it.</div>' : ''}`;
+        const shopTMs = [...new Set(fd.sh.flat().map(id => tmOfItem(id)).filter(t => t != null))];
+        const shopNotable = [...new Set(fd.sh.flat().filter(id => tmOfItem(id) == null && NOTABLE_ITEM.test(E.itemName(id) || '')).map(id => E.itemName(id)))];
+        if (fd.sh.length) body += `<div class="lbl">Shops and exchanges (${fd.sh.length})</div><div class="small">${shopTMs.length ? `TMs: ${shopTMs.map(t => `${tmName(t)} ${esc(E.mv(D.tms[t]) ? E.mv(D.tms[t]).f : '')}`).join(', ')}. ` : ''}${shopNotable.length ? `Held items and stones: ${shopNotable.slice(0, 18).map(esc).join(', ')}${shopNotable.length > 18 ? '…' : ''}.` : ''}${!shopTMs.length && !shopNotable.length ? 'Basic supplies.' : ''}</div>`;
+      }
       body += `<div class="row"><button class="btn small" data-best="${esc(a.n)}">Best catch here</button>${e ? `<button class="btn small ghost" data-undo="${esc(a.n)}">Undo this encounter</button>` : `<button class="btn small ghost" data-skip="${esc(a.n)}">No encounter here</button>`}</div>
         <div id="best-${encodeURIComponent(a.n)}"></div>`;
     }
     return `<details class="card area ${e ? 'done' : ''}" data-area="${esc(a.n)}" ${open ? 'open' : ''}><summary><span class="nm">${esc(a.n)}</span><span class="st">${status}</span>
-      <span class="note">${areaSpecies(a).length} species · from Lv ${a.minLv}${routeTrainers(a).length ? ' · ' + routeTrainers(a).length + ' trainers' : ''}</span></summary><div class="body">${body}</div></details>`;
+      <span class="note">${a.fo ? 'no wild Pokémon · gifts and items' : `${areaSpecies(a).length} species · from Lv ${a.minLv}`}${routeTrainers(a).length ? ' · ' + routeTrainers(a).length + ' trainers' : ''}</span></summary><div class="body">${body}</div></details>`;
   }
   function renderRoutes() {
     const enc = S.run.enc || {};
     const areas = D.areas;
-    const doneN = areas.filter(a => enc[a.n]).length, caught = Object.values(enc).filter(e => e && e.r === 'caught').length;
-    const list = S.routeFilter === 'todo' ? areas.filter(a => !enc[a.n] || a.n === S.openArea) : areas;
+    const wild = areas.filter(a => !a.fo);
+    const doneN = wild.filter(a => enc[a.n]).length, caught = Object.values(enc).filter(e => e && e.r === 'caught').length;
+    const list = S.routeFilter === 'todo' ? areas.filter(a => (!enc[a.n] && !a.fo) || a.n === S.openArea) : areas;
     main.innerHTML = `<section class="section">
-      <div class="card"><div class="row"><h2 class="grow">Routes</h2><span class="pill">${doneN}/${areas.length} done · ${caught} caught</span></div>
+      <div class="card"><div class="row"><h2 class="grow">Routes</h2><span class="pill">${doneN}/${wild.length} done · ${caught} caught</span></div>
         <p class="small" style="margin:0">Nuzlocke rule: only the first Pokémon you meet in each area counts. Open an area, then tap <b>Caught</b> on what you got (it goes into your party with its level and the moves a wild one knows) or <b>✕</b> if it fainted or fled. Encounter tables, levels and odds are read from the ROM, including the separate day and night tables.</p>
-        <div class="row small"><span class="seg" role="group" aria-label="Show"><button data-filter="todo" aria-pressed="${S.routeFilter === 'todo'}">Still to do</button><button data-filter="all" aria-pressed="${S.routeFilter !== 'todo'}">All areas</button></span>
+        <div class="row small"><span class="seg" role="group" aria-label="Show"><button data-filter="todo" aria-pressed="${S.routeFilter === 'todo'}">Still to do</button><button data-filter="all" aria-pressed="${S.routeFilter !== 'todo'}">All areas, items and gifts</button></span>
           <label class="row" style="gap:6px;flex-wrap:nowrap"><input type="checkbox" id="dupes" ${S.run.dupes !== false ? 'checked' : ''}> <span>Dupes clause: mark species you already have</span></label></div></div>
       ${list.map(areaCard).join('') || '<div class="empty">Every area is done. Switch to “All areas” to review them.</div>'}
     </section>`;
@@ -1200,6 +1234,13 @@
     main.querySelectorAll('[data-undo]').forEach(b => b.onclick = () => { setEnc(b.dataset.undo, null); renderRoutes(); });
     main.querySelectorAll('[data-plan]').forEach(b => b.onclick = () => { S.planBoss = +b.dataset.plan; S.tab = 'plan'; selectTab('plan'); render(); window.scrollTo(0, 0); });
     main.querySelectorAll('[data-best]').forEach(b => b.onclick = () => bestCatch(D.areas.find(a => a.n === b.dataset.best)));
+    main.querySelectorAll('[data-gift]').forEach(b => b.onclick = () => openEditor(null, { s: +b.dataset.gift, lv: +b.dataset.lv, met: `${b.dataset.area} (gift)` }));
+    main.querySelectorAll('[data-tmown]').forEach(b => b.onclick = () => {
+      const t = +b.dataset.tmown; const set = new Set(S.run.tms || []);
+      if (set.has(t)) set.delete(t); else set.add(t);
+      S.run.tms = [...set].sort((x, y) => x - y); b.setAttribute('aria-pressed', set.has(t));
+      store.saveRun();
+    });
   }
   /** Encounter planner: which species here would help most in the next two big fights, as what it evolves into by then. */
   function bestCatch(a) {

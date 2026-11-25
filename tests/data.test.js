@@ -28,3 +28,10 @@ test('data: 27 starters with tiers', () => {
   assert(T.starters.length === 27, 'starters');
   assert(T.starters.every(s => 'SABCD'.includes(s.tier)), 'tiers');
 });
+test('data: gifts, items and TM locations from the map scripts', () => {
+  const r4 = D.finds['Route 4'];
+  assert(r4 && r4.i.some(([id]) => D.items[id].n === 'TM05'), 'TM05 on Route 4');
+  assert(r4.g.some(([k, s]) => k === 'g' && E.sp(s).g === 'Magikarp'), 'Magikarp gift on Route 4');
+  assert(D.finds['Viridian Forest'].g.some(([k, s]) => k === 's' && E.sp(s).g === 'Virizion'), 'static Virizion');
+  assert(Object.keys(D.tmWhere).length >= 100, 'TM locations ' + Object.keys(D.tmWhere).length);
+});
