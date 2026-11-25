@@ -1,0 +1,218 @@
+[
+ {
+  "gen": 1,
+  "ball": 1,
+  "species": 1,
+  "name": "Bulbasaur",
+  "type": "Grass",
+  "rival": "Charmander"
+ },
+ {
+  "gen": 1,
+  "ball": 2,
+  "species": 7,
+  "name": "Squirtle",
+  "type": "Water",
+  "rival": "Bulbasaur"
+ },
+ {
+  "gen": 1,
+  "ball": 3,
+  "species": 4,
+  "name": "Charmander",
+  "type": "Fire",
+  "rival": "Squirtle"
+ },
+ {
+  "gen": 2,
+  "ball": 1,
+  "species": 152,
+  "name": "Chikorita",
+  "type": "Grass",
+  "rival": "Charmander"
+ },
+ {
+  "gen": 2,
+  "ball": 2,
+  "species": 158,
+  "name": "Totodile",
+  "type": "Water",
+  "rival": "Bulbasaur"
+ },
+ {
+  "gen": 2,
+  "ball": 3,
+  "species": 155,
+  "name": "Cyndaquil",
+  "type": "Fire",
+  "rival": "Squirtle"
+ },
+ {
+  "gen": 3,
+  "ball": 1,
+  "species": 277,
+  "name": "Treecko",
+  "type": "Grass",
+  "rival": "Charmander"
+ },
+ {
+  "gen": 3,
+  "ball": 2,
+  "species": 283,
+  "name": "Mudkip",
+  "type": "Water",
+  "rival": "Bulbasaur"
+ },
+ {
+  "gen": 3,
+  "ball": 3,
+  "species": 280,
+  "name": "Torchic",
+  "type": "Fire",
+  "rival": "Squirtle"
+ },
+ {
+  "gen": 4,
+  "ball": 1,
+  "species": 440,
+  "name": "Turtwig",
+  "type": "Grass",
+  "rival": "Charmander"
+ },
+ {
+  "gen": 4,
+  "ball": 2,
+  "species": 446,
+  "name": "Piplup",
+  "type": "Water",
+  "rival": "Bulbasaur"
+ },
+ {
+  "gen": 4,
+  "ball": 3,
+  "species": 443,
+  "name": "Chimchar",
+  "type": "Fire",
+  "rival": "Squirtle"
+ },
+ {
+  "gen": 5,
+  "ball": 1,
+  "species": 548,
+  "name": "Snivy",
+  "type": "Grass",
+  "rival": "Charmander"
+ },
+ {
+  "gen": 5,
+  "ball": 2,
+  "species": 554,
+  "name": "Oshawott",
+  "type": "Water",
+  "rival": "Bulbasaur"
+ },
+ {
+  "gen": 5,
+  "ball": 3,
+  "species": 551,
+  "name": "Tepig",
+  "type": "Fire",
+  "rival": "Squirtle"
+ },
+ {
+  "gen": 6,
+  "ball": 1,
+  "species": 758,
+  "name": "Chespin",
+  "type": "Grass",
+  "rival": "Charmander"
+ },
+ {
+  "gen": 6,
+  "ball": 2,
+  "species": 764,
+  "name": "Froakie",
+  "type": "Water",
+  "rival": "Bulbasaur"
+ },
+ {
+  "gen": 6,
+  "ball": 3,
+  "species": 761,
+  "name": "Fennekin",
+  "type": "Fire",
+  "rival": "Squirtle"
+ },
+ {
+  "gen": 7,
+  "ball": 1,
+  "species": 939,
+  "name": "Rowlet",
+  "type": "Grass",
+  "rival": "Charmander"
+ },
+ {
+  "gen": 7,
+  "ball": 2,
+  "species": 945,
+  "name": "Popplio",
+  "type": "Water",
+  "rival": "Bulbasaur"
+ },
+ {
+  "gen": 7,
+  "ball": 3,
+  "species": 942,
+  "name": "Litten",
+  "type": "Fire",
+  "rival": "Squirtle"
+ },
+ {
+  "gen": 8,
+  "ball": 1,
+  "species": 1102,
+  "name": "Grookey",
+  "type": "Grass",
+  "rival": "Charmander"
+ },
+ {
+  "gen": 8,
+  "ball": 2,
+  "species": 1108,
+  "name": "Sobble",
+  "type": "Water",
+  "rival": "Bulbasaur"
+ },
+ {
+  "gen": 8,
+  "ball": 3,
+  "species": 1105,
+  "name": "Scorbunny",
+  "type": "Fire",
+  "rival": "Squirtle"
+ },
+ {
+  "gen": 9,
+  "ball": 1,
+  "species": 921,
+  "name": "Sprigatito",
+  "type": "Grass",
+  "rival": "Charmander"
+ },
+ {
+  "gen": 9,
+  "ball": 2,
+  "species": 927,
+  "name": "Quaxly",
+  "type": "Water",
+  "rival": "Bulbasaur"
+ },
+ {
+  "gen": 9,
+  "ball": 3,
+  "species": 924,
+  "name": "Fuecoco",
+  "type": "Fire",
+  "rival": "Squirtle"
+ }
+]

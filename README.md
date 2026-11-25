@@ -30,6 +30,8 @@ The ROM is **not** in this repository. Bring your own copy.
 - `encounters.json`, `maps.json`: wild Pokémon per area, map and method (grass, surfing, Rock Smash, fishing by rod), with the game's separate day (4:00–16:59) and night (17:00–3:59) tables
 - `trainer_locations.json`: which area each trainer stands in, read from the maps' NPC scripts
 - `tutors.json`: the 126 move tutor moves and which species can learn each
+- `starters.json`: the 27 starters Oak's Lab offers (a generation setting swaps the three balls) and which rival line each one gives you
+- `starter_tiers.json`: the starter tier list (see below)
 
 ## Rebuilding the data
 
@@ -49,7 +51,9 @@ npm install                                  # installs @smogon/calc for the nam
 node tools/map_names.js data                 # prints every match that needed review
 python3 tools/extract_world.py data         # evolutions, encounters, map names, trainer locations
 python3 tools/extract_tutors.py data
+python3 tools/extract_starters.py data
 node tools/build_app_data.js data app/rrdata.json
+node tools/starter_tiers.js data app/rrdata.json app/starters.json   # about a minute
 
 # optional: sprites for the app, decoded from your own ROM (kept out of git)
 python3 tools/extract_sprites.py app/sprites
@@ -78,9 +82,22 @@ A phone web app to use through the run, styled like a GBA menu, with sprites dec
 - **Routes**: every area in story order with its encounter table from the ROM (day and night, grass, surfing, Rock Smash and each rod). Tap **Caught** on your first encounter and it joins your party with its level and the moves a wild one knows, or **✕** if it got away. The dupes clause marks species families you already have. **Best catch here** ranks the area's species by how much they'd help in your next two big fights, as what they evolve into by then. Each area also lists its trainers and their teams, and any of them can be planned like a boss.
 - **Plan**: for any boss or route trainer, **Plan this fight** simulates the battle hundreds of times with your Pokémon and the exact team. It picks your six and your lead, and writes a turn-by-turn script: what to click, when to switch, and any planned sacrifice. It reports the odds (win with no losses, win at all, average losses) and the most common ways things go wrong.
 - **Battle**: set the active Pokémon and HP mid-fight. The planner ranks every move and switch by expected losses for your whole team, and shows what the boss AI will pick and why (its move scores). A **reality check** compares a hit you saw with every possible roll, to catch anything the Coach doesn't know about.
+- **Runs**: your current run (progress, encounters, who's alive) and **End this run…**, which saves the run to your history (result, where it ended, notes, your team and who fell before which fight) and clears everything for a fresh start in one step. A wipe on the Party tab offers the same button. Past runs stay listed with how far each got. The **starter tier list** is here too, and you can start a run with any starter from it.
 - **Nature & moves** (on each Pokémon): the nature to set with Radical Red's free Nature Change service, when it evolves, and the best four moves before each of the next big fights with exactly when each becomes available: level-up level, a TM you own, a move tutor (optional), or the Move Maniac for moves it already passed.
 
 How it works: `sim.js` is a turn-by-turn singles simulator: damage rolls, crits, accuracy, speed and priority, status, confusion, Encore, Taunt, stat changes, hazards, screens, weather, terrain, healing, pivots, recharge and charge turns, Destiny Bond, berries, Mega Evolution, Z-Moves, and key items and abilities. Move effects are driven by the ROM's own effect IDs. `ai.js` is the boss AI, **ported from the battle AI of the engine Radical Red is built on** (Complete Fire Red Upgrade): every move starts at 100 points, loses points if it would fail or be absorbed, and gains the engine's own bonuses (+9 for a knockout before the target moves, +2 for the strongest attack, status, setup, healing, hazard and pivot bonuses by the Pokémon's fighting style). It switches out and picks its next Pokémon with the engine's switch-in scoring, Mega Evolves immediately, and uses a Z-Move unless the plain move already knocks out. Radical Red may have private changes to its AI that the public engine source doesn't show. `advice.js` handles natures, evolutions and move timing; `save.js` reads save files. `engine.js` runs the open-source [Smogon damage calculator](https://github.com/smogon/damage-calc) (Gen 9 rules), fed with Radical Red's own stats, types, abilities and move data.
+
+## Starter tier list
+
+All 27 starters (Gen 1-9) are available in Oak's Lab: the balls' script swaps in the chosen generation's trio, and the ball you take decides the rival's starter (grass ball: he takes Charmander; water: Bulbasaur; fire: Squirtle). `tools/starter_tiers.js` tests each starter at every major fight's Hardcore level cap up to the Champion (36 fights: gym leaders, rival, Rocket admins and Giovanni, Elite Four and the other milestone fights), evolved by level as it would be by then, with its best level-up moves (Hardcore bans excluded, no TMs or tutors assumed) and the best of Adamant, Jolly, Modest and Timid. Each of the boss's Pokémon is a one-on-one matchup counting every damage roll, crit and miss, scored 3 (safe) to −1 (loses), and rival fights use the team that starter gives you. Overall = 60% early game (caps up to 36, the first four badges) + 40% the rest. Tiers are by distance from the average (S is more than one standard deviation above it).
+
+| Tier | Starters |
+| --- | --- |
+| S | Fennekin, Scorbunny, Charmander, Totodile, Chimchar |
+| A | Torchic, Cyndaquil, Mudkip, Fuecoco, Litten |
+| B | Popplio, Piplup, Rowlet, Quaxly, Grookey, Turtwig, Sobble |
+| C | Tepig, Oshawott, Bulbasaur, Chespin |
+| D | Chikorita, Froakie, Treecko, Sprigatito, Snivy, Squirtle |
 
 ## Roadmap
 

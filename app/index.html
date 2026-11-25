@@ -51,12 +51,13 @@ h1 .accent { color: inherit; opacity: .85; }
 .pill { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--chip); color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .pill.cap { background: var(--accent-soft); color: var(--accent); }
 .pill.warn { background: var(--risky-soft); color: var(--risky); }
-.tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; background: var(--surface); padding: 4px; border-radius: 10px; border: 3px solid var(--box-edge); box-shadow: inset 0 0 0 2px var(--box-inner); }
+.tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; background: var(--surface); padding: 4px; border-radius: 10px; border: 3px solid var(--box-edge); box-shadow: inset 0 0 0 2px var(--box-inner); }
 .tabs button { border: 0; background: transparent; padding: 7px 4px 7px 14px; border-radius: 6px; font-family: var(--font-display); font-weight: 700; font-size: 16px; position: relative; text-align: left; }
 .tabs button::before { content: ""; position: absolute; left: 4px; top: 50%; margin-top: -5px; border: 5px solid transparent; border-left: 7px solid var(--cursor); visibility: hidden; }
 .tabs button[aria-selected="true"]::before { visibility: visible; }
 .tabs button[aria-selected="true"] { background: var(--surface-2); }
-@media (max-width: 380px) { .tabs button { font-size: 14px; padding-left: 12px; } }
+@media (max-width: 480px) { .tabs button { font-size: 14px; padding-left: 11px; } .tabs button::before { left: 2px; } }
+@media (max-width: 360px) { .tabs button { font-size: 12.5px; padding-left: 10px; } }
 h2 { font-family: var(--font-display); font-size: 21px; margin: 0; text-wrap: balance; letter-spacing: .01em; }
 h3 { font-size: 15px; margin: 0; }
 .muted { color: var(--muted); }
@@ -203,6 +204,10 @@ input.search { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--l
 .badge-row .bd.on { background: var(--hp-mid); color: #232a36; }
 .check { display: grid; gap: 6px; }
 .dropzone { border: 3px dashed var(--box-inner); border-radius: 10px; padding: 16px; text-align: center; display: grid; gap: 8px; justify-items: center; }
+.tier { display: grid; grid-template-columns: 34px 1fr; gap: 8px; align-items: start; padding: 4px 0; border-top: 1px solid var(--line); }
+.tier .tl { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; font-size: 20px; color: #1b1b1b; border: 2px solid var(--box-edge); }
+.chipbtn { display: inline-flex; align-items: center; gap: 2px; }
+.chipbtn .ico { margin: -6px 2px -6px -4px; }
 </style>
 
 <div class="wrap">
@@ -218,6 +223,7 @@ input.search { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--l
       <button role="tab" id="tab-routes" aria-selected="false" data-tab="routes">Routes</button>
       <button role="tab" id="tab-plan" aria-selected="false" data-tab="plan">Plan</button>
       <button role="tab" id="tab-battle" aria-selected="false" data-tab="battle">Battle</button>
+      <button role="tab" id="tab-runs" aria-selected="false" data-tab="runs">Runs</button>
     </nav>
   </header>
   <main id="main"><div class="empty">Loading game data and the damage calculator…</div></main>

@@ -13,7 +13,7 @@
   let D = null, E = null, SIM = null, ADV = null, SR = null;
   let SPR = null;   // sprite index (sprites/index.json); without it the page simply shows no sprites
   const S = {
-    roster: [], run: { beaten: [], tms: [], enc: {}, dupes: true, checks: [] }, tab: 'team', routeFilter: 'todo', openArea: null, encTime: null, planBoss: null, example: false, plans: {}, planning: null,
+    roster: [], run: { beaten: [], tms: [], enc: {}, dupes: true, checks: [], no: 1, started: null, starter: null }, history: [], tab: 'team', routeFilter: 'todo', openArea: null, encTime: null, planBoss: null, example: false, plans: {}, planning: null,
     battle: { boss: null, them: 0, me: null, themHp: 100, meHp: 100, themBoost: {}, meBoost: {}, weather: 'auto', themStatus: '', meStatus: '' },
   };
 
@@ -86,29 +86,40 @@
         this.timer = setTimeout(() => { this.note = 'Your saved team hasn’t loaded yet. Check your connection.'; renderStatus(); }, 10000);
         this.unsub = this.col.onSnapshot(snap => {
           clearTimeout(this.timer); this.note = '';
-          const roster = [], run = { beaten: [] };
+          const roster = [], run = { beaten: [] }, history = [];
           snap.docs.forEach(d => {
             const v = d.data(); if (!v) return;
             if (d.id === 'run') Object.assign(run, v);
             else if (d.id.startsWith('mon-')) roster.push(Object.assign({}, v, { key: d.id }));
+            else if (d.id.startsWith('hist-')) history.push(Object.assign({}, v, { id: d.id.slice(5) }));
           });
+          S.history = history.sort((a, b) => (b.ended || 0) - (a.ended || 0));
           roster.sort((a, b) => (a.ord || 0) - (b.ord || 0));
           if (!S.example || roster.length) { S.roster = roster; S.example = false; }
           S.run = { beaten: Array.isArray(run.beaten) ? run.beaten.slice() : [], tms: Array.isArray(run.tms) ? run.tms.slice() : [],
-            enc: run.enc && typeof run.enc === 'object' ? Object.assign({}, run.enc) : {}, dupes: run.dupes !== false, checks: Array.isArray(run.checks) ? run.checks.slice(-50) : [], tutors: !!run.tutors };
+            enc: run.enc && typeof run.enc === 'object' ? Object.assign({}, run.enc) : {}, dupes: run.dupes !== false, checks: Array.isArray(run.checks) ? run.checks.slice(-50) : [], tutors: !!run.tutors,
+            no: run.no || (history.length + 1), started: run.started || null, starter: run.starter || null };
           ADV.setOptions({ tutors: S.run.tutors });
           render();
         }, err => { clearTimeout(this.timer); this.note = 'Saving to your account stopped working (' + err.code + '). Reload to try again.'; renderStatus(); });
       } else {
         this.mode = 'local';
-        try { const v = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); if (v) { S.roster = v.roster || []; S.run = Object.assign({ beaten: [], tms: [], enc: {}, dupes: true, checks: [], tutors: false }, v.run || {}); ADV.setOptions({ tutors: S.run.tutors }); } } catch (e) { /* storage blocked */ }
+        try { const v = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); if (v) { S.roster = v.roster || []; S.history = v.history || []; S.run = Object.assign({ beaten: [], tms: [], enc: {}, dupes: true, checks: [], tutors: false, no: S.history.length + 1, started: null, starter: null }, v.run || {}); ADV.setOptions({ tutors: S.run.tutors }); } } catch (e) { /* storage blocked */ }
         render();
       }
     },
-    saveLocal() { try { localStorage.setItem(LS_KEY, JSON.stringify({ roster: S.roster, run: S.run })); } catch (e) { this.note = 'This browser blocked saving.'; } },
+    saveLocal() { try { localStorage.setItem(LS_KEY, JSON.stringify({ roster: S.roster, run: S.run, history: S.history })); } catch (e) { this.note = 'This browser blocked saving.'; } },
+    async saveHist(h) {
+      if (this.mode === 'db') { try { await this.col.doc('hist-' + h.id).set(Object.assign({}, h, { id: undefined })); } catch (e) { flash('Couldn’t save the run to your history (' + e.code + ').'); } }
+      else this.saveLocal();
+    },
+    async deleteHist(id) {
+      if (this.mode === 'db') { try { await this.col.doc('hist-' + id).delete(); } catch (e) { flash('Couldn’t delete (' + e.code + ').'); } }
+      else this.saveLocal();
+    },
     async saveMon(m) {
       if (S.example) return;
-      const body = { s: m.s, nick: m.nick || '', lv: m.lv, nat: m.nat, ab: m.ab, it: m.it || null, mv: m.mv, box: m.box, met: m.met || '', ord: m.ord || Date.now(), pid: m.pid || null };
+      const body = { s: m.s, nick: m.nick || '', lv: m.lv, nat: m.nat, ab: m.ab, it: m.it || null, mv: m.mv, box: m.box, met: m.met || '', ord: m.ord || Date.now(), pid: m.pid || null, died: m.died || null };
       if (this.mode === 'db') { try { await this.col.doc(m.key).set(body); } catch (e) { flash('Couldn’t save to your account (' + e.code + ').'); } }
       else this.saveLocal();
     },
@@ -119,7 +130,9 @@
     },
     async saveRun() {
       if (S.example) return;
-      if (this.mode === 'db') { try { await this.col.doc('run').set({ beaten: S.run.beaten, tms: S.run.tms || [], enc: S.run.enc || {}, dupes: S.run.dupes !== false, checks: (S.run.checks || []).slice(-50), tutors: !!S.run.tutors }); } catch (e) { flash('Couldn’t save progress (' + e.code + ').'); } }
+      if (!S.run.started && S.roster.length) S.run.started = Math.min(...S.roster.map(m => m.ord || Date.now()));
+      if (this.mode === 'db') { try { await this.col.doc('run').set({ beaten: S.run.beaten, tms: S.run.tms || [], enc: S.run.enc || {}, dupes: S.run.dupes !== false, checks: (S.run.checks || []).slice(-50), tutors: !!S.run.tutors,
+        no: S.run.no || 1, started: S.run.started || null, starter: S.run.starter || null }); } catch (e) { flash('Couldn’t save progress (' + e.code + ').'); } }
       else this.saveLocal();
     },
   };
@@ -151,6 +164,7 @@
     if (S.tab === 'team') renderTeam();
     else if (S.tab === 'routes') renderRoutes();
     else if (S.tab === 'plan') renderPlan();
+    else if (S.tab === 'runs') renderRuns();
     else renderBattle();
   }
 
@@ -186,6 +200,7 @@
         <div class="row" style="justify-content:center"><button class="btn primary" data-act="add">Add a Pokémon</button><button class="btn" data-act="import">Import save file</button><button class="btn" data-act="example">Try an example team</button></div></div>`;
       main.innerHTML = html; wireTeam(); return;
     }
+    if (!S.example && S.roster.length && !alive().length) html += `<div class="banner" style="display:grid;gap:8px"><b>Every Pokémon you had has fainted: that's a wipe.</b><span>Save this run to your history and start fresh in one step.</span><div><button class="btn primary" data-act="endrun">End this run…</button></div></div>`;
     html += `<div class="row"><button class="btn primary" data-act="add">Add a Pokémon</button><button class="btn" data-act="import">Import save file</button><span class="muted small">${p.length}/6 in party · ${box.length} in box · ${dead.length} fainted</span></div>`;
     html += `<section class="section"><div class="head"><h2>Party</h2></div>${p.length ? p.map(monCard).join('') : '<div class="empty small">No Pokémon in your party. Move some from your box.</div>'}</section>`;
     if (box.length) html += `<section class="section"><div class="head"><h2>Box</h2></div>${box.map(monCard).join('')}</section>`;
@@ -275,13 +290,14 @@
       const card = btn.closest('[data-key]'); const m = card ? S.roster.find(x => x.key === card.dataset.key) : null;
       if (act === 'add') openEditor(null);
       else if (act === 'import') openImport();
+      else if (act === 'endrun') openEndRun('wipe');
       else if (act === 'example') loadExample();
       else if (act === 'edit') openEditor(m);
       else if (act === 'advice') openAdvice(m);
       else if (act === 'move') { m.box = m.box === 'party' ? 'box' : 'party'; render(); await store.saveMon(m); }
       else if (act === 'faint') {
         btn.textContent = 'Confirm: mark as fainted'; btn.dataset.act = 'faint2'; btn.classList.add('primary');
-        btn.addEventListener('click', async () => { m.box = 'dead'; render(); await store.saveMon(m); }, { once: true });
+        btn.addEventListener('click', async () => { m.box = 'dead'; m.died = { at: Date.now(), before: D.bosses[nextBoss()].n }; render(); await store.saveMon(m); }, { once: true });
       } else if (act === 'delete') {
         btn.textContent = 'Confirm delete'; btn.dataset.act = 'delete2'; btn.classList.add('primary');
         btn.addEventListener('click', async () => { S.roster = S.roster.filter(x => x !== m); render(); await store.deleteMon(m.key); }, { once: true });
@@ -1033,6 +1049,158 @@
       };
     }
     draw('');
+  }
+
+  // ---------------- RUNS: the current run, starting over, past runs and the starter tier list ----------------
+  const RESULT = { wipe: ['Wiped out', 'v-lose'], quit: ['Gave up', 'v-risky'], win: ['Won', 'v-safe'] };
+  const fmtDate = t => (t ? new Date(t).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '—');
+  function lastBeatenMajor() {
+    let last = null;
+    for (const b of D.bosses) if (!b.route && S.run.beaten.includes(b.i) && (b.ms || b.cat === 'gym' || b.cat === 'e4' || b.cat === 'rival')) last = b;
+    return last;
+  }
+  function runSummary() {
+    const enc = Object.values(S.run.enc || {});
+    const last = lastBeatenMajor();
+    return {
+      milestones: milestonesDone(), cap: capNow(), beaten: S.run.beaten.length, lastBeaten: last ? last.n : null,
+      caught: enc.filter(e => e && e.r === 'caught').length, missed: enc.filter(e => e && e.r === 'failed').length, areas: enc.length,
+      alive: alive().length, fainted: S.roster.filter(m => m.box === 'dead').length,
+    };
+  }
+  function teamIcons(team) {
+    return `<div class="team-icons">${team.map(m => `<span class="t" style="${m.box === 'dead' ? 'opacity:.45;filter:grayscale(1)' : ''}" title="${esc((E.sp(m.s) || {}).n || '')}">${icon(m.s) || esc((E.sp(m.s) || {}).n || '?')}<span>${m.box === 'dead' ? '✝' : 'Lv ' + m.lv}</span></span>`).join('')}</div>`;
+  }
+  let TIERS = null, tiersLoading = null;
+  function loadTiers() {
+    if (TIERS || tiersLoading) return tiersLoading;
+    tiersLoading = fetch('starters.json').then(r => (r.ok ? r.json() : null)).then(v => { TIERS = v; if (S.tab === 'runs') renderRuns(); }).catch(() => { TIERS = { error: true }; });
+    return tiersLoading;
+  }
+  const TIER_COLORS = { S: '#e0523e', A: '#e8963a', B: '#e8c22c', C: '#5bb36a', D: '#5b8fd6' };
+  function tierListHTML() {
+    if (!TIERS) { loadTiers(); return '<div class="empty">Loading the starter tier list…</div>'; }
+    if (TIERS.error || !TIERS.starters) return '<div class="empty">The starter tier list didn’t load.</div>';
+    const pick = S.tierPick != null ? TIERS.starters.find(x => x.s === S.tierPick) : null;
+    const rows = ['S', 'A', 'B', 'C', 'D'].map(t => {
+      const list = TIERS.starters.filter(x => x.tier === t);
+      if (!list.length) return '';
+      return `<div class="tier"><span class="tl" style="background:${TIER_COLORS[t]}">${t}</span><div class="chips">${list.map(x =>
+        `<button class="chipbtn" data-tier="${x.s}" aria-pressed="${S.tierPick === x.s}">${icon(x.s)}${esc(x.name)}</button>`).join('')}</div></div>`;
+    }).join('');
+    let detail = '';
+    if (pick) {
+      const bar = (v, label) => `<div class="small" style="display:grid;grid-template-columns:7.5em 1fr 3em;gap:6px;align-items:center"><span>${label}</span><div class="progress"><span style="width:${Math.max(0, Math.min(100, 100 * (v + 1) / 4))}%"></span></div><span class="num">${v.toFixed(2)}</span></div>`;
+      const fightLine = f => `${esc(f.name)} (cap ${f.cap}): ${f.handles.toFixed(f.handles % 1 ? 1 : 0)} of ${f.size}`;
+      detail = `<div class="card" style="box-shadow:none;border-width:2px">
+        <div class="slot">${front(pick.stages[pick.stages.length - 1].s)}<div class="who"><b>#${pick.rank} ${esc(pick.name)} <span class="tag">tier ${pick.tier}</span></b>
+          <span class="small">${pick.stages.map((st, k) => `${esc(E.sp(st.s).n)}${k ? ' (Lv ' + st.lv + ')' : ''}`).join(' → ')}</span>
+          <div class="row" style="gap:4px">${typesHTML(pick.types)}<span class="small muted">Gen ${pick.gen} · ${esc(pick.type)} ball · final base total ${pick.bst}</span></div></div></div>
+        ${bar(pick.early, 'Early game')}${bar(pick.late, 'Rest of the run')}
+        <dl class="kv"><dt>Nature</dt><dd>${esc(pick.nature)} tested best (set it free with the Nature Change service)</dd>
+          <dt>Ability</dt><dd>${esc(pick.ability || '—')}${pick.hidden ? ` · hidden: ${esc(pick.hidden)}` : ''}</dd>
+          <dt>Rival</dt><dd>He takes the ${esc(pick.rival)} line, so his ${esc(pick.rival)} fights are the ones scored here</dd>
+          <dt>Key moves</dt><dd>${pick.keyMoves.map(k => esc(E.mv(k.id) ? E.mv(k.id).f : '?') + (k.lv === 0 ? ' (on evolving)' : k.lv ? ` (Lv ${k.lv})` : '')).join(', ')}</dd>
+          <dt>Best vs</dt><dd>${pick.best.map(fightLine).join('<br>')}</dd>
+          <dt>Struggles vs</dt><dd>${pick.worst.map(fightLine).join('<br>')}</dd></dl>
+        ${!S.roster.length && !S.example ? `<div class="row"><button class="btn primary" data-choose="${pick.s}">Start this run with ${esc(pick.name)}</button></div>` : ''}
+      </div>`;
+    }
+    return `<div class="card"><p class="small" style="margin:0">All 27 starters Oak's Lab offers (the generation setting changes the three balls), ranked for Hardcore from the game's data. Each one is tested at every major fight's level cap up to the Champion (${TIERS.fights} fights), evolved by level as it would be by then, with its best level-up moves and nature, one-on-one against each of the boss's Pokémon. Early game (the first four badges) counts 60%, because that's when your starter carries you. Tap one for details.</p>
+      ${rows}${detail}
+      <p class="note" style="margin:0">Scores run from 3 (beats every boss Pokémon safely) to −1 (loses to all of them); one Pokémon alone rarely beats a whole Hardcore team, so even the best sit near 1. TMs and tutors aren't assumed, so Pokémon that rely on them can do better than this.</p></div>`;
+  }
+  function renderRuns() {
+    const r = runSummary();
+    const runNo = S.run.no || S.history.length + 1;
+    const wins = S.history.filter(h => h.result === 'win').length;
+    const best = S.history.slice().sort((a, b) => ((b.progress || {}).milestones || 0) - ((a.progress || {}).milestones || 0))[0];
+    let html = `<section class="section"><div class="card rec"><div class="row"><h2 class="grow">Run #${runNo}</h2><span class="pill">${S.example ? 'example team' : 'started ' + fmtDate(S.run.started || (S.roster.length ? Math.min(...S.roster.map(m => m.ord || Date.now())) : null))}</span></div>
+      <dl class="kv"><dt>Progress</dt><dd>${r.milestones} of 16 milestones · cap ${r.cap}${r.lastBeaten ? ` · last beat ${esc(r.lastBeaten)}` : ''}</dd>
+        <dt>Encounters</dt><dd>${r.caught} caught, ${r.missed} missed, ${r.areas} areas done</dd>
+        <dt>Team</dt><dd>${r.alive} alive, ${r.fainted} fainted</dd></dl>
+      ${S.roster.length ? teamIcons(S.roster) : '<p class="small muted" style="margin:0">No Pokémon yet. Pick a starter below or add one on the Party tab.</p>'}
+      <div class="row"><button class="btn primary" id="run-end" ${S.example || (!S.roster.length && !S.run.beaten.length) ? 'disabled' : ''}>End this run…</button>
+        <span class="note">Saves it to your history, then clears your party, boxes, encounters, beaten bosses and TMs for a fresh start. Your settings stay.</span></div></div></section>`;
+    html += `<section class="section"><div class="head"><h2>Starter tier list</h2></div>${tierListHTML()}</section>`;
+    html += `<section class="section"><div class="head"><h2>Past runs</h2>${S.history.length ? `<span class="muted small">${S.history.length} run${S.history.length > 1 ? 's' : ''} · ${wins} won${best && best.progress ? ` · furthest: ${best.progress.milestones} milestones (run #${best.no})` : ''}</span>` : ''}</div>
+      ${S.history.length ? S.history.map(h => {
+        const [label, cls] = RESULT[h.result] || ['Ended', 'v-ok'];
+        const p = h.progress || {};
+        const days = h.started && h.ended ? Math.max(1, Math.round((h.ended - h.started) / 86400000)) : null;
+        const deaths = (h.team || []).filter(m => m.box === 'dead');
+        return `<div class="card" data-hist="${esc(h.id)}"><div class="row"><b class="grow" style="font-family:var(--font-display);font-size:18px">Run #${h.no || '?'}</b><span class="verdict ${cls}">${label}</span></div>
+          <div class="small">${fmtDate(h.started)} – ${fmtDate(h.ended)}${days ? ` · ${days} day${days > 1 ? 's' : ''}` : ''}${h.starter && E.sp(h.starter) ? ` · starter ${esc(E.sp(h.starter).n)}` : ''}</div>
+          <dl class="kv"><dt>Reached</dt><dd>${p.milestones || 0} of 16 milestones · cap ${p.cap || '—'}${p.lastBeaten ? ` · last beat ${esc(p.lastBeaten)}` : ''}</dd>
+            ${h.endedAt ? `<dt>Ended at</dt><dd>${esc(h.endedAt)}</dd>` : ''}
+            <dt>Encounters</dt><dd>${(h.enc || {}).caught || 0} caught, ${(h.enc || {}).missed || 0} missed</dd>
+            ${deaths.length ? `<dt>Lost</dt><dd>${deaths.map(m => `${esc((E.sp(m.s) || {}).n || '?')}${m.died && m.died.before ? ` (before ${esc(m.died.before)})` : ''}`).join(', ')}</dd>` : ''}
+            ${h.notes ? `<dt>Notes</dt><dd>${esc(h.notes)}</dd>` : ''}</dl>
+          ${teamIcons(h.team || [])}
+          <div class="row"><button class="btn small ghost" data-delhist="${esc(h.id)}">Delete…</button></div></div>`;
+      }).join('') : '<div class="empty">Finished runs show up here: how far you got, your team, who fell and where.</div>'}</section>`;
+    main.innerHTML = html;
+    const end = $('#run-end'); if (end) end.onclick = () => openEndRun(alive().length ? 'quit' : 'wipe');
+    main.querySelectorAll('[data-tier]').forEach(b => b.onclick = () => { S.tierPick = S.tierPick === +b.dataset.tier ? null : +b.dataset.tier; renderRuns(); });
+    main.querySelectorAll('[data-choose]').forEach(b => b.onclick = () => {
+      const sid = +b.dataset.choose;
+      openEditor(null, { s: sid, lv: 5, met: 'Starter', onSave: m => { S.run.starter = sid; if (!S.run.started) S.run.started = Date.now(); store.saveRun(); } });
+    });
+    main.querySelectorAll('[data-delhist]').forEach(b => b.onclick = () => {
+      if (b.dataset.armed) { const id = b.dataset.delhist; S.history = S.history.filter(h => h.id !== id); renderRuns(); store.deleteHist(id); return; }
+      b.dataset.armed = '1'; b.textContent = 'Confirm delete'; b.classList.add('primary');
+    });
+  }
+  function openEndRun(preset) {
+    document.body.style.overflow = 'hidden';
+    sheet.hidden = false;
+    const close = () => { sheet.hidden = true; sheet.innerHTML = ''; document.body.style.overflow = ''; };
+    let result = preset || 'wipe';
+    const nb = D.bosses[nextBoss()];
+    const majors = D.bosses.filter(b => !b.route && (b.ms || b.cat === 'gym' || b.cat === 'e4' || b.cat === 'rival')).filter((b, k, arr) => k === arr.findIndex(x => x.n === b.n && x.cap === b.cap));
+    function draw() {
+      const r = runSummary();
+      sheet.innerHTML = `<div class="inner"><div class="row"><h2 class="grow">End run #${S.run.no || S.history.length + 1}</h2><button class="btn ghost" id="er-close">Cancel</button></div>
+        <div class="card"><div class="lbl">How did it end?</div>
+          <span class="seg" role="group" aria-label="Result">${Object.entries(RESULT).map(([k, [l]]) => `<button data-res="${k}" aria-pressed="${result === k}">${l}</button>`).join('')}</span>
+          <div class="field"><label for="er-at">Where</label><select id="er-at" class="inline">
+            <option value="">—</option>
+            ${majors.map(b => `<option value="${esc(b.n)} (cap ${b.cap})" ${b.n === nb.n && b.cap === nb.cap ? 'selected' : ''}>${esc(b.n)} (${esc(b.cls)}, cap ${b.cap})</option>`).join('')}
+            <option value="A route or wild battle">A route or wild battle</option><option value="Somewhere else">Somewhere else</option></select></div>
+          <div class="field"><label for="er-notes">Notes (optional)</label><textarea id="er-notes" rows="3" style="padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface)" placeholder="What went wrong, what to try next time"></textarea></div>
+          <p class="small" style="margin:0">Saved to your history: ${r.milestones} milestones, cap ${r.cap}, ${S.roster.length} Pokémon (${r.fainted} fainted), ${r.caught} catches. Then your party, boxes, encounters, beaten bosses and TMs are cleared for run #${(S.run.no || S.history.length + 1) + 1}.</p>
+          <div class="row"><button class="btn primary" id="er-go">Save and start a new run</button></div></div></div>`;
+      $('#er-close').onclick = close;
+      sheet.querySelectorAll('[data-res]').forEach(b => b.onclick = () => { result = b.dataset.res; const n = $('#er-notes').value, at = $('#er-at').value; draw(); $('#er-notes').value = n; $('#er-at').value = at; });
+      $('#er-go').onclick = async () => {
+        const btn = $('#er-go'); btn.disabled = true; btn.textContent = 'Saving…';
+        await endRun(result, $('#er-at').value, $('#er-notes').value.trim());
+        close(); S.tab = 'runs'; selectTab('runs'); render(); window.scrollTo(0, 0);
+        flash('Run saved to your history. Good luck on the next one!');
+      };
+    }
+    draw();
+  }
+  async function endRun(result, endedAt, notes) {
+    const r = runSummary();
+    const no = S.run.no || S.history.length + 1;
+    const starter = S.run.starter || (S.roster.find(m => /starter/i.test(m.met || '')) || {}).s || null;
+    const h = {
+      id: uid(), no, result, endedAt: endedAt || '', notes: notes || '', starter,
+      started: S.run.started || (S.roster.length ? Math.min(...S.roster.map(m => m.ord || Date.now())) : Date.now()), ended: Date.now(),
+      progress: { milestones: r.milestones, cap: r.cap, beaten: r.beaten, lastBeaten: r.lastBeaten },
+      enc: { caught: r.caught, missed: r.missed, areas: r.areas },
+      team: S.roster.map(m => ({ s: m.s, lv: m.lv, nick: m.nick || '', box: m.box, met: m.met || '', died: m.died || null })),
+    };
+    S.history = [h].concat(S.history);
+    await store.saveHist(h);
+    const keys = S.roster.map(m => m.key);
+    S.roster = [];
+    S.run = { beaten: [], tms: [], enc: {}, dupes: S.run.dupes !== false, checks: [], tutors: !!S.run.tutors, no: no + 1, started: null, starter: null };
+    S.plans = {}; planCache = { key: '', plan: null }; S.planBoss = null; S.tierPick = null;
+    S.battle = { boss: null, them: 0, me: null, themHp: 100, meHp: 100, themBoost: {}, meBoost: {}, weather: 'auto', themStatus: '', meStatus: '' };
+    for (const k of keys) await store.deleteMon(k);
+    await store.saveRun();
   }
 
   /** Regular trainers on each route become plannable fights after the bosses (they never count as progress). */
