@@ -165,5 +165,44 @@
     return { steps, upcoming };
   }
 
-  return { natureAdvice, movePlan, available, bestSet, upcomingMajor, fightScore, setOptions };
+  /** A move offered at level-up: is it worth a slot, and which move should go? Each way of fitting it in is played
+   *  against the next big fights' teams at their level cap: matchups first (safe/ok/risky/lose), then how much damage
+   *  the four moves do to each of their Pokemon; status moves that do something useful (sleep, paralysis, healing,
+   *  Leech Seed and the like) count for a little. */
+  function learnAdvice(spec, newId, fromBoss, count) {
+    const known = (spec.mv || []).filter(id => E.mv(id));
+    const nm = E.mv(newId);
+    if (!nm) return { learn: false, forget: null, reason: '' };
+    if (known.includes(newId)) return { learn: false, forget: null, reason: 'It already knows it.' };
+    if (known.length < 4) return { learn: true, forget: null, reason: 'It has a free move slot.' };
+    const bosses = upcomingMajor(fromBoss, count || 2);
+    const USEFUL = new Set([1, 33, 66, 67, 167, 187, 84, 32, 132, 37, 158, 156]);
+    const teams = bosses.map(bi => ({ bi, cap: D.bosses[bi].cap, team: E.bossTeam(bi, D.bosses[bi].cap) }));
+    const value = mv => {
+      let v = 0;
+      for (const { cap, team } of teams) {
+        const s = Object.assign({}, spec, { mv, lv: Math.max(spec.lv, cap) });
+        for (const foe of team) {
+          const m = E.matchup(s, foe);
+          v += 10 * (VS[m.verdict] - m.risk);
+          let best = 0;
+          for (const id of mv) { const mm = E.mv(id); if (!mm || mm.k === 'X') continue; const d = E.damage(Object.assign({}, s, { mv: [id] }), foe, id); if (d) best = Math.max(best, Math.min(100, d.minPct) * (d.acc ? d.acc / 100 : 1)); }
+          v += best / 25;
+        }
+      }
+      for (const id of mv) { const mm = E.mv(id); if (mm && mm.k === 'X') v += USEFUL.has(mm.e) ? 3 : -0.2; }   // a status move that does nothing here goes first
+      return v;
+    };
+    const now = value(known);
+    const options = known.map(id => ({ forget: id, v: value(known.filter(x => x !== id).concat(newId)) })).sort((a, b) => b.v - a.v);
+    const best = options[0];
+    const names = teams.map(t => D.bosses[t.bi].n).join(' and ');
+    if (best && best.v > now + 0.5) {
+      return { learn: true, forget: best.forget, gain: best.v - now,
+        reason: `${nm.f} does more against ${names} than ${E.mv(best.forget).f} does.` };
+    }
+    return { learn: false, forget: null, gain: best ? best.v - now : 0, reason: `What it knows already does as well against ${names}.` };
+  }
+
+  return { natureAdvice, movePlan, learnAdvice, available, bestSet, upcomingMajor, fightScore, setOptions };
 });

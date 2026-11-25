@@ -292,6 +292,13 @@
       default: return ok() ? statusBonus(c, 1) : 0;
     }
   }
+  /** GoodIdeaToRaiseAttackAgainst: the foe doesn't ignore boosts (Unaware), it isn't maxed out, and it has a real attack of that kind. */
+  function goodToRaise(c, cat) {
+    const { me, foe } = c, stat = cat === 'P' ? 'atk' : 'spa';
+    if (foe.ability === 'Unaware' && !MOLD.has(me.ability)) return false;
+    if ((me.boosts[stat] || 0) >= 6) return false;
+    return me.moves.some(x => { const m = meta(x); return m.cat === cat && (m.power || 0) > 1; });
+  }
   /** Which stat a boosting move is mainly for, the stage limit and the bonus (AIScript_Positives' stat cases). */
   function boostPlan(c, id) {
     const { me } = c;
@@ -475,6 +482,14 @@
         // the engine's defense branch checks the Attack stage here (AI_DEFENSE_PLUS); ported as written
         if (foePhys) add(statBonus(c, id, 'atk', 4, 2), 'Stockpile');
         else if (foe.moves.some(x => meta(x).cat === 'S')) add(statBonus(c, id, 'spd', 4, 1), 'Stockpile');
+      }
+    } else if (mm.cat !== 'X' && (e === 139 || e === 110 || e === 96) && (mm.ec || 100) >= 75) {
+      // Attacks that raise the user's stats on hit (Power-Up Punch, Torch Song, Flame Charge): with a 75%+ chance they score
+      // like setup moves, AI_ATTACK_PLUS / AI_SPEED_PLUS: INCREASE_STAT_VIABILITY(stat, +2 stages, 2 or 3)
+      if (me.ability !== 'Contrary') {
+        if (e === 139 && n !== 'Fell Stinger' && goodToRaise(c, 'P')) add(statBonus(c, id, 'atk', 2, 2), 'attack that raises Attack');
+        else if (e === 110 && goodToRaise(c, 'S')) add(statBonus(c, id, 'spa', 2, 2), 'attack that raises Sp. Atk');
+        else if (e === 96) add(statBonus(c, id, 'spe', 2, 3), 'attack that raises Speed');
       }
     } else if (BOOST_EFFECTS.has(e) || H.SETUP[n]) {
       if (me.ability !== 'Contrary') {
@@ -725,7 +740,29 @@
     });
     return out.sort((a, b) => b.score - a.score || a.i - b.i);
   }
-  function bestSwitch(st, side, c) { return switchScores(st, side, c)[0] || null; }
+  /** The engine's pick among switch-ins (CalcMostSuitableMonToSwitchInto), in party order: a higher score wins; on a tie,
+   *  one that won't be knocked out wins over one that would, and if neither would, it's a coin flip. */
+  function pickSwitch(list, rng) {
+    let best = null;
+    for (const r of list.slice().sort((a, b) => a.i - b.i)) {
+      if (!best || r.score > best.score) best = r;
+      else if (r.score === best.score) {
+        const bf = best.flags & F.FAINTS, rf = r.flags & F.FAINTS;
+        if (bf && !rf) best = r;
+        else if (!bf && !rf && rng && !rng.expected && coin(rng, 0.5)) best = r;
+      }
+    }
+    return best;
+  }
+  /** Switch-ins the AI could pick (several when it would flip a coin between equal scores). */
+  function switchChoices(st, side) {
+    const list = switchScores(st, side);
+    const best = pickSwitch(list, H.expectedDice());
+    if (!best) return [];
+    const tied = list.filter(r => r.score === best.score && !(r.flags & F.FAINTS) && !(best.flags & F.FAINTS));
+    return tied.length > 1 ? tied.sort((a, b) => a.i - b.i).map(r => r.i) : [best.i];
+  }
+  function bestSwitch(st, side, c, rng) { return pickSwitch(switchScores(st, side, c), rng) || null; }
   function wontDoTooMuch(c, cand) {
     // PredictedMoveWontDoTooMuchToMon
     const { st, foe } = c;
@@ -893,7 +930,7 @@
           const ranked = [...total.entries()].filter(([i]) => !st[side].slots.includes(i)).sort((x, y) => y[1] - x[1] || x[0] - y[0]);
           if (ranked.length) return ranked[0][0];
         }
-        const r = bestSwitch(st, side);
+        const r = bestSwitch(st, side, null, rng);
         if (r) return r.i;
         const i = st[side].team.findIndex((m, k) => !m.fainted && !st[side].slots.includes(k));
         return i >= 0 ? i : null;
@@ -901,7 +938,7 @@
     };
   }
 
-  return { policy, fightingStyle, fightingStyleDoubles, switchScores, residual, STYLE_NAMES: {
+  return { policy, fightingStyle, fightingStyleDoubles, switchScores, switchChoices, residual, STYLE_NAMES: {
     dAllOut: 'all-out attacker (doubles)', dSetup: 'set-up attacker (doubles)', dTRattack: 'Trick Room attacker', dTRsetup: 'Trick Room setter',
     dUtility: 'support and utility (doubles)', dPhaze: 'phazer (doubles)', dSupport: 'team support (doubles)', dTotalSupport: 'full support (doubles)',
     kill: 'attacker', setup: 'set-up sweeper', status: 'status sweeper', stall: 'staller', baton: 'Baton Passer', cleric: 'cleric',

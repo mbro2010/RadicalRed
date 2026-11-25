@@ -262,7 +262,7 @@ ol.path::before { content: ""; position: absolute; left: 9px; top: 8px; bottom: 
 .vs-mon { display: inline-grid; justify-items: center; font-family: var(--font-data); font-size: 10.5px; color: var(--muted); margin-right: -4px; }
 .fight-head { position: relative; overflow: hidden; }
 .fight-head::after { content: "VS"; position: absolute; right: 10px; top: 4px; font-family: var(--font-display); font-weight: 700; font-size: 44px; line-height: 1; color: var(--accent); opacity: .12; pointer-events: none; }
-.toast { position: fixed; z-index: 45; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); width: min(520px, calc(100% - 2 * max(16px, env(safe-area-inset-left, 0px)))); transform: translate(-50%, calc(100% + 30px)); background: var(--st-text-bg); color: var(--st-text-ink); border: 3px solid var(--st-text-edge); border-radius: 10px; padding: 12px 16px; font-family: var(--font-display); font-size: 16px; line-height: 1.3; text-shadow: 1px 1px 0 var(--st-text-shade); box-shadow: 0 10px 30px var(--st-shadow); }
+.toast { position: fixed; z-index: 55; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); width: min(520px, calc(100% - 2 * max(16px, env(safe-area-inset-left, 0px)))); transform: translate(-50%, calc(100% + 30px)); background: var(--st-text-bg); color: var(--st-text-ink); border: 3px solid var(--st-text-edge); border-radius: 10px; padding: 12px 16px; font-family: var(--font-display); font-size: 16px; line-height: 1.3; text-shadow: 1px 1px 0 var(--st-text-shade); box-shadow: 0 10px 30px var(--st-shadow); }
 .toast.on { transform: translate(-50%, 0); }
 .cele { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: var(--scrim); opacity: 0; transition: opacity .22s; padding: calc(env(safe-area-inset-top, 0px) + 16px) max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 16px) max(16px, env(safe-area-inset-left, 0px)); cursor: pointer; }
 .cele.on { opacity: 1; }
@@ -319,6 +319,66 @@ ol.path::before { content: ""; position: absolute; left: 9px; top: 8px; bottom: 
   .is-hof.on .hof-mon { animation: mon-pop .5s calc(.25s + .18s * var(--k)) cubic-bezier(.3, 1.6, .6, 1) both; }
 }
 .evo-row { display: grid; grid-template-columns: 32px 1fr auto; gap: 8px; align-items: center; font-size: 13.5px; }
+/* turn report: what happened, HP sliders, who came out */
+.report { gap: 10px; }
+.rp-acts { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+@media (min-width: 560px) { .rp-acts { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.rp-acts select { flex: 1 1 150px; width: auto !important; min-width: 0; }
+.rp-mon { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); }
+.rp-main { display: grid; gap: 2px; min-width: 0; }
+.rp-name { font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rp-hp { display: grid; grid-template-columns: minmax(0, 1fr) 58px; gap: 8px; align-items: center; }
+.rp-hp input[type=range] { width: 100%; min-width: 0; accent-color: var(--accent); height: 28px; }
+.rp-hp output { font-family: var(--font-data); font-size: 12.5px; text-align: right; }
+.rp-mon select { width: 84px !important; }
+.rp-out { display: grid; gap: 6px; padding: 8px; border-radius: 10px; border: 2px dashed var(--accent); }
+.rp-words summary { font-size: 13.5px; font-weight: 600; cursor: pointer; }
+.rp-words textarea { width: 100%; margin: 6px 0; font: inherit; font-size: 15px; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); resize: vertical; }
+/* a question over the page (learn a move, which evolution) */
+.cele.ask { cursor: default; }
+.ask-card { text-align: left; justify-items: stretch; width: min(420px, 100%); max-height: calc(100dvh - 40px); overflow-y: auto; }
+.ask-card .cele-kicker { text-align: center; }
+.evo-pick { display: grid; gap: 6px; }
+.evo-pick .btn { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: center; text-align: left; }
+.evo-pick .btn small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+/* the evolution scene */
+.evo-card { width: min(340px, 100%); }
+.evo-stage { position: relative; width: 136px; height: 136px; display: grid; place-items: center; }
+.evo-stage > span { position: absolute; inset: 0; display: grid; place-items: center; }
+.evo-b { opacity: 0; }
+.evo-card.done .evo-a { opacity: 0; } .evo-card.done .evo-b { opacity: 1; }
+.evo-text { font-size: 19px; color: var(--ink); min-height: 2.6em; }
+.evo-card.done .evo-text { color: var(--accent); }
+/* one Pokemon's sheet */
+.monsheet .mon-top { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; }
+.monsheet .who { display: grid; gap: 4px; min-width: 0; }
+.ticker { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.ticker > .btn:not(.small) { width: 44px; height: 44px; padding: 0; font-size: 22px; line-height: 1; }
+.lvbig { font-family: var(--font-display); font-weight: 700; font-size: 26px; min-width: 76px; text-align: center; font-variant-numeric: tabular-nums; }
+/* natures and held items in fight prep */
+.tune-rows { display: grid; gap: 6px; }
+.tune-row { display: grid; grid-template-columns: 32px auto 1fr; gap: 4px 8px; align-items: center; padding: 6px 8px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); font-size: 13.5px; }
+.tune-row > b { white-space: nowrap; }
+.tune-pick { grid-column: 2 / -1; display: grid; gap: 4px; }
+.tune-line { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.switch { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); font-size: 14px; }
+.switch input { width: 20px; height: 20px; margin-top: 1px; accent-color: var(--accent); }
+@media (prefers-reduced-motion: no-preference) {
+  .evo.on .evo-a { animation: evo-flash-a 3.4s cubic-bezier(.55, 0, .85, .4) both; }
+  .evo.on .evo-b { animation: evo-flash-b 3.4s cubic-bezier(.55, 0, .85, .4) both; }
+  .evo.on .evo-stage { animation: evo-glow 3.4s ease-in both; }
+  @keyframes evo-flash-a { 0% { opacity: 1; filter: none; } 8% { filter: brightness(0) invert(1); } 14%, 26%, 38%, 47%, 55%, 62%, 68%, 73%, 77%, 81%, 84%, 87%, 90%, 92%, 94%, 96%, 98% { opacity: 1; filter: brightness(0) invert(1); } 20%, 32%, 43%, 51%, 59%, 65%, 71%, 75%, 79%, 83%, 86%, 89%, 91%, 93%, 95%, 97%, 100% { opacity: 0; filter: brightness(0) invert(1); } }
+  @keyframes evo-flash-b { 0%, 14% { opacity: 0; filter: brightness(0) invert(1); } 20%, 32%, 43%, 51%, 59%, 65%, 71%, 75%, 79%, 83%, 86%, 89%, 91%, 93%, 95%, 97% { opacity: 1; filter: brightness(0) invert(1); } 26%, 38%, 47%, 55%, 62%, 68%, 73%, 77%, 81%, 84%, 87%, 90%, 92%, 94%, 96%, 98% { opacity: 0; filter: brightness(0) invert(1); } 100% { opacity: 1; filter: brightness(0) invert(1); } }
+  @keyframes evo-glow { 0% { filter: none; } 90% { filter: drop-shadow(0 0 10px var(--glow)) drop-shadow(0 0 24px var(--glow)); } 100% { filter: drop-shadow(0 0 4px var(--glow)); } }
+  .evo-card.done .evo-b { animation: evo-reveal .6s ease-out both; }
+  @keyframes evo-reveal { 0% { filter: brightness(0) invert(1); scale: 1.12; } 100% { filter: none; scale: 1; } }
+  .evo-card.stopped .evo-a { animation: evo-reveal .5s ease-out both; }
+  .evo-card.stopped .evo-b { animation: none; opacity: 0; }
+  .lvbig.tick { animation: lv-tick .16s ease-out; }
+  @keyframes lv-tick { 40% { scale: 1.18; color: var(--accent); } }
+  .pmon .lv.tick { animation: lv-tick .16s ease-out; }
+}
+
 .linkbtn { border: 0; background: none; color: var(--accent); font-weight: 600; padding: 0; text-decoration: underline; text-underline-offset: 2px; font-size: inherit; }
 h2 { font-family: var(--font-display); font-size: 21px; margin: 0; text-wrap: balance; letter-spacing: .01em; }
 h3 { font-size: 15px; margin: 0; }
@@ -488,6 +548,7 @@ input.search { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--l
       <button data-go="fight">Plan any fight</button>
       <button data-go="check">Quick check</button>
       <button data-go="runs">Past runs &amp; starters</button>
+      <button data-go="newrun">Start a new run</button>
     </nav>
     <div class="status" id="status"><span class="pill">Loading…</span></div>
     <div class="backbar" id="backbar" hidden><button class="btn small" data-go="run">← Your run</button><b></b></div>

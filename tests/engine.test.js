@@ -24,3 +24,24 @@ test('engine: Hardcore ability changes (decoded from 0x09079584)', () => {
   assert(E.hardcoreAbility('Contrary', 308) === 'Contrary' && E.hardcoreAbility('Contrary', s('Serperior')) === 'Bad Company', 'Contrary');
   assert(E.hardcoreAbility('Overgrow', 1) === 'Overgrow', 'others unchanged');
 });
+test('engine: a one-on-one matchup is played with the attack that wins it, not just the strongest one', () => {
+  // Totodile at 16 vs Brock's Lunatone: Bite hits harder, but Aqua Jet moves first and wins
+  const brock = D.bosses.findIndex(b => b.n === 'Brock');
+  const lunatone = E.bossTeam(brock, 16).find(t => E.sp(t.s).n === 'Lunatone');
+  const toto = mon('Totodile', 16, { ability: 'Sheer Force', moves: ['Scratch', 'Bite', 'Aqua Jet', 'Rage'] });
+  const m = E.matchup(toto, lunatone);
+  const onlyJet = E.matchup(Object.assign({}, toto, { mv: [mid('Aqua Jet')] }), lunatone);
+  assert(m.risk <= onlyJet.risk + 1e-9, `adding moves never makes a matchup worse (${m.risk} vs ${onlyJet.risk})`);
+  assert(m.best && m.best.moveName === 'Aqua Jet' && m.meFirst, 'picks Aqua Jet and moves first: ' + (m.best && m.best.moveName));
+});
+test('advice: level-up move prompt (learn Bite over Leer; skip a move that adds nothing)', () => {
+  const { ADV } = require('./lib');
+  const rival = D.bosses.findIndex(b => b.n === 'Terry');
+  const toto = mon('Totodile', 13, { ability: 'Sheer Force', moves: ['Scratch', 'Leer', 'Aqua Jet', 'Rage'] });
+  const a = ADV.learnAdvice(toto, mid('Bite'), rival, 2);
+  assert(a.learn && a.forget === mid('Leer'), 'learn Bite, forget Leer: ' + JSON.stringify(a));
+  const b = ADV.learnAdvice(Object.assign({}, toto, { mv: [mid('Bite'), mid('Ice Fang'), mid('Aqua Jet'), mid('Crunch')] }), mid('Scary Face'), rival, 2);
+  assert(!b.learn, 'Scary Face adds nothing to a full attacking set: ' + JSON.stringify(b));
+  const free = ADV.learnAdvice(Object.assign({}, toto, { mv: [mid('Scratch')] }), mid('Bite'), rival, 2);
+  assert(free.learn && free.forget == null, 'a free slot just learns it');
+});

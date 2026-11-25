@@ -374,31 +374,42 @@
     const mySpeed = speedOf(me, weather), theirSpeed = speedOf(them, weather);
     const myHits = (me.mv || []).map(id => damage(me, them, id, { weather })).filter(Boolean);
     const theirHits = (them.mv || []).map(id => damage(them, me, id, { weather, worst: true })).filter(Boolean);
-    const best = myHits.slice().sort((a, b) => (b.min - a.min) || (b.acc - a.acc))[0] || null;
     const threat = theirHits.slice().sort((a, b) => (b.max - a.max))[0] || null;
     const myHP = maxHP(me) * (me.hpPct != null ? me.hpPct / 100 : 1);
-    const theirHP = (best ? best.cur : maxHP(them));
-    let toKOthem = best && best.min > 0 ? Math.ceil(theirHP / best.min) : Infinity;
-    if (best && best.sashed && toKOthem === 1) toKOthem = 2;
     const theirMax = threat ? threat.max : 0;
     let toKOme = theirMax > 0 ? Math.ceil(myHP / theirMax) : Infinity;
-    const meFirst = best && threat ? (best.priority > threat.priority || (best.priority === threat.priority && mySpeed > theirSpeed)) : mySpeed > theirSpeed;
+    const hpInt = Math.max(1, Math.round(myHP));
+    let dist = null;
+    // each of my attacks played out: how many hits it needs, who moves first (priority, then Speed), and the chance of
+    // losing my Pokemon before it wins (their best move every turn, all rolls, hit counts, crits, my accuracy)
+    const outcome = h => {
+      let toKO = h.min > 0 ? Math.ceil(h.cur / h.min) : Infinity;
+      if (h.sashed && toKO === 1) toKO = 2;
+      const first = threat ? (h.priority > threat.priority || (h.priority === threat.priority && mySpeed > theirSpeed)) : mySpeed > theirSpeed;
+      const taken = !isFinite(toKO) ? Infinity : (first ? toKO - 1 : toKO);
+      let r = 1;
+      if (isFinite(toKO) && threat) {
+        if (!dist) dist = damageDist(them, me, threat.move.i, weather, hpInt);
+        r = faintChance(dist, hpInt, taken);
+        const myAcc = h.acc === 0 ? 1 : Math.min(1, h.acc / 100);
+        if (myAcc < 1) {                                  // one miss gives them one more attack
+          const pMiss = 1 - Math.pow(myAcc, toKO);
+          r = r + pMiss * (faintChance(dist, hpInt, taken + 1) - r);
+        }
+      } else if (isFinite(toKO) && !threat) r = 0;
+      return { h, toKO, first, taken, r };
+    };
+    // the attack a player would pick here: least risk, then fewest hits, then most damage (a weaker priority move can win
+    // a matchup the strongest move loses)
+    const pick = myHits.map(outcome).sort((a, b) => (a.r - b.r) || (a.toKO - b.toKO) || (b.h.min - a.h.min) || (b.h.acc - a.h.acc))[0] || null;
+    const best = pick ? pick.h : null;
+    const toKOthem = pick ? pick.toKO : Infinity;
+    const meFirst = pick ? pick.first : mySpeed > theirSpeed;
     const win = meFirst ? toKOthem <= toKOme : toKOthem < toKOme;
-    const hitsTaken = !isFinite(toKOthem) ? Infinity : (meFirst ? toKOthem - 1 : toKOthem);
+    const hitsTaken = pick ? pick.taken : Infinity;
     const dmgTaken = hitsTaken === Infinity ? Infinity : hitsTaken * theirMax;
     const critTaken = hitsTaken === Infinity ? Infinity : (hitsTaken > 0 && threat ? threat.critMax + (hitsTaken - 1) * theirMax : 0);
-    // chance of losing my Pokemon before it wins: their best move every turn, all rolls, hit counts, crits, accuracy
-    let risk = 1;
-    const hpInt = Math.max(1, Math.round(myHP));
-    if (best && isFinite(toKOthem) && threat) {
-      const dist = damageDist(them, me, threat.move.i, weather, hpInt);
-      risk = faintChance(dist, hpInt, hitsTaken);
-      const myAcc = best.acc === 0 ? 1 : Math.min(1, best.acc / 100);
-      if (myAcc < 1) {                                  // one miss gives them one more attack
-        const pMiss = 1 - Math.pow(myAcc, toKOthem);
-        risk = risk + pMiss * (faintChance(dist, hpInt, hitsTaken + 1) - risk);
-      }
-    } else if (best && isFinite(toKOthem) && !threat) risk = 0;
+    const risk = pick ? pick.r : 1;
     let verdict;
     if (!best || !isFinite(toKOthem)) verdict = 'lose';
     else if (risk <= 1e-9) verdict = 'safe';
