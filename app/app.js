@@ -1488,6 +1488,49 @@
       ${rows}${detail}
       <p class="note" style="margin:0">Scores run from 3 (beats every boss Pokémon safely) to −1 (loses to all of them); one Pokémon alone rarely beats a whole Hardcore team, so even the best sit near 1. TMs and tutors aren't assumed, so Pokémon that rely on them can do better than this.</p></div>`;
   }
+  /** What your runs say: where you lose Pokemon, how each starter did, who you rely on, encounter luck, the AI check. */
+  function insightsHTML() {
+    const H = S.history || [];
+    const AC = S.run.aiChecks;
+    if (!H.length && !(AC && AC.n)) return '';
+    const parts = [];
+    if (H.length) {
+      const ms = H.map(h => (h.progress || {}).milestones || 0);
+      const wins = H.filter(h => h.result === 'win').length;
+      parts.push(`<div class="small">${H.length} finished run${H.length > 1 ? 's' : ''}: ${wins} won, average ${(ms.reduce((a, b) => a + b, 0) / H.length).toFixed(1)} of 16 milestones, best ${Math.max(...ms)}.</div>`);
+      // where Pokemon fall
+      const deaths = new Map(), ends = new Map();
+      for (const h of H) {
+        for (const m of h.team || []) if (m.box === 'dead') { const k = (m.died && m.died.before) || 'unknown'; deaths.set(k, (deaths.get(k) || 0) + 1); }
+        if (h.result !== 'win' && h.endedAt) ends.set(h.endedAt, (ends.get(h.endedAt) || 0) + 1);
+      }
+      const top = [...deaths.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+      if (top.length) parts.push(`<div><div class="lbl">Where your Pokémon fall</div>${top.map(([k, n]) => `<div class="small">${k === 'unknown' ? 'Unrecorded' : 'Before ' + esc(k)}: ${n} lost</div>`).join('')}</div>`);
+      const topEnds = [...ends.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
+      if (topEnds.length) parts.push(`<div><div class="lbl">Runs ended at</div>${topEnds.map(([k, n]) => `<div class="small">${esc(k)}: ${n} run${n > 1 ? 's' : ''}</div>`).join('')}</div>`);
+      // starters you used, against the tier list
+      const st = new Map();
+      for (const h of H) if (h.starter) { const x = st.get(h.starter) || { n: 0, ms: 0, wins: 0 }; x.n++; x.ms += (h.progress || {}).milestones || 0; if (h.result === 'win') x.wins++; st.set(h.starter, x); }
+      if (st.size) {
+        const tierOf = sid => (TIERS && TIERS.starters ? (TIERS.starters.find(t => t.s === sid) || {}).tier : null);
+        parts.push(`<div><div class="lbl">Your starters</div>${[...st.entries()].sort((a, b) => b[1].ms / b[1].n - a[1].ms / a[1].n).map(([sid, x]) =>
+          `<div class="slot">${icon(+sid)}<div class="who"><span class="small"><b>${esc(E.sp(+sid) ? E.sp(+sid).n : '?')}</b>${tierOf(+sid) ? ` · tier ${tierOf(+sid)}` : ''}</span><span class="small muted">${x.n} run${x.n > 1 ? 's' : ''}, average ${(x.ms / x.n).toFixed(1)} milestones${x.wins ? `, ${x.wins} won` : ''}</span></div></div>`).join('')}</div>`);
+      }
+      // who you rely on
+      const used = new Map();
+      for (const h of H) for (const m of h.team || []) { const k = E.sp(m.s) ? E.sp(m.s).g : m.s; const x = used.get(k) || { s: m.s, n: 0, alive: 0 }; x.n++; if (m.box !== 'dead') x.alive++; used.set(k, x); }
+      const favs = [...used.values()].filter(x => x.n > 1).sort((a, b) => b.n - a.n).slice(0, 6);
+      if (favs.length) parts.push(`<div><div class="lbl">Pokémon you keep using</div><div class="team-icons">${favs.map(x => `<span class="t">${icon(x.s)}<span>${x.n} runs, ${Math.round(100 * x.alive / x.n)}% lived</span></span>`).join('')}</div></div>`);
+      const caught = H.reduce((a, h) => a + ((h.enc || {}).caught || 0), 0), missed = H.reduce((a, h) => a + ((h.enc || {}).missed || 0), 0);
+      if (caught + missed) parts.push(`<div class="small">Encounters: ${caught} caught, ${missed} missed (${Math.round(100 * caught / (caught + missed))}% caught).</div>`);
+    }
+    if (AC && AC.n) {
+      parts.push(`<div><div class="lbl">AI check (all your live battles)</div><div class="small">The boss did what the ported AI predicted ${AC.ok} of ${AC.n} times (${Math.round(100 * AC.ok / AC.n)}%).</div>
+        ${(AC.misses || []).slice(-3).reverse().map(c => `<div class="small muted">${esc(c.boss)}: ${esc(c.mon)} used ${esc(c.actual)}, predicted ${esc(c.predicted)}</div>`).join('')}
+        ${AC.n >= 10 ? '<div class="note">If you send me the misses, I can check them against the engine and tighten the AI.</div>' : ''}</div>`);
+    }
+    return `<section class="section"><div class="head"><h2>Insights</h2></div><div class="card" style="gap:10px">${parts.join('')}</div></section>`;
+  }
   function renderRuns() {
     const r = runSummary();
     const runNo = S.run.no || S.history.length + 1;
@@ -1500,6 +1543,7 @@
       ${S.roster.length ? teamIcons(S.roster) : '<p class="small muted" style="margin:0">No Pokémon yet. Pick a starter below or add one on the Party tab.</p>'}
       <div class="row"><button class="btn primary" id="run-end" ${S.example || (!S.roster.length && !S.run.beaten.length) ? 'disabled' : ''}>End this run…</button>
         <span class="note">Saves it to your history, then clears your party, boxes, encounters, beaten bosses and TMs for a fresh start. Your settings stay.</span></div></div></section>`;
+    html += insightsHTML();
     html += `<section class="section"><div class="head"><h2>Starter tier list</h2></div>${tierListHTML()}</section>`;
     html += `<section class="section"><div class="head"><h2>Past runs</h2>${S.history.length ? `<span class="muted small">${S.history.length} run${S.history.length > 1 ? 's' : ''} · ${wins} won${best && best.progress ? ` · furthest: ${best.progress.milestones} milestones (run #${best.no})` : ''}</span>` : ''}</div>
       ${S.history.length ? S.history.map(h => {

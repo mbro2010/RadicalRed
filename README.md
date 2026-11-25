@@ -30,6 +30,7 @@ The ROM is **not** in this repository. Bring your own copy.
 - `encounters.json`, `maps.json`: wild Pokémon per area, map and method (grass, surfing, Rock Smash, fishing by rod), with the game's separate day (4:00–16:59) and night (17:00–3:59) tables
 - `trainer_locations.json`: which area each trainer stands in, read from the maps' NPC scripts
 - `tutors.json`: the 126 move tutor moves and which species can learn each
+- `finds.json`: per area, gift Pokémon, one-time encounters, eggs, item balls, hidden items, items people give you, and shop stock (from the maps' scripts)
 - `starters.json`: the 27 starters Oak's Lab offers (a generation setting swaps the three balls) and which rival line each one gives you
 - `starter_tiers.json`: the starter tier list (see below)
 
@@ -51,6 +52,7 @@ npm install                                  # installs @smogon/calc for the nam
 node tools/map_names.js data                 # prints every match that needed review
 python3 tools/extract_world.py data         # evolutions, encounters, map names, trainer locations
 python3 tools/extract_tutors.py data
+python3 tools/extract_finds.py data          # gifts, one-time encounters, items, shops
 python3 tools/extract_starters.py data
 node tools/build_app_data.js data app/rrdata.json
 node tools/starter_tiers.js data app/rrdata.json app/starters.json   # about a minute
@@ -60,6 +62,8 @@ python3 tools/extract_sprites.py app/sprites
 ```
 
 The tools check the ROM's SHA-1 and warn if it isn't Radical Red 4.1, because every address is version-specific.
+
+Tests: `npm install && npm test` runs `tests/*.test.js` against the app's own modules and the committed game data (no ROM needed): data integrity, damage, the ported boss AI, singles and doubles simulation, and the save reader. GitHub Actions runs them on every push.
 
 To view the boss page locally, serve the `page/` folder (it loads `bosses.json` next to it), for example `python3 -m http.server -d page` and open `rr-hardcore-bosses.html`.
 
@@ -79,13 +83,13 @@ Read from the game code (details and addresses in `NOTES.md`):
 A phone web app to use through the run, styled like a GBA menu, with sprites decoded from your own ROM:
 
 - **Party**: enter each Pokémon as you catch it, or **import your My Boy! save file** (beta): party, PC boxes and badges, read on the phone. The move picker lists what it can learn by level-up, TM or tutor, and flags moves Hardcore bans. Each card shows how it evolves.
-- **Routes**: every area in story order with its encounter table from the ROM (day and night, grass, surfing, Rock Smash and each rod). Tap **Caught** on your first encounter and it joins your party with its level and the moves a wild one knows, or **✕** if it got away. The dupes clause marks species families you already have. **Best catch here** ranks the area's species by how much they'd help in your next two big fights, as what they evolve into by then. Each area also lists its trainers and their teams, and any of them can be planned like a boss.
-- **Plan**: for any boss or route trainer, **Plan this fight** simulates the battle hundreds of times with your Pokémon and the exact team. It picks your six and your lead, and writes a turn-by-turn script: what to click, when to switch, and any planned sacrifice. It reports the odds (win with no losses, win at all, average losses) and the most common ways things go wrong.
-- **Battle**: set the active Pokémon and HP mid-fight. The planner ranks every move and switch by expected losses for your whole team, and shows what the boss AI will pick and why (its move scores). A **reality check** compares a hit you saw with every possible roll, to catch anything the Coach doesn't know about.
-- **Runs**: your current run (progress, encounters, who's alive) and **End this run…**, which saves the run to your history (result, where it ended, notes, your team and who fell before which fight) and clears everything for a fresh start in one step. A wipe on the Party tab offers the same button. Past runs stay listed with how far each got. The **starter tier list** is here too, and you can start a run with any starter from it.
+- **Routes**: every area in story order with its encounter table from the ROM (day and night, grass, surfing, Rock Smash and each rod), plus its gifts and one-time encounters, TMs and notable items, and what its shops sell. Tap **Caught** on your first encounter and it joins your party with its level and the moves a wild one knows, or **✕** if it got away. The dupes clause marks species families you already have. **Best catch here** ranks the area's species by how much they'd help in your next two big fights, as what they evolve into by then. Each area also lists its trainers and their teams, and any of them can be planned like a boss.
+- **Plan**: for any boss or route trainer, **Plan this fight** simulates the battle hundreds of times with your Pokémon and the exact team, in a background worker so the page stays responsive. **Double battles** (26 of the 153 Hardcore boss fights) are planned as doubles: a lead pair, and both of your moves with targets every turn. **Held items for this fight** tries your items on each Pokémon you'd bring and simulates the fight with the best swaps. It picks your six and your lead, and writes a turn-by-turn script: what to click, when to switch, and any planned sacrifice. It reports the odds (win with no losses, win at all, average losses) and the most common ways things go wrong.
+- **Battle**: a **live battle** mode plays the fight with you turn by turn: what to do, what the boss AI will most likely do, then you record what really happened (pre-filled with the prediction) and it re-plans. It keeps an **AI check**: how often the boss did what the ported AI predicted. **Quick check** is the one-on-one calculator, with the boss AI's move scores and a **reality check** that compares a hit you saw with every possible roll.
+- **Runs**: **Insights** across your runs (where your Pokémon fall, how each starter did against the tier list, who you rely on, the AI check); your current run (progress, encounters, who's alive) and **End this run…**, which saves the run to your history (result, where it ended, notes, your team and who fell before which fight) and clears everything for a fresh start in one step. A wipe on the Party tab offers the same button. Past runs stay listed with how far each got. The **starter tier list** is here too, and you can start a run with any starter from it.
 - **Nature & moves** (on each Pokémon): the nature to set with Radical Red's free Nature Change service, when it evolves, and the best four moves before each of the next big fights with exactly when each becomes available: level-up level, a TM you own, a move tutor (optional), or the Move Maniac for moves it already passed.
 
-How it works: `sim.js` is a turn-by-turn singles simulator: damage rolls, crits, accuracy, speed and priority, status, confusion, Encore, Taunt, stat changes, hazards, screens, weather, terrain, healing, pivots, recharge and charge turns, Destiny Bond, berries, Mega Evolution, Z-Moves, and key items and abilities. Move effects are driven by the ROM's own effect IDs. `ai.js` is the boss AI, **ported from the battle AI of the engine Radical Red is built on** (Complete Fire Red Upgrade): every move starts at 100 points, loses points if it would fail or be absorbed, and gains the engine's own bonuses (+9 for a knockout before the target moves, +2 for the strongest attack, status, setup, healing, hazard and pivot bonuses by the Pokémon's fighting style). It switches out and picks its next Pokémon with the engine's switch-in scoring, Mega Evolves immediately, and uses a Z-Move unless the plain move already knocks out. Radical Red may have private changes to its AI that the public engine source doesn't show. `advice.js` handles natures, evolutions and move timing; `save.js` reads save files. `engine.js` runs the open-source [Smogon damage calculator](https://github.com/smogon/damage-calc) (Gen 9 rules), fed with Radical Red's own stats, types, abilities and move data.
+How it works: `sim.js` is a turn-by-turn simulator for singles and doubles (targets, spread moves at 75%, redirection, Wide Guard, Helping Hand): damage rolls, crits, accuracy, speed and priority, status, confusion, Encore, Taunt, stat changes, hazards, screens, weather, terrain, healing, pivots, recharge and charge turns, Destiny Bond, berries, Mega Evolution, Z-Moves, and key items and abilities. Move effects are driven by the ROM's own effect IDs. `ai.js` is the boss AI, **ported from the battle AI of the engine Radical Red is built on** (Complete Fire Red Upgrade): every move starts at 100 points, loses points if it would fail or be absorbed, and gains the engine's own bonuses (+9 for a knockout before the target moves, +2 for the strongest attack, status, setup, healing, hazard and pivot bonuses by the Pokémon's fighting style). It switches out and picks its next Pokémon with the engine's switch-in scoring, Mega Evolves immediately, and uses a Z-Move unless the plain move already knocks out. In doubles it uses the engine's doubles logic: knockout points per attack and target, doubles fighting styles, and partner coordination. Your side is planned by playing out every promising pair of actions for a turn against the AI's choice. Radical Red may have private changes to its AI that the public engine source doesn't show. `advice.js` handles natures, evolutions and move timing; `save.js` reads save files. `engine.js` runs the open-source [Smogon damage calculator](https://github.com/smogon/damage-calc) (Gen 9 rules), fed with Radical Red's own stats, types, abilities and move data.
 
 ## Starter tier list
 
@@ -105,7 +109,8 @@ All 27 starters (Gen 1-9) are available in Oak's Lab: the balls' script swaps in
 2. ~~Damage calculator using Radical Red's own move and species data~~
 3. ~~Turn-by-turn battle advisor that minimizes the chance of losing a Pokémon~~
 4. ~~Regular trainers, wild encounter tables, move tutors and Hardcore's ability changes~~
-5. ~~Model the boss AI from the engine's AI code~~ (ported from CFRU; double battles are still planned as singles)
+5. ~~Model the boss AI from the engine's AI code~~ (ported from CFRU, singles and doubles)
 6. ~~Import your team from your My Boy! save file~~ (beta: built from the format, waiting on a real save to confirm)
 7. ~~Confusion, Encore, Taunt, Mega Evolution and Z-Moves in the simulator~~; your own Z-Moves in plans
-8. Double battles
+8. ~~Double battles~~
+9. Confirm the save reader and the AI port against real saves and fights (send a `.sav` and your AI-check misses)
