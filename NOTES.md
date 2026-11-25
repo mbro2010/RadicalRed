@@ -222,6 +222,10 @@ Run 2 found the other big gap, in switching (Snubbull stayed in against Tentacoo
 
 The player's side of one-on-one matchups (`E.matchup`) is played with the attack that wins it: least risk of fainting, then fewest hits, then most damage. Before, it always took the hardest-hitting move, so a weaker priority move that wins (Aqua Jet against Lunatone) was ignored, and learning a stronger move could make a matchup look worse.
 
+## Saving to the account database
+
+The published Coach saves to the artifact's database (`data/users/<id>`: `run`, `mon-*`, `hist-*`). Two properties of it broke run 3 and the first "Start a new run": snapshot bodies are **frozen** (so a counter taken from one, like the AI check's, threw in strict mode on the next turn report, and the live battle stopped after turn 1), and **every write echoes back** as a snapshot (first with `hasPendingWrites`, then confirmed). The page used to rebuild its whole state from every snapshot, so a stale echo could put the old run back in the middle of starting a new one. Now the page keeps only plain copies (`plain()`), applies the first load in full, and after that ignores its own echoes (pending ones, and confirmed ones equal to what it last wrote, compared with `canon()`), applying only changes made elsewhere, one document at a time.
+
 ## The care package cheat (SO2Toxic)
 
 Codes are typed at an event tile (a sign or PC event) upstairs in your house in Pallet Town (map 4.1). The code script at `0x1050086` compares the entry with each string (`special 0x12D`):

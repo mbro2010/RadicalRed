@@ -48,12 +48,12 @@ test('flow: progress finds the step to do now', () => {
   p = F.progress({ started: 1, beaten: [], enc: {} });
   assert(F.steps[p.current].kind === 'starter', 'then the starter');
   p = F.progress({ started: 1, starter: 1, beaten: [], enc: {} });
-  assert(name(F.steps[p.current]) === 'Route 1+Viridian City+Pallet Town+Route 21+Route 22', 'then the first areas (Route 21\'s grass, south of Pallet Town, is open from the start): ' + name(F.steps[p.current]));
-  p = F.progress({ started: 1, starter: 1, beaten: [], enc: { 'Route 1': { r: 'caught' }, 'Viridian City': { r: 'failed' }, 'Pallet Town': { r: 'skipped' }, 'Route 21': { r: 'skipped' }, 'Route 22': { r: 'skipped' } } });
+  assert(name(F.steps[p.current]) === 'Route 1+Viridian City+Pallet Town+Route 21+Route 22+Route 2+Viridian Forest', 'then the first areas (Route 21\'s grass, Route 2 and Viridian Forest are open before the rival): ' + name(F.steps[p.current]));
+  p = F.progress({ started: 1, starter: 1, beaten: [], enc: { 'Route 1': { r: 'caught' }, 'Viridian City': { r: 'failed' }, 'Pallet Town': { r: 'skipped' }, 'Route 21': { r: 'skipped' }, 'Route 22': { r: 'skipped' }, 'Route 2': { r: 'skipped' }, 'Viridian Forest': { r: 'skipped' } } });
   assert(name(F.steps[p.current]) === 'Terry', 'areas done: the rival');
   p = F.progress({ started: 1, starter: 1, beaten: [], enc: {}, passed: ['areas@0'] });
   assert(name(F.steps[p.current]) === 'Terry', 'moving on leaves areas open');
-  assert(F.stillOpen({ enc: {} }, p.current).join() === 'Route 1,Viridian City,Pallet Town,Route 21,Route 22', 'still open');
+  assert(F.stillOpen({ enc: {} }, p.current).join() === 'Route 1,Viridian City,Pallet Town,Route 21,Route 22,Route 2,Viridian Forest', 'still open');
   const brock = D.bosses.find(b => b.n === 'Brock').i;
   p = F.progress({ started: 1, starter: 1, beaten: [brock], enc: {} });
   assert(name(F.steps[p.current]) === 'Route 3', 'after Brock: Route 3, earlier steps passed');

@@ -90,8 +90,25 @@
 
   // ---------------- storage: your account (db), or this device ----------------
   const LS_KEY = 'rrcoach:v1';
+  /** A stable string for a document body (key order doesn't matter), to recognize the echo of this page's own write. */
+  function canon(v) {
+    if (Array.isArray(v)) return '[' + v.map(x => canon(x === undefined ? null : x)).join(',') + ']';
+    if (v && typeof v === 'object') return '{' + Object.keys(v).filter(k => v[k] !== undefined).sort().map(k => JSON.stringify(k) + ':' + canon(v[k])).join(',') + '}';
+    return JSON.stringify(v === undefined ? null : v);
+  }
+  /** Database snapshots are frozen: the app only ever keeps its own plain copies. */
+  const plain = v => (v == null ? v : JSON.parse(JSON.stringify(v)));
+  function runFromDoc(run, histLen) {
+    return { beaten: Array.isArray(run.beaten) ? run.beaten.slice() : [], tms: Array.isArray(run.tms) ? run.tms.slice() : [],
+      enc: run.enc && typeof run.enc === 'object' ? Object.assign({}, run.enc) : {}, dupes: run.dupes !== false, checks: Array.isArray(run.checks) ? run.checks.slice(-50) : [], tutors: !!run.tutors,
+      no: run.no || (histLen + 1), started: run.started || null, starter: run.starter || null, aiChecks: run.aiChecks || null, bag: Array.isArray(run.bag) ? run.bag.slice() : [],
+      skipped: Array.isArray(run.skipped) ? run.skipped.slice() : [], passed: Array.isArray(run.passed) ? run.passed.slice() : [],
+      variants: run.variants && typeof run.variants === 'object' ? Object.assign({}, run.variants) : {}, postgame: !!run.postgame, care: run.care != null ? !!run.care : run.anyItems !== false };
+  }
   const store = {
     mode: 'loading', ready: false, col: null, unsub: null, timer: null, note: '',
+    loaded: false,
+    mine: new Map(),   // document id -> canon() of this page's last write to it (null: deleted)
     async init() {
       let db = null, user = null;
       try { if (window.claude && claude.use) { [db, user] = await Promise.all([claude.use('db'), claude.use('user')]); } } catch (e) { db = null; }
@@ -102,24 +119,27 @@
         this.timer = setTimeout(() => { this.note = 'Your saved team hasn’t loaded yet. Check your connection.'; renderStatus(); }, 10000);
         this.unsub = this.col.onSnapshot(snap => {
           clearTimeout(this.timer); this.note = '';
-          const roster = [], run = { beaten: [] }, history = [];
-          snap.docs.forEach(d => {
-            const v = d.data(); if (!v) return;
-            if (d.id === 'run') Object.assign(run, v);
-            else if (d.id.startsWith('mon-')) roster.push(Object.assign({}, v, { key: d.id }));
-            else if (d.id.startsWith('hist-')) history.push(Object.assign({}, v, { id: d.id.slice(5) }));
-          });
-          S.history = history.sort((a, b) => (b.ended || 0) - (a.ended || 0));
-          roster.sort((a, b) => (a.ord || 0) - (b.ord || 0));
-          if (!S.example || roster.length) { S.roster = roster; S.example = false; }
-          S.run = { beaten: Array.isArray(run.beaten) ? run.beaten.slice() : [], tms: Array.isArray(run.tms) ? run.tms.slice() : [],
-            enc: run.enc && typeof run.enc === 'object' ? Object.assign({}, run.enc) : {}, dupes: run.dupes !== false, checks: Array.isArray(run.checks) ? run.checks.slice(-50) : [], tutors: !!run.tutors,
-            no: run.no || (history.length + 1), started: run.started || null, starter: run.starter || null, aiChecks: run.aiChecks || null, bag: Array.isArray(run.bag) ? run.bag.slice() : [],
-            skipped: Array.isArray(run.skipped) ? run.skipped.slice() : [], passed: Array.isArray(run.passed) ? run.passed.slice() : [],
-            variants: run.variants && typeof run.variants === 'object' ? Object.assign({}, run.variants) : {}, postgame: !!run.postgame, care: run.care != null ? !!run.care : run.anyItems !== false };
-          ADV.setOptions({ tutors: S.run.tutors });
-          this.ready = true;
-          render();
+          if (!this.loaded) {
+            // the first load (and a copy cached from an earlier visit before it): take everything, unless the page
+            // has already saved something since
+            if (!this.mine.size) this.applyAll(snap);
+            if (!snap.metadata || !snap.metadata.fromCache) this.loaded = true;
+            this.ready = true;
+            render();
+            return;
+          }
+          // after that, what's on the page is the truth: the echoes of its own saves are ignored (replacing the run
+          // mid-way through starting a new one, or a battle turn, broke both), and only changes made elsewhere,
+          // such as on another device, are applied, one document at a time
+          let changed = false;
+          for (const ch of snap.docChanges()) {
+            const d = ch.doc;
+            if (d.metadata && d.metadata.hasPendingWrites) continue;
+            const body = ch.type === 'removed' ? null : d.data();
+            if (this.mine.has(d.id) && this.mine.get(d.id) === (body == null ? null : canon(body))) continue;
+            if (this.applyDoc(d.id, body)) changed = true;
+          }
+          if (changed) render();
         }, err => { clearTimeout(this.timer); this.ready = true; this.note = 'Saving to your account stopped working (' + err.code + '). Reload to try again.'; render(); });
       } else {
         this.mode = 'local';
@@ -128,32 +148,70 @@
         render();
       }
     },
+    applyAll(snap) {
+      const roster = [], history = [];
+      let run = { beaten: [] };
+      snap.docs.forEach(d => {
+        const v = plain(d.data()); if (!v) return;
+        if (d.id === 'run') run = Object.assign(run, v);
+        else if (d.id.startsWith('mon-')) roster.push(Object.assign(v, { key: d.id }));
+        else if (d.id.startsWith('hist-')) history.push(Object.assign(v, { id: d.id.slice(5) }));
+      });
+      S.history = history.sort((a, b) => (b.ended || 0) - (a.ended || 0));
+      roster.sort((a, b) => (a.ord || 0) - (b.ord || 0));
+      if (!S.example || roster.length) { S.roster = roster; S.example = false; }
+      S.run = runFromDoc(run, history.length);
+      ADV.setOptions({ tutors: S.run.tutors });
+    },
+    /** A change made elsewhere to one document: the run, one Pokemon or one past run. Returns whether anything changed. */
+    applyDoc(id, body) {
+      if (id === 'run') { if (!body) return false; S.run = runFromDoc(plain(body), S.history.length); ADV.setOptions({ tutors: S.run.tutors }); return true; }
+      if (id.startsWith('mon-')) {
+        const i = S.roster.findIndex(m => m.key === id);
+        if (!body) { if (i < 0) return false; S.roster.splice(i, 1); return true; }
+        const m = Object.assign(plain(body), { key: id });
+        if (i >= 0) S.roster[i] = m; else { S.roster.push(m); S.roster.sort((a, b) => (a.ord || 0) - (b.ord || 0)); }
+        return true;
+      }
+      if (id.startsWith('hist-')) {
+        const hid = id.slice(5), i = S.history.findIndex(h => h.id === hid);
+        if (!body) { if (i < 0) return false; S.history.splice(i, 1); return true; }
+        const h = Object.assign(plain(body), { id: hid });
+        if (i >= 0) S.history[i] = h; else S.history.push(h);
+        S.history.sort((a, b) => (b.ended || 0) - (a.ended || 0));
+        return true;
+      }
+      return false;
+    },
+    /** Write one document, remembering what was written so its echo isn't mistaken for a change from elsewhere. */
+    async put(id, body) { this.mine.set(id, canon(body)); await this.col.doc(id).set(body); },
+    async drop(id) { this.mine.set(id, null); await this.col.doc(id).delete(); },
     saveLocal() { try { localStorage.setItem(LS_KEY, JSON.stringify({ roster: S.roster, run: S.run, history: S.history })); } catch (e) { this.note = 'This browser blocked saving.'; } },
     async saveHist(h) {
-      if (this.mode === 'db') { try { await this.col.doc('hist-' + h.id).set(Object.assign({}, h, { id: undefined })); } catch (e) { flash('Couldn’t save the run to your history (' + e.code + ').'); } }
+      if (this.mode === 'db') { try { const body = plain(Object.assign({}, h, { id: undefined })); await this.put('hist-' + h.id, body); } catch (e) { flash('Couldn’t save the run to your history (' + e.code + ').'); } }
       else this.saveLocal();
     },
     async deleteHist(id) {
-      if (this.mode === 'db') { try { await this.col.doc('hist-' + id).delete(); } catch (e) { flash('Couldn’t delete (' + e.code + ').'); } }
+      if (this.mode === 'db') { try { await this.drop('hist-' + id); } catch (e) { flash('Couldn’t delete (' + e.code + ').'); } }
       else this.saveLocal();
     },
     async saveMon(m) {
       if (S.example) return;
       const body = { s: m.s, nick: m.nick || '', lv: m.lv, nat: m.nat, ab: m.ab, it: m.it || null, mv: m.mv, box: m.box, met: m.met || '', ord: m.ord || Date.now(), pid: m.pid || null, died: m.died || null, noEvo: !!m.noEvo };
-      if (this.mode === 'db') { try { await this.col.doc(m.key).set(body); } catch (e) { flash('Couldn’t save to your account (' + e.code + ').'); } }
+      if (this.mode === 'db') { try { await this.put(m.key, plain(body)); } catch (e) { flash('Couldn’t save to your account (' + e.code + ').'); } }
       else this.saveLocal();
     },
     async deleteMon(key) {
       if (S.example) return;
-      if (this.mode === 'db') { try { await this.col.doc(key).delete(); } catch (e) { flash('Couldn’t delete (' + e.code + ').'); } }
+      if (this.mode === 'db') { try { await this.drop(key); } catch (e) { flash('Couldn’t delete (' + e.code + ').'); } }
       else this.saveLocal();
     },
     async saveRun() {
       if (S.example) return;
       if (!S.run.started && S.roster.length) S.run.started = Math.min(...S.roster.map(m => m.ord || Date.now()));
-      if (this.mode === 'db') { try { await this.col.doc('run').set({ beaten: S.run.beaten, tms: S.run.tms || [], enc: S.run.enc || {}, dupes: S.run.dupes !== false, checks: (S.run.checks || []).slice(-50), tutors: !!S.run.tutors, aiChecks: S.run.aiChecks || null, bag: S.run.bag || [],
+      if (this.mode === 'db') { try { await this.put('run', plain({ beaten: S.run.beaten, tms: S.run.tms || [], enc: S.run.enc || {}, dupes: S.run.dupes !== false, checks: (S.run.checks || []).slice(-50), tutors: !!S.run.tutors, aiChecks: S.run.aiChecks || null, bag: S.run.bag || [],
         no: S.run.no || 1, started: S.run.started || null, starter: S.run.starter || null,
-        skipped: S.run.skipped || [], passed: S.run.passed || [], variants: S.run.variants || {}, postgame: !!S.run.postgame, care: !!S.run.care }); } catch (e) { flash('Couldn’t save progress (' + e.code + ').'); } }
+        skipped: S.run.skipped || [], passed: S.run.passed || [], variants: S.run.variants || {}, postgame: !!S.run.postgame, care: !!S.run.care })); } catch (e) { flash('Couldn’t save progress (' + e.code + ').'); } }
       else this.saveLocal();
     },
   };
@@ -1500,25 +1558,11 @@
       }
       L.pred = pred; L.recs = recs;
       const mine = SIM.actives(st, 'p'), theirs = SIM.actives(st, 'a');
-      if (!L.doubles) {
-        // the command box: your moves, the Coach's pick marked, each with its risk this turn
-        const me = mine[0], cur = recs[0];
-        const riskOf = id => { const x = opts.find(o => o.type !== 'switch' && o.id === id && !o.z); return x ? x.risk : null; };
-        const sw = opts.find(o => o.type === 'switch' && cur && cur.type === 'switch' && o.to === cur.to);
-        html += `<div class="cmd"><div class="cmd-q">What will <b>${esc(me.name.replace(/ \(.*\)$/, ''))}</b> do?</div>
-          <div class="cmd-moves">${SIM.usable(me, st).map(id => {
-            const mv = E.mv(id); if (!mv) return '';
-            const pick = cur && cur.type === 'move' && cur.id === id && !cur.z;
-            const r = riskOf(id);
-            return `<button class="mvbtn${pick ? ' pick' : ''}" data-mvpick="m:${id}" aria-pressed="${pick}" style="--t:${TYPE_COLORS[mv.t] || '#888888'}"><span class="mvn">${esc(mv.f)}</span><span class="mvm">${esc(mv.t)}${r != null ? ' · ' + (r <= 1e-9 ? 'safe' : r >= 0.995 ? 'loses' : fmtRisk(r) + ' risk') : ''}</span>${pick ? '<span class="cp">Coach pick</span>' : ''}</button>`;
-          }).join('')}</div>
-          ${(() => { const bench = st.p.team.map((x, i) => i).filter(i => !st.p.team[i].fainted && !st.p.slots.includes(i)); return bench.length ? `<div class="rp-swrow"><span class="small muted">Or switch to</span><div class="chips">${bench.map(i => { const o = opts.find(x => x.type === 'switch' && x.to === i); const pick = cur && cur.type === 'switch' && cur.to === i; return `<button class="chipbtn" data-mvpick="s:${i}" aria-pressed="${pick}">${icon(st.p.team[i].spec.s)}${esc(shortName(st.p.team[i].name))}${pick ? ' <span class="tag">Coach pick</span>' : o ? ` <span class="small muted">${o.risk <= 1e-9 ? 'safe' : o.risk >= 0.995 ? 'loses' : fmtRisk(o.risk) + ' risk'}</span>` : ''}</button>`; }).join('')}</div></div>` : ''; })()}
-          ${cur && (cur.type === 'switch' || cur.z) ? `<p class="small" style="margin:0"><b>Coach pick: ${esc(actionLabel(st, 'p', cur))}</b>${sw ? ' ' + riskBadge(sw.risk) : ''}</p>` : ''}
-          <p class="small" style="margin:0">The boss will most likely use ${theirs.map((m, k) => predictionHTML(st, m, pred[k])).join('; ')}.</p></div>`;
-      } else html += `<div class="card rec"><div class="lbl">Do this</div>
+      L.opts = opts;
+      if (L.doubles) html += `<div class="card rec"><div class="lbl">Do this</div>
         ${mine.map((m, k) => `<h3>${esc(m.name)}: ${esc(actionLabel(st, 'p', recs[k]))}</h3>`).join('')}${alts}
         <p class="small" style="margin:0">The boss AI will most likely use: ${theirs.map((m, k) => predictionHTML(st, m, pred[k])).join('; ')}.</p></div>`;
-      html += `<div class="card report" id="lv-report"></div>`;
+      html += `<div class="card report${L.doubles ? '' : ' wiz'}" id="lv-report"></div>`;
     } else if (L.step === 'anim') {
       html += `<div class="card"><div class="row"><span class="grow small muted">Playing the turn the Coach expects. Tap the screen to skip.</span><button class="btn small" id="lv-skip">Skip</button></div></div>`;
     }
@@ -1544,7 +1588,7 @@
   function lvActsInit(L) {
     if (L.acts && L.actsTurn === L.st.turn) return;
     L.acts = { p: (L.recs || []).slice(), a: (L.pred || []).map(a => (a ? { type: a.type, id: a.id, to: a.to, z: !!a.z, target: a.target } : null)) };
-    L.actsTurn = L.st.turn; L.hpEdits = {}; L.statEdits = {}; L.sendout = {}; L.prev = null;
+    L.actsTurn = L.st.turn; L.hpEdits = {}; L.statEdits = {}; L.sendout = {}; L.prev = null; L.wiz = 'you';
   }
   /** The turn as entered, played out with average rolls: the report starts from this (HP, status, who is out). */
   function lvPreview() {
@@ -1580,21 +1624,94 @@
   }
   function actKey(a) { return !a ? '' : a.type === 'switch' ? 's:' + a.to : (a.z ? 'z:' : 'm:') + a.id; }
   /** What a Pokemon did this turn, as buttons: its moves, then a switch to one of its team. */
-  function actButtonsHTML(st, side, m, k, chosen, marks) {
+  function actButtonsHTML(st, side, m, k, chosen, marks, extra) {
     const cur = actKey(chosen);
+    extra = extra || {};
     const moves = side === 'p' ? SIM.usable(m, st) : m.moves;
-    const mvBtn = (v, mv, label) => `<button class="mvbtn" data-act="${side}:${k}:${v}" aria-pressed="${cur === v}" style="--t:${TYPE_COLORS[mv.t] || '#888888'}"><span class="mvn">${esc(label)}</span><span class="mvm">${esc(mv.t)} · ${mv.k === 'X' ? 'status' : (mv.p > 1 ? mv.p : '—')}</span>${marks[v] ? `<span class="cp">${esc(marks[v])}</span>` : ''}</button>`;
+    const mvBtn = (v, mv, label) => `<button class="mvbtn${extra.pick === v ? ' pick' : ''}" data-act="${side}:${k}:${v}" aria-pressed="${cur === v}" style="--t:${TYPE_COLORS[mv.t] || '#888888'}"><span class="mvn">${esc(label)}</span><span class="mvm">${esc(mv.t)} · ${mv.k === 'X' ? 'status' : (mv.p > 1 ? mv.p : '—')}${extra.meta && extra.meta(v) ? ' · ' + esc(extra.meta(v)) : ''}</span>${marks[v] ? `<span class="cp">${esc(marks[v])}</span>` : ''}</button>`;
     let h = `<div class="cmd-moves">${moves.map(id => { const mv = E.mv(id); return mv ? mvBtn('m:' + id, mv, mv.f) : ''; }).join('')}`;
     if (side === 'p') h += moves.filter(id => SIM.zKind(st, m, id) === 'type').map(id => mvBtn('z:' + id, E.mv(id), 'Z-' + E.mv(id).f)).join('');
     h += '</div>';
     const bench = st[side].team.map((x, i) => i).filter(i => !st[side].team[i].fainted && !st[side].slots.includes(i));
     if (bench.length) h += `<div class="rp-swrow"><span class="small muted">${side === 'a' ? 'Or they switched to' : 'Or you switched to'}</span><div class="chips">${bench.map(i => {
       const v = 's:' + i, x = st[side].team[i];
-      return `<button class="chipbtn" data-act="${side}:${k}:${v}" aria-pressed="${cur === v}">${icon(x.spec.s)}${esc(shortName(x.name))}${marks[v] ? ` <span class="tag">${esc(marks[v])}</span>` : ''}</button>`;
+      return `<button class="chipbtn" data-act="${side}:${k}:${v}" aria-pressed="${cur === v}">${icon(x.spec.s)}${esc(shortName(x.name))}${marks[v] ? ` <span class="tag">${esc(marks[v])}</span>` : extra.meta && extra.meta(v) ? ` <span class="small muted">${esc(extra.meta(v))}</span>` : ''}</button>`;
     }).join('')}</div></div>`;
     return h;
   }
+  const riskText = r => (r == null ? '' : r <= 1e-9 ? 'safe' : r >= 0.995 ? 'loses' : fmtRisk(r) + ' risk');
+  /** Singles: one question at a time. 1. what you did (the Coach's pick first), 2. what they did, 3. HP after the turn. */
   function renderReport() {
+    const L = S.live, box = $('#lv-report');
+    if (!L || !box || !L.acts) return;
+    if (L.doubles) return renderReportAll();
+    const st = L.st;
+    if (!L.prev) lvPreview();
+    const nx = L.prev.nx;
+    const me = SIM.actives(st, 'p')[0], foe = SIM.actives(st, 'a')[0];
+    if (!me || !foe) return renderReportAll();
+    const step = L.wiz || 'you';
+    const STEPS = [['you', 'Your move'], ['them', 'Their move'], ['hp', 'HP after']];
+    const bar = `<div class="wiz-steps" role="tablist">${STEPS.map(([k, l], i) => `<button class="wiz-step${k === step ? ' on' : ''}" role="tab" aria-selected="${k === step}" data-wiz="${k}"><span class="n">${i + 1}</span>${l}</button>`).join('')}</div>`;
+    let body = '';
+    if (step === 'you') {
+      const opts = L.opts || [], rec = (L.recs || [])[0];
+      const riskOf = v => { const [kind, x] = v.split(':'); const o = opts.find(q => (kind === 's' ? q.type === 'switch' && q.to === +x : q.type !== 'switch' && q.id === +x && !!q.z === (kind === 'z'))); return o ? riskText(o.risk) : ''; };
+      const recKey = actKey(rec);
+      const recOpt = opts[0];
+      body = `<div class="wiz-q">What did you do with <b>${esc(shortName(me.name))}</b>?</div>
+        ${rec ? `<p class="small wiz-tip">Coach: <b>${esc(actionLabel(st, 'p', rec))}</b>${recOpt ? ' ' + riskBadge(recOpt.risk) : ''}</p>` : ''}
+        ${actButtonsHTML(st, 'p', me, 0, L.acts.p[0], recKey ? { [recKey]: 'Coach pick' } : {}, { pick: recKey, meta: riskOf })}
+        <p class="small muted" style="margin:0">${esc(shortName(foe.name))} will most likely use ${predictionHTML(st, foe, (L.pred || [])[0]).replace(/^<b>[^:]*: /, '<b>')}.</p>`;
+    } else if (step === 'them') {
+      body = `<div class="wiz-q">What did <b>${esc(shortName(foe.name))}</b> do?</div>
+        ${actButtonsHTML(st, 'a', foe, 0, L.acts.a[0], predMarks(0))}
+        <details class="rp-words" ${L.wordsOpen ? 'open' : ''} hidden><summary>Or tell the Coach in your own words</summary>
+          <textarea id="lv-words" rows="2" placeholder="e.g. Water Gun, Snubbull switched to Squirtle, it's at about half, I'm at 70%">${esc(L.words || '')}</textarea>
+          <div class="row"><button class="btn small" id="lv-parse">Fill it in</button><span class="note" id="lv-parse-out" aria-live="polite">${esc(L.wordsNote || '')}</span></div></details>`;
+    } else {
+      body = `<div class="wiz-q">HP after the turn</div>
+        <p class="small muted" style="margin:0">You: <b>${esc(actionLabel(st, 'p', L.acts.p[0]))}</b> · ${esc(shortName(foe.name))}: <b>${esc(actionLabel(st, 'a', L.acts.a[0]))}</b>. The bars show what that does; move one only if your game shows something else.</p>
+        ${reportRows(nx)}
+        <button class="btn primary wiz-go" id="lv-next">Next turn</button>`;
+    }
+    box.innerHTML = bar + body;
+    wireReport();
+  }
+  /** HP and status rows for whoever is on the field after the turn, and who came in for a fallen one. */
+  function reportRows(nx) {
+    const L = S.live, st = L.st;
+    const pctNow = (side, i) => { const k = side + ':' + i; return k in L.hpEdits ? L.hpEdits[k] : pctExact(nx[side].team[i]); };
+    const stNow = (side, i) => { const k = side + ':' + i; return k in L.statEdits ? L.statEdits[k] : (nx[side].team[i].status || ''); };
+    const hpRow = (side, i) => {
+      const m = nx[side].team[i], nm = esc(shortName(m.name)), pct = pctNow(side, i);
+      const val = side === 'p' ? Math.round(m.maxHp * pct / 100) : Math.round(pct);
+      const max = side === 'p' ? m.maxHp : 100;
+      const out = side === 'p' ? (val ? `${val}/${m.maxHp}` : 'fainted') : (val ? val + '%' : 'fainted');
+      return `<div class="rp-mon">${icon(m.spec.s)}<div class="rp-name"><b>${nm}</b> <span class="muted small">${side === 'a' ? 'theirs' : 'yours'}</span></div>
+        <select class="inline" data-stat="${side}:${i}" aria-label="${nm}: status">${STATUS_OPTS.map(([k, l]) => `<option value="${k}" ${stNow(side, i) === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
+        <div class="rp-hp"><button class="rp-nudge" data-nudge="${side}:${i}:-1" aria-label="${nm}: less HP">−</button><input type="range" min="0" max="${max}" step="1" value="${val}" data-hp="${side}:${i}" data-max="${max}" aria-label="${nm}: HP left${side === 'a' ? ', percent' : ''}"><button class="rp-nudge" data-nudge="${side}:${i}:1" aria-label="${nm}: more HP">+</button><output data-hpo="${side}:${i}">${out}</output></div></div>`;
+    };
+    const sendRows = side => fieldedAt(side).map((cur, k) => {
+      if (cur == null || !st[side].team[cur] || pctNow(side, cur) > 0) return '';
+      const taken = new Set(fieldedAt(side));
+      const cands = nx[side].team.map((m, i) => i).filter(i => !taken.has(i) && !st[side].slots.includes(i) && !nx[side].team[i].fainted && pctNow(side, i) > 0);
+      if (!cands.length) return '';
+      const key = side + ':' + k;
+      const picks = side === 'a' ? aiChoicesAfter(nx, cur, k) : [coachReplace(nx, cur, k)];
+      const chosen = key in L.sendout ? L.sendout[key] : (nx[side].slots[k] !== cur && cands.includes(nx[side].slots[k]) ? nx[side].slots[k] : picks[0]);
+      return `<div class="rp-out"><div class="lbl">${esc(shortName(st[side].team[cur].name))} fainted. Who did ${side === 'a' ? 'they' : 'you'} send out?</div>
+        <div class="chips">${cands.map(i => {
+          const m = nx[side].team[i];
+          const tag = side === 'a' ? (picks.length > 1 && picks.includes(i) ? 'coin flip' : picks[0] === i ? 'AI pick' : '') : (picks[0] === i ? 'Coach pick' : '');
+          return `<button class="chipbtn" data-sendout="${key}:${i}" aria-pressed="${i === chosen}">${icon(m.spec.s)}${esc(shortName(m.name))}${tag ? ` <span class="tag">${tag}</span>` : ''}</button>`;
+        }).join('')}</div>${side === 'a' && picks.length > 1 ? '<p class="note" style="margin:0">The engine flips a coin between equally good switch-ins, so either can come.</p>' : ''}</div>`;
+    }).join('');
+    const rows = side => fieldedAt(side).filter(i => i != null && st[side].team[i]).map(i => hpRow(side, i)).join('');
+    return rows('a') + rows('p') + sendRows('a') + sendRows('p');
+  }
+  /** Doubles (and anything unusual): every question on one card. */
+  function renderReportAll() {
     const L = S.live, box = $('#lv-report');
     if (!L || !box || !L.acts) return;
     const st = L.st;
@@ -1656,8 +1773,10 @@
       const [side, k, kind, x] = b.dataset.act.split(':');
       const foe = side === 'p' ? 'a' : 'p';
       L.acts[side][+k] = kind === 's' ? { type: 'switch', to: +x, why: 'switch' } : { type: 'move', id: +x, z: kind === 'z', target: { side: foe, slot: (SIM.actives(st, foe)[0] || { slot: 0 }).slot } };
+      if (!L.doubles) L.wiz = side === 'p' ? 'them' : 'hp';   // on to the next question
       reset();
     });
+    box.querySelectorAll('[data-wiz]').forEach(b => b.onclick = () => { L.wiz = b.dataset.wiz; renderReport(); });
     // doubles: the selects
     const readActs = () => {
       L.acts.p = SIM.actives(st, 'p').map(m => readAction(st, 'p', m.slot, 'lvp' + m.slot));
@@ -1697,7 +1816,7 @@
     }
     const ta = $('#lv-words'); if (ta) ta.addEventListener('input', () => { L.words = ta.value; });
     const parse = $('#lv-parse'); if (parse) parse.onclick = () => parseTurnWords(($('#lv-words') || {}).value || '');
-    $('#lv-next').onclick = applyReport;
+    const nb = $('#lv-next'); if (nb) nb.onclick = applyReport;
   }
   function applyReport() {
     const L = S.live; if (!L || !L.prev) return;
@@ -2111,21 +2230,10 @@
     return [...out];
   }
   function areaHasTime(a) { return a.parts.some(p => Object.values(p.k).some(t => t.day || t.night)); }
-  function encRows(rows, owned, area) {
-    return rows.map(r => {
-      const [sid, lo, hi, pctv, rod] = r;
-      const sp = E.sp(sid); if (!sp) return '';
-      const dupe = S.run.dupes !== false && owned.has(familyOf(sid));
-      return `<div class="enc-row ${dupe ? 'dupe' : ''}">${icon(sid)}<div><div class="nm">${esc(sp.n)} ${typesHTML(sp.t)}${dupe ? '<span class="tag">dupe</span>' : ''}</div>
-        <div class="meta">Lv ${lo === hi ? lo : lo + '–' + hi} · ${pctv}%${rod ? ' · ' + esc(rod) : ''}</div></div>
-        <div class="row" style="gap:4px;flex-wrap:nowrap"><button class="btn small" data-got="${sid}" data-lv="${hi}" data-area="${esc(area)}">Caught</button><button class="btn small ghost" data-fail="${sid}" data-area="${esc(area)}" aria-label="Didn't catch ${esc(sp.n)}">✕</button></div></div>`;
-    }).join('');
-  }
   function routeTrainers(a) { return D.bosses.filter(b => b.route && (b.areas || []).includes(a.n)); }
   function areaCard(a, need) {
     const e = (S.run.enc || {})[a.n];
     const owned = ownedFamilies();
-    const when = S.encTime || gameTimeNow();
     let status = a.fo || !areaSpecies(a).length ? '' : '<span class="tag">not yet</span>';
     if (e && e.r === 'caught') status = `${icon(e.s)}<span class="verdict v-safe">${esc(E.sp(e.s) ? E.sp(e.s).n : 'caught')}</span>`;
     else if (e && e.r === 'failed') status = `${e.s ? icon(e.s) : ''}<span class="verdict v-lose">missed${e.s && E.sp(e.s) ? ': ' + esc(E.sp(e.s).n) : ''}</span>`;
@@ -2133,15 +2241,13 @@
     const open = S.openArea === a.n;
     let body = '';
     if (open) {
-      const timed = areaHasTime(a);
-      if (timed) body += `<div class="row small"><span class="seg" role="group" aria-label="Time of day"><button data-time="day" aria-pressed="${when === 'day'}">Day 4:00–16:59</button><button data-time="night" aria-pressed="${when === 'night'}">Night 17:00–3:59</button></span><span class="note">My Boy! uses your phone's clock.</span></div>`;
       a.parts.forEach((part, k) => {
         const label = a.parts.length > 1 ? `<div class="lbl">Part ${k + 1} of ${a.parts.length}</div>` : '';
         let inner = '';
         for (const [kind, t] of Object.entries(part.k)) {
-          const rows = t.any || t[when] || t.day || t.night;
-          if (!rows || !rows.length) continue;
-          inner += `<div class="lbl">${METHOD_LABEL[kind] || kind}${t.any || !timed ? '' : ` (${when === 'day' ? 'day' : 'night'})`}</div><div class="enc">${encRows(rows, owned, a.n)}</div>`;
+          const rows = mergedRows(t);
+          if (!rows.length) continue;
+          inner += `<div class="lbl">${METHOD_LABEL[kind] || kind}</div><div class="enc">${encRowsMerged(rows, owned, a.n)}</div>`;
         }
         if (inner) body += label + inner;
       });
@@ -2170,11 +2276,13 @@
       }
       const pks = S.run.care ? (D.care || []).filter(pk => pk.area === a.n && !pk.after) : [];
       if (pks.length) body += `<div class="lbl">Care package here (SO2Toxic)</div><div class="small">${pks.map(pk => pk.items.map(([id, q]) => esc(E.itemName(id)) + (q !== 10 ? ' ×' + q : '')).join(', ')).join('; ')}</div>`;
-      body += `<div class="row"><button class="btn small" data-best="${esc(a.n)}">Best catch here</button>${e ? `<button class="btn small ghost" data-undo="${esc(a.n)}">Undo this encounter</button>` : `<button class="btn small ghost" data-skip="${esc(a.n)}">No encounter here</button>`}</div>
+      body += `<div class="row"><button class="btn small" data-best="${esc(a.n)}">Why? Compare the species</button>${e ? `<button class="btn small ghost" data-undo="${esc(a.n)}">Undo this encounter</button>` : `<button class="btn small ghost" data-skip="${esc(a.n)}">No encounter here</button>`}</div>
         <div id="best-${encodeURIComponent(a.n)}"></div>`;
     }
+    const advise = !e && !a.fo && areaSpecies(a).length && (S.screen === 'run' || open);
     return `<details class="card area ${e ? 'done' : ''}" data-area="${esc(a.n)}" ${open ? 'open' : ''}><summary><span class="nm">${esc(a.n)}</span><span class="st">${status}</span>
-      <span class="note">${a.fo || !areaSpecies(a).length ? 'no wild Pokémon · gifts and items' : `${areaSpecies(a).length} species`}${routeTrainers(a).length ? ' · ' + routeTrainers(a).length + (routeTrainers(a).length === 1 ? ' trainer' : ' trainers') : ''}${need ? ' · ' + esc(need) : ''}</span></summary><div class="body">${body}</div></details>`;
+      <span class="note">${a.fo || !areaSpecies(a).length ? 'no wild Pokémon · gifts and items' : `${areaSpecies(a).length} species`}${routeTrainers(a).length ? ' · ' + routeTrainers(a).length + (routeTrainers(a).length === 1 ? ' trainer' : ' trainers') : ''}${need ? ' · ' + esc(need) : ''}</span>
+      ${advise ? catchLineHTML(a) : ''}</summary><div class="body">${body}</div></details>`;
   }
   function renderRoutes() {
     const enc = S.run.enc || {};
@@ -2199,12 +2307,13 @@
     store.saveRun();
   }
   function wireRoutes() {
+    fillCatch();
     main.querySelectorAll('details.area').forEach(d => d.addEventListener('toggle', () => {
       if (d.open && S.openArea !== d.dataset.area) { S.openArea = d.dataset.area; render(); const el = main.querySelector(`details.area[data-area="${CSS.escape(S.openArea)}"]`); if (el) el.scrollIntoView({ block: 'nearest' }); }
       else if (!d.open && S.openArea === d.dataset.area) S.openArea = null;
     }));
     main.querySelectorAll('[data-filter]').forEach(b => b.onclick = () => { S.routeFilter = b.dataset.filter; render(); });
-    main.querySelectorAll('[data-time]').forEach(b => b.onclick = () => { S.encTime = b.dataset.time; render(); });
+
     const du = $('#dupes'); if (du) du.onchange = () => { S.run.dupes = du.checked; store.saveRun(); render(); };
     main.querySelectorAll('[data-got]').forEach(b => b.onclick = () => {
       const sid = +b.dataset.got, area = b.dataset.area;
@@ -2292,57 +2401,120 @@
     const st = FLOW.steps.slice(stepIndex).find(s => s.kind === 'fight');
     return ADV.upcomingMajor(st ? Math.max(nextBoss(), st.g.first) : nextBoss(), 2);
   }
+  /** Both time tables of a method merged: one row per species, with its chance by day and by night. */
+  function mergedRows(t) {
+    if (t.any) return t.any.map(([sid, lo, hi, pct, rod]) => ({ sid, lo, hi, rod, day: pct, night: pct, any: true }));
+    const out = new Map();
+    for (const time of ['day', 'night']) for (const [sid, lo, hi, pct, rod] of (t[time] || [])) {
+      const k = sid + '|' + (rod || '');
+      const r = out.get(k) || { sid, lo, hi, rod, day: 0, night: 0 };
+      r.lo = Math.min(r.lo, lo); r.hi = Math.max(r.hi, hi); r[time] += pct;
+      out.set(k, r);
+    }
+    return [...out.values()].sort((x, y) => (y.day + y.night) - (x.day + x.night));
+  }
+  function encRowsMerged(rows, owned, area) {
+    return rows.map(r => {
+      const sp = E.sp(r.sid); if (!sp) return '';
+      const dupe = S.run.dupes !== false && owned.has(familyOf(r.sid));
+      const when = r.any || r.day === r.night ? `${r.day}%` : !r.night ? `${r.day}% by day only` : !r.day ? `${r.night}% at night only` : `${r.day}% day · ${r.night}% night`;
+      return `<div class="enc-row ${dupe ? 'dupe' : ''}">${icon(r.sid)}<div><div class="nm">${esc(sp.n)} ${typesHTML(sp.t)}${dupe ? '<span class="tag">dupe</span>' : ''}</div>
+        <div class="meta">Lv ${r.lo === r.hi ? r.lo : r.lo + '–' + r.hi} · ${when}${r.rod ? ' · ' + esc(r.rod) : ''}</div></div>
+        <div class="row" style="gap:4px;flex-wrap:nowrap"><button class="btn small" data-got="${r.sid}" data-lv="${r.hi}" data-area="${esc(area)}">Caught</button><button class="btn small ghost" data-fail="${r.sid}" data-area="${esc(area)}" aria-label="Didn't catch ${esc(sp.n)}">✕</button></div></div>`;
+    }).join('');
+  }
+  /** What to do on a route: the best time of day, catch now or come back with a rod or Surf, and who to hope for. Every
+   *  way of meeting Pokemon here is judged by what its species would add to your team in the next two big fights
+   *  (for one you'll only have later, the two big fights after that). */
   function catchAdvice(a) {
-    const P = runProgress(), when = S.encTime || gameTimeNow(), owned = ownedFamilies();
-    const groups = new Map();   // method label -> { open, rows: [[sid, pct]] }
-    for (const part of a.parts) for (const [kind, t] of Object.entries(part.k)) {
-      const rows = t.any || t[when] || t.day || t.night || [];
-      for (const r of rows) {
-        const rod = kind === 'fish' ? r[4] : null;
-        const open = methodOpen(kind, rod, P);
-        const g = groups.get(open.label) || { open, rows: new Map() };
-        g.rows.set(r[0], (g.rows.get(r[0]) || 0) + r[3]);
-        groups.set(open.label, g);
+    const P = runProgress(), owned = ownedFamilies();
+    const times = areaHasTime(a) ? ['day', 'night'] : ['any'];
+    const opts = [];
+    for (const time of times) {
+      const groups = new Map();
+      for (const part of a.parts) for (const [kind, t] of Object.entries(part.k)) {
+        const rows = t.any || (time === 'any' ? null : t[time]) || t.day || t.night || [];
+        for (const r of rows) {
+          const open = methodOpen(kind, kind === 'fish' ? r[4] : null, P);
+          const g = groups.get(open.label) || { open, rows: new Map() };
+          g.rows.set(r[0], (g.rows.get(r[0]) || 0) + r[3]);
+          groups.set(open.label, g);
+        }
+      }
+      for (const [label, g] of groups) {
+        const majors = majorsFrom(g.open.now ? P.current : g.open.at);
+        const total = [...g.rows.values()].reduce((x, y) => x + y, 0) || 1;
+        const ranked = [...g.rows.entries()].map(([sid, pct]) => {
+          let gain = 0, sum = 0, as = sid; const fills = [];
+          for (const bi of majors) { const v = candidateValue(sid, bi); gain += v.gain; sum += v.total; as = v.as; fills.push(...v.fills.map(n => `${n} (${D.bosses[bi].n})`)); }
+          const dupe = S.run.dupes !== false && owned.has(familyOf(sid));
+          return { sid, as, pct: pct / total * 100, gain: dupe ? 0 : gain, sum, fills, dupe };
+        }).sort((x, y) => (x.dupe - y.dupe) || (y.gain - x.gain) || (y.sum - x.sum));
+        opts.push({ time, label, open: g.open, majors, ranked, expect: ranked.reduce((s, r) => s + r.pct / 100 * r.gain, 0) });
       }
     }
-    const out = [];
-    for (const [label, g] of groups) {
-      const majors = majorsFrom(g.open.now ? P.current : g.open.at);
-      const total = [...g.rows.values()].reduce((x, y) => x + y, 0) || 1;
-      const ranked = [...g.rows.entries()].map(([sid, pct]) => {
-        let gain = 0, sum = 0; const fills = [];
-        let as = sid;
-        for (const bi of majors) { const v = candidateValue(sid, bi); gain += v.gain; sum += v.total; as = v.as; fills.push(...v.fills.map(n => `${n} (${D.bosses[bi].n})`)); }
-        const dupe = S.run.dupes !== false && owned.has(familyOf(sid));
-        return { sid, as, pct: pct / total * 100, gain: dupe ? 0 : gain, sum, fills, dupe };
-      }).sort((x, y) => (x.dupe - y.dupe) || (y.gain - x.gain) || (y.sum - x.sum));
-      const expect = ranked.reduce((s, r) => s + r.pct / 100 * r.gain, 0);
-      out.push({ label, open: g.open, majors, ranked, expect });
+    const byExpect = (x, y) => y.expect - x.expect;
+    const now = opts.filter(o => o.open.now).sort(byExpect), later = opts.filter(o => !o.open.now).sort(byExpect);
+    const bestNow = now[0] || null, bestLater = later[0] || null;
+    let time = 'any';
+    if (times.length > 1 && bestNow) {
+      const at = t => Math.max(0, ...now.filter(o => o.time === t).map(o => o.expect));
+      const d = at('day'), n = at('night');
+      if (Math.abs(d - n) > Math.max(0.3, 0.1 * Math.max(d, n))) time = d > n ? 'day' : 'night';
     }
-    out.sort((x, y) => (y.open.now - x.open.now) || (x.open.at - y.open.at));
-    const nowBest = Math.max(0, ...out.filter(x => x.open.now).map(x => x.expect));
-    const later = out.filter(x => !x.open.now).sort((x, y) => y.expect - x.expect)[0];
-    const wait = later && later.expect > nowBest * 1.3 + 0.4 ? later : null;
-    return { groups: out, wait, nowBest };
+    const pick = bestNow ? (time === 'any' ? bestNow : now.find(o => o.time === time) || bestNow) : null;
+    const wait = bestLater && (!pick || bestLater.expect > pick.expect * 1.3 + 0.4) ? bestLater : null;
+    return { opts, pick, wait, time, timed: times.length > 1 };
   }
+  const TIME_TEXT = { day: 'Go by day (4 AM–5 PM on your phone’s clock)', night: 'Go at night (5 PM–4 AM on your phone’s clock)', any: 'Any time of day' };
+  /** The verdict for a route, in one or two sentences. */
+  function catchLine(C) {
+    const hope = o => o.ranked.filter(r => r.gain > 0.05).slice(0, 2).map(r => `${E.sp(r.sid).n} (${Math.round(r.pct)}%)`);
+    if (C.wait) {
+      const h = hope(C.wait);
+      return `<b>Skip for now:</b> come back ${C.wait.label === 'Surfing' ? 'with Surf, after the Soul Badge' : `with the ${esc(C.wait.label)}${C.wait.open.where ? ` (from ${esc(C.wait.open.where)})` : ''}`}${h.length ? `, hoping for ${esc(h.join(' or '))}` : ''}.`;
+    }
+    if (!C.pick) return 'Nothing to meet here yet.';
+    const h = hope(C.pick);
+    const how = C.pick.label === 'Grass / cave' ? '' : C.pick.label === 'Surfing' ? ' by surfing' : ` with the ${esc(C.pick.label)}`;
+    if (!h.length) return `<b>${TIME_TEXT[C.time]}: catch now${how}.</b> Nothing here covers a gap in your team, but a backup is better than nothing.`;
+    return `<b>${TIME_TEXT[C.time]}: catch now${how}.</b> Hoping for ${esc(h.join(' or '))}.`;
+  }
+  const CATCH = new Map();
+  function catchKey(a) { return a.n + '|' + JSON.stringify([alive().map(m => [m.s, m.lv, m.mv]), S.run.beaten, Object.keys(S.run.enc || {}), (S.run.tms || []).length, S.run.dupes !== false]); }
+  function catchFor(a) { const k = catchKey(a); if (!CATCH.has(k)) { if (CATCH.size > 200) CATCH.clear(); CATCH.set(k, catchAdvice(a)); } return CATCH.get(k); }
+  /** Fill in the verdicts on the page, one route at a time, so it stays responsive. */
+  function fillCatch() {
+    const el = main.querySelector('[data-adv][data-pending="1"]');
+    if (!el) return;
+    setTimeout(() => {
+      if (!el.isConnected) { fillCatch(); return; }
+      const a = D.areas.find(x => x.n === el.dataset.adv);
+      const html = a ? catchLine(catchFor(a)) : '';
+      main.querySelectorAll(`[data-adv="${CSS.escape(el.dataset.adv)}"]`).forEach(x => { x.innerHTML = html; x.dataset.pending = '0'; });
+      fillCatch();
+    }, 20);
+  }
+  function catchLineHTML(a) {
+    const k = catchKey(a);
+    return CATCH.has(k) ? `<span class="adv" data-adv="${esc(a.n)}" data-pending="0">${catchLine(CATCH.get(k))}</span>` : `<span class="adv" data-adv="${esc(a.n)}" data-pending="1"><span class="muted">Working out what to hope for here…</span></span>`;
+  }
+  /** The details behind a verdict: each way of meeting Pokemon here, by time of day, best species first. */
   function bestCatch(a) {
     const box = document.getElementById('best-' + encodeURIComponent(a.n)); if (!box) return;
-    box.innerHTML = '<div class="note">Testing each species against your next big fights, with your team…</div>';
+    box.innerHTML = '<div class="note">Comparing every species here…</div>';
     setTimeout(() => {
       if (!box.isConnected) return;
-      const C = catchAdvice(a);
-      if (!C.groups.length) { box.innerHTML = '<p class="small" style="margin:0">No wild Pokémon here.</p>'; return; }
-      const covers = r => { const n = r.fills.map(x => x.replace(/ \(.*\)$/, '')); const u = [...new Set(n)]; return u.length > 2 ? `${u.slice(0, 2).join(', ')} and ${u.length - 2} more` : u.join(' and '); };
+      const C = catchFor(a);
+      if (!C.opts.length) { box.innerHTML = '<p class="small" style="margin:0">No wild Pokémon here.</p>'; return; }
+      const covers = r => { const u = [...new Set(r.fills.map(x => x.replace(/ \(.*\)$/, '')))]; return u.length > 2 ? `${u.slice(0, 2).join(', ')} and ${u.length - 2} more` : u.join(' and '); };
       const fmt = r => `<div class="slot catch-row">${icon(r.sid)}<div class="who"><span class="cr-n"><b>${esc(E.sp(r.sid).n)}</b>${r.as !== r.sid ? `<span class="small muted"> → ${esc(E.sp(r.as).n)}</span>` : ''}${r.dupe ? ' <span class="tag">dupe</span>' : ''}</span>
         <span class="small muted">${Math.round(r.pct)}% · ${r.fills.length ? 'answers ' + esc(covers(r)) : r.gain > 0.05 ? 'adds to what you have' : 'nothing your team lacks'}</span></div><span class="num">${r.gain > 0.05 ? '+' + r.gain.toFixed(1) : '—'}</span></div>`;
-      const nowG = C.groups.filter(g => g.open.now), laterG = C.groups.filter(g => !g.open.now);
-      const verdict = C.wait
-        ? `<p class="small" style="margin:0"><b>Coach: worth waiting for ${esc(C.wait.open.why)}.</b> Your first encounter here is the only one that counts, and ${esc(C.wait.label === 'Surfing' ? 'surfing' : 'fishing')} here later is likely to give you more (expected +${C.wait.expect.toFixed(1)} against ${C.wait.majors.map(i => esc(D.bosses[i].n)).join(' and ')}, vs +${C.nowBest.toFixed(1)} now).</p>`
-        : laterG.length ? `<p class="small" style="margin:0"><b>Coach: take your encounter now.</b> What comes later here (${laterG.map(g => esc(g.label)).join(', ')}) isn't clearly better, and a catch now helps from the next fight on.</p>` : '';
-      box.innerHTML = `<div class="card catch-card" style="box-shadow:none;border-width:2px">${verdict}
-        ${nowG.map(g => `<div class="lbl">${esc(g.label)} now · best for ${g.majors.map(i => esc(D.bosses[i].n)).join(' and ')}</div>${g.ranked.slice(0, 3).map(fmt).join('')}<div class="small muted">Expected from one encounter: +${g.expect.toFixed(1)}</div>`).join('')}
-        ${laterG.map(g => `<details class="more"><summary>${esc(g.label)} later${g.open.when ? ', ' + esc(g.open.when) : ''} · expected +${g.expect.toFixed(1)}</summary><div class="section" style="margin-top:6px">${g.ranked.slice(0, 3).map(fmt).join('')}<div class="small muted">Judged for ${g.majors.map(i => esc(D.bosses[i].n)).join(' and ')}, the big fights after you can ${g.label === 'Surfing' ? 'surf' : 'fish with it'}.</div></div></details>`).join('')}
-        <p class="note" style="margin:0">The number is what a species adds to your team: matchups against those bosses' exact Hardcore teams that it wins or saves and your Pokémon don't, at the level cap, evolved by level-up where it would be by then. You can't choose your encounter, but this tells you what to hope for.</p></div>`;
+      const when = o => (o.time === 'any' ? '' : o.time === 'day' ? ' · day' : ' · night');
+      box.innerHTML = `<div class="card catch-card" style="box-shadow:none;border-width:2px">
+        ${C.opts.slice().sort((x, y) => (y.open.now - x.open.now) || (y.expect - x.expect)).map(o => `<details class="more" ${o === C.pick || o === C.wait ? 'open' : ''}><summary>${esc(o.label)}${when(o)}${o.open.now ? '' : ` · later${o.open.when ? ', ' + esc(o.open.when) : ''}`} · expected +${o.expect.toFixed(1)}</summary>
+          <div class="section" style="margin-top:6px">${o.ranked.slice(0, 4).map(fmt).join('')}<div class="small muted">Judged for ${o.majors.map(i => esc(D.bosses[i].n)).join(' and ')}.</div></div></details>`).join('')}
+        <p class="note" style="margin:0">The number is what a species adds to your team: matchups against those bosses' exact Hardcore teams that it wins or saves and your Pokémon don't, at the level cap, evolved by level-up where it would be by then. “Expected” weighs each species by how often it appears.</p></div>`;
     }, 30);
   }
   /** Your team's gaps for the catch step: what the next big fights have that you can't answer yet. */
@@ -2355,7 +2527,7 @@
     return `<div class="gaps"><div class="lbl">Your team vs ${majors.map(i => esc(D.bosses[i].n)).join(' and ')}: no safe answer yet to</div>
       ${byBoss.length ? byBoss.map(x => { const n = E.bossTeam(x.bi, D.bosses[x.bi].cap).length; return `<div class="gap-row"><b class="small">${esc(D.bosses[x.bi].n)}</b><span class="gap-icons">${x.list.map(g => `<span title="${esc(E.sp(g.s).n)}" role="img" aria-label="${esc(E.sp(g.s).n)}">${icon(g.s)}</span>`).join('')}</span><span class="small muted">${x.list.length === n ? `all ${n}` : `${x.list.length} of ${n}`}${x.list.length <= 2 ? ': ' + x.list.map(g => esc(E.sp(g.s).n)).join(', ') : ''}</span></div>`; }).join('') : '<div class="small">nobody: you have a safe answer to every Pokémon in both fights.</div>'}
       ${G.weak.length ? `<div class="small">Weak spots: ${G.weak.map(w => `${typeChip(w.t)} ${w.n} of ${G.size} weak`).join(', ')}.</div>` : ''}
-      <div class="note">“Best catch here” ranks each area's Pokémon by what they'd add to this.</div></div>`;
+      <div class="note">Each route below says what to hope for there, judged against this.</div></div>`;
   }
 
   // ---------------- YOUR RUN: the whole run as one path, step by step ----------------

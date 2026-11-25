@@ -19,12 +19,13 @@
   // [area, the fight it comes before (trainer, level cap, which of that name at that cap), what you need there]
   const PLACES = [
     ['Route 1', 'Terry', 16], ['Viridian City', 'Terry', 16], ['Pallet Town', 'Terry', 16, 0, ROD], ['Route 21', 'Terry', 16], ['Route 22', 'Terry', 16],
-    ['Route 2', 'Brendan', 16], ['Viridian Forest', 'Brendan', 16], ['Pewter City', 'Falkner', 16],
+    ['Route 2', 'Terry', 16], ['Viridian Forest', 'Terry', 16],          // open before the rival on Route 22
+    ["Diglett's Cave", 'Falkner', 16], ['Pewter City', 'Falkner', 16],   // its Route 2 end (Lv 7) is open before Falkner
     ['Route 3', 'Sally', 23], ['Mt. Moon', 'Miguel', 23],
     ['Route 4', 'Terry', 28], ['Cerulean City', 'Terry', 28, 0, ROD], ['Route 24', 'Cale', 28], ['Route 25', 'Bugsy', 28],
     ['Route 5', 'Jeff', 36], ['Underground Path', 'Jeff', 36], ['Route 6', 'Jeff', 36],
     ['Vermilion City', 'Ann', 36, 0, ROD], ['S.S. Anne', 'Ann', 36, 0, ROD],
-    ['Route 11', 'Whitney', 36], ["Diglett's Cave", 'Whitney', 36],
+    ['Route 11', 'Whitney', 36],
     ['Route 9', 'Alicia', 44], ['Route 10', 'Dana', 44], ['Rock Tunnel', 'Dana', 44],
     ['Lavender Town', 'Aidan', 44], ['Route 8', 'Aidan', 44],
     ['Route 7', 'Mary', 44], ['Celadon City', 'Mary', 44, 0, ROD], ['Route 16', 'Mary', 44],

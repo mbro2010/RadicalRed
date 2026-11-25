@@ -322,6 +322,14 @@ ol.path::before { content: ""; position: absolute; left: 9px; top: 8px; bottom: 
 .evo-row { display: grid; grid-template-columns: 32px 1fr auto; gap: 8px; align-items: center; font-size: 13.5px; }
 /* turn report: what happened, HP sliders, who came out */
 .report { gap: 10px; }
+.wiz-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+.wiz-step { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 4px; border-radius: 8px; border: 2px solid var(--line); background: var(--surface-2); font-weight: 600; font-size: 13px; color: var(--muted); }
+.wiz-step .n { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--line); color: var(--ink); font-size: 12px; }
+.wiz-step.on { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); }
+.wiz-step.on .n { background: var(--accent); color: var(--accent-ink); }
+.wiz-q { font-family: var(--font-display); font-size: 19px; line-height: 1.25; }
+.wiz-tip { margin: 0; padding: 6px 10px; border-left: 4px solid var(--accent); background: var(--surface-2); border-radius: 6px; }
+.wiz-go { width: 100%; padding: 12px; font-size: 17px; }
 .rp-acts { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
 @media (min-width: 560px) { .rp-acts { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
 .rp-acts select { flex: 1 1 150px; width: auto !important; min-width: 0; }
@@ -415,6 +423,8 @@ ol.path::before { content: ""; position: absolute; left: 9px; top: 8px; bottom: 
 .tune-line { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
 .switch { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); font-size: 14px; }
 .switch input { width: 20px; height: 20px; margin-top: 1px; accent-color: var(--accent); }
+.area summary .adv { display: block; grid-column: 1 / -1; font-size: 13px; line-height: 1.35; margin-top: 2px; }
+.area summary .adv b { color: var(--ink); }
 .gaps { display: grid; gap: 6px; padding: 8px 10px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); }
 .gap-row { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 0 8px; align-items: center; }
 .gap-row > .small.muted { grid-column: 2; }
