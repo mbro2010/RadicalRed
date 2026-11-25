@@ -81,6 +81,35 @@
     return HP_TYPES[Math.floor(bits.reduce((s, x, i) => s + (x << i), 0) * 15 / 63)];
   }
 
+  /** Hardcore and Restricted Mode change some of your Pokemon's abilities (decoded from the game's code at 0x09079584,
+   *  which the ability getters call when flag 0x1034 or 0x103C is set). Applied to your side only, as the game describes it. */
+  function hardcoreAbility(ab, sid) {
+    switch (ab) {
+      case 'Drizzle': case 'Primordial Sea': return 'Adaptability';
+      case 'Drought': case 'Desolate Land': return 'Sheer Force';
+      case 'Speed Boost': return sid === 891 ? 'Striker' : (sid === 1320 || sid === 1321) ? ab : 'Infiltrator';
+      case 'Trace': return 'Synchronize';
+      case 'Sand Stream': return sid === 248 || sid === 889 ? 'Intimidate' : sid === 579 ? 'Solid Rock' : 'Sand Force';
+      case 'Snow Warning': return 'Slush Rush';
+      case 'Magic Bounce': return 'Magic Guard';
+      case 'Anger Shell': return 'Regenerator';
+      case 'Moxie': case 'Beast Boost': case 'Soul-Heart': case 'Grim Neigh': return 'Unnerve';
+      case 'Seed Sower': case 'Grassy Surge': return sid === 1104 ? 'Intimidate' : 'Self Sufficient';
+      case 'Defiant': case 'Competitive': return 'Clear Body';
+      case 'Hadron Engine': return 'Quark Drive';
+      case 'OrichalcumPulse': return 'Protosynthesis';
+      case 'Stamina': return 'Inner Focus';
+      case 'Triage': return sid === 981 ? ab : 'Natural Cure';
+      case 'Electric Surge': case 'Misty Surge': return 'Telepathy';
+      case 'Psychic Surge': return 'Dazzling';
+      case 'Contrary': return sid === 308 ? ab : 'Bad Company';
+      case 'Imposter': return 'Limber';
+      case 'Toxic Debris': return 'Corrosion';
+      case 'Sand Spit': return 'Sand Force';
+      case 'Blazing Soul': return 'Flash Fire';
+      default: return ab;
+    }
+  }
   function sp(id) { return species.get(id); }
   function mv(id) { return moves.get(id); }
   function itemName(id) { return id && D.items[id] ? D.items[id].n : null; }
@@ -484,7 +513,7 @@
     return { picked, bestPer, team, pool };
   }
 
-  return { C, gen, D, sp, mv, itemName, natureName, abilityInfo, buildMon, damage, damageDist, faintChance, speedOf, matchup,
+  return { C, gen, D, sp, mv, itemName, hardcoreAbility, natureName, abilityInfo, buildMon, damage, damageDist, faintChance, speedOf, matchup,
     bossTeam, planBoss, teamWeather, learnable, upcoming, isBanned, suggestMoves, maxHP, rawStats, rawRolls, typeEff, hiddenPowerType,
     STATUS_CODE, WEATHER_SETTERS, HIGH_CRIT, ALWAYS_CRIT, STAT_MULT, clearCache: () => cache.clear() };
 });

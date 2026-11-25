@@ -727,7 +727,8 @@
     const s = E.sp(to);
     if (!s) return;
     st[side].megaUsed = true;
-    const ab = (s.a || []).find(Boolean) || m.ability;
+    let ab = (s.a || []).find(Boolean) || m.ability;
+    if (m.side === 'p') ab = E.hardcoreAbility(ab, to);   // Hardcore changes some of your abilities, Mega forms included
     m.spec = Object.assign({}, m.spec, { s: to, ab });
     m.types = s.t.slice(); m.ability = ab;
     log(st, `${m.name} Mega Evolves into ${s.n}!`, 'switch');

@@ -16,3 +16,11 @@ test('engine: Z-Move damage is stronger than the plain move', () => {
   const plain = E.rawRolls(r, golem, mid('Blizzard'), {}), z = E.rawRolls(r, golem, mid('Blizzard'), { z: true });
   assert(z.rolls[15] > plain.rolls[15], 'Z-Blizzard hits harder');
 });
+test('engine: Hardcore ability changes (decoded from 0x09079584)', () => {
+  const s = n => require('./lib').sid(n);
+  assert(E.hardcoreAbility('Drizzle', s('Pelipper')) === 'Adaptability', 'Drizzle');
+  assert(E.hardcoreAbility('Speed Boost', s('Ninjask')) === 'Infiltrator', 'Speed Boost');
+  assert(E.hardcoreAbility('Sand Stream', 248) === 'Intimidate' && E.hardcoreAbility('Sand Stream', 579) === 'Solid Rock' && E.hardcoreAbility('Sand Stream', s('Hippowdon')) === 'Sand Force', 'Sand Stream by species');
+  assert(E.hardcoreAbility('Contrary', 308) === 'Contrary' && E.hardcoreAbility('Contrary', s('Serperior')) === 'Bad Company', 'Contrary');
+  assert(E.hardcoreAbility('Overgrow', 1) === 'Overgrow', 'others unchanged');
+});

@@ -66,7 +66,8 @@
     const cat = { P: 'Phys', S: 'Spec', X: 'Status' }[m.k];
     return `<div class="mv"><span class="bar" style="background:${c}"></span><span class="txt"><span class="nm">${esc(m.f)}</span><span class="meta">${esc(m.t)} · ${cat}${m.p ? ' · ' + (m.p === 1 ? 'var' : m.p) : ''}${extra ? ' · ' + extra : ''}</span></span></div>`;
   }
-  function specOf(m, extra) { return Object.assign({ key: m.key, s: m.s, lv: m.lv, nat: m.nat, ab: m.ab, it: m.it || null, mv: (m.mv || []).filter(Boolean) }, extra || {}); }
+  // your Pokemon battle with Hardcore's ability changes applied
+  function specOf(m, extra) { return Object.assign({ key: m.key, s: m.s, lv: m.lv, nat: m.nat, ab: E.hardcoreAbility(m.ab, m.s), it: m.it || null, mv: (m.mv || []).filter(Boolean) }, extra || {}); }
   function alive() { return S.roster.filter(m => m.box !== 'dead'); }
   function party() { return S.roster.filter(m => m.box === 'party'); }
   function milestonesDone() { return D.bosses.filter(b => b.ms && S.run.beaten.includes(b.i)).length; }
@@ -187,7 +188,7 @@
     const evo = evoSummary(m.s);
     return `<div class="card" data-key="${esc(m.key)}">
       <div class="slot">${icon(m.s, 'x2')}<div class="who"><b>${esc(monName(m))}</b><div class="row" style="gap:6px">${typesHTML(s.t)}<span class="lv">Lv ${m.lv}</span>${over}${m.box === 'dead' ? '<span class="tag ban">fainted</span>' : ''}</div></div></div>
-      <dl class="kv"><dt>Ability</dt><dd>${esc(m.ab || '—')}${ab.x ? ' <span class="tag">Radical Red ability</span>' : ''}</dd>
+      <dl class="kv"><dt>Ability</dt><dd>${esc(m.ab || '—')}${ab.x ? ' <span class="tag">Radical Red ability</span>' : ''}${m.ab && E.hardcoreAbility(m.ab, m.s) !== m.ab ? ` <span class="tag ban">Hardcore: ${esc(E.hardcoreAbility(m.ab, m.s))}</span>` : ''}</dd>
         <dt>Item</dt><dd>${esc(E.itemName(m.it) || '—')}</dd><dt>Nature</dt><dd>${esc(natureText(m.nat))}</dd>${m.met ? `<dt>Caught</dt><dd>${esc(m.met)}</dd>` : ''}
         ${evo.length ? `<dt>Evolves</dt><dd>${evo.map(esc).join('<br>')}</dd>` : ''}</dl>
       <div class="moves">${moves || '<span class="muted small">No moves entered</span>'}</div>
@@ -473,7 +474,7 @@
     const isNew = !existing;
     function draw() {
       const s = m.s ? E.sp(m.s) : null;
-      const abil = s ? s.a.map((a, i) => a ? `<option value="${esc(a)}" ${m.ab === a ? 'selected' : ''}>${esc(a)}${i === 2 ? ' (hidden)' : ''}</option>` : '').join('') : '';
+      const abil = s ? s.a.map((a, i) => a ? `<option value="${esc(a)}" ${m.ab === a ? 'selected' : ''}>${esc(a)}${i === 2 ? ' (hidden)' : ''}${E.hardcoreAbility(a, m.s) !== a ? ' → ' + esc(E.hardcoreAbility(a, m.s)) + ' in Hardcore' : ''}</option>` : '').join('') : '';
       const abInfo = m.ab ? E.abilityInfo(m.ab) : null;
       sheet.innerHTML = `<div class="inner">
         <div class="row"><h2 class="grow">${isNew ? 'Add a Pokémon' : 'Edit ' + esc(monName(existing))}</h2><button class="btn ghost" id="ed-cancel">Cancel</button></div>
@@ -1353,7 +1354,7 @@
           const b = D.bosses[bi];
           const as = evolvedBy(sid, b.cap);
           const sp = E.sp(as);
-          const spec = { key: 'cand', s: as, lv: b.cap, nat: 0, ab: sp.a[0], it: null, mv: [] };
+          const spec = { key: 'cand', s: as, lv: b.cap, nat: 0, ab: E.hardcoreAbility(sp.a[0], as), it: null, mv: [] };
           const f = ADV.fightScore(spec, bi, tms);
           total += f.score;
           const wins = f.per.filter(x => x.verdict === 'safe' || x.verdict === 'ok').length;

@@ -72,7 +72,7 @@ Read from the game code (details and addresses in `NOTES.md`):
 - **Most boss levels follow yours.** 646 of the 779 Hardcore boss Pokémon have their level set from your highest-level party Pokémon when the battle starts, from 3 below it up to equal. Gym leaders have fixed levels that match the cap.
 - **Hardcore level caps:** 16, 23, 28, 36, 44, 47, 56, 57, 59, 68, 73, 76, 79, 80, 81, 82, 85, then 100 after becoming Champion. Normal Mode's first four are 15, 22, 27 and 34.
 - **Your Pokémon can't learn 82 moves**, including setup moves, hazards, weather, Protect and Substitute. Toxic and Leech Seed are allowed only on 156 listed species.
-- **Some abilities are restricted too.** The game's own description says so; which ones isn't decoded yet.
+- **Some of your abilities change.** Decoded from the game's code: Drizzle becomes Adaptability, Drought Sheer Force, Speed Boost Infiltrator, Moxie and Beast Boost Unnerve, Magic Bounce Magic Guard, terrain surges become Telepathy, Dazzling or Self Sufficient, and more (full list in `NOTES.md`). The Coach applies these to your Pokémon in every calculation and shows them on your cards.
 
 ## Nuzlocke Coach (`app/`)
 
@@ -104,7 +104,7 @@ All 27 starters (Gen 1-9) are available in Oak's Lab: the balls' script swaps in
 1. ~~Extract boss teams, level caps and restrictions from the ROM~~
 2. ~~Damage calculator using Radical Red's own move and species data~~
 3. ~~Turn-by-turn battle advisor that minimizes the chance of losing a Pokémon~~
-4. ~~Regular trainers, wild encounter tables and move tutors~~; Hardcore ability restrictions still to decode
+4. ~~Regular trainers, wild encounter tables, move tutors and Hardcore's ability changes~~
 5. ~~Model the boss AI from the engine's AI code~~ (ported from CFRU; double battles are still planned as singles)
 6. ~~Import your team from your My Boy! save file~~ (beta: built from the format, waiting on a real save to confirm)
 7. ~~Confusion, Encore, Taunt, Mega Evolution and Z-Moves in the simulator~~; your own Z-Moves in plans
