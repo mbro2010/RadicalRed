@@ -160,6 +160,21 @@ These lists are checked when a move is learned by level-up (`0x090A8818`) and in
 
 Move struct byte 9 is the Z-move power. Radical Red adds 15 abilities of its own (for example Striker, Bone Zone, Sage Power, Primal Armor and Feline Prowess) and about a dozen moves of its own (for example Soul Robbery, Dark Hole, Leech Fang and Aqua Fang). It also changes the types and stats of many existing Pokémon, so vanilla Pokédex data is wrong for it.
 
+## The run path (`app/flow.js`)
+
+The Coach lays the run out as one path. **Fights** are the Hardcore boss table in its own order, which is the game's progression: each entry's level cap rises only at the 16 milestone fights, so caps never go down along the table. Neighbouring entries with the same trainer, class and cap are versions of one fight (the rival's three teams in each rival fight, Bugsy 2, Pryce 3, Jasmine 3, Ketchup 2, each Elite Four member 2), except generic Grunts and Goons, who are separate trainers. The rival's teams are always ordered Squirtle line, Bulbasaur line, Charmander line, so the one you face follows from your starter's ball. For the other leaders the trigger for each version isn't known; you pick the one you see.
+
+**Areas** are placed by FireRed's map order before the fight you'd reach next, checked two ways: against the 82 boss fights whose trainers stand on a map (`trainer_locations.json`: every area comes before the first fight placed in it) and against wild levels, which rise along the path for the main story's grass and caves. Placement choices worth knowing:
+
+- Areas with only fishing or surfing (Pallet Town, Cerulean City, Vermilion City, the S.S. Anne dock) come up at Vermilion, where FireRed's Old Rod is; Celadon and Fuchsia at their own arrival.
+- Route 16's grass is reachable from Celadon (as in FireRed, the Cut house side), so it comes before Erika even though its trainers come later.
+- Power Plant, Routes 19-21, Seafoam and Cinnabar need Surf (HM03 is a Safari Zone gift).
+- Cerulean Cave has Rocket and other boss trainers at caps 79-81 in Radical Red, so it sits there, before Victory Road.
+- The Sevii Islands and the rest are after the Champion: their wild Pokémon are at the last cap (83-85) and the boss fights there come after the Champion in the table.
+- Route 23's wild levels (33-35) are low for its place before Victory Road; it may open earlier than the path shows.
+
+Nothing is locked: an area can be logged from any step, a fight can be taken out of order, and areas you move past stay open.
+
 ## Open questions
 
 - Which abilities Hardcore or Restricted Mode restricts for the player

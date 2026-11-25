@@ -109,12 +109,13 @@ function category(t) {
   return 'other';
 }
 const HC = caps.hardcore;
+const bossLoc = read('trainer_locations.json');   // where each fight is, when its trainer stands on a map
 let done = 0;
 const bosses = order.map((tid, i) => {
   const t = trainers[tid];
   const ov = t.hardcoreOverride.find(p => p.order === i);
   const b = {
-    i, id: tid, n: t.name, cls: t.class, cat: category(t), dbl: ov.double ? 1 : 0, cap: HC[done],
+    i, id: tid, n: t.name, cls: t.class, cat: category(t), dbl: ov.double ? 1 : 0, cap: HC[done], ...(bossLoc[tid] ? { loc: bossLoc[tid] } : {}),
     party: ov.party.map(m => ({
       s: m.speciesId, lv: m.level ?? null, rel: m.relativeToPlayerMax ?? null,
       iv: [m.ivs.hp, m.ivs.atk, m.ivs.def, m.ivs.spa, m.ivs.spd, m.ivs.spe],

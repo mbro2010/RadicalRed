@@ -4,7 +4,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
-/* Layout: sticky header with three tabs (Team, Plan, Battle); single column of cards; editor opens as a full-screen sheet. */
+/* Layout: sticky header with a menu; the run page is one path of steps (the step to do now open, the rest one line each);
+   the menu's tools (team, all areas, any fight, quick check, past runs) open as pages with a way back; editors open as sheets. */
 :root {
   --bg: #f2eee2; --bg-stripe: #ebe6d8; --surface: #fffdf6; --surface-2: #f6f2e6; --ink: #232a36; --muted: #5d6676; --line: #cfc8b4;
   --box-edge: #485a72; --box-inner: #c5d3e1; --bar: #c8423a; --bar-edge: #8f2a24; --bar-ink: #ffffff;
@@ -32,6 +33,7 @@
   --up: #63c48f; --down: #ef7d74; --hp-track: #0d1118; color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body { background: var(--bg) repeating-linear-gradient(135deg, var(--bg) 0 14px, var(--bg-stripe) 14px 28px); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 56px; }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
@@ -51,13 +53,60 @@ h1 .accent { color: inherit; opacity: .85; }
 .pill { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--chip); color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .pill.cap { background: var(--accent-soft); color: var(--accent); }
 .pill.warn { background: var(--risky-soft); color: var(--risky); }
-.tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; background: var(--surface); padding: 4px; border-radius: 10px; border: 3px solid var(--box-edge); box-shadow: inset 0 0 0 2px var(--box-inner); }
-.tabs button { border: 0; background: transparent; padding: 7px 4px 7px 14px; border-radius: 6px; font-family: var(--font-display); font-weight: 700; font-size: 16px; position: relative; text-align: left; }
-.tabs button::before { content: ""; position: absolute; left: 4px; top: 50%; margin-top: -5px; border: 5px solid transparent; border-left: 7px solid var(--cursor); visibility: hidden; }
-.tabs button[aria-selected="true"]::before { visibility: visible; }
-.tabs button[aria-selected="true"] { background: var(--surface-2); }
-@media (max-width: 480px) { .tabs button { font-size: 14px; padding-left: 11px; } .tabs button::before { left: 2px; } }
-@media (max-width: 360px) { .tabs button { font-size: 12.5px; padding-left: 10px; } }
+.menu-btn { margin-left: auto; border: 2px solid currentColor; background: transparent; color: var(--bar-ink); border-radius: 8px; padding: 3px 10px; font-family: var(--font-display); font-weight: 700; font-size: 15px; display: inline-flex; align-items: center; gap: 6px; }
+.menu-btn .bars { width: 14px; height: 10px; background: linear-gradient(currentColor 0 2px, transparent 2px 4px, currentColor 4px 6px, transparent 6px 8px, currentColor 8px 10px); }
+.menu { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 2px; background: var(--surface); padding: 4px; border-radius: 10px; border: 3px solid var(--box-edge); box-shadow: inset 0 0 0 2px var(--box-inner); }
+.menu[hidden], .backbar[hidden] { display: none; }
+.menu button { border: 0; background: transparent; padding: 8px 6px 8px 18px; border-radius: 6px; font-family: var(--font-display); font-weight: 700; font-size: 16px; position: relative; text-align: left; }
+.menu button::before { content: ""; position: absolute; left: 5px; top: 50%; margin-top: -5px; border: 5px solid transparent; border-left: 7px solid var(--cursor); visibility: hidden; }
+.menu button[aria-current="page"] { background: var(--surface-2); }
+.menu button[aria-current="page"]::before, .menu button:hover::before { visibility: visible; }
+.backbar { display: flex; align-items: center; gap: 10px; }
+.backbar b { font-family: var(--font-display); font-size: 19px; }
+/* the run: chapters of steps along a line */
+.runhead { gap: 8px; }
+.party-strip { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 2px; }
+.pmon { display: grid; justify-items: center; min-width: 58px; padding: 4px 4px 3px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); font-size: 11px; line-height: 1.25; }
+.pmon .nm { max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.pmon .lv { font-family: var(--font-data); font-size: 10.5px; color: var(--muted); }
+.pmon .lv.under { color: var(--risky); }
+.pmon .lv.over { color: var(--lose); font-weight: 700; }
+.chap { display: grid; gap: 8px; min-width: 0; }
+.ch-head, .chap > summary { font-family: var(--font-display); font-size: 18px; font-weight: 700; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ch-t { flex: 1 1 auto; min-width: 0; }
+.ch-cap { font-family: var(--font-body); font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); white-space: nowrap; }
+.ch-sum { font-family: var(--font-body); font-size: 12.5px; font-weight: 600; color: var(--safe); }
+.chap.done > summary { cursor: pointer; list-style: none; padding: 8px 12px; border-radius: 10px; background: var(--surface); border: 2px solid var(--line); }
+.chap.done > summary::-webkit-details-marker { display: none; }
+.chap.done[open] > summary { border-color: var(--box-edge); }
+.chap.next { opacity: .8; padding: 2px 0 6px; }
+ol.path { list-style: none; margin: 0; padding: 0 0 0 26px; display: grid; gap: 4px; position: relative; min-width: 0; }
+ol.path::before { content: ""; position: absolute; left: 9px; top: 8px; bottom: 8px; width: 3px; border-radius: 2px; background: var(--box-inner); }
+.step { position: relative; min-width: 0; }
+.step > .dot { position: absolute; left: -26px; top: 6px; width: 21px; height: 21px; border-radius: 50%; border: 3px solid var(--box-edge); background: var(--surface); display: grid; place-items: center; }
+.step.done > .dot { background: var(--safe); border-color: var(--safe); }
+.step.done > .dot::after { content: ""; width: 7px; height: 4px; border-left: 2.5px solid #fff; border-bottom: 2.5px solid #fff; transform: translateY(-1px) rotate(-45deg); }
+.step.passed > .dot { background: var(--chip); border-color: var(--line); }
+.step.now > .dot { background: var(--accent); border-color: var(--bar-edge); box-shadow: 0 0 0 4px var(--accent-soft); }
+.step.todo > .dot { border-color: var(--line); }
+.step .line { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 0; font-size: 14px; min-width: 0; text-align: left; }
+.step.todo .line { color: var(--muted); }
+.linebtn { width: 100%; border: 0; background: none; cursor: pointer; border-radius: 8px; }
+.linebtn:hover { background: var(--surface-2); }
+.now-body { display: grid; gap: 10px; min-width: 0; padding: 2px 0 10px; }
+#now { scroll-margin-top: 150px; }
+.sub { font-family: var(--font-display); font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.sub .n { width: 26px; height: 26px; flex: none; border-radius: 50%; background: var(--box-edge); color: var(--surface); display: grid; place-items: center; font-size: 15px; }
+.achips { display: flex; flex-wrap: wrap; gap: 4px; }
+.achip { display: inline-flex; align-items: center; gap: 2px; font-size: 12.5px; font-weight: 600; padding: 2px 9px; border-radius: 999px; background: var(--chip); min-height: 24px; }
+.achip .ico { margin: -6px -2px -6px -6px; }
+.achip.caught { background: var(--safe-soft); color: var(--safe); }
+.achip.failed { background: var(--lose-soft); color: var(--lose); }
+.achip.finds { background: transparent; border: 1px dashed var(--line); color: var(--muted); font-weight: 500; }
+.tag.capup { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+.lost { border-left-color: var(--lose); }
+.evo-row { display: grid; grid-template-columns: 32px 1fr auto; gap: 8px; align-items: center; font-size: 13.5px; }
+.linkbtn { border: 0; background: none; color: var(--accent); font-weight: 600; padding: 0; text-decoration: underline; text-underline-offset: 2px; font-size: inherit; }
 h2 { font-family: var(--font-display); font-size: 21px; margin: 0; text-wrap: balance; letter-spacing: .01em; }
 h3 { font-size: 15px; margin: 0; }
 .muted { color: var(--muted); }
@@ -216,21 +265,24 @@ input.search { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--l
       <span class="ball" aria-hidden="true"></span>
       <h1>Nuzlocke <span class="accent">Coach</span></h1>
       <span class="muted small">Radical Red 4.1 · Hardcore</span>
+      <button class="menu-btn" id="menu-btn" aria-expanded="false" aria-controls="menu"><span class="bars" aria-hidden="true"></span>Menu</button>
     </div>
-    <div class="status" id="status"><span class="pill">Loading…</span></div>
-    <nav class="tabs" role="tablist" aria-label="Sections">
-      <button role="tab" id="tab-team" aria-selected="true" data-tab="team">Party</button>
-      <button role="tab" id="tab-routes" aria-selected="false" data-tab="routes">Routes</button>
-      <button role="tab" id="tab-plan" aria-selected="false" data-tab="plan">Plan</button>
-      <button role="tab" id="tab-battle" aria-selected="false" data-tab="battle">Battle</button>
-      <button role="tab" id="tab-runs" aria-selected="false" data-tab="runs">Runs</button>
+    <nav class="menu" id="menu" hidden aria-label="Coach tools">
+      <button data-go="run">Your run</button>
+      <button data-go="team">Team &amp; PC</button>
+      <button data-go="areas">All areas</button>
+      <button data-go="fight">Plan any fight</button>
+      <button data-go="check">Quick check</button>
+      <button data-go="runs">Past runs &amp; starters</button>
     </nav>
+    <div class="status" id="status"><span class="pill">Loading…</span></div>
+    <div class="backbar" id="backbar" hidden><button class="btn small" data-go="run">← Your run</button><b></b></div>
   </header>
   <main id="main"><div class="empty">Loading game data and the damage calculator…</div></main>
   <footer>
     <p><b>Where the numbers come from.</b> Stats, types, abilities, moves, learnsets, evolutions, wild encounters, trainers and every boss team are read from the Radical Red 4.1 ROM. Damage uses the open-source Smogon damage calculator (Gen 9 rules) fed with those values. Sprites are decoded from your own copy of the game.</p>
-    <p><b>Battle plans.</b> The Plan tab simulates the whole fight hundreds of times: damage rolls, crits, misses, speed, status, confusion, stat changes, hazards, weather, terrain, healing, berries, Mega Evolution, Z-Moves and other key items and abilities. The boss AI is ported from the battle AI of the engine Radical Red is built on (Complete Fire Red Upgrade): the same move scores, fighting styles and switching rules. Radical Red may have private changes to it that the public source doesn't show.</p>
-    <p><b>Limits.</b> Double battles are planned as singles. Radical Red's own abilities and moves are modeled from their in-game descriptions and flagged when an effect isn't calculated. Your own Z-Moves aren't planned yet.</p>
+    <p><b>Battle plans.</b> Each fight's plan simulates the whole battle hundreds of times, double battles as doubles: damage rolls, crits, misses, speed, status, confusion, stat changes, hazards, weather, terrain, healing, berries, Mega Evolution, Z-Moves and other key items and abilities. The boss AI is ported from the battle AI of the engine Radical Red is built on (Complete Fire Red Upgrade): the same move scores, fighting styles and switching rules. Radical Red may have private changes to it that the public source doesn't show.</p>
+    <p><b>Limits.</b> Radical Red's own abilities and moves are modeled from their in-game descriptions and flagged when an effect isn't calculated. Double battles are planned one turn ahead. The order of routes and fights follows the story; if you play them in another order, log any area or fight from the step you're on.</p>
   </footer>
 </div>
 <div class="sheet" id="sheet" hidden></div>
@@ -242,4 +294,5 @@ input.search { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--l
 <script src="sim.js"></script>
 <script src="save.js"></script>
 <script src="advice.js"></script>
+<script src="flow.js"></script>
 <script src="app.js"></script>
