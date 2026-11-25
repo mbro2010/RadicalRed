@@ -112,11 +112,11 @@ All 27 starters (Gen 1-9) are available in Oak's Lab: the balls' script swaps in
 
 | Tier | Starters |
 | --- | --- |
-| S | Fennekin, Scorbunny, Charmander, Totodile, Chimchar |
-| A | Torchic, Cyndaquil, Mudkip, Fuecoco, Litten |
-| B | Popplio, Piplup, Rowlet, Quaxly, Grookey, Turtwig, Sobble |
+| S | Scorbunny, Fennekin, Charmander, Totodile, Torchic |
+| A | Chimchar, Fuecoco, Mudkip, Cyndaquil, Litten, Popplio |
+| B | Rowlet, Piplup, Quaxly, Sobble, Grookey, Turtwig |
 | C | Tepig, Oshawott, Bulbasaur, Chespin |
-| D | Chikorita, Froakie, Treecko, Sprigatito, Snivy, Squirtle |
+| D | Froakie, Chikorita, Treecko, Sprigatito, Snivy, Squirtle |
 
 ## Roadmap
 
