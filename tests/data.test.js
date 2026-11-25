@@ -35,3 +35,14 @@ test('data: gifts, items and TM locations from the map scripts', () => {
   assert(D.finds['Viridian Forest'].g.some(([k, s]) => k === 's' && E.sp(s).g === 'Virizion'), 'static Virizion');
   assert(Object.keys(D.tmWhere).length >= 100, 'TM locations ' + Object.keys(D.tmWhere).length);
 });
+test('data: the care package cheat (SO2Toxic) by checkpoint, Hardcore lists', () => {
+  const name = id => D.items[id] && D.items[id].n;
+  const at = (area, after) => D.care.find(p => p.area === area && (after ? p.after === after : !p.after));
+  assert(D.care.length === 16, 'sixteen packages: ' + D.care.length);
+  assert(at('Route 2') && at('Route 2').items.some(([id]) => name(id) === 'Mystic Water'), 'the DexNav aide on Route 2 hands over the type items');
+  assert(at('Cinnabar Island', 'Volcano Badge').items.some(([id]) => name(id) === 'Life Orb'), 'Life Orb after Blaine');
+  assert(at('Pallet Town', 'Champion').items.some(([id]) => name(id) === 'Choice Band'), 'the Choice items only after the Champion');
+  assert(at('Fuchsia City').items.some(([id]) => name(id) === 'Leftovers'), 'Leftovers in Fuchsia City');
+  const all = D.care.flatMap(p => p.items.map(([id]) => name(id)));
+  for (const n of ['WeaknessPol.', 'Heat Rock', 'Throat Spray', 'Air Balloon', 'Protein']) assert(!all.includes(n), 'Hardcore leaves out ' + n);
+});

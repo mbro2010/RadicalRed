@@ -215,7 +215,28 @@ Two fixes came from a real run (the Route 22 rival, whose Snubbull used Power-Up
 - **Attacks that raise a stat** (effects 139 Attack up: Power-Up Punch, Metal Claw, Meteor Mash; 110 Sp. Atk up: Charge Beam; 96 Speed up: Flame Charge, Aqua Step…) get the stat-raising bonus in `ai_positives.c` when the boost chance is at least 75% and raising that stat is a good idea (`GoodIdeaToRaiseAttackAgainst`: the target has no Unaware, the stat isn't already +6, the user has a move that uses it). With it, Power-Up Punch outscores Covet, as in the game.
 - **Replacements after a faint**: `CalcMostSuitableMonToSwitchInto` only takes a candidate with a strictly higher score. On a tie it takes the candidate if the current best faints to the player's Pokémon and the candidate doesn't, and when neither faints it flips a coin. The port now flips the same coin in random battles, and the turn report marks both Pokémon ("coin flip") so the player knows either can come.
 
+Run 2 found the other big gap, in switching (Snubbull stayed in against Tentacool in the Coach's prediction, but switched to Squirtle in the game):
+
+- **Only bad moves left** (`ShouldSwitchIfOnlyBadMovesLeft` → `CalcOnlyBadMovesLeftInMoveset`, `ai_util.c`): the AI keeps its Pokémon in while any status move still works (no penalty from `AIScript_Negatives`), while Knock Off can take an item, or when it has Protect. Otherwise, if its strongest attack does under a third of the target's remaining HP (counting the target's Leftovers and similar healing), and the best switch-in has an edge the current one doesn't (a knockout, a 2HKO, resisting every attack, walling the foe, or speed), it switches to the best switch-in, else the second best, as long as that one outspeeds, walls or resists everything and the predicted attack won't do too much to it. Snubbull's Thunder Wave kept it in on turn 1; once Tentacool was paralyzed, every attack it had was resisted, so it switched. The port used to approximate this with "every move scores below 95", which almost never happens.
+- **Switching cooldown** (`gNewBS->ai.switchingCooldown`): 2 after a chosen switch (`SetSwitchingBankSwitchingCooldownTo2`, unless the other side switched that turn too), 1 after replacing a fainted Pokémon, minus 1 at each end of turn, and back to 0 whenever the player's Pokémon comes in (`SwitchIn_HandleAICooldown`). Most switching rules don't fire while it's above 0. The simulator now keeps it per Pokémon (`swCooldown`); before, the port treated any Pokémon that came in last turn as cooling down, including the lead on turn 1.
+
 The player's side of one-on-one matchups (`E.matchup`) is played with the attack that wins it: least risk of fainting, then fewest hits, then most damage. Before, it always took the hardest-hitting move, so a weaker priority move that wins (Aqua Jet against Lunatone) was ignored, and learning a stronger move could make a matchup look worse.
+
+## The care package cheat (SO2Toxic)
+
+Codes are typed at an event tile (a sign or PC event) upstairs in your house in Pallet Town (map 4.1). The code script at `0x1050086` compares the entry with each string (`special 0x12D`):
+
+| Code | Script | Sets |
+| --- | --- | --- |
+| `Woyaopp` | `0x10500F3` | flag `0x1040`: the Rare Candy cheat ("Talk to the youngster in Viridian City") |
+| `DexAll` | `0x105011F` | flag `0x1056`: DexNav |
+| `SO2Toxic` | `0x105013F` | flag `0x103F`: the care package |
+| `TeamPreview` | `0x10507FB` | team preview |
+| `EZCatch` | `0x1050109` | flag `0x109D`: easy catching |
+
+Every place that hands over a package does `checkflag 0x103F` and then `call_if TRUE` to a list of `giveitem`s. `SO2Toxic`'s own script hands over the packages for checkpoints already passed (by story variables and badge flags). Some items depend on the mode: `checkflag F; call_if FALSE` adds them only when F is not set. Choosing Hardcore Mode (`0x104F10C`) sets `0x1034` (Hardcore), `0x1032` (Minimal Grinding) and `0x10BE`, so Hardcore players don't get the weather rocks, terrain seeds, Weakness Policy, Throat Spray, Heat Rock, Air Balloon, Terrain Extender, or the EV wings and vitamins.
+
+`tools/extract_care_package.py` finds every package, places it by walking every map's scripts, and writes `data/care_package.json` (Hardcore lists, plus what other modes add). Thirteen packages come from one-time triggers you walk over (`var == 0`, then set): Route 2 (the DexNav aide), Viridian Forest, Pewter City, Route 3, Route 4, Route 24, Cerulean City, Route 6, Route 9, Route 10, Celadon City and Fuchsia City. Three come after gym wins (Thunder, Volcano and Earth Badges), and one from Mom in Pallet Town after you become Champion (Choice Band, Specs and Scarf, Rocky Helmet, Eviolite). A care package NPC near "the tunnel from Cerulean" (`0x1050D95`) isn't on any map in 4.1.
 
 ## Starters
 

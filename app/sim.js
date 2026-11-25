@@ -269,6 +269,12 @@
     st[side].slots[slot] = idx;
     const m = act(st, side, slot);
     m.slot = slot;
+    // the engine's AI switching cooldown (gNewBS->ai.switchingCooldown): 2 after a chosen switch, unless the other side
+    // switched this turn too (SetSwitchingBankSwitchingCooldownTo2); 1 after replacing a fainted Pokemon (it can't switch
+    // again until an end of turn has passed); and whenever the player's Pokemon comes in, the boss's resets to 0
+    if (why === 'switch') { st.switchedTurn = Object.assign({}, st.switchedTurn, { [side]: st.turn }); m.swCooldown = (st.switchedTurn[other(side)] === st.turn) ? 0 : 2; }
+    else m.swCooldown = why === 'replace' ? 1 : 0;
+    if (side === 'p') for (const x of actives(st, 'a')) x.swCooldown = 0;
     st.events.push({ turn: st.turn, type: 'switch', side, to: m.key, why: why || '', slot });
     log(st, `${side === 'p' ? 'You send out' : 'Boss sends out'} ${m.name}`, 'switch', m);
     onEntry(st, side, rng, slot);
@@ -862,6 +868,7 @@
       if (!alive(st, 'p').length || !alive(st, 'a').length) break;
     }
     endOfTurn(st, rng);
+    for (const side of ['p', 'a']) for (const x of actives(st, side)) if (x.swCooldown) x.swCooldown--;
     // replacements after faints (set mode: the player gets no free look before the boss sends its next Pokemon)
     for (const side of ['a', 'p']) {
       st[side].slots.forEach((idx, slot) => {

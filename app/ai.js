@@ -777,6 +777,53 @@
     if (d * 2 < m.hp) return true;
     return d * 2 >= m.maxHp && m.moves.some(id => HEAL_EFFECTS.has(meta(id).eff)) && speed(st, m) > speed(st, foe);
   }
+  const PIVOT_NAMES = new Set(['U-turn', 'Volt Switch', 'Flip Turn', 'Parting Shot']);
+  /** How much the target heals each turn on its own (GetAmountToRecoverBy with no move): items and abilities. */
+  function recoveryPerTurn(st, m) {
+    const it = itemName(m), w = st.weather || '', a = m.ability;
+    let r = 0;
+    if (it === 'Leftovers' || (it === 'Black Sludge' && hasType(m, 'Poison'))) r += Math.floor(m.maxHp / 16);
+    if ((a === 'Rain Dish' && /Rain/.test(w)) || (a === 'Ice Body' && /Snow|Hail/.test(w))) r += Math.floor(m.maxHp / 16);
+    if (a === 'Dry Skin' && /Rain/.test(w)) r += Math.floor(m.maxHp / 8);
+    if (a === 'Poison Heal' && (m.status === 'psn' || m.status === 'tox')) r += Math.floor(m.maxHp / 8);
+    return r;
+  }
+  /** CalcOnlyBadMovesLeftInMoveset (singles). No status move that still works (or Knock Off on an item), no Protect, and
+   *  its strongest attack does under a third of the target's HP (counting the target's healing), while the best switch-in
+   *  has an edge the current Pokemon doesn't (a knockout, a 2HKO, resisting everything, walling the foe, or speed). */
+  function onlyBadMovesLeft(c, ranked) {
+    const { st, me, foe } = c;
+    let damaging = 0;
+    for (const id of usable(me, st)) {
+      if (negatives(c, id) < 0) continue;                           // AIScript_Negatives would cut it below 100
+      const mm = meta(id);
+      if (mm.cat === 'X') return false;                              // has a status move that still works
+      if (mm.name === 'Knock Off' && foe.item) return false;
+      damaging++;
+    }
+    if (me.moves.some(id => meta(id).eff === 111)) return false;     // singles: a Pokemon with Protect stalls instead
+    if (!damaging) return true;                                      // no usable move at all
+    if (me.sub && !foe.moves.some(id => meta(id).cat !== 'X' && meta(id).sound)) return false;   // hiding behind a Substitute
+    if (me.moves.some(id => PIVOT_NAMES.has(meta(id).name) && negatives(c, id) === 0)) return false;   // pivots switch on their own
+    const s = c.myStrongest, dmg = s ? c.dmg(me, foe, s) : 0;
+    if (dmg >= foe.hp) return false;                                 // can knock it out
+    const rec = recoveryPerTurn(st, foe);
+    if (rec || foe.moves.some(id => HEAL_EFFECTS.has(meta(id).eff))) { if (dmg * 3 >= foe.hp + rec * 2) return false; }
+    else if (dmg * 3 >= foe.hp) return false;                        // can 3HKO: keep attacking
+    const best = c.bestSw || (c.bestSw = pickSwitch(ranked, c.rng));
+    const flags = best ? best.flags : 0;
+    if (!flags) return false;                                        // the switch-in has no edge either
+    if (flags & (F.KO | F.TWO_HKO)) return true;
+    if (flags & F.RESIST_ALL) return !foe.moves.every(id => meta(id).cat === 'X' || c.dmg(foe, me, id) < me.hp / 3);   // unless it resists everything too
+    if (flags & F.WALLS) {                                           // unless it walls the foe too (WallsFoe)
+      const fs = E.rawStats(foe.spec), ms = E.rawStats(me.spec);
+      const stage = x => (x >= 0 ? (2 + x) / 2 : 2 / (2 - x));
+      const cantWall = (foe.moves.some(id => meta(id).cat === 'P') && ms.def * stage(me.boosts.def) <= fs.atk * stage(foe.boosts.atk))
+        || (foe.moves.some(id => meta(id).cat === 'S') && ms.spd * stage(me.boosts.spd) <= fs.spa * stage(foe.boosts.spa));
+      return cantWall;
+    }
+    return true;
+  }
   /** ShouldSwitch (singles): the checks that matter for boss fights, in the engine's order. */
   function shouldSwitch(c) {
     const { st, me, foe } = c;
@@ -785,7 +832,7 @@
     if (me.charging || me.rampage || me.recharge) return null;
     if (['Shadow Tag', 'Arena Trap'].includes(foe.ability) && !hasType(me, 'Ghost') && (foe.ability !== 'Arena Trap' || grounded(me))) return null;
     if (foe.ability === 'Magnet Pull' && hasType(me, 'Steel')) return null;
-    const cooldown = st.turn - (me.enteredTurn || 0) <= 1;   // just switched in
+    const cooldown = (me.swCooldown || 0) > 0;   // just switched in (the engine's switchingCooldown, kept by the simulator)
     const ranked = c.ranked || (c.ranked = switchScores(st, side, c));
     if (!ranked.length) return null;
     const p = c.predicted;
@@ -802,12 +849,14 @@
         }
       }
     }
-    // 2. only bad moves left
-    if (!cooldown && !(me.destinyBond && c.foeKOsMe && !c.firstVs(me, foe, c.myStrongest, p))) {
-      const scores = c.scores || (c.scores = scoreMoves(c, true));
-      if (scores.length && scores.every(s => s.score < 100 - 5)) {
-        for (const r of ranked.slice(0, 2)) if (r.flags & (F.OUTSPEEDS | F.WALLS | F.RESIST_ALL) && wontDoTooMuch(c, r)) return { to: r.i, why: 'only bad moves left' };
-      }
+    // 2. only bad moves left (ShouldSwitchIfOnlyBadMovesLeft): to the best switch-in, else the second best, if it has an
+    //    edge (outspeeds, walls the foe or resists all its attacks) and the predicted attack won't do too much to it
+    if (!cooldown && !(me.destinyBond && c.foeKOsMe && !c.firstVs(me, foe, c.myStrongest, p)) && onlyBadMovesLeft(c, ranked)) {
+      const best = c.bestSw || (c.bestSw = pickSwitch(ranked, c.rng));
+      const second = pickSwitch(ranked.filter(r => r !== best), H.expectedDice());
+      for (const r of [best, second]) if (r && r.flags & (F.OUTSPEEDS | F.WALLS | F.RESIST_ALL) && wontDoTooMuch(c, r)) return { to: r.i, why: 'only bad moves left' };
+      if (me.lock && /^Choice /.test(itemName(me) || ''))   // choice-locked: any switch-in that won't be knocked out
+        for (const r of [best, second]) if (r && !(r.flags & F.FAINTS) && wontDoTooMuch(c, r)) return { to: r.i, why: 'only bad moves left (choice-locked)' };
     }
     // 3. about to fall asleep from Yawn
     if (me.yawn === 1 && !me.status && !cooldown) {
@@ -864,7 +913,7 @@
     options.sort((x, y) => (y.top - x.top) || (y.kos - x.kos) || (y.dmg - x.dmg));
     const best = options[0];
     // with nothing useful against anyone, switch out like the singles check does
-    if (best.top < 95 && bench(st, side).length && !(st.turn - (me.enteredTurn || 0) <= 1)) {
+    if (best.top < 95 && bench(st, side).length && !((me.swCooldown || 0) > 0)) {
       const total = new Map();
       for (const f of foes) for (const r of switchScores(st, side, null, f)) total.set(r.i, (total.get(r.i) || 0) + r.score);
       const ranked = [...total.entries()].filter(([i]) => !st[side].slots.includes(i)).sort((x, y) => y[1] - x[1]);

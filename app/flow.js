@@ -18,7 +18,7 @@
   const ROD = 'rod', SURF = 'surf';
   // [area, the fight it comes before (trainer, level cap, which of that name at that cap), what you need there]
   const PLACES = [
-    ['Route 1', 'Terry', 16], ['Viridian City', 'Terry', 16], ['Pallet Town', 'Terry', 16, 0, ROD], ['Route 22', 'Terry', 16],
+    ['Route 1', 'Terry', 16], ['Viridian City', 'Terry', 16], ['Pallet Town', 'Terry', 16, 0, ROD], ['Route 21', 'Terry', 16], ['Route 22', 'Terry', 16],
     ['Route 2', 'Brendan', 16], ['Viridian Forest', 'Brendan', 16], ['Pewter City', 'Falkner', 16],
     ['Route 3', 'Sally', 23], ['Mt. Moon', 'Miguel', 23],
     ['Route 4', 'Terry', 28], ['Cerulean City', 'Terry', 28, 0, ROD], ['Route 24', 'Cale', 28], ['Route 25', 'Bugsy', 28],
@@ -35,7 +35,7 @@
     ['Saffron City', 'Terry', 56], ['Silph Co.', 'Terry', 56],
     ['Power Plant', 'Kid', 68, 0, SURF],
     ['Route 20', 'Pryce', 73, 0, SURF], ['Seafoam Islands', 'Pryce', 73, 0, SURF],
-    ['Cinnabar Island', 'May', 73, 0, SURF], ['Route 21', 'May', 73, 0, SURF], ['Pokémon Mansion', 'Ted', 76, 0, SURF],
+    ['Cinnabar Island', 'May', 73, 0, SURF], ['Pokémon Mansion', 'Ted', 76, 0, SURF],
     ['Cerulean Cave', 'Grunt', 79],
     ['Route 23', 'Brendan', 82], ['Victory Road', 'Naomi', 85], ['Indigo Plateau', 'Lorelei', 85],
   ];

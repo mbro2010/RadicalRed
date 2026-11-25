@@ -262,6 +262,9 @@ const out = {
   // where scripts hand over the fishing rods (Radical Red moves them earlier than FireRed)
   rods: Object.fromEntries(['Old Rod', 'Good Rod', 'Super Rod'].map(n => [n, scripted.given[Object.keys(items).find(k => items[k] === n)] || []])),
   evo: outEvo, mega: outMega, areas: outAreas, trainers: outTrainers, finds: outFinds, mart: finds.mart, tmWhere, itemWhere,
+  // the care package cheat (code SO2Toxic): what each checkpoint hands over in Hardcore Mode, and where or after which badge
+  care: fs.existsSync(path.join(D, 'care_package.json')) ? read('care_package.json').packages.map(p => Object.assign(
+    { area: p.area, items: p.items.filter(([id]) => items[id]) }, p.after ? { after: p.after } : {})) : [],
 };
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, JSON.stringify(out));

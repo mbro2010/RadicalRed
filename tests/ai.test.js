@@ -58,3 +58,24 @@ test('ai: replacements on equal scores are a coin flip unless one would faint (C
   for (let seed = 1; seed < 40; seed++) picked.add(SIM.bossPolicy().replace(st, 'a', SIM.mulberry32(seed), 'faint', 0));
   assert(picked.has(1) && picked.has(2), 'a coin flip picks either: ' + [...picked].join(','));
 });
+test('ai: switches out when only bad moves are left (Snubbull to Squirtle against a paralyzed Tentacool, as in run 2)', () => {
+  const rival = D.bosses.findIndex(b => b.n === 'Terry' && b.party.some(m => E.sp(m.s).n === 'Squirtle'));
+  const team = E.bossTeam(rival, 16).map((t, i) => Object.assign({ key: 'b' + i, label: E.sp(t.s).n }, t));
+  const st = battle([mon('Tentacool', 16, { moves: ['Acid', 'Water Gun', 'Wrap', 'Supersonic'] }), mon('Charmeleon', 16)], team);
+  let r = st.policies.a.choose(st, 'a', SIM.expectedDice(), true, true);
+  assert(r.type === 'move' && E.mv(r.id).f === 'Thunder Wave', 'turn 1: Thunder Wave still works, so no switch: ' + JSON.stringify(r).slice(0, 60));
+  SIM.actives(st, 'p')[0].status = 'par';
+  r = st.policies.a.choose(st, 'a', SIM.expectedDice(), true, true);
+  assert(r.type === 'switch' && st.a.team[r.to].name === 'Squirtle' && /only bad moves/.test(r.why), 'then every attack is resisted: switch to Squirtle, got ' + JSON.stringify(r).slice(0, 80));
+});
+test('ai: the switching cooldown (2 after a chosen switch, 1 after a replacement, cleared when the player switches)', () => {
+  const st = SIM.newBattle([mon('Tentacool', 16), mon('Charmeleon', 16)], bossSpecs(414, 16), {});
+  st.policies = { p: SIM.plannerPolicy(), a: SIM.bossPolicy() };
+  st.turn = 3;
+  SIM.switchIn(st, 'a', 1, SIM.expectedDice(), 'switch', 0);
+  assert(SIM.actives(st, 'a')[0].swCooldown === 2, 'a chosen switch sets 2');
+  SIM.switchIn(st, 'p', 1, SIM.expectedDice(), 'switch', 0);
+  assert(SIM.actives(st, 'a')[0].swCooldown === 0, 'the player switching in clears it');
+  SIM.switchIn(st, 'a', 2, SIM.expectedDice(), 'replace', 0);
+  assert(SIM.actives(st, 'a')[0].swCooldown === 1, 'a replacement after a faint sets 1');
+});
