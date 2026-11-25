@@ -96,20 +96,47 @@
       usedPhoenix: false, disguise: spec.ab === 'Disguise', moves: (spec.mv || []).filter(id => E.mv(id)), hitThisTurn: false,
     };
   }
+  /** One side of the field. slots: the team index in each battle slot (one in singles, two in doubles); .active is slot 0. */
+  function makeSide(team, size, lead, extra) {
+    const slots = [];
+    for (const i of lead == null ? [] : [].concat(lead)) if (i != null && i >= 0 && i < team.length && !slots.includes(i) && slots.length < size) slots.push(i);
+    for (let i = 0; i < team.length && slots.length < size; i++) if (!slots.includes(i)) slots.push(i);
+    const side = Object.assign({ team, slots, hazards: { sr: 0, spikes: 0, tspikes: 0, web: 0 }, screens: { reflect: 0, light: 0, veil: 0 }, tailwind: 0, safeguard: 0 }, extra || {});
+    Object.defineProperty(side, 'active', { get() { return this.slots[0]; }, set(v) { this.slots[0] = v; if (this.team[v]) this.team[v].slot = 0; }, enumerable: true });
+    slots.forEach((i, k) => { team[i].slot = k; });
+    return side;
+  }
   function newBattle(playerSpecs, bossSpecs, opts) {
-    const st = {
-      p: { team: playerSpecs.map((s, i) => makeMon(s, 'p', i)), active: 0, hazards: { sr: 0, spikes: 0, tspikes: 0, web: 0 }, screens: { reflect: 0, light: 0, veil: 0 }, tailwind: 0, safeguard: 0 },
-      a: { team: bossSpecs.map((s, i) => makeMon(s, 'a', i)), active: 0, hazards: { sr: 0, spikes: 0, tspikes: 0, web: 0 }, screens: { reflect: 0, light: 0, veil: 0 }, tailwind: 0, safeguard: 0 },
+    const o = opts || {};
+    const size = o.doubles ? 2 : 1;
+    return {
+      size,
+      p: makeSide(playerSpecs.map((s, i) => makeMon(s, 'p', i)), size, o.lead != null ? o.lead : 0),
+      a: makeSide(bossSpecs.map((s, i) => makeMon(s, 'a', i)), size, 0),
       weather: null, weatherTurns: 0, terrain: null, terrainTurns: 0, trickRoom: 0, turn: 0, log: [], events: [], over: false, winner: null,
-      opts: opts || {},
+      opts: o,
     };
-    st.p.active = (opts && opts.lead != null) ? opts.lead : 0;
-    return st;
+  }
+  /** A deep copy of a battle for look-ahead (functions and the log are not copied). */
+  function cloneState(st) {
+    const copySide = sd => {
+      const team = sd.team.map(m => Object.assign({}, m, { boosts: Object.assign({}, m.boosts), spec: m.spec, moves: m.moves }));
+      const extra = {};
+      for (const k of Object.keys(sd)) if (!['team', 'slots', 'hazards', 'screens', 'active'].includes(k)) extra[k] = sd[k];
+      const side = makeSide(team, sd.slots.length, null, extra);
+      side.slots = sd.slots.slice(); side.hazards = Object.assign({}, sd.hazards); side.screens = Object.assign({}, sd.screens);
+      return side;
+    };
+    const c = Object.assign({}, st, { p: copySide(st.p), a: copySide(st.a), log: [], events: [], opts: Object.assign({}, st.opts, { record: false }) });
+    return c;
   }
   const other = side => (side === 'p' ? 'a' : 'p');
-  const act = (st, side) => st[side].team[st[side].active];
+  // battle slots: st[side].slots holds the team index in each slot (one in singles, two in doubles); .active is slot 0
+  const act = (st, side, slot) => st[side].team[st[side].slots[slot || 0]];
+  const actives = (st, side) => st[side].slots.map(i => st[side].team[i]).filter(m => m && !m.fainted);
+  const isActive = (st, m) => st[m.side].slots.includes(m.idx) && !m.fainted;
   const alive = (st, side) => st[side].team.filter(m => !m.fainted);
-  const bench = (st, side) => st[side].team.filter((m, i) => !m.fainted && i !== st[side].active);
+  const bench = (st, side) => st[side].team.filter((m, i) => !m.fainted && !st[side].slots.includes(i));
   function itemName(m) { return m.item ? E.itemName(m.item) : null; }
   function hasType(m, t) { return m.types.includes(t); }
   function grounded(m) { return !hasType(m, 'Flying') && m.ability !== 'Levitate' && itemName(m) !== 'Air Balloon'; }
@@ -183,8 +210,8 @@
     if (seed && st.terrain === seed[0]) { applyBoosts(st, m, { [seed[1]]: 1 }); consume(m); }
   }
   function consume(m) { m.item = null; if (m.ability === 'Unburden') m.unburden = true; }
-  function onEntry(st, side, rng) {
-    const m = act(st, side);
+  function onEntry(st, side, rng, slot) {
+    const m = act(st, side, slot || 0);
     m.firstTurn = true; m.enteredTurn = st.turn; m.lock = null; m.charging = null; m.invuln = false; m.rampage = 0; m.protectStreak = 0; m.toxic = m.status === 'tox' ? 0 : m.toxic;
     const hz = st[side].hazards;
     if (itemName(m) !== 'Heavy-Duty Boots' && m.ability !== 'Magic Guard') {
@@ -200,11 +227,12 @@
     abilityOnEntry(st, side, m);
   }
   function abilityOnEntry(st, side, m) {
-    const foe = act(st, other(side));
+    const foes = actives(st, other(side));
+    const foe = foes.find(f => f.slot === m.slot) || foes[0];
     const a = m.ability;
-    if (a === 'Intimidate' && foe && !foe.fainted) {
-      if (NO_INTIMIDATE.has(foe.ability)) { if (foe.ability === 'Rattled') applyBoosts(st, foe, { spe: 1 }); }
-      else { applyBoosts(st, foe, { atk: -1 }, 'foe'); log(st, `${m.name}'s Intimidate`); }
+    if (a === 'Intimidate') for (const f of foes) {
+      if (NO_INTIMIDATE.has(f.ability)) { if (f.ability === 'Rattled') applyBoosts(st, f, { spe: 1 }); }
+      else { applyBoosts(st, f, { atk: -1 }, 'foe'); log(st, `${m.name}'s Intimidate lowers ${f.name}'s Attack`); }
     }
     if (E.WEATHER_SETTERS[a]) setWeather(st, E.WEATHER_SETTERS[a].replace('Heavy Rain', 'Rain').replace('Harsh Sunshine', 'Sun'), m);
     if (TERRAIN_SURGE[a]) setTerrain(st, TERRAIN_SURGE[a], m);
@@ -215,8 +243,9 @@
     if (a === 'Valiant Shield') applyBoosts(st, m, { def: 1 });
     seedCheck(st, m);
   }
-  function switchIn(st, side, idx, rng, why) {
-    const out = act(st, side);
+  function switchIn(st, side, idx, rng, why, slot) {
+    slot = slot || 0;
+    const out = act(st, side, slot);
     if (out && !out.fainted) {
       st[side].lastOut = out.key; st[side].lastOutTurn = st.turn;
       out.boosts = { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, acc: 0, eva: 0 };
@@ -226,11 +255,12 @@
       if (out.ability === 'Natural Cure') out.status = '';
       if (out.status === 'tox') out.toxic = 0;
     }
-    st[side].active = idx;
-    const m = act(st, side);
-    st.events.push({ turn: st.turn, type: 'switch', side, to: m.key, why: why || '' });
+    st[side].slots[slot] = idx;
+    const m = act(st, side, slot);
+    m.slot = slot;
+    st.events.push({ turn: st.turn, type: 'switch', side, to: m.key, why: why || '', slot });
     log(st, `${side === 'p' ? 'You send out' : 'Boss sends out'} ${m.name}`, 'switch');
-    onEntry(st, side, rng);
+    onEntry(st, side, rng, slot);
   }
 
   // ---------------- damage and effects ----------------
@@ -333,11 +363,31 @@
   }
 
   /** Run one move. ctx: {first: did the user move before the target this turn, targetAction} */
+  /** Who a move hits: the chosen target (or the other foe if it fainted, or a foe that redirects it), both foes, or everyone else. */
+  function targetsOf(st, user, moveId, ctx) {
+    const mm = meta(moveId);
+    const tg = (E.mv(moveId) || {}).tg || 0;
+    const foes = actives(st, other(user.side));
+    if (tg === 8) return foes;                                                     // both foes: Rock Slide, Heat Wave, Growl
+    if (tg === 32) return foes.concat(actives(st, user.side).filter(m => m !== user)); // everyone else: Earthquake, Surf
+    if (tg === 16 || tg === 64) return [];                                         // self, own side or the field
+    let t = ctx.target && !ctx.target.fainted && isActive(st, ctx.target) && ctx.target !== user ? ctx.target : null;
+    if (!t || t.side === user.side) t = foes.find(f => f.slot === (ctx.target ? ctx.target.slot : 0)) || foes[0] || null;
+    if (t && st.size > 1 && foes.length > 1) {
+      const center = foes.find(f => f.redirect && f !== t && !(f.redirect === 'Rage Powder' && (hasType(user, 'Grass') || user.ability === 'Overcoat' || itemName(user) === 'Safety Goggles')));
+      if (center && !['Stalwart', 'Propeller Tail'].includes(user.ability)) t = center;
+      else {
+        const rod = foes.find(f => f !== t && ((f.ability === 'Lightning Rod' && mm.type === 'Electric') || (f.ability === 'Storm Drain' && mm.type === 'Water')));
+        if (rod && !['Stalwart', 'Propeller Tail'].includes(user.ability)) t = rod;
+      }
+    }
+    return t ? [t] : [];
+  }
   function useMove(st, side, moveId, rng, ctx) {
-    const user = act(st, side);
-    if (!user || user.fainted) return;
-    const tside = other(side);
-    let target = act(st, tside);
+    ctx = ctx || {};
+    const user = ctx.user || act(st, side, ctx.slot || 0);
+    if (!user || user.fainted || !isActive(st, user)) return;
+    user.movedThisTurn = true;
     const mm0 = meta(moveId);
     // turn-skipping conditions
     if (user.recharge) { user.recharge = false; log(st, `${user.name} must recharge`); return; }
@@ -372,7 +422,7 @@
     const mm = meta(moveId);
     st.events.push({ turn: st.turn, type: 'move', side, user: user.key, move: moveId });
     // Choice lock and rampage bookkeeping
-    if (/^Choice /.test(itemName(user) || '') && !user.lock) user.lock = moveId;
+    if ((/^Choice /.test(itemName(user) || '') || user.ability === 'Sage Power' || user.ability === 'Gorilla Tactics') && !user.lock) user.lock = moveId;
     if (mm.eff === 27 && !user.rampage) user.rampage = rng.expected ? 2 : (rng() < 0.5 ? 2 : 3);
     // two-turn moves
     const instantCharge = itemName(user) === 'Power Herb' || (mm.eff === SOLAR && /Sun/.test(st.weather || '')) || (mm.name === 'Electro Shot' && /Rain/.test(st.weather || ''));
@@ -380,11 +430,11 @@
       if (mm.name === 'Meteor Beam' || mm.name === 'Electro Shot') applyBoosts(st, user, { spa: 1 });
       if (instantCharge) { if (itemName(user) === 'Power Herb') consume(user); }
       else {
-        user.charging = moveId; user.invuln = mm.eff === SEMI_INV;
+        user.charging = moveId; user.invuln = mm.eff === SEMI_INV; user.chargeTarget = ctx.target || null;
         log(st, `${user.name} uses ${mm.name} (charging)`); return;
       }
     }
-    if (user.charging === moveId) { user.charging = null; user.invuln = false; }
+    if (user.charging === moveId) { user.charging = null; user.invuln = false; if (!ctx.target && user.chargeTarget) ctx.target = user.chargeTarget; }
     const zk = ctx.z ? zKind(st, user, moveId) : null;
     if (zk) {
       st[side].zUsed = true;
@@ -395,14 +445,57 @@
     user.lastMove = moveId;
     if (mm.cat === 'X' && user.taunt) { log(st, `${user.name} can't use ${mm.name} after the taunt`); return; }
     if (mm.eff === FAKE_OUT && !user.firstTurn) { log(st, 'But it failed'); return; }
-    if (mm.eff === SUCKER && (!ctx.targetAction || ctx.targetAction.type !== 'move' || meta(ctx.targetAction.id).cat === 'X' || !ctx.first)) { log(st, 'But it failed'); return; }
     if (mm.name === 'Focus Punch' && user.hitThisTurn) { log(st, `${user.name} loses its focus`); return; }
+    const tg = (E.mv(moveId) || {}).tg || 0;
+    const targets = targetsOf(st, user, moveId, ctx);
+    if (mm.eff === SUCKER) {
+      const t = targets[0], ta = t && t.plannedAction;
+      if (!t || !ta || ta.type !== 'move' || meta(ta.id).cat === 'X' || t.movedThisTurn) { log(st, 'But it failed'); return; }
+    }
 
     // ---- status moves ----
-    if (mm.cat === 'X') return statusMove(st, user, target, mm, rng);
+    if (mm.cat === 'X') {
+      if (tg === 8 || tg === 32) { for (const t of targets) statusMove(st, user, t, mm, rng); if (!targets.length) log(st, 'But it failed'); return; }
+      return statusMove(st, user, targets[0] || null, mm, rng);
+    }
 
     // ---- damaging moves ----
-    if (!target || target.fainted) { log(st, 'But there was no target'); return; }
+    if (!targets.length) { log(st, 'But there was no target'); return; }
+    const spread = targets.length > 1 ? 0.75 : 1;
+    let total = 0, anyHit = false;
+    for (const t of targets) {
+      if (user.fainted) break;
+      const r = hitOne(st, user, t, moveId, mm, rng, ctx, zk, spread, tg);
+      total += r.dealt; anyHit = anyHit || r.hit;
+    }
+    // once per move: attacker items, recoil, drain
+    if (!user.fainted && total > 0) {
+      if (itemName(user) === 'Life Orb' && user.ability !== 'Magic Guard' && user.ability !== 'Sheer Force') hurt(st, user, Math.floor(user.maxHp / 10), 'Life Orb');
+      if (mm.recoil && !['Rock Head', 'Magic Guard', 'Bad Company'].includes(user.ability)) hurt(st, user, Math.max(1, Math.floor(total * mm.recoil[0] / mm.recoil[1])), 'recoil');
+      if (mm.drain && !user.fainted) heal(st, user, Math.max(1, Math.floor(total * mm.drain[0] / mm.drain[1]) * (itemName(user) === 'Big Root' ? 1.3 : 1)), 'drain');
+      if (itemName(user) === 'Shell Bell') heal(st, user, Math.floor(total / 8), 'Shell Bell');
+    }
+    if ((mm.eff === 7 || mm.name === 'Misty Explosion' || mm.name === 'Explosion' || mm.name === 'Self-Destruct') && !user.fainted) faint(st, user, mm.name);
+    if (mm.name === 'Final Gambit' && anyHit && !user.fainted) faint(st, user, mm.name);
+    if (user.fainted || !anyHit) { if (!anyHit) user.rampage = 0; return; }
+    if (zk) { if (mm.eff === RECHARGE) user.recharge = false; return; }
+    const sheer = user.ability === 'Sheer Force';
+    const chanceOf = p => Math.min(1, (user.ability === 'Serene Grace' ? 2 : 1) * p / 100);
+    if (!sheer && HIT_SELF_UP[mm.eff] && roll(rng, chanceOf(mm.eff === 129 ? 100 : (mm.ec || 100)))) applyBoosts(st, user, HIT_SELF_UP[mm.eff]);
+    if ((mm.eff === 182 || mm.eff === 204 || SELF_DROP[mm.name]) && SELF_DROP[mm.name]) applyBoosts(st, user, SELF_DROP[mm.name], user.ability === 'Bad Company' ? 'self-blocked' : 'self');
+    else if (mm.eff === 204 && user.ability !== 'Bad Company') applyBoosts(st, user, { spa: -2 });
+    if (mm.eff === 129) { st[side].hazards = { sr: 0, spikes: 0, tspikes: 0, web: 0 }; }
+    if (mm.eff === RECHARGE) user.recharge = true;
+    if (user.rampage) { user.rampage--; if (user.rampage === 0) user.lock = null; }
+    // pivots
+    if (mm.eff === PIVOT && !user.fainted && bench(st, side).length) pivot(st, side, rng, user.slot);
+  }
+  /** One target of a damaging move: protection, accuracy, damage (spread moves do 75%), reactions and secondary effects. */
+  function hitOne(st, user, target, moveId, mm, rng, ctx, zk, spread, tg) {
+    const none = { dealt: 0, hit: false };
+    const tside = target.side;
+    if (tside !== user.side && st[tside].wideGuard && (tg === 8 || tg === 32)) { log(st, `Wide Guard protects ${target.name}`); return none; }
+    if (tside !== user.side && st[tside].quickGuard && priorityOf(st, user, moveId) > 0) { log(st, `Quick Guard protects ${target.name}`); return none; }
     if (target.protect && mm.name !== 'Feint' && !zk) {
       log(st, `${target.name} protects itself`);
       if (mm.contact) {
@@ -411,14 +504,13 @@
         if (pt === "King's Shield") applyBoosts(st, user, { atk: -1 }, 'foe');
         if (pt === 'Baneful Bunker' && canStatus(st, user, 'psn', '', target)) inflict(st, user, 'psn', rng, 'Baneful Bunker');
       }
-      return;
+      return none;
     }
-    if (target.invuln && !(mm.name === 'Earthquake' || mm.name === 'Surf' || mm.name === 'Thunder' || mm.name === 'Hurricane')) { log(st, `${target.name} avoids the attack`); return; }
+    if (target.invuln && !(mm.name === 'Earthquake' || mm.name === 'Surf' || mm.name === 'Thunder' || mm.name === 'Hurricane')) { log(st, `${target.name} avoids the attack`); return none; }
     if (!zk && !roll(rng, hitChance(st, user, target, mm))) {
-      log(st, `${user.name}'s attack misses`, 'miss');
+      log(st, `${user.name}'s attack misses ${target.name}`, 'miss');
       if (mm.name === 'High Jump Kick' || mm.name === 'Jump Kick' || mm.name === 'Supercell Slam') hurt(st, user, Math.floor(user.maxHp / 2), 'crash');
-      user.rampage = 0;
-      return;
+      return none;
     }
     const hits = zk ? 1 : pickHits(rng, user, mm);
     const crit = roll(rng, critChance(user, target, mm));
@@ -426,6 +518,8 @@
     const rr = E.rawRolls(specNow(user), specNow(target), moveId, Object.assign({ crit, hits, z: !!zk }, fo));
     const rolls = rr.rolls;
     let dmg = rolls[rng.expected ? 7 : Math.floor(rng() * rolls.length)] || 0;
+    if (spread < 1) dmg = Math.floor(dmg * spread);
+    if (user.helped) dmg = Math.floor(dmg * 1.5);
     if (zk && target.protect) { dmg = Math.floor(dmg / 4); log(st, `${target.name} couldn't fully protect itself`); }
     // special damage
     if (mm.name === 'Final Gambit') dmg = user.hp;
@@ -436,15 +530,14 @@
       else if (absorb[1] !== 'none' && absorb[1] !== 'def2') applyBoosts(st, target, { [absorb[1]]: 1 });
       else if (absorb[1] === 'def2') applyBoosts(st, target, { def: 2 });
       log(st, `It doesn't affect ${target.name} (${target.ability})`);
-      user.rampage = 0;
-      return;
+      return none;
     }
-    if (dmg === 0 && rr.eff === 0) { log(st, `It doesn't affect ${target.name}`); return; }
+    if (dmg === 0 && rr.eff === 0) { log(st, `It doesn't affect ${target.name}`); return none; }
     if (target.sub && !mm.sound && user.ability !== 'Infiltrator') {
       target.sub -= dmg;
       log(st, `The substitute takes the hit`);
       if (target.sub <= 0) { target.sub = 0; log(st, `${target.name}'s substitute breaks`); }
-      return;
+      return { dealt: 0, hit: true };
     }
     if (target.disguise) { target.disguise = false; dmg = Math.floor(target.maxHp / 8); log(st, `${target.name}'s disguise is busted`); }
     const fullHp = target.hp === target.maxHp;
@@ -453,7 +546,6 @@
       if (itemName(target) === 'Focus Sash') { consume(target); log(st, `${target.name} hangs on with its Focus Sash`); }
       else log(st, `${target.name} endures with Sturdy`);
     }
-    const before = target.hp;
     if (crit) log(st, 'A critical hit!', 'crit');
     if (hits > 1) log(st, `Hit ${hits} times`);
     target.hitThisTurn = true;
@@ -466,7 +558,7 @@
     if (RESIST_BERRY[tItem] === rr.type && (rr.eff > 1 || tItem === 'Chilan Berry')) consume(target);
     if (tItem === 'Weakness Policy' && rr.eff > 1 && target.hp > 0) { consume(target); applyBoosts(st, target, { atk: 2, spa: 2 }); }
     if (target.hp <= 0) {
-      if (target.destinyBond) { faint(st, target, `${mm.name}`); log(st, `${user.name} is taken down by Destiny Bond`); faint(st, user, 'Destiny Bond'); return; }
+      if (target.destinyBond) { faint(st, target, `${mm.name}`); log(st, `${user.name} is taken down by Destiny Bond`); faint(st, user, 'Destiny Bond'); return { dealt, hit: true }; }
       faint(st, target, `${user.name}'s ${mm.name}${crit ? ' (critical hit)' : ''}`);
       if (target.fainted) {
         if (['Moxie', 'Chilling Neigh'].includes(user.ability)) applyBoosts(st, user, { atk: 1 });
@@ -487,24 +579,14 @@
         if (['Gooey', 'Tangling Hair'].includes(target.ability)) applyBoosts(st, user, { spe: -1 }, 'foe');
       }
     }
-    // attacker side effects
-    if (!user.fainted && dealt > 0) {
-      if (itemName(user) === 'Life Orb' && user.ability !== 'Magic Guard' && user.ability !== 'Sheer Force') hurt(st, user, Math.floor(user.maxHp / 10), 'Life Orb');
-      if (mm.recoil && !['Rock Head', 'Magic Guard', 'Bad Company'].includes(user.ability)) hurt(st, user, Math.max(1, Math.floor(dealt * mm.recoil[0] / mm.recoil[1])), 'recoil');
-      if (mm.drain && !user.fainted) heal(st, user, Math.max(1, Math.floor(dealt * mm.drain[0] / mm.drain[1]) * (itemName(user) === 'Big Root' ? 1.3 : 1)), 'drain');
-      if (itemName(user) === 'Shell Bell') heal(st, user, Math.floor(dealt / 8), 'Shell Bell');
-    }
-    if (mm.eff === 7 || mm.name === 'Misty Explosion' || mm.name === 'Explosion' || mm.name === 'Self-Destruct') faint(st, user, mm.name);
-    if (mm.name === 'Final Gambit') faint(st, user, mm.name);
-    if (user.fainted) return;
+    if (user.fainted || target.fainted || zk) return { dealt, hit: true };
     // knock off
-    if (mm.eff === 188 && target.item && !target.fainted && target.ability !== 'Sticky Hold') { log(st, `${target.name}'s ${tItem} is knocked off`); consume(target); }
+    if (mm.eff === 188 && target.item && target.ability !== 'Sticky Hold') { log(st, `${target.name}'s ${tItem} is knocked off`); consume(target); }
     // secondary effects
-    if (zk) { if (mm.eff === RECHARGE) user.recharge = false; return; }
     const sheer = user.ability === 'Sheer Force';
     const shielded = NO_SECONDARY.has(target.ability) || itemName(target) === 'Covert Cloak';
     const chanceOf = p => Math.min(1, (user.ability === 'Serene Grace' ? 2 : 1) * p / 100);
-    if (!sheer && !target.fainted && !shielded) {
+    if (!sheer && !shielded) {
       const ec = mm.ec || 0;
       const statusByEff = { 2: 'psn', 4: 'brn', 5: 'frz', 6: 'par', 209: 'tox' };
       if (statusByEff[mm.eff] && roll(rng, chanceOf(ec)) && canStatus(st, target, statusByEff[mm.eff], mm.name, user)) inflict(st, target, statusByEff[mm.eff], rng, mm.name);
@@ -512,24 +594,17 @@
       if (mm.eff === 36 && roll(rng, chanceOf(20))) { const s = ['brn', 'par', 'frz'][rng.expected ? 0 : Math.floor(rng() * 3)]; if (canStatus(st, target, s, mm.name, user)) inflict(st, target, s, rng, mm.name); }
       if (FANG[mm.name] && roll(rng, chanceOf(10)) && canStatus(st, target, FANG[mm.name], mm.name, user)) inflict(st, target, FANG[mm.name], rng, mm.name);
       const flinchP = mm.eff === 31 ? ec : (mm.eff === FAKE_OUT ? 100 : 0) + (['King\'s Rock', 'Razor Fang'].includes(itemName(user)) && mm.eff !== 31 ? 10 : 0);
-      if (flinchP && ctx.first && target.ability !== 'Inner Focus' && roll(rng, chanceOf(flinchP))) { target.flinch = true; }
+      if (flinchP && !target.movedThisTurn && target.ability !== 'Inner Focus' && roll(rng, chanceOf(flinchP))) { target.flinch = true; }
       if (mm.eff === 76 && roll(rng, chanceOf(ec || 100))) confuse(st, target, rng, mm.name);
       if (HIT_DROP[mm.eff] && roll(rng, chanceOf(ec || 100))) applyBoosts(st, target, { [HIT_DROP[mm.eff]]: mm.name === 'Acid Spray' || mm.name === 'Lumina Crash' ? -2 : -1 }, 'foe');
     }
-    if (!sheer && HIT_SELF_UP[mm.eff] && roll(rng, chanceOf(mm.eff === 129 ? 100 : (mm.ec || 100)))) applyBoosts(st, user, HIT_SELF_UP[mm.eff]);
-    if ((mm.eff === 182 || mm.eff === 204 || SELF_DROP[mm.name]) && SELF_DROP[mm.name]) applyBoosts(st, user, SELF_DROP[mm.name], user.ability === 'Bad Company' ? 'self-blocked' : 'self');
-    else if (mm.eff === 204 && user.ability !== 'Bad Company') applyBoosts(st, user, { spa: -2 });
-    if (mm.eff === 129) { st[side].hazards = { sr: 0, spikes: 0, tspikes: 0, web: 0 }; }
-    if (mm.eff === RECHARGE) user.recharge = true;
-    if (user.rampage) { user.rampage--; if (user.rampage === 0) user.lock = null; }
     // forced switch on the target (Dragon Tail, Circle Throw)
-    if (mm.eff === 28 && !target.fainted && bench(st, tside).length && target.ability !== 'Suction Cups') {
+    if (mm.eff === 28 && bench(st, tside).length && target.ability !== 'Suction Cups') {
       const opts = bench(st, tside);
       const pick = opts[rng.expected ? 0 : Math.floor(rng() * opts.length)];
-      switchIn(st, tside, st[tside].team.indexOf(pick), rng, 'forced out');
+      switchIn(st, tside, st[tside].team.indexOf(pick), rng, 'forced out', target.slot);
     }
-    // pivots
-    if (mm.eff === PIVOT && !user.fainted && bench(st, side).length) pivot(st, side, rng);
+    return { dealt, hit: true };
   }
 
   function statusMove(st, user, target, mm, rng) {
@@ -554,6 +629,9 @@
       case HEAL_WEATHER: { const w = st.weather || ''; heal(st, user, user.maxHp * (/Sun/.test(w) ? 2 / 3 : w ? 1 / 4 : 1 / 2), n); return; }
       case 37: if (user.hp === user.maxHp) { log(st, 'But it failed'); return; } user.hp = user.maxHp; user.status = 'slp'; user.sleep = 2; log(st, `${user.name} sleeps and restores its HP`); return;
       case PROTECT_EFF: {
+        if (n === 'Wide Guard' || n === 'Quick Guard') {
+          st[user.side][n === 'Wide Guard' ? 'wideGuard' : 'quickGuard'] = true; log(st, `${n} protects ${user.side === 'p' ? 'your' : 'their'} side`); return;
+        }
         const p = Math.pow(1 / 3, user.protectStreak);
         if (roll(rng, p)) { user.protect = true; user.protectKind = n; user.protectStreak++; log(st, `${user.name} protects itself`); }
         else { user.protectStreak = 0; log(st, 'But it failed'); }
@@ -576,24 +654,26 @@
       case 98: user.destinyBond = true; log(st, `${user.name} is trying to take its foe down with it`); return;
       case 124: st[user.side].safeguard = 5; return;
       case 79: if (user.hp > user.maxHp / 4 && !user.sub) { hurt(st, user, Math.floor(user.maxHp / 4), 'Substitute'); user.sub = Math.floor(user.maxHp / 4); } return;
-      case 25: for (const s of ['p', 'a']) { const x = act(st, s); if (x) x.boosts = { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, acc: 0, eva: 0 }; } return;
-      case TELEPORT: if (bench(st, user.side).length) pivot(st, user.side, rng); return;
+      case 25: for (const s of ['p', 'a']) for (const x of actives(st, s)) x.boosts = { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, acc: 0, eva: 0 }; return;
+      case 172: if (st.size > 1) { user.redirect = n; log(st, `${user.name} becomes the center of attention`); } return;
+      case 176: { const ally = actives(st, user.side).find(m => m !== user); if (ally) { ally.helped = true; log(st, `${user.name} is ready to help ${ally.name}`); } return; }
+      case TELEPORT: if (bench(st, user.side).length) pivot(st, user.side, rng, user.slot); return;
       case PIVOT:
         if (n === 'Parting Shot' && target && !target.fainted) applyBoosts(st, target, { atk: -1, spa: -1 }, 'foe');
         if (n === 'Shed Tail') { if (user.hp <= user.maxHp / 2) return; hurt(st, user, Math.ceil(user.maxHp / 2), 'Shed Tail'); }
-        if (bench(st, user.side).length) pivot(st, user.side, rng);
+        if (bench(st, user.side).length) pivot(st, user.side, rng, user.slot);
         return;
       case 175: if (target && !target.fainted) { if (target.taunt || target.ability === 'Oblivious' || itemName(target) === 'Mental Herb') log(st, 'But it failed'); else { target.taunt = 3; log(st, `${target.name} fell for the taunt`); } } return;
       case 90: if (target && !target.fainted) { if (!target.lastMove || target.encore || !target.moves.includes(target.lastMove)) log(st, 'But it failed'); else { target.encore = 3; target.encoreMove = target.lastMove; target.lock = null; log(st, `${target.name} must repeat ${meta(target.lastMove).name}`); } } return;
       case 49: if (target && !target.fainted) confuse(st, target, rng, n); return;
       case 118: if (target && !target.fainted) { applyBoosts(st, target, { atk: 2 }, 'foe'); confuse(st, target, rng, n); } return;
       case 166: if (target && !target.fainted) { applyBoosts(st, target, { spa: 1 }, 'foe'); confuse(st, target, rng, n); } return;
-      case 28: if (target && !target.fainted && bench(st, target.side).length && target.ability !== 'Suction Cups') { const o = bench(st, target.side); switchIn(st, target.side, st[target.side].team.indexOf(o[rng.expected ? 0 : Math.floor(rng() * o.length)]), rng, 'forced out'); } return;
+      case 28: if (target && !target.fainted && bench(st, target.side).length && target.ability !== 'Suction Cups') { const o = bench(st, target.side); switchIn(st, target.side, st[target.side].team.indexOf(o[rng.expected ? 0 : Math.floor(rng() * o.length)]), rng, 'forced out', target.slot); } return;
       default: break;
     }
     if (!target || target.fainted) return;
     if (n === 'Strength Sap') { const atk = Math.floor(E.rawStats(target.spec).atk * STAGE(target.boosts.atk)); heal(st, user, atk, n); applyBoosts(st, target, { atk: -1 }, 'foe'); return; }
-    if (e === 84 || n === 'Leech Seed') { if (!hasType(target, 'Grass') && !target.seeded) { target.seeded = true; log(st, `${target.name} is seeded`); } return; }
+    if (e === 84 || n === 'Leech Seed') { if (!hasType(target, 'Grass') && !target.seeded) { target.seeded = true; target.seededBy = { side: user.side, slot: user.slot }; log(st, `${target.name} is seeded`); } return; }
     if (e === 187) { if (!target.status && !target.yawn && canStatus(st, target, 'slp', n, user)) { target.yawn = 2; log(st, `${target.name} grows drowsy`); } return; }
     const statusMoves = { 1: 'slp', 33: 'tox', 66: 'psn', 67: 'par', 167: 'brn' };
     if (statusMoves[e]) {
@@ -640,8 +720,8 @@
     const hit = list.find(([item]) => item && item === m.item);
     return hit ? hit[1] : null;
   }
-  function megaEvolve(st, side) {
-    const m = act(st, side);
+  function megaEvolve(st, side, m) {
+    m = m || act(st, side);
     const to = megaTarget(m);
     if (!to || st[side].megaUsed) return;
     const s = E.sp(to);
@@ -655,18 +735,19 @@
     st.events.push({ turn: st.turn, type: 'mega', side, key: m.key, to });
     abilityOnEntry(st, side, m);
   }
-  function pivot(st, side, rng) {
+  function pivot(st, side, rng, slot) {
     const pol = st.policies[side];
-    const idx = pol.replace(st, side, rng, 'pivot');
-    if (idx != null && idx !== st[side].active) switchIn(st, side, idx, rng, 'pivot');
+    const idx = pol.replace(st, side, rng, 'pivot', slot || 0);
+    if (idx != null && !st[side].slots.includes(idx)) switchIn(st, side, idx, rng, 'pivot', slot || 0);
   }
 
   // ---------------- end of turn ----------------
   function endOfTurn(st, rng) {
     const w = st.weather;
-    for (const side of ['p', 'a']) {
-      const m = act(st, side);
+    const field = actives(st, 'p').concat(actives(st, 'a')).sort((x, y) => speed(st, y) - speed(st, x));
+    for (const m of field) {
       if (!m || m.fainted) continue;
+      const side = m.side;
       if (w === 'Sand' && !['Rock', 'Ground', 'Steel'].some(t => hasType(m, t)) && !['Sand Veil', 'Sand Rush', 'Sand Force', 'Overcoat', 'Magic Guard'].includes(m.ability) && itemName(m) !== 'Safety Goggles')
         hurt(st, m, Math.floor(m.maxHp / 16), 'sandstorm');
       if (m.fainted) continue;
@@ -679,7 +760,7 @@
       if (m.ability === 'Dry Skin' && w === 'Sun') hurt(st, m, Math.floor(m.maxHp / 8), 'Dry Skin');
       if (st.terrain === 'Grassy' && grounded(m)) heal(st, m, m.maxHp / 16, 'Grassy Terrain');
       if (m.fainted) continue;
-      if (m.seeded) { const foe = act(st, other(side)); const d = hurt(st, m, Math.floor(m.maxHp / 8), 'Leech Seed'); if (foe && !foe.fainted) heal(st, foe, d, 'Leech Seed'); }
+      if (m.seeded) { const by = m.seededBy ? act(st, m.seededBy.side, m.seededBy.slot) : actives(st, other(side))[0]; const d = hurt(st, m, Math.floor(m.maxHp / 8), 'Leech Seed'); if (by && !by.fainted) heal(st, by, d, 'Leech Seed'); }
       if (m.fainted) continue;
       if (m.ability !== 'Magic Guard') {
         if (m.status === 'brn') hurt(st, m, Math.floor(m.maxHp / 16), 'burn');
@@ -701,13 +782,13 @@
       for (const k of ['reflect', 'light', 'veil']) if (sd.screens[k]) sd.screens[k]--;
       if (sd.tailwind) sd.tailwind--;
       if (sd.safeguard) sd.safeguard--;
-      for (const m of sd.team) { m.flinch = false; m.hitThisTurn = false; if (!m.protect) m.protectStreak = 0; m.protect = false; }
-      const cur = act(st, side);
-      if (cur && !cur.fainted) {
+      sd.wideGuard = false; sd.quickGuard = false;
+      for (const m of sd.team) { m.flinch = false; m.hitThisTurn = false; if (!m.protect) m.protectStreak = 0; m.protect = false; m.movedThisTurn = false; m.redirect = null; m.helped = false; m.plannedAction = null; }
+      for (const cur of actives(st, side)) {
         if (cur.taunt && --cur.taunt === 0) log(st, `${cur.name}'s taunt wears off`);
         if (cur.encore && --cur.encore === 0) { cur.encoreMove = null; log(st, `${cur.name}'s encore ends`); }
+        cur.firstTurn = false;
       }
-      const m = act(st, side); if (m) m.firstTurn = false;
     }
   }
 
@@ -724,43 +805,60 @@
     if (m.status !== 'slp') mv = mv.filter(id => meta(id).name !== 'Sleep Talk' && meta(id).name !== 'Snore');
     return mv.length ? mv : m.moves.slice(0, 1);
   }
+  const resolveTarget = (st, t) => (t && t.side ? act(st, t.side, t.slot || 0) : null);
   function playTurn(st, rng) {
     st.turn++;
     const P = st.policies;
-    const pA = P.p.choose(st, 'p', rng);
-    const aA = P.a.choose(st, 'a', rng);
-    st.events.push({ turn: st.turn, type: 'decide', p: pA, a: aA, pm: act(st, 'p').key, am: act(st, 'a').key,
-      php: act(st, 'p').hp / act(st, 'p').maxHp, ahp: act(st, 'a').hp / act(st, 'a').maxHp });
+    // every battler on the field picks an action (doubles policies may pick both at once)
+    const acts = [];
+    for (const side of ['p', 'a']) {
+      const pol = P[side];
+      const mons = st[side].slots.map((i, slot) => ({ slot, m: st[side].team[i] })).filter(x => x.m && !x.m.fainted);
+      const chosen = pol.chooseAll && st.size > 1 ? pol.chooseAll(st, side, rng) : mons.map(x => pol.choose(st, side, rng, false, false, x.slot));
+      mons.forEach((x, k) => {
+        const a = Object.assign({}, chosen[k] || { type: 'move', id: usable(x.m, st)[0] }, { slot: x.slot });
+        x.m.plannedAction = a;
+        acts.push({ side, slot: x.slot, user: x.m, a });
+      });
+    }
+    const ev = { turn: st.turn, type: 'decide', acts: acts.map(x => ({ side: x.side, slot: x.slot, key: x.user.key, a: x.a, hp: x.user.hp / x.user.maxHp,
+      tkey: x.a.target ? (act(st, x.a.target.side, x.a.target.slot) || {}).key || null : null })) };
+    if (st.size === 1) {
+      const pa = acts.find(x => x.side === 'p'), aa = acts.find(x => x.side === 'a');
+      Object.assign(ev, { p: pa && pa.a, a: aa && aa.a, pm: pa && pa.user.key, am: aa && aa.user.key, php: pa ? pa.user.hp / pa.user.maxHp : 0, ahp: aa ? aa.user.hp / aa.user.maxHp : 0 });
+    }
+    st.events.push(ev);
     // switches go first
-    if (pA.type === 'switch') switchIn(st, 'p', pA.to, rng, pA.why || 'switch');
-    if (aA.type === 'switch') switchIn(st, 'a', aA.to, rng, 'switch');
-    for (const [side, A] of [['p', pA], ['a', aA]]) if (A.type === 'move' && !act(st, side).fainted && megaTarget(act(st, side))) megaEvolve(st, side);
-    const order = [];
-    if (pA.type === 'move') order.push({ side: 'p', id: pA.id, z: !!pA.z });
-    if (aA.type === 'move') order.push({ side: 'a', id: aA.id, z: !!aA.z });
-    for (const o of order) { o.pri = priorityOf(st, act(st, o.side), o.id); o.spe = speed(st, act(st, o.side)); }
-    order.sort((x, y) => (y.pri - x.pri) || (st.trickRoom ? x.spe - y.spe : y.spe - x.spe) || (rng.expected ? (x.side === 'a' ? -1 : 1) : (rng() < 0.5 ? -1 : 1)));
+    for (const x of acts.filter(y => y.a.type === 'switch').sort((y, z) => speed(st, z.user) - speed(st, y.user))) {
+      const to = st[x.side].team[x.a.to];
+      if (!to || to.fainted || st[x.side].slots.includes(x.a.to)) continue;
+      switchIn(st, x.side, x.a.to, rng, x.a.why || 'switch', x.slot);
+    }
+    for (const x of acts) if (x.a.type === 'move' && isActive(st, x.user) && megaTarget(x.user)) megaEvolve(st, x.side, x.user);
+    const order = acts.filter(x => x.a.type === 'move').map(x => Object.assign({}, x, { id: x.a.id, z: !!x.a.z }));
+    for (const o of order) { o.pri = priorityOf(st, o.user, o.id); o.spe = speed(st, o.user); o.r = rng.expected ? (o.side === 'a' ? 0 : 1) + o.slot / 10 : rng(); }
+    order.sort((x, y) => (y.pri - x.pri) || (st.trickRoom ? x.spe - y.spe : y.spe - x.spe) || (x.r - y.r));
     // Custap Berry: move first within the bracket at low HP
     order.forEach((o, i) => {
-      const m = act(st, o.side);
+      const m = o.user;
       if (itemName(m) === 'Custap Berry' && m.hp <= m.maxHp / 4 && i > 0 && order[0].pri === o.pri) { consume(m); order.splice(i, 1); order.unshift(o); log(st, `${m.name}'s Custap Berry lets it move first`); }
     });
-    for (let i = 0; i < order.length; i++) {
-      const o = order[i];
-      const m = act(st, o.side);
-      if (!m || m.fainted) continue;
-      const otherAction = o.side === 'p' ? aA : pA;
-      useMove(st, o.side, o.id, rng, { first: i === 0, targetAction: i === 0 ? otherAction : null, z: o.z && !!zKind(st, m, o.id) });
-      if (alive(st, 'p').length === 0 || alive(st, 'a').length === 0) break;
+    for (const o of order) {
+      const m = o.user;
+      if (!m || m.fainted || !isActive(st, m)) continue;
+      useMove(st, o.side, o.id, rng, { user: m, slot: m.slot, target: resolveTarget(st, o.a.target), z: o.z && !!zKind(st, m, o.id) });
+      if (!alive(st, 'p').length || !alive(st, 'a').length) break;
     }
     endOfTurn(st, rng);
     // replacements after faints (set mode: the player gets no free look before the boss sends its next Pokemon)
     for (const side of ['a', 'p']) {
-      const m = act(st, side);
-      if (m && m.fainted && alive(st, side).length) {
-        const idx = P[side].replace(st, side, rng, 'faint');
-        switchIn(st, side, idx, rng, 'replace');
-      }
+      st[side].slots.forEach((idx, slot) => {
+        const m = st[side].team[idx];
+        if (m && m.fainted && bench(st, side).length) {
+          const to = P[side].replace(st, side, rng, 'faint', slot);
+          if (to != null && !st[side].slots.includes(to) && !st[side].team[to].fainted) switchIn(st, side, to, rng, 'replace', slot);
+        }
+      });
     }
     if (!alive(st, 'a').length) { st.over = true; st.winner = 'p'; }
     else if (!alive(st, 'p').length) { st.over = true; st.winner = 'a'; }
@@ -851,7 +949,7 @@
         const foe = act(st, other(side));
         let bestI = null, bestS = -1e9;
         st[side].team.forEach((m, i) => {
-          if (m.fainted || i === st[side].active) return;
+          if (m.fainted || st[side].slots.includes(i)) return;
           if (!foe || foe.fainted) { if (bestI == null) bestI = i; return; }
           const off = bestDamage(st, m, foe).reduce((a, b) => Math.max(a, Math.min(1, b.frac) * 100 + (b.ko >= 0.5 ? 50 : 0)), 0);
           const def = bestDamage(st, foe, m).reduce((a, b) => Math.max(a, Math.min(1, b.frac) * 100 + (b.ko >= 0.5 ? 50 : 0)), 0);
@@ -866,10 +964,11 @@
   // ---------------- the player's planner ----------------
   /** Analytic estimate of the chance `me` faints before knocking out `foe`, from the current battle state,
    *  if `me` keeps using `moveId` and `foe` keeps using its strongest move (via the engine's matchup). */
-  function duelRisk(st, me, foe, moveId, mePct) {
+  function duelRisk(st, me, foe, moveId, mePct, foePct) {
     const ms = Object.assign(specNow(me), { mv: moveId ? [moveId] : me.moves, entry: false });
     if (mePct != null) ms.hpPct = mePct;
     const fs = Object.assign(specNow(foe), { mv: usable(foe, st), entry: false });
+    if (foePct != null) fs.hpPct = foePct;
     const mu = E.matchup(ms, fs, { weather: st.weather, entry: false });
     return mu;
   }
@@ -912,6 +1011,23 @@
         const foeAfterPct = Math.max(1, 100 * (foe.hp - (d ? d.mean * Math.max(0, mu.hitsTaken) : 0)) / foe.maxHp);
         const cost = mu.risk * (value(me) + cleanup(st, side, foe, foeAfterPct, me)) + o.hpWeight * (1 - mu.hpLeftPct / 100);
         options.push({ type: 'move', id, cost, risk: mu.risk, mu, label: `Use ${mm.name}` });
+      }
+      // your Z-Move (once per battle): one big hit now, then the duel goes on with its normal moves
+      for (const id of moves) {
+        if (meta(id).cat === 'X' || zKind(st, me, id) !== 'type') continue;
+        const rr = E.rawRolls(specNow(me), specNow(foe), id, Object.assign({ z: true }, fieldOpts(st, foe.side)));
+        if (!rr || !rr.rolls.length || rr.eff === 0) continue;
+        const mean = rr.rolls.reduce((a, b) => a + b, 0) / rr.rolls.length;
+        const koP = rr.rolls.filter(x => x >= foe.hp).length / rr.rolls.length;
+        const foeDmg = bestDamage(st, foe, me);
+        const foeBest = foeDmg.reduce((a, b) => (b.ko > a.ko ? b : a), { ko: 0, pri: 0, mean: 0 });
+        const meFirst = firstMover(st, me, foe, priorityOf(st, me, id), foeBest.pri);
+        const diesFirst = meFirst ? 0 : foeBest.ko;
+        const after = Math.max(1, 100 * (foe.hp - mean) / foe.maxHp);
+        const rest = koP >= 0.999 ? null : duelRisk(st, me, foe, null, null, after);
+        const risk = diesFirst + (1 - diesFirst) * (1 - koP) * (rest ? rest.risk : 0);
+        const cost = risk * (value(me) + cleanup(st, side, foe, after, me)) + o.hpWeight * (1 - (rest ? rest.hpLeftPct : 100 * (me.hp - (meFirst ? 0 : foeBest.mean)) / me.maxHp) / 100) - 0.0005;
+        options.push({ type: 'move', id, z: true, cost, risk, mu: rest, label: `Use Z-${meta(id).name} (your Z-Move)` });
       }
       // status and healing moves the player might have
       for (const id of moves) {
@@ -984,13 +1100,13 @@
         if (!opts) { opts = evaluate(st, side); memoDecisions.set(key, opts); }
         const pick = opts[0] || { type: 'move', id: forced[0] };
         const alts = st.opts.record ? opts.slice(0, 3).map(x => ({ label: x.label, risk: x.risk })) : null;
-        return pick.type === 'switch' ? { type: 'switch', to: pick.to, why: 'plan', risk: pick.risk, alts } : { type: 'move', id: pick.id, risk: pick.risk, alts };
+        return pick.type === 'switch' ? { type: 'switch', to: pick.to, why: 'plan', risk: pick.risk, alts } : { type: 'move', id: pick.id, z: !!pick.z, risk: pick.risk, alts };
       },
       replace(st, side, rng, why) {
         const foe = act(st, other(side));
         let bestI = null, bestC = Infinity;
         st[side].team.forEach((b, i) => {
-          if (b.fainted || i === st[side].active) return;
+          if (b.fainted || st[side].slots.includes(i)) return;
           if (!foe || foe.fainted) { if (bestI == null) bestI = i; return; }
           const bs = Object.assign(specNow(b), { entry: true });
           const fs = Object.assign(specNow(foe), { mv: usable(foe, st), entry: false });
@@ -1003,10 +1119,142 @@
     };
   }
 
+  // ---------------- the player's planner in doubles ----------------
+  /** Each turn: every pair of actions for your two Pokemon (a move on each target, Protect and support moves, switches),
+   *  pruned to the most promising, is played out for one turn against what the boss AI will do (it picks without knowing
+   *  yours), and the pair that leaves your side best off wins: Pokemon kept, HP kept, foes knocked out. */
+  function doublesPlanner(opts) {
+    const o = Object.assign({ hpWeight: 0.6, keep: 4 }, opts || {});
+    const value = m => (o.values && o.values[m.key] != null ? o.values[m.key] : 1);
+    const memo = new Map();
+    function quickReplace(st, side) {
+      const foes = actives(st, other(side));
+      let best = null, bs = -1e9;
+      bench(st, side).forEach(b => {
+        let sc = 0;
+        for (const f of foes) {
+          const mine = bestDamage(st, b, f).reduce((a, x) => Math.max(a, Math.min(1, x.frac) + (x.ko >= 0.5 ? 0.5 : 0)), 0);
+          const theirs = bestDamage(st, f, b).reduce((a, x) => Math.max(a, Math.min(1, x.frac) + (x.ko >= 0.5 ? 0.5 : 0)), 0);
+          sc += mine - theirs + (speed(st, b) > speed(st, f) ? 0.15 : 0);
+        }
+        sc += 0.2 * b.hp / b.maxHp;
+        if (sc > bs) { bs = sc; best = st[side].team.indexOf(b); }
+      });
+      return best;
+    }
+    const fixed = acts => ({ chooseAll: () => acts, choose: (st, side, rng, e, p, slot) => acts[slot] || { type: 'move', id: usable(act(st, side, slot), st)[0] }, replace: (st, side) => quickReplace(st, side) });
+    function optionsFor(st, side, slot, aiActs) {
+      const me = act(st, side, slot);
+      const foes = actives(st, other(side));
+      const raw = [];
+      for (const id of usable(me, st)) {
+        const mm = meta(id), tg = (E.mv(id) || {}).tg || 0;
+        const single = !(tg === 8 || tg === 32 || tg === 16 || tg === 64);
+        const zOk = mm.cat !== 'X' && zKind(st, me, id) === 'type';
+        for (const z of zOk ? [false, true] : [false]) {
+          if (single && foes.length) for (const f of foes) raw.push({ type: 'move', id, z, target: { side: f.side, slot: f.slot } });
+          else raw.push({ type: 'move', id, z });
+        }
+      }
+      // quick score to keep the most promising
+      const threatened = aiActs.some(a => a.type === 'move' && meta(a.id).cat !== 'X' && (!a.target || (a.target.side === side && a.target.slot === slot)));
+      for (const x of raw) {
+        const mm = meta(x.id), tg = (E.mv(x.id) || {}).tg || 0;
+        if (mm.cat === 'X') {
+          x.q = mm.eff === PROTECT_EFF ? (threatened && !me.protectStreak ? 0.35 : -0.2) : mm.eff === 172 ? 0.25 : mm.eff === 176 ? 0.2 : 0.05;
+          continue;
+        }
+        const hits = tg === 8 || tg === 32 ? foes : foes.filter(f => x.target && f.slot === x.target.slot);
+        const mul = hits.length > 1 ? 0.75 : 1;
+        let q = 0;
+        for (const f of hits) {
+          const rr = E.rawRolls(specNow(me), specNow(f), x.id, Object.assign({ z: x.z, hits: mm.multihit ? 3 : 0 }, fieldOpts(st, f.side)));
+          if (!rr || !rr.rolls.length) continue;
+          const mean = mul * rr.rolls.reduce((a, b) => a + b, 0) / rr.rolls.length;
+          q += Math.min(1, mean / f.hp) + (mul * rr.rolls[0] >= f.hp ? 0.6 : 0);
+        }
+        if (tg === 32) for (const ally of actives(st, side).filter(m => m !== me)) {
+          const rr = E.rawRolls(specNow(me), specNow(ally), x.id, fieldOpts(st, side));
+          if (rr && rr.rolls.length) q -= 1.5 * Math.min(1, 0.75 * rr.rolls[15] / ally.hp);
+        }
+        x.q = q * (mm.acc ? Math.min(100, mm.acc) / 100 : 1) - (x.z ? 0.15 : 0);
+      }
+      raw.sort((a, b) => b.q - a.q);
+      const keep = raw.slice(0, o.keep);
+      const prot = raw.find(x => meta(x.id).eff === PROTECT_EFF);
+      if (prot && !keep.includes(prot)) keep.push(prot);
+      // the best switch-ins
+      const sw = bench(st, side).map(b => ({ type: 'switch', to: st[side].team.indexOf(b) }));
+      if (sw.length) {
+        const pick = quickReplace(st, side);
+        keep.push(sw.find(x => x.to === pick));
+      }
+      return keep.length ? keep : [{ type: 'move', id: usable(me, st)[0] }];
+    }
+    function valueOf(st, side) {
+      let v = 0;
+      for (const m of st[side].team) v += m.fainted ? -1.2 * value(m) : o.hpWeight * value(m) * m.hp / m.maxHp;
+      for (const m of st[other(side)].team) v -= m.fainted ? -1 : o.hpWeight * m.hp / m.maxHp;
+      return v;
+    }
+    function sig(st, side) {
+      const parts = [st.weather || '', st.terrain || '', st.trickRoom ? 1 : 0, st.turn > 1 ? 1 : 0];
+      for (const s of ['p', 'a']) {
+        const t = st[s];
+        parts.push(t.slots.join('.'), JSON.stringify(t.hazards), t.tailwind ? 1 : 0, t.screens.reflect ? 1 : 0, t.screens.light ? 1 : 0);
+        for (const m of t.team) parts.push(m.fainted ? 'x' : [Math.round(20 * m.hp / m.maxHp), m.status, STATS5.map(k => m.boosts[k]).join(''), m.item || 0, m.charging || 0, m.lock || 0, m.firstTurn ? 1 : 0].join(':'));
+      }
+      return side + parts.join('|');
+    }
+    function decide(st, side) {
+      const key = sig(st, side);
+      if (memo.has(key)) return memo.get(key);
+      const aiActs = st.policies[other(side)].chooseAll ? st.policies[other(side)].chooseAll(st, other(side), expectedDice(), true) : [];
+      const slots = st[side].slots.map((idx, slot) => ({ slot, m: st[side].team[idx] })).filter(x => x.m && !x.m.fainted);
+      const forced = x => x.m.charging || (x.m.rampage && x.m.lock) || x.m.recharge;
+      const lists = slots.map(x => (forced(x) ? [{ type: 'move', id: usable(x.m, st)[0], target: x.m.chargeTarget ? { side: x.m.chargeTarget.side, slot: x.m.chargeTarget.slot } : undefined }] : optionsFor(st, side, x.slot, aiActs)));
+      const combos = [];
+      const rec = (k, acc) => {
+        if (k === lists.length) { combos.push(acc.slice()); return; }
+        for (const opt of lists[k]) {
+          if (opt.type === 'switch' && acc.some(a => a.type === 'switch' && a.to === opt.to)) continue;
+          if (opt.z && acc.some(a => a.z)) continue;
+          acc.push(opt); rec(k + 1, acc); acc.pop();
+        }
+      };
+      rec(0, []);
+      const rng = expectedDice();
+      let best = null, bestV = -1e9;
+      const scored = [];
+      for (const combo of combos) {
+        const c = cloneState(st);
+        c.policies = { [side]: fixed(combo), [other(side)]: fixed(aiActs) };
+        playTurn(c, rng);
+        const v = valueOf(c, side) - combo.filter(a => a.type === 'switch').length * 0.03 + 0.001 * combo.reduce((s, a) => s + (a.q || 0), 0);
+        scored.push({ combo, v });
+        if (v > bestV) { bestV = v; best = combo; }
+      }
+      scored.sort((x, y) => y.v - x.v);
+      const out = { acts: best || [], alts: scored.slice(0, 3), ai: aiActs, base: valueOf(st, side) };
+      memo.set(key, out);
+      return out;
+    }
+    return {
+      kind: 'doubles-planner',
+      decide,
+      chooseAll(st, side, rng) {
+        const d = decide(st, side);
+        return d.acts.map(a => Object.assign({}, a, { risk: 0, why: a.type === 'switch' ? 'plan' : undefined }));
+      },
+      choose(st, side, rng, explain, peek, slot) { return this.chooseAll(st, side, rng)[slot || 0] || { type: 'move', id: usable(act(st, side, slot || 0), st)[0] }; },
+      replace(st, side) { return quickReplace(st, side); },
+    };
+  }
+
   // ---------------- the boss AI, ported from the engine (ai.js) ----------------
   const AI = (typeof createAI === 'function' ? createAI : require('./ai.js'))({
     E, meta, usable, act, other, bench, alive, speed, priorityOf, canStatus, hitChance, specNow, fieldOpts, itemName, hasType, grounded,
-    hazardDamage, expectedDice, SETUP, EFFECT_BOOST, EFFECT_DROP, zKind, SELF_DROP });
+    hazardDamage, expectedDice, SETUP, EFFECT_BOOST, EFFECT_DROP, zKind, SELF_DROP, actives });
   function bossPolicy(opts) { return AI.policy(opts); }
 
   // ---------------- running battles ----------------
@@ -1014,12 +1262,12 @@
     const o = opts || {};
     const st = newBattle(playerSpecs, bossSpecs, o);
     const rng = o.expected ? expectedDice() : mulberry32(o.seed || 1);
-    st.policies = { p: o.player || plannerPolicy(o.plannerOpts), a: o.ai || bossPolicy() };
-    st.events.push({ turn: 0, type: 'lead', p: act(st, 'p').key, a: act(st, 'a').key });
-    log(st, `You lead with ${act(st, 'p').name}; the boss leads with ${act(st, 'a').name}`, 'switch');
+    st.policies = { p: o.player || (st.size > 1 ? doublesPlanner(o.plannerOpts) : plannerPolicy(o.plannerOpts)), a: o.ai || bossPolicy() };
+    const names = side => actives(st, side).map(m => m.name).join(' and ');
+    st.events.push({ turn: 0, type: 'lead', p: act(st, 'p').key, a: act(st, 'a').key, pAll: actives(st, 'p').map(m => m.key), aAll: actives(st, 'a').map(m => m.key) });
+    log(st, `You lead with ${names('p')}; the boss leads with ${names('a')}`, 'switch');
     // entry effects: faster Pokemon's ability first, so the slower one's weather wins
-    const pFirst = speed(st, act(st, 'p')) >= speed(st, act(st, 'a'));
-    onEntry(st, pFirst ? 'p' : 'a', rng); onEntry(st, pFirst ? 'a' : 'p', rng);
+    for (const m of actives(st, 'p').concat(actives(st, 'a')).sort((x, y) => speed(st, y) - speed(st, x))) onEntry(st, m.side, rng, m.slot);
     while (!st.over && st.turn < (o.maxTurns || 80)) playTurn(st, rng);
     if (!st.over) { st.over = true; st.winner = 'timeout'; }
     return st;
@@ -1028,7 +1276,7 @@
   /** Many simulated battles of one lineup: odds and the most common losses. */
   function simulate(playerSpecs, bossSpecs, opts) {
     const o = Object.assign({ runs: 200, seed: 7 }, opts || {});
-    const player = plannerPolicy(o.plannerOpts);
+    const player = o.doubles ? doublesPlanner(o.plannerOpts) : plannerPolicy(o.plannerOpts);
     const res = { runs: 0, wins: 0, noLoss: 0, losses: 0, lossBy: {}, causes: {}, turns: 0, faced: {} };
     const pl = o.player || player;
     for (let i = 0; i < o.runs; i++) {
@@ -1039,7 +1287,7 @@
       if (!lost.length && st.winner === 'p') res.noLoss++;
       res.losses += lost.length;
       for (const e of st.events) {
-        if (e.type !== 'decide') continue;
+        if (e.type !== 'decide' || !e.p) continue;
         const f = res.faced[e.am] || (res.faced[e.am] = {});
         const k = e.pm + '|' + (e.p.type === 'switch' ? 'switch:' + st.p.team[e.p.to].key : 'move:' + e.p.id);
         f[k] = (f[k] || 0) + 1;
@@ -1059,7 +1307,7 @@
   async function simulateAsync(playerSpecs, bossSpecs, opts, onBattle) {
     const o = Object.assign({ runs: 200, seed: 7, chunk: 6 }, opts || {});
     const total = { runs: 0, wins: 0, noLoss: 0, losses: 0, lossBy: {}, causes: {}, turns: 0, faced: {} };
-    const player = plannerPolicy(o.plannerOpts);
+    const player = o.doubles ? doublesPlanner(o.plannerOpts) : plannerPolicy(o.plannerOpts);
     for (let i = 0; i < o.runs; i += o.chunk) {
       const n = Math.min(o.chunk, o.runs - i);
       const r = simulate(playerSpecs, bossSpecs, Object.assign({}, o, { runs: n, seed: o.seed + i * 31, player }));
@@ -1105,12 +1353,18 @@
       candidates = [chosen.slice()];
       for (const r of rest) for (let k = 0; k < 6; k++) { const c = chosen.slice(); c[k] = r; candidates.push(c); }
     }
-    const leadGuess = idxs => idxs.slice().sort((a, b) => (grid[a][0].risk - grid[b][0].risk) || (grid[b][0].hpLeftPct - grid[a][0].hpLeftPct))[0];
+    const doubles = !!o.doubles;
+    // how well each Pokemon does against the boss's lead (two leads in doubles)
+    const vsLeads = i => (doubles ? [0, 1] : [0]).filter(j => grid[i][j]).reduce((sum, j) => sum + ({ safe: 3, ok: 2, risky: 1, lose: 0 }[grid[i][j].verdict]) - grid[i][j].risk, 0);
+    const leadGuess = idxs => {
+      const ranked = idxs.slice().sort((a, b) => doubles ? vsLeads(b) - vsLeads(a) : (grid[a][0].risk - grid[b][0].risk) || (grid[b][0].hpLeftPct - grid[a][0].hpLeftPct));
+      return doubles ? ranked.slice(0, 2) : ranked[0];
+    };
     const total = candidates.length * o.screenRuns + 3 * o.leadRuns + o.finalRuns;
     let done = 0;
     const evalLineup = async (idxs, lead, runs) => {
       const specs = idxs.map(i => roster[i]);
-      return simulateAsync(specs, bossSpecs, { runs, seed: o.seed, lead: idxs.indexOf(lead), plannerOpts },
+      return simulateAsync(specs, bossSpecs, { runs, seed: o.seed, lead: doubles ? lead.map(l => idxs.indexOf(l)) : idxs.indexOf(lead), plannerOpts, doubles },
         n => { done += n; progress(done / total, `Simulated ${done} of ${total} battles`); });
     };
     // 1) screen lineups
@@ -1120,7 +1374,14 @@
       if (!best || better(r, best.res) > 0) best = { idxs: c, res: r };
     }
     // 2) choose the lead among the three best analytic leads
-    const leads = best.idxs.slice().sort((a, b) => (grid[a][0].risk - grid[b][0].risk) || (grid[b][0].hpLeftPct - grid[a][0].hpLeftPct)).slice(0, 3);
+    let leads = best.idxs.slice().sort((a, b) => (grid[a][0].risk - grid[b][0].risk) || (grid[b][0].hpLeftPct - grid[a][0].hpLeftPct)).slice(0, 3);
+    if (doubles) {
+      // lead pairs from the four best against their leads
+      const top = best.idxs.slice().sort((a, b) => vsLeads(b) - vsLeads(a)).slice(0, 4);
+      const pairs = [];
+      for (let x = 0; x < top.length; x++) for (let y = x + 1; y < top.length; y++) pairs.push([top[x], top[y]]);
+      leads = pairs.sort((p1, p2) => (vsLeads(p2[0]) + vsLeads(p2[1])) - (vsLeads(p1[0]) + vsLeads(p1[1]))).slice(0, 3);
+    }
     let bestLead = null;
     for (const l of leads) {
       const r = await evalLineup(best.idxs, l, o.leadRuns);
@@ -1130,9 +1391,9 @@
     const final = await evalLineup(best.idxs, bestLead.lead, o.finalRuns);
     // 4) the most likely run, turn by turn
     const specs = best.idxs.map(i => roster[i]);
-    const scriptState = runBattle(specs, bossSpecs, { expected: true, record: true, lead: best.idxs.indexOf(bestLead.lead), plannerOpts, maxTurns: 60 });
+    const scriptState = runBattle(specs, bossSpecs, { expected: true, record: true, lead: doubles ? bestLead.lead.map(l => best.idxs.indexOf(l)) : best.idxs.indexOf(bestLead.lead), plannerOpts, maxTurns: 60, doubles });
     progress(1, 'Done');
-    return { lineup: best.idxs, lead: bestLead.lead, odds: final, script: scriptOf(scriptState), grid };
+    return { lineup: best.idxs, lead: bestLead.lead, doubles, odds: final, script: scriptOf(scriptState), grid };
   }
 
   /** Turn the recorded "most likely" battle into steps a player can follow. */
@@ -1148,7 +1409,16 @@
       if (e.type !== 'decide') continue;
       const t = turns.find(x => x.turn === e.turn);
       if (!t) continue;
-      const action = e.p.type === 'switch' ? `Switch to ${st.p.team[e.p.to].name}` : `Use ${meta(e.p.id).name}`;
+      if (!e.p) {
+        // doubles: both of your actions, with targets
+        const mine = e.acts.filter(x => x.side === 'p'), theirs = e.acts.filter(x => x.side === 'a');
+        const who = x => name(x.side, x.key);
+        const what = x => (x.a.type === 'switch' ? `switch to ${st.p.team[x.a.to].name}` : `${x.a.z ? 'Z-' : ''}${meta(x.a.id).name}${x.tkey && x.a.target.side === 'a' && (E.mv(x.a.id) || {}).tg === 0 ? ' on ' + name('a', x.tkey) : ''}`);
+        t.decision = { you: mine.map(who).join(' & '), foe: theirs.map(who).join(' & '), action: mine.map(x => `${who(x)}: ${what(x)}`).join(' · '),
+          lines: mine.map(x => `${who(x)}: ${what(x)}`), risk: 0, alts: null, youHp: mine.reduce((a, x) => a + x.hp, 0) / Math.max(1, mine.length), foeHp: theirs.reduce((a, x) => a + x.hp, 0) / Math.max(1, theirs.length) };
+        continue;
+      }
+      const action = e.p.type === 'switch' ? `Switch to ${st.p.team[e.p.to].name}` : `Use ${e.p.z ? 'Z-' : ''}${meta(e.p.id).name}${e.p.z ? ' (your Z-Move)' : ''}`;
       t.decision = { you: name('p', e.pm), foe: name('a', e.am), action, risk: e.p.risk, alts: e.p.alts, youHp: e.php, foeHp: e.ahp };
     }
     const faints = st.events.filter(e => e.type === 'faint' && e.side === 'p').map(e => {
@@ -1160,5 +1430,5 @@
     return { winner: st.winner, turns, faints, totalTurns: st.turn };
   }
 
-  return { meta, makeMon, newBattle, runBattle, simulate, simulateAsync, planFight, scriptOf, plannerPolicy, aiPolicy, bossPolicy, AI, megaTarget, zKind, usable, speed, mulberry32, expectedDice, specNow, act };
+  return { meta, makeMon, newBattle, runBattle, simulate, simulateAsync, planFight, scriptOf, plannerPolicy, doublesPlanner, aiPolicy, bossPolicy, AI, megaTarget, zKind, usable, actives, cloneState, playTurn, speed, mulberry32, expectedDice, specNow, act };
 });

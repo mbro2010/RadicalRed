@@ -17,7 +17,37 @@
   else root.createAI = factory;
 })(typeof self !== 'undefined' ? self : this, function createAI(H) {
   'use strict';
-  const { E, meta, usable, act, other, bench, alive, speed, priorityOf, canStatus, hitChance, specNow, fieldOpts, itemName, hasType, grounded, hazardDamage } = H;
+  const { E, meta, usable, act, other, bench, alive, speed, priorityOf, canStatus, hitChance, specNow, fieldOpts, itemName, hasType, grounded, hazardDamage, actives } = H;
+  // doubles: bonus for the best attack by its knockout points (gDoublesDamageViabilityMapping), per doubles fighting style
+  const DMAP = {
+    dAllOut: [0, 9, 9, 9, 9, 10, 11, 11, 13, 14, 16, 17, 19], dSetup: [0, 4, 4, 4, 4, 9, 11, 11, 12, 13, 15, 16, 19],
+    dTRattack: [0, 3, 3, 3, 3, 9, 10, 10, 11, 14, 15, 16, 18], dTRsetup: [0, 1, 1, 1, 1, 1, 2, 2, 3, 4, 5, 6, 18],
+    dUtility: [0, 1, 1, 1, 1, 1, 1, 1, 2, 3, 8, 9, 18], dPhaze: [0, 4, 4, 4, 4, 4, 4, 4, 5, 6, 7, 8, 18],
+    dSupport: [0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 7, 9, 16], dTotalSupport: [0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 7, 9, 16] };
+  /** The engine's fighting style in doubles (PredictFightingStyle, doubles branch). */
+  function fightingStyleDoubles(st, m) {
+    let tr = false, phaze = false, redirect = false, support = false, pivot = false, protect = false, fakeOut = false, boosts = 0, attacks = 0;
+    for (const id of m.moves) {
+      const mm = meta(id), e = mm.eff, n = mm.name;
+      if (n === 'Trick Room') tr = true;
+      else if ([10, 12, 13, 15, 50, 52, 53, 55, 212, 211, 208, 199, 198].includes(e)) boosts++;
+      else if (e === 28 || e === 25 || e === 222) phaze = true;
+      else if (e === 172) redirect = true;
+      else if ([65, 35, 102, 124, 46].includes(e) || (e === 239 && n !== 'Magnet Rise')) support = true;
+      else if (e === 127 && n !== 'Baton Pass') pivot = true;
+      else if (n === 'Fake Out') fakeOut = true;
+      else if (e === 111 && !['Quick Guard', 'Wide Guard', 'Crafty Shield', 'Mat Block', 'Endure'].includes(n)) protect = true;
+      if (mm.cat !== 'X' && n !== 'Nuzzle' && n !== 'Fake Out') attacks++;
+    }
+    const slowItem = ['Room Service', 'Iron Ball', 'Macho Brace'].includes(itemName(m));
+    if (tr) return attacks <= 1 ? 'dTRsetup' : 'dTRattack';
+    if (redirect || (m.ability === 'Intimidate' && fakeOut) || (fakeOut && pivot)) return 'dUtility';
+    if (phaze) return attacks === 3 || (attacks === 2 && protect) ? 'dSetup' : 'dPhaze';
+    if (attacks >= 4 || (attacks === 3 && protect)) return slowItem ? 'dTRattack' : 'dAllOut';
+    if (attacks + boosts >= 3 || (attacks + boosts === 2 && protect)) return slowItem ? 'dTRattack' : 'dSetup';
+    if (support) return attacks <= 1 ? 'dTotalSupport' : 'dSupport';
+    return 'dUtility';
+  }
 
   const BOOST_EFFECTS = new Set([10, 11, 12, 13, 14, 15, 16, 50, 51, 52, 53, 54, 55, 56, 198, 199, 200, 206, 208, 211, 212]);
   const HEAL_EFFECTS = new Set([32, 132, 162]);
@@ -42,7 +72,7 @@
     let cls = null, attack = 0, hazards = 0, screens = 0, status = 0, boosting = false, healing = false, veil = false, phazing = false, seed = false, protect = false;
     const foeHz = st[other(m.side)].hazards;
     const it = itemName(m);
-    const choiceLike = /^Choice /.test(it || '') || it === 'Assault Vest' || m.ability === 'Gorilla Tactics';
+    const choiceLike = /^Choice /.test(it || '') || it === 'Assault Vest' || m.ability === 'Gorilla Tactics' || m.ability === 'Sage Power';
     for (const id of m.moves) {
       const mm = meta(id), e = mm.eff, n = mm.name;
       if (n === 'Baton Pass' && alive(st, m.side).length > 1) cls = 'baton';
@@ -93,8 +123,11 @@
   const takingResidual = (st, m) => residual(st, m) > 0;
 
   /** Per-decision context: AI damage numbers (93% roll), predictions and knockout checks, computed once. */
-  function context(st, side, rng) {
-    const me = act(st, side), foe = act(st, other(side));
+  function context(st, side, rng, meIn, foeIn) {
+    const me = meIn || act(st, side);
+    const foe = foeIn || (act(st, other(side)) && !act(st, other(side)).fainted ? act(st, other(side)) : (actives(st, other(side))[0] || act(st, other(side))));
+    // doubles logic runs while it isn't one-on-one ("Doubles is now defined as being a non 1v1 Double Battle")
+    const doubles = st.size > 1 && (actives(st, side).length > 1 || actives(st, other(side)).length > 1);
     const cache = new Map();
     const zero = { atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
     const specs = new Map();
@@ -182,7 +215,7 @@
     const hitsFirst = id => firstVs(me, foe, id, predicted);
     const c = {
       st, side, rng, me, foe, dmg, kos, canKO, zSet, can2HKO, acc, strongest, myStrongest, foeStrongest, predicted, firstVs, hitsFirst, moves, attacks,
-      cls: fightingStyle(st, me),
+      cls: doubles ? fightingStyleDoubles(st, me) : fightingStyle(st, me), doubles,
       meSpe: speed(st, me), foeSpe: speed(st, foe),
       foeKOsMe: !!predicted && meta(predicted).cat !== 'X' && kos(foe, me, predicted, 1),
       foeCanKOMe: canKO(foe, me), foeCan2HKOMe: can2HKO(foe, me),
@@ -215,6 +248,12 @@
       case 'screens': case 'setupScreens': return 2 + boost;
       case 'phaze': return 4 + boost;
       case 'hazards': return 3;
+      case 'dAllOut': return 0;
+      case 'dSetup': case 'dTRattack': return 4 + boost;
+      case 'dTRsetup': return 7 + boost;
+      case 'dUtility': return 3 + boost;
+      case 'dPhaze': return 8 + boost;
+      case 'dSupport': case 'dTotalSupport': return 2 + boost;
       default: return 0;
     }
   }
@@ -502,7 +541,17 @@
     } else if (e === 31 && mm.cat !== 'X') {
       if (c.hitsFirst(id) && ec >= 30 && foe.ability !== 'Inner Focus' && !blockedBySub && isDamager(cls) === false) add(statusBonus(c, 3), 'flinch');
     }
-    if (mm.cat !== 'X') damageBonus(c, id, v, add);
+    if (mm.cat !== 'X') {
+      if (c.doubles) { const dk = doublesKilling(c); if (dk.id === id && dk.score > 0) add((DMAP[cls] || DMAP.dAllOut)[dk.score], `best attack here (${dk.score} knockout points)`); }
+      else damageBonus(c, id, v, add);
+    }
+    if (c.doubles) {
+      const ally = actives(st, me.side).find(m => m !== me);
+      if (e === 172 && ally) add(cls === 'dUtility' ? 16 : statusBonus(c, 3), 'draw attacks away from its partner');
+      else if (e === 176 && ally && ally.moves.some(x => meta(x).cat !== 'X')) add(statusBonus(c, 2), 'Helping Hand');
+      else if (n === 'Wide Guard' && actives(st, foe.side).some(f => f.moves.some(x => [8, 32].includes((E.mv(x) || {}).tg) && meta(x).cat !== 'X'))) add(statusBonus(c, 3), 'Wide Guard');
+      else if (e === 158 && me.firstTurn && foe.ability !== 'Inner Focus') add(cls === 'dUtility' ? 17 : statusBonus(c, 3), 'Fake Out');
+    }
     if (me.status === 'frz' && ['Flame Wheel', 'Sacred Fire', 'Flare Blitz', 'Fusion Flare', 'Scald', 'Steam Eruption', 'Burn Up', 'Pyro Ball', 'Scorching Sands', 'Matcha Gotcha'].includes(n)) add(10, 'thaw');
     return v;
   }
@@ -554,6 +603,35 @@
     }
     void mm;
   }
+  /** Doubles: the attack with the most knockout points against this target and whoever else it hits. */
+  function doublesKilling(c) {
+    if (c.dk) return c.dk;
+    const { st, me, foe } = c;
+    const foes = [foe].concat(actives(st, other(me.side)).filter(f => f !== foe));
+    const ally = actives(st, me.side).find(m => m !== me);
+    const wideGuard = foes.some(f => f.moves.some(x => meta(x).name === 'Wide Guard') && f.status !== 'slp' && f.status !== 'frz') && coin(c.rng, 0.75);
+    let best = null, bestScore = -99, bestTg = -1;
+    for (const id of c.attacks(me)) {
+      const tg = (E.mv(id) || {}).tg || 0;
+      const spread = tg === 8 || tg === 32;
+      if (wideGuard && spread) continue;
+      let score = 0;
+      foes.forEach((f, j) => {
+        if (j > 0 && !spread) return;
+        if (c.handled && c.handled.has(f.key)) return;
+        const d = c.dmg(me, f, id) * (spread && foes.length > 1 ? 0.75 : 1);
+        if (d <= 0) return;
+        score += 4;
+        const ko = d >= f.hp && !(f.hp === f.maxHp && (f.ability === 'Sturdy' || itemName(f) === 'Focus Sash') && !meta(id).multihit);
+        if (ko) score += f.destinyBond ? 0 : 2;
+        else if (c.strongest(me, f) === id) score += 1;
+      });
+      if (tg === 32 && ally) { const d = c.dmg(me, ally, id) * 0.75; if (d > 0) { score -= 3; if (d >= ally.hp) score -= 2; } }
+      if (score > bestScore || (score === bestScore && tg === 8 && bestTg === 32)) { best = id; bestScore = score; bestTg = tg; }
+    }
+    c.dk = { id: best, score: Math.max(0, Math.min(12, bestScore)) };
+    return c.dk;
+  }
   // MoveKnocksOutPossiblyGoesFirstWithBestAccuracy
   function koBestAccuracy(c, id, checkFirst) {
     const { me, foe } = c;
@@ -586,13 +664,13 @@
 
   // ---------------- switching ----------------
   /** CalcMostSuitableMonToSwitchInto: score every Pokemon that could come in against the current foe. */
-  function switchScores(st, side, c) {
-    const foe = act(st, other(side));
+  function switchScores(st, side, c, foeIn) {
+    const foe = foeIn || (c && c.foe) || actives(st, other(side))[0] || act(st, other(side));
     const out = [];
     if (!foe || foe.fainted) return out;
     const ctx = c || context(st, side, H.expectedDice());
     st[side].team.forEach((m, i) => {
-      if (m.fainted || i === st[side].active) return;
+      if (m.fainted || st[side].slots.includes(i)) return;
       const entry = hazardDamage(st, side, m);
       if (entry >= m.hp) return;   // would faint on entry
       let score = 0, flags = 0;
@@ -723,12 +801,53 @@
     return null;
   }
 
+  /** One battler's action in doubles: the best move against each target (ChooseMoveOrAction_Doubles), then the best target
+   *  (ChooseTarget_Doubles: highest score, then more knockouts, then more damage). Partners never target each other here. */
+  function chooseDoubles(st, side, rng, slot, handled, explain, peek) {
+    const me = act(st, side, slot);
+    const forced = usable(me, st);
+    const ct = me.chargeTarget && !me.chargeTarget.fainted ? { side: me.chargeTarget.side, slot: me.chargeTarget.slot } : undefined;
+    if (me.charging || (me.rampage && me.lock) || me.recharge) return { type: 'move', id: forced[0], target: ct };
+    const foes = actives(st, other(side));
+    if (!foes.length) return { type: 'move', id: forced[0] };
+    const options = foes.map(foe => {
+      const c = context(st, side, rng, me, foe);
+      c.handled = handled;
+      const scores = scoreMoves(c, explain);
+      const top = Math.max(...scores.map(x => x.score));
+      const ties = scores.filter(x => x.score === top);
+      const pick = ties.length === 1 || rng.expected ? ties[0] : ties[Math.floor(rng() * ties.length)];
+      const mm = meta(pick.id);
+      const tg = (E.mv(pick.id) || {}).tg || 0;
+      const hit = mm.cat === 'X' ? [] : (tg === 8 || tg === 32 ? foes : [foe]);
+      const kos = hit.filter(f => c.dmg(me, f, pick.id) * (hit.length > 1 ? 0.75 : 1) >= f.hp).length;
+      const dmg = hit.reduce((sum, f) => sum + Math.min(f.hp, c.dmg(me, f, pick.id)), 0);
+      return { foe, c, top, pick, scores, kos, dmg, tg };
+    });
+    options.sort((x, y) => (y.top - x.top) || (y.kos - x.kos) || (y.dmg - x.dmg));
+    const best = options[0];
+    // with nothing useful against anyone, switch out like the singles check does
+    if (best.top < 95 && bench(st, side).length && !(st.turn - (me.enteredTurn || 0) <= 1)) {
+      const total = new Map();
+      for (const f of foes) for (const r of switchScores(st, side, null, f)) total.set(r.i, (total.get(r.i) || 0) + r.score);
+      const ranked = [...total.entries()].filter(([i]) => !st[side].slots.includes(i)).sort((x, y) => y[1] - x[1]);
+      if (ranked.length && ranked[0][1] > 0) return { type: 'switch', to: ranked[0][0], why: 'only bad moves left' };
+    }
+    if (!peek) me.absorbCooldown = false;
+    const single = best.pick && meta(best.pick.id).cat !== 'X' && !(best.tg === 8 || best.tg === 32);
+    const res = { type: 'move', id: best.pick.id, target: { side: best.foe.side, slot: best.foe.slot }, z: !!(best.c.zSet && best.c.zSet.has(best.pick.id)),
+      knocksOut: single && best.kos ? best.foe.key : null };
+    if (explain) { res.scores = best.scores; res.style = best.c.cls; res.targetName = best.foe.name; res.byTarget = options.map(x => ({ target: x.foe.name, score: x.top, move: x.pick.id })); }
+    return res;
+  }
+
   function policy(opts) {
     const o = opts || {};
     return {
       kind: 'cfru',
       /** Returns { type: 'move', id } or { type: 'switch', to }, plus the scores when explain is set. */
-      choose(st, side, rng, explain, peek) {
+      choose(st, side, rng, explain, peek, slot) {
+        if (st.size > 1) return chooseDoubles(st, side, rng, slot || 0, new Set(), explain || o.explain, peek);
         const me = act(st, side);
         const forced = usable(me, st);
         if (me.charging || (me.rampage && me.lock) || me.recharge) return { type: 'move', id: forced[0] };
@@ -753,16 +872,38 @@
         if (explain || o.explain) { res.scores = scores; res.style = c.cls; res.ties = best.length; }
         return res;
       },
-      replace(st, side) {
+      /** Doubles: both slots, the first slot first so the second knows which foe its partner is knocking out. */
+      chooseAll(st, side, rng, peek, explain) {
+        const out = [];
+        const handled = new Set();
+        st[side].slots.forEach((idx, slot) => {
+          const m = st[side].team[idx];
+          if (!m || m.fainted) return;
+          const a = chooseDoubles(st, side, rng, slot, handled, explain || o.explain, peek);
+          out.push(a);
+          if (a.type === 'move' && a.knocksOut) handled.add(a.knocksOut);
+        });
+        return out;
+      },
+      replace(st, side, rng, why, slot) {
+        if (st.size > 1) {
+          // the best switch-in against everything on the other side of the field
+          const total = new Map();
+          for (const f of actives(st, other(side))) for (const r of switchScores(st, side, null, f)) total.set(r.i, (total.get(r.i) || 0) + r.score);
+          const ranked = [...total.entries()].filter(([i]) => !st[side].slots.includes(i)).sort((x, y) => y[1] - x[1] || x[0] - y[0]);
+          if (ranked.length) return ranked[0][0];
+        }
         const r = bestSwitch(st, side);
         if (r) return r.i;
-        const i = st[side].team.findIndex((m, k) => !m.fainted && k !== st[side].active);
+        const i = st[side].team.findIndex((m, k) => !m.fainted && !st[side].slots.includes(k));
         return i >= 0 ? i : null;
       },
     };
   }
 
-  return { policy, fightingStyle, switchScores, residual, STYLE_NAMES: {
+  return { policy, fightingStyle, fightingStyleDoubles, switchScores, residual, STYLE_NAMES: {
+    dAllOut: 'all-out attacker (doubles)', dSetup: 'set-up attacker (doubles)', dTRattack: 'Trick Room attacker', dTRsetup: 'Trick Room setter',
+    dUtility: 'support and utility (doubles)', dPhaze: 'phazer (doubles)', dSupport: 'team support (doubles)', dTotalSupport: 'full support (doubles)',
     kill: 'attacker', setup: 'set-up sweeper', status: 'status sweeper', stall: 'staller', baton: 'Baton Passer', cleric: 'cleric',
     screens: 'screen setter', setupScreens: 'screens + attacks', phaze: 'phazer', hazards: 'hazard setter' } };
 });

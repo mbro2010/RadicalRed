@@ -15,3 +15,14 @@ test('sim: Taunt blocks status moves and Encore locks the last move', () => {
   p.taunt = 0; p.encore = 2; p.encoreMove = mid('Thunder Shock');
   assert(SIM.usable(p, st).length === 1 && SIM.usable(p, st)[0] === mid('Thunder Shock'), 'Encore locks Thunder Shock');
 });
+test('sim: Sage Power locks into its first move', () => {
+  const st = SIM.runBattle([mon('Alakazam', 40, { ability: 'Sage Power', moves: ['Psychic', 'Shadow Ball'] })], [mon('Snorlax', 40)], { expected: true, record: true });
+  const used = new Set(st.events.filter(e => e.type === 'move' && e.side === 'p').map(e => e.move));
+  assert(used.size === 1, 'Sage Power user used ' + used.size + ' different moves');
+});
+test('sim: the planner uses your Z-Move when it wins the fight', () => {
+  const me = mon('Charizard', 40, { moves: ['Flamethrower', 'Air Slash'], item: 'Firium Z' });
+  const foe = mon('Venusaur', 44, { moves: ['Earth Power', 'Sludge Bomb'] });
+  const st = SIM.runBattle([me], [foe], { expected: true, record: true });
+  assert(st.events.some(e => e.type === 'zmove' && e.side === 'p'), 'player used a Z-Move');
+});
