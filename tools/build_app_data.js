@@ -236,6 +236,13 @@ for (const [area, a] of Object.entries(finds.areas)) {
   for (const shop of a.shops) for (const id of shop) addTM(id, area, 'shop');
 }
 for (const id of finds.mart) addTM(id, 'Poké Marts', 'shop');
+// where each held item can be found or bought (first few places)
+const itemWhere = {};
+const addItem = (id, area, how) => { if (tmIndexOfItem[id] != null || !outItems[id] || !outItems[id].c) return; const l = itemWhere[id] = itemWhere[id] || []; if (l.length < 4 && !l.some(x => x[0] === area)) l.push([area, how]); };
+for (const [area, a] of Object.entries(finds.areas)) {
+  for (const [id, , how] of a.items) addItem(id, area, how === 'hidden' ? 'hidden' : how === 'given' ? 'gift' : 'found');
+  for (const shop of a.shops) for (const id of shop) addItem(id, area, 'shop');
+}
 
 const out = {
   version: 'Radical Red 4.1', calcVersion: '@smogon/calc 0.12.0 (gen 9 mechanics)',
@@ -248,7 +255,7 @@ const out = {
     condSpecies: restrictions.conditionalAllowedSpecies,
   },
   bosses, caps: { hardcore: HC, normal: caps.normal },
-  evo: outEvo, mega: outMega, areas: outAreas, trainers: outTrainers, finds: outFinds, mart: finds.mart, tmWhere,
+  evo: outEvo, mega: outMega, areas: outAreas, trainers: outTrainers, finds: outFinds, mart: finds.mart, tmWhere, itemWhere,
 };
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, JSON.stringify(out));

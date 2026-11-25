@@ -108,7 +108,7 @@
           if (!S.example || roster.length) { S.roster = roster; S.example = false; }
           S.run = { beaten: Array.isArray(run.beaten) ? run.beaten.slice() : [], tms: Array.isArray(run.tms) ? run.tms.slice() : [],
             enc: run.enc && typeof run.enc === 'object' ? Object.assign({}, run.enc) : {}, dupes: run.dupes !== false, checks: Array.isArray(run.checks) ? run.checks.slice(-50) : [], tutors: !!run.tutors,
-            no: run.no || (history.length + 1), started: run.started || null, starter: run.starter || null, aiChecks: run.aiChecks || null };
+            no: run.no || (history.length + 1), started: run.started || null, starter: run.starter || null, aiChecks: run.aiChecks || null, bag: Array.isArray(run.bag) ? run.bag.slice() : [] };
           ADV.setOptions({ tutors: S.run.tutors });
           render();
         }, err => { clearTimeout(this.timer); this.note = 'Saving to your account stopped working (' + err.code + '). Reload to try again.'; renderStatus(); });
@@ -141,7 +141,7 @@
     async saveRun() {
       if (S.example) return;
       if (!S.run.started && S.roster.length) S.run.started = Math.min(...S.roster.map(m => m.ord || Date.now()));
-      if (this.mode === 'db') { try { await this.col.doc('run').set({ beaten: S.run.beaten, tms: S.run.tms || [], enc: S.run.enc || {}, dupes: S.run.dupes !== false, checks: (S.run.checks || []).slice(-50), tutors: !!S.run.tutors, aiChecks: S.run.aiChecks || null,
+      if (this.mode === 'db') { try { await this.col.doc('run').set({ beaten: S.run.beaten, tms: S.run.tms || [], enc: S.run.enc || {}, dupes: S.run.dupes !== false, checks: (S.run.checks || []).slice(-50), tutors: !!S.run.tutors, aiChecks: S.run.aiChecks || null, bag: S.run.bag || [],
         no: S.run.no || 1, started: S.run.started || null, starter: S.run.starter || null }); } catch (e) { flash('Couldn’t save progress (' + e.code + ').'); } }
       else this.saveLocal();
     },
@@ -216,9 +216,11 @@
     if (box.length) html += `<section class="section"><div class="head"><h2>Box</h2></div>${box.map(monCard).join('')}</section>`;
     if (dead.length) html += `<details class="more"><summary>Fainted (${dead.length})</summary><div class="section" style="margin-top:8px">${dead.map(monCard).join('')}</div></details>`;
     html += tmCaseHTML();
+    html += bagHTML();
     main.innerHTML = html;
     wireTeam();
     wireTMCase();
+    wireBag();
   }
   // ---------------- TM case: which TMs you own (move advice only uses these) ----------------
   function tmCaseHTML() {
@@ -248,6 +250,74 @@
       clearTimeout(t); t = setTimeout(() => store.saveRun(), 600);
     }));
   }
+  // ---------------- held items you have (item advice only gives these) ----------------
+  let HELD = null;
+  function heldItems() {
+    if (!HELD) HELD = Object.entries(D.items).filter(([id, x]) => x.c && tmOfItem(+id) == null && !/Ball$|Potion$|Revive|Heal$|Ether$|Elixir|Repel|Mail$|Fossil|Shard$|Nugget|Pearl$|Stardust|Mushroom|Wing$|Candy|Escape Rope|Flute$|Honey|Fresh Water|Soda Pop|Lemonade|Moomoo/.test(x.n))
+      .map(([id, x]) => ({ id: +id, n: x.n })).sort((a, b) => a.n.localeCompare(b.n));
+    return HELD;
+  }
+  function bagHTML() {
+    const have = new Set(S.run.bag || []);
+    const where = id => ((D.itemWhere || {})[id] || []).slice(0, 2).map(([a, how]) => `${a}${how !== 'found' ? ' (' + (HOW_LABEL[how] || how) + ')' : ''}`).join(', ');
+    return `<details class="more" id="bag" ${S.bagOpen ? 'open' : ''}><summary>Held items you have (${have.size})</summary>
+      <p class="note">Tick the held items you own. The Plan tab then suggests which Pokémon should hold what for each fight.</p>
+      <input class="search" id="bag-filter" placeholder="Filter items" style="margin:6px 0;width:100%">
+      <div class="tmgrid">${heldItems().map(x => `<label class="tm" data-q="${esc(x.n.toLowerCase())}"><input type="checkbox" data-bag="${x.id}" ${have.has(x.id) ? 'checked' : ''}><span>${esc(x.n)}${where(x.id) ? `<span class="note" style="display:block">${esc(where(x.id))}</span>` : ''}</span></label>`).join('')}</div></details>`;
+  }
+  function wireBag() {
+    const box = $('#bag'); if (!box) return;
+    box.addEventListener('toggle', () => { S.bagOpen = box.open; });
+    const f = $('#bag-filter');
+    f.addEventListener('input', () => { const q = f.value.trim().toLowerCase(); box.querySelectorAll('.tm').forEach(el => { el.hidden = q && !el.dataset.q.includes(q); }); });
+    let t = null;
+    box.querySelectorAll('[data-bag]').forEach(cb => cb.addEventListener('change', () => {
+      const id = +cb.dataset.bag; const set = new Set(S.run.bag || []);
+      if (cb.checked) set.add(id); else set.delete(id);
+      S.run.bag = [...set];
+      box.querySelector('summary').textContent = `Held items you have (${S.run.bag.length})`;
+      clearTimeout(t); t = setTimeout(() => store.saveRun(), 600);
+    }));
+  }
+  /** Which of your Pokemon should hold which of your items for this fight: each item is tried on each Pokemon against the boss
+   *  team (one-on-one matchups; Mega Stones as the Mega form), the best gains are assigned greedily, then the whole fight is
+   *  simulated before and after. */
+  async function itemAdvice(lineup, team, doubles, onStep) {
+    const VS = { safe: 3, ok: 2, risky: 1, lose: 0 };
+    const pool = new Map();
+    for (const id of S.run.bag || []) pool.set(id, (pool.get(id) || 0) + 1);
+    for (const m of S.roster) if (m.it && m.box !== 'dead') pool.set(m.it, (pool.get(m.it) || 0) + 1);
+    const candidates = [...pool.keys()].filter(id => (D.items[id] || {}).c);
+    const score = (m, it) => {
+      let spec = specOf(m, { it });
+      const mega = it && SIM.megaTarget({ spec, item: it });
+      if (mega) spec = Object.assign({}, spec, { s: mega, ab: (E.sp(mega).a || [])[0] || spec.ab });
+      return team.reduce((sum, t) => { const mu = E.matchup(Object.assign({}, spec, { entry: true }), Object.assign({}, t, { entry: true })); return sum + VS[mu.verdict] - mu.risk; }, 0);
+    };
+    const base = lineup.map(m => score(m, m.it || null));
+    const gains = [];
+    for (let k = 0; k < lineup.length; k++) {
+      for (const it of candidates) if (it !== lineup[k].it) gains.push({ k, it, g: score(lineup[k], it) - base[k] });
+      if (onStep) { onStep((k + 1) / lineup.length / 2); await new Promise(r => setTimeout(r, 0)); }
+    }
+    gains.sort((a, b) => b.g - a.g);
+    const left = new Map(pool), assigned = new Map();
+    for (const x of gains) {
+      if (x.g < 0.15 || assigned.has(x.k) || !(left.get(x.it) > 0)) continue;
+      assigned.set(x.k, x); left.set(x.it, left.get(x.it) - 1);
+    }
+    // check the whole fight with and without the swaps
+    const specsNow = lineup.map(m => specOf(m, { label: monName(m) }));
+    const specsNew = lineup.map((m, k) => specOf(m, { label: monName(m), it: assigned.has(k) ? assigned.get(k).it : m.it || null }));
+    let before = null, after = null;
+    if (assigned.size) {
+      before = await SIM.simulateAsync(specsNow, team, { runs: 40, seed: 5, doubles }, () => {});
+      if (onStep) onStep(0.75);
+      after = await SIM.simulateAsync(specsNew, team, { runs: 40, seed: 5, doubles }, () => {});
+    }
+    return { assigned: [...assigned.values()].map(x => ({ m: lineup[x.k], it: x.it, g: x.g, from: lineup[x.k].it || null })), before, after, candidates: candidates.length };
+  }
+
   // ---------------- per-Pokemon advice: nature and when to learn what ----------------
   function openAdvice(m) {
     document.body.style.overflow = 'hidden';
@@ -547,6 +617,9 @@
           const label = m.verdict === 'safe' ? 'safe' : m.verdict === 'lose' ? 'loses' : fmtRisk(m.risk);
           return `<td class="${cls}">${label}</td>`;
         }).join('')}</tr>`).join('')}</tbody></table></div></details>`;
+      out += `<section class="section" id="items-sec"><details class="more" ${S.itemsOpen ? 'open' : ''} id="items-det"><summary>Held items for this fight</summary><div class="card" style="margin-top:8px" id="items-out">
+        <p class="small" style="margin:0">Tries every held item you have (ticked on the Party tab, plus what your Pokémon already hold) on each Pokémon you'd bring, keeps the swaps that win or save matchups against this team, then simulates the fight before and after.</p>
+        <div class="row"><button class="btn" id="items-go" ${(S.run.bag || []).length || S.roster.some(m => m.it) ? '' : 'disabled'}>Suggest held items</button>${(S.run.bag || []).length ? '' : '<span class="note">Tick the items you have on the Party tab first.</span>'}</div></div></details></section>`;
       out += movesetSection(P);
       out += claudeSection();
       main.innerHTML = out;
@@ -663,7 +736,31 @@
       <div class="row"><button class="btn primary" id="claude-go">Write a game plan</button><button class="btn" id="claude-stop" hidden>Stop</button></div>
       <div class="claude-out" id="claude-out" hidden></div></div></section>`;
   }
+  async function runItemAdvice() {
+    const box = $('#items-out'); if (!box) return;
+    const plan = Object.entries(S.plans).find(([k, v]) => v && JSON.parse(k)[0] === S.planBoss);
+    const roster = alive();
+    const lineup = plan ? plan[1].lineup.map(i => plan[1].roster[i]) : (party().length ? party() : roster.slice(0, 6));
+    const b = D.bosses[S.planBoss];
+    const top = Math.max(1, ...lineup.map(m => m.lv));
+    const team = E.bossTeam(S.planBoss, top).map((t, i) => Object.assign({ key: 'b' + i, label: E.sp(t.s).n }, t));
+    box.innerHTML = '<div class="progress"><span style="width:2%"></span></div><div class="note">Trying each item on each Pokémon…</div>';
+    const bar = () => box.querySelector('.progress span');
+    const r = await itemAdvice(lineup, team, !!b.dbl, f => { const el = bar(); if (el) el.style.width = Math.round(100 * f) + '%'; });
+    if (!r.assigned.length) { box.innerHTML = `<p class="small" style="margin:0">None of your ${r.candidates} held items changes a matchup here. Keep what they hold.</p>`; return; }
+    const odds = (o) => `${Math.round(100 * o.pNoLoss)}% no losses, ${Math.round(100 * o.pWin)}% win`;
+    box.innerHTML = `<div class="answers">${r.assigned.map(x => `<div class="answer"><div class="top">${icon(x.m.s)}<b>${esc(monName(x.m))}</b> holds <b>${esc(E.itemName(x.it))}</b></div>
+        <span class="small muted">${x.from ? 'instead of ' + esc(E.itemName(x.from)) + ' · ' : ''}+${x.g.toFixed(1)} matchup points</span></div>`).join('')}</div>
+      ${r.before && r.after ? `<p class="small" style="margin:0">Simulated fight (40 battles each): now ${odds(r.before)} → with these items ${odds(r.after)}.</p>` : ''}
+      <div class="row"><button class="btn primary" id="items-apply">Give them these items</button><span class="note">Updates your Pokémon's items; plan the fight again afterwards.</span></div>`;
+    $('#items-apply').onclick = async () => {
+      for (const x of r.assigned) { const m = S.roster.find(y => y.key === x.m.key); if (m) { m.it = x.it; await store.saveMon(m); } }
+      flash('Items updated. Plan the fight again to see the new odds.'); render();
+    };
+  }
   async function wirePlan(P) {
+    const ig = $('#items-go'); if (ig) ig.onclick = () => runItemAdvice();
+    const idt = $('#items-det'); if (idt) idt.addEventListener('toggle', () => { S.itemsOpen = idt.open; });
     const sel = $('#plan-boss'); if (sel) sel.onchange = () => { S.planBoss = +sel.value; S.battle.boss = S.planBoss; render(); };
     const ex = $('#plan-ex'); if (ex) ex.onclick = () => { loadExample(); };
     const bt = $('#plan-beaten');
@@ -1287,7 +1384,8 @@
         ${p ? `<div class="card"><h3>Your party (${p.party.length})</h3>${p.party.map(m => { const sp = E.sp(m.s); return `<div class="slot">${icon(m.s, 'x2')}<div class="who"><b>${esc(m.nick ? m.nick + ' (' + sp.n + ')' : sp.n)}</b>
               <span class="small">Lv ${m.lv} · ${esc(natureText(m.nat))} · ${esc(m.ab || '')}${m.it ? ' · ' + esc(E.itemName(m.it)) : ''}</span>
               <span class="small muted">${m.mv.map(id => esc(E.mv(id) ? E.mv(id).f : '?')).join(', ')}</span></div>${m.maxHp ? `<div style="width:90px">${hpBar(100 * m.hp / m.maxHp)}</div>` : ''}</div>`; }).join('') || '<p class="muted small">No party Pokémon found.</p>'}
-            <p class="small" style="margin:0">PC boxes: ${p.boxes.length} Pokémon. Badges: ${p.badges.length}.</p>
+            <p class="small" style="margin:0">PC boxes: ${p.boxes.length} Pokémon. Badges: ${p.badges.length}.${p.bag ? ` Bag: ${p.bag.filter(x => tmOfItem(x.id) != null).length} TMs and ${p.bag.filter(x => tmOfItem(x.id) == null && (D.items[x.id] || {}).c).length} held items.` : ''}</p>
+            ${p.bag ? '<label class="row small"><input type="checkbox" id="im-bag" checked> Also import your TMs and held items (beta)</label>' : ''}
             ${p.notes.map(n => `<div class="note">${esc(n)}</div>`).join('')}
             <label class="row small"><input type="checkbox" id="im-boxes" ${p.boxes.length ? '' : 'disabled'}> Also import the ${p.boxes.length} Pokémon in your PC boxes</label>
             <label class="row small"><input type="checkbox" id="im-badges" checked ${p.badges.length ? '' : 'disabled'}> Mark the gyms of your ${p.badges.length} badges as beaten</label>
@@ -1316,6 +1414,10 @@
         }
         // anything else still marked as in the party goes to the box, so the party matches the game
         for (const r of S.roster) if (r.box === 'party' && !changed.includes(r)) r.box = 'box';
+        if ($('#im-bag') && $('#im-bag').checked && p.bag) {
+          S.run.tms = [...new Set((S.run.tms || []).concat(p.bag.map(x => tmOfItem(x.id)).filter(t => t != null)))].sort((x, y) => x - y);
+          S.run.bag = [...new Set((S.run.bag || []).concat(p.bag.filter(x => tmOfItem(x.id) == null && (D.items[x.id] || {}).c).map(x => x.id)))];
+        }
         if ($('#im-badges').checked) for (const k of p.badges) { const b = D.bosses.find(x => x.ms === BADGES[k]); if (b && !S.run.beaten.includes(b.i)) S.run.beaten.push(b.i); }
         close(); render();
         for (const m of S.roster) await store.saveMon(m);

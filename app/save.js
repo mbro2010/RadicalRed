@@ -12,7 +12,8 @@
  *     Pokemon is used.
  * Nature is the personality value mod 25; the ability is the hidden one if bit 31 is set, otherwise slot 1 or 2
  * by the personality's lowest bit. Box Pokemon store experience, not level, so their level comes from the
- * species' growth rate. This is a beta: check the preview before importing. */
+ * species' growth rate. The bag is read from FireRed's pocket layout and only used if it reads as real items.
+ * This is a beta: check the preview before importing. */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory;
   else root.createSaveReader = factory;
@@ -127,7 +128,18 @@
         if (m) boxes.push(Object.assign(m, { box: bx + 1 }));
       }
     } else notes.push('The PC boxes are missing from this save, so only the party was read.');
-    return { counter: sl.counter, party, boxes, badges, notes };
+    // bag (beta): FireRed's pockets in SaveBlock1 (items 0x310, TM case 0x464, berries 0x54C), quantities XOR'd with the
+    // security key in SaveBlock2 at 0xF20. Only used when the slots read as real items.
+    let bag = null;
+    if (sl.sections[0] != null) {
+      const key = u32(b, sl.sections[0] + 0xF20) & 0xFFFF;
+      const pocket = (off, n) => { const out = []; for (let k = 0; k < n; k++) { const id = u16(sb1, off + 4 * k), q = (u16(sb1, off + 4 * k + 2) ^ key) & 0xFFFF; if (id) out.push([id, q]); } return out; };
+      const all = pocket(0x310, 42).concat(pocket(0x464, 58), pocket(0x54C, 43));
+      const valid = all.filter(([id, q]) => D.items[id] && q > 0 && q <= 999);
+      if (all.length && valid.length / all.length >= 0.8) bag = valid.map(([id, q]) => ({ id, q }));
+      else if (all.length) notes.push("Your bag couldn't be read from this save (Radical Red may keep it somewhere else), so items and TMs aren't imported.");
+    }
+    return { counter: sl.counter, party, boxes, badges, bag, notes };
   }
 
   return { read, levelFromExp, expFor };
