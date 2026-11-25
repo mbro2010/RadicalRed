@@ -1,0 +1,751 @@
+/* The boss AI, ported from the battle AI of the engine Radical Red is built on: Complete Fire Red Upgrade
+ * (CFRU, src/Battle_AI). How the engine decides:
+ *   - Every usable move starts at 100 points. Moves that would fail or backfire lose points (AIScript_Negatives,
+ *     mostly -10, -20 for moves the target absorbs). Good moves gain points (AIScript_Positives): +9 for an attack
+ *     that knocks out before the target can move, +8 or so for a slower knockout, +2 for the strongest attack,
+ *     and status, setup, healing, hazard and pivot moves gain points depending on the Pokemon's "fighting style",
+ *     which the engine works out from its moveset and item (sweeper, set-up sweeper, staller, hazard setter, ...).
+ *   - The highest score is used; ties are broken at random. Bosses run both scripts (AI flags 7).
+ *   - The AI judges damage at the 93% roll, and assumes a critical hit only for moves that always crit.
+ *   - Before choosing a move it checks whether to switch out (ShouldSwitch), and after a knockout it picks
+ *     the replacement that scores best on speed, knockouts, revenge kills and resistances
+ *     (CalcMostSuitableMonToSwitchInto).
+ * Point values and thresholds are the engine's own. Doubles, Z-moves, Dynamax and the rarest move effects are
+ * left out, and Radical Red may have private changes the public engine source doesn't show. */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory;
+  else root.createAI = factory;
+})(typeof self !== 'undefined' ? self : this, function createAI(H) {
+  'use strict';
+  const { E, meta, usable, act, other, bench, alive, speed, priorityOf, canStatus, hitChance, specNow, fieldOpts, itemName, hasType, grounded, hazardDamage } = H;
+
+  const BOOST_EFFECTS = new Set([10, 11, 12, 13, 14, 15, 16, 50, 51, 52, 53, 54, 55, 56, 198, 199, 200, 206, 208, 211, 212]);
+  const HEAL_EFFECTS = new Set([32, 132, 162]);
+  const STATUS_EFFECT = { 1: 'slp', 33: 'tox', 66: 'psn', 67: 'par', 167: 'brn' };
+  const MOXIE = new Set(['Moxie', 'Beast Boost', 'Chilling Neigh', 'Grim Neigh', 'As One']);
+  const TRAPPERS = new Set(['Shadow Tag', 'Arena Trap', 'Magnet Pull']);
+  const ABSORBS = { 'Volt Absorb': 'Electric', 'Motor Drive': 'Electric', 'Lightning Rod': 'Electric', 'Water Absorb': 'Water', 'Dry Skin': 'Water',
+    'Storm Drain': 'Water', 'Flash Fire': 'Fire', 'Well-Baked Body': 'Fire', 'Sap Sipper': 'Grass', 'Earth Eater': 'Ground', Levitate: 'Ground' };
+  const MOLD = new Set(['Mold Breaker', 'Teravolt', 'Turboblaze']);
+  const CURES = { slp: ['Chesto Berry', 'Lum Berry'], par: ['Cheri Berry', 'Lum Berry'], brn: ['Rawst Berry', 'Lum Berry'], psn: ['Pecha Berry', 'Lum Berry'], tox: ['Pecha Berry', 'Lum Berry'] };
+  const STAT_OF = { atk: 'atk', def: 'def', spa: 'spa', spd: 'spd', spe: 'spe' };
+  // switching scores (include/new/ai_switching.h)
+  const SW = { KO: 31, RESIST_ALL: 17, REVENGE: 8, WALLS: 2, TWO_HKO: 2, OUTSPEEDS: 14, WEAK: 1, FAINTS: 39, FAINTS_OUTSPEEDS: 15 };
+  SW.MAX = SW.KO + SW.RESIST_ALL + SW.REVENGE + SW.OUTSPEEDS;
+  SW.HAZARDS = SW.MAX + 1;
+  const F = { KO: 1, RESIST_ALL: 2, REVENGE: 4, WALLS: 8, TWO_HKO: 16, HAZARDS: 32, OUTSPEEDS: 64, FAINTS: 128 };
+
+  const coin = (rng, p) => (rng.expected ? p > 0.5 : rng() < p);
+
+  /** The engine's fighting style for a Pokemon in singles (PredictFightingStyle). */
+  function fightingStyle(st, m) {
+    let cls = null, attack = 0, hazards = 0, screens = 0, status = 0, boosting = false, healing = false, veil = false, phazing = false, seed = false, protect = false;
+    const foeHz = st[other(m.side)].hazards;
+    const it = itemName(m);
+    const choiceLike = /^Choice /.test(it || '') || it === 'Assault Vest' || m.ability === 'Gorilla Tactics';
+    for (const id of m.moves) {
+      const mm = meta(id), e = mm.eff, n = mm.name;
+      if (n === 'Baton Pass' && alive(st, m.side).length > 1) cls = 'baton';
+      else if (e === 28) phazing = true;
+      else if (e === 25 || e === 222) cls = 'phaze';
+      else if (e === 179 || e === 102) cls = 'cleric';
+      else if (e === 65 && n === 'Aurora Veil') { if (!st[m.side].screens.veil) veil = true; }
+      else if (e === 65 || e === 35) screens++;
+      else if (e === 84) seed = true;
+      else if (e === 111) protect = true;
+      else if (e === 42 || e === 106) cls = 'stall';
+      else if (choiceLike) cls = 'kill';
+      else if (HEAL_EFFECTS.has(e)) healing = true;
+      if (cls) break;
+      if (mm.cat !== 'X') attack++;
+      if (BOOST_EFFECTS.has(e)) boosting = true;
+      else if (e === 112) {
+        if ((n === 'Stealth Rock' && !foeHz.sr) || (n === 'Toxic Spikes' && foeHz.tspikes < 2) || (n === 'Sticky Web' && !foeHz.web) || (n === 'Spikes' && foeHz.spikes < 3)) hazards++;
+      } else if (mm.cat === 'X') status++;
+    }
+    void healing;
+    if (cls) return cls;
+    if (screens >= 2 || veil) return attack >= 2 ? 'setupScreens' : 'screens';
+    if (hazards >= 1) return phazing ? 'phaze' : 'hazards';
+    if (attack >= 3) return boosting ? 'setup' : (status > 0 || phazing) ? 'status' : 'kill';
+    if (seed && protect) return 'stall';
+    if (attack >= 2 && (boosting || status > 0 || phazing)) return boosting ? 'setup' : 'status';
+    return 'stall';
+  }
+  const isDamager = c => c === 'kill' || c === 'setup' || c === 'status';
+  const isScreener = c => c === 'screens' || c === 'setupScreens';
+
+  /** End-of-turn damage a Pokemon takes (poison, burn, Leech Seed, sandstorm), net of Leftovers. */
+  function residual(st, m) {
+    if (!m || m.ability === 'Magic Guard') return 0;
+    let d = 0;
+    if (m.ability !== 'Poison Heal') {
+      if (m.status === 'psn') d += m.maxHp / 8;
+      if (m.status === 'tox') d += m.maxHp * Math.min(15, (m.toxic || 0) + 1) / 16;
+    }
+    if (m.status === 'brn') d += m.maxHp / 16;
+    if (m.seeded) d += m.maxHp / 8;
+    if (st.weather === 'Sand' && !['Rock', 'Ground', 'Steel'].some(t => hasType(m, t)) && !['Sand Veil', 'Sand Rush', 'Sand Force', 'Overcoat'].includes(m.ability) && itemName(m) !== 'Safety Goggles') d += m.maxHp / 16;
+    if (itemName(m) === 'Leftovers') d -= m.maxHp / 16;
+    return Math.floor(d);
+  }
+  const willFaintResidual = (st, m) => { const r = residual(st, m); return r > 0 && m.hp <= r; };
+  const takingResidual = (st, m) => residual(st, m) > 0;
+
+  /** Per-decision context: AI damage numbers (93% roll), predictions and knockout checks, computed once. */
+  function context(st, side, rng) {
+    const me = act(st, side), foe = act(st, other(side));
+    const cache = new Map();
+    const zero = { atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
+    const specs = new Map();
+    const specOf = m => {
+      let sp = specs.get(m);
+      if (!sp) { sp = Object.freeze(m === act(st, m.side) ? specNow(m) : Object.assign(specNow(m), { boosts: zero })); specs.set(m, sp); }
+      return sp;
+    };
+    function dmg(from, to, id) {
+      const k = from.key + '>' + to.key + ':' + id;
+      let v = cache.get(k);
+      if (v != null) return v;
+      const mm = meta(id);
+      v = 0;
+      if (mm.cat !== 'X' && to && !to.fainted) {
+        const hits = mm.multihit ? (from.ability === 'Skill Link' ? mm.multihit[1] : 3) : 0;
+        const rr = E.rawRolls(specOf(from), specOf(to), id, Object.assign({ hits, crit: mm.alwaysCrit }, fieldOpts(st, to.side)));
+        if (rr && rr.rolls && rr.rolls.length && rr.eff !== 0) v = rr.rolls[Math.min(8, rr.rolls.length - 1)];
+      }
+      cache.set(k, v);
+      return v;
+    }
+    // MoveKnocksOutXHits: Sturdy and Focus Sash hold at full HP, Disguise takes the first hit, a Substitute takes it instead
+    function kos(from, to, id, n) {
+      const d = dmg(from, to, id);
+      if (!d) return false;
+      const mm = meta(id);
+      const mold = MOLD.has(from.ability);
+      let hp = to.hp;
+      if (n === 1) {
+        if (to.hp === to.maxHp && !mm.multihit && ((to.ability === 'Sturdy' && !mold) || itemName(to) === 'Focus Sash')) return false;
+        if (to.disguise && !mold) return false;
+        if (to.sub && !mm.sound && from.ability !== 'Infiltrator') return false;
+      }
+      if (to.disguise && !mold) hp += 0;
+      return d * n >= hp;
+    }
+    const moves = m => (m === me || m === foe ? usable(m, st) : m.moves);
+    const attacks = m => moves(m).filter(id => meta(id).cat !== 'X');
+    const canKO = (from, to) => attacks(from).some(id => kos(from, to, id, 1));
+    const can2HKO = (from, to) => attacks(from).some(id => kos(from, to, id, 2));
+    const acc = (from, to, id) => {
+      const mm = meta(id);
+      return Math.round(100 * hitChance(st, from, to, mm));
+    };
+    /** The engine's strongest move (CalcStrongestMove): most damage, capped at the target's HP; ties go to priority, then accuracy. */
+    function strongest(from, to) {
+      let best = null, bd = -1, bp = -99, ba = -1;
+      for (const id of attacks(from)) {
+        const mm = meta(id);
+        if (mm.eff === 38) continue;   // one-hit KO moves only if they surely hit
+        const d = Math.min(dmg(from, to, id), to.hp);
+        const p = priorityOf(st, from, id), a = acc(from, to, id);
+        if (d > bd || (d === bd && d > 0 && (p > bp || (p === bp && a > ba) || (p === bp && a === ba && best && meta(best).recoil && !mm.recoil)))) {
+          best = id; bd = d; bp = p; ba = a;
+        }
+      }
+      return best;
+    }
+    const myStrongest = strongest(me, foe);
+    const foeStrongest = strongest(foe, me);
+    // the move the AI expects the player to use: their strongest attack, else their first move
+    const predicted = foeStrongest || (moves(foe)[0] || null);
+    const firstVs = (a, b, aMove, bMove) => {
+      const pa = aMove ? priorityOf(st, a, aMove) : 0, pb = bMove ? priorityOf(st, b, bMove) : 0;
+      if (pa !== pb) return pa > pb;
+      const sa = speed(st, a), sb = speed(st, b);
+      return st.trickRoom ? sa < sb : sa > sb;
+    };
+    const hitsFirst = id => firstVs(me, foe, id, predicted);
+    const c = {
+      st, side, rng, me, foe, dmg, kos, canKO, can2HKO, acc, strongest, myStrongest, foeStrongest, predicted, firstVs, hitsFirst, moves, attacks,
+      cls: fightingStyle(st, me),
+      meSpe: speed(st, me), foeSpe: speed(st, foe),
+      foeKOsMe: !!predicted && meta(predicted).cat !== 'X' && kos(foe, me, predicted, 1),
+      foeCanKOMe: canKO(foe, me), foeCan2HKOMe: can2HKO(foe, me),
+      iCanKO: canKO(me, foe), iCan2HKO: can2HKO(me, foe),
+    };
+    return c;
+  }
+
+  // ---------------- move scoring ----------------
+  function badIdeaToStatus(c, s) {
+    const { st, me, foe } = c;
+    if (!canStatus(st, foe, s, '', me)) return true;
+    if ((CURES[s] || []).includes(itemName(foe))) return true;
+    const a = foe.ability;
+    if (s === 'slp') return foe.moves.some(id => ['Sleep Talk', 'Snore'].includes(meta(id).name)) || ['Early Bird', 'Shed Skin'].includes(a) || (a === 'Natural Cure' && bench(st, foe.side).length > 0);
+    if (s === 'par') return ['Quick Feet', 'Guts', 'Marvel Scale', 'Synchronize'].includes(a);
+    if (s === 'brn') return ['Guts', 'Flare Boost', 'Magic Guard', 'Quick Feet', 'Heatproof'].includes(a);
+    if (s === 'psn' || s === 'tox') return ['Poison Heal', 'Guts', 'Toxic Boost', 'Magic Guard', 'Quick Feet', 'Marvel Scale'].includes(a);
+    return false;
+  }
+  // IncreaseStatusViability: how much a "status move" bonus is worth for each fighting style
+  function statusBonus(c, boost) {
+    switch (c.cls) {
+      case 'kill': return 0;
+      case 'setup': return c.foeCan2HKOMe ? 0 : 3;
+      case 'status': return 4 + boost;
+      case 'stall': return 3 + boost;
+      case 'baton': return boost >= 3 ? 1 : 0;
+      case 'cleric': return 3 + boost;
+      case 'screens': case 'setupScreens': return 2 + boost;
+      case 'phaze': return 4 + boost;
+      case 'hazards': return 3;
+      default: return 0;
+    }
+  }
+  // ShouldTryToSetUpStat (singles)
+  function shouldSetUp(c, id, stat, limit) {
+    const { st, me, foe } = c;
+    if (foe.ability === 'Unaware' && !me.moves.some(x => ['Stored Power', 'Power Trip'].includes(meta(x).name)) && !(stat === 'def' && me.moves.some(x => meta(x).name === 'Body Press'))) return false;
+    if (willFaintResidual(st, me)) return false;
+    if (stat === 'all') return true;
+    if (c.hitsFirst(id)) {
+      if (c.foeCanKOMe || (c.foeStrongest && c.dmg(foe, me, c.foeStrongest) + residual(st, me) >= me.hp)) return false;
+      if (foe.invuln) return true;
+    } else {
+      if (foe.charging && meta(foe.charging).eff === 155) return true;
+      if (stat === 'spe' && me.boosts.spe < limit && !c.foeKOsMe && speed(st, Object.assign({}, me, { boosts: Object.assign({}, me.boosts, { spe: me.boosts.spe + 1 }) })) > c.foeSpe) return true;
+      if (c.foeCan2HKOMe) {
+        if (!c.foeCanKOMe && c.foeStrongest) {
+          const k = meta(c.foeStrongest).cat;
+          if ((stat === 'def' && k === 'P') || (stat === 'spd' && k === 'S')) return true;
+        }
+        return false;
+      }
+    }
+    if ((me.boosts[stat] || 0) >= limit) return false;
+    if ((stat === 'atk' || stat === 'spa') && foe.hp === foe.maxHp && (foe.ability === 'Sturdy' || itemName(foe) === 'Focus Sash')
+        && !me.moves.some(x => meta(x).multihit && meta(x).cat === (stat === 'atk' ? 'P' : 'S')) && !foe.status) return false;
+    return true;
+  }
+  // IncreaseStatViability
+  function statBonus(c, id, stat, limit, boost) {
+    const ok = () => shouldSetUp(c, id, stat, limit);
+    switch (c.cls) {
+      case 'kill': return ok() ? 3 + boost : (meta(id).cat !== 'X' && (stat === 'atk' || stat === 'spa') ? 1 : 0);
+      case 'setup': return ok() ? 3 + boost : 0;
+      case 'baton': return shouldSetUp(c, id, stat, 4) ? (['atk', 'spa', 'spe'].includes(stat) ? 5 : 4) : 0;
+      default: return ok() ? statusBonus(c, 1) : 0;
+    }
+  }
+  /** Which stat a boosting move is mainly for, the stage limit and the bonus (AIScript_Positives' stat cases). */
+  function boostPlan(c, id) {
+    const { me } = c;
+    const mm = meta(id), e = mm.eff;
+    const b = H.SETUP[mm.name] || H.EFFECT_BOOST[e] || {};
+    const phys = me.moves.some(x => meta(x).cat === 'P'), spec = me.moves.some(x => meta(x).cat === 'S');
+    const foePhys = c.foe.moves.some(x => meta(x).cat === 'P'), foeSpec = c.foe.moves.some(x => meta(x).cat === 'S');
+    const slower = c.meSpe <= c.foeSpe;
+    if (b.spe > 0 && (slower || !(b.atk > 0 || b.spa > 0))) return { stat: 'spe', limit: 2, boost: 3, good: slower };
+    if (b.atk > 0 && phys) return { stat: 'atk', limit: 2, boost: 2, good: true };
+    if (b.spa > 0 && spec) return { stat: 'spa', limit: 2, boost: 2, good: true };
+    if (b.def > 0 && (foePhys || me.moves.some(x => meta(x).name === 'Body Press'))) return foePhys ? { stat: 'atk', limit: 4, boost: 2, good: true } : { stat: 'def', limit: 2, boost: 1, good: true };
+    if (b.spd > 0 && foeSpec) return { stat: 'spd', limit: 4, boost: 1, good: true };
+    if (b.eva > 0) return { stat: 'eva', limit: 6, boost: 4, good: true };
+    if (b.acc > 0) return { stat: 'acc', limit: 6, boost: 2, good: true };
+    return { good: false };
+  }
+  // ShouldRecover
+  function shouldRecover(c, id, heal) {
+    const { st, me, foe } = c;
+    const foeD = c.foeStrongest ? c.dmg(foe, me, c.foeStrongest) : 0;
+    const incapacitated = foe.status === 'slp' || foe.status === 'frz' || foe.recharge;
+    if (c.hitsFirst(id)) {
+      if (c.foeCanKOMe && !(foeD >= Math.min(me.maxHp, me.hp + heal))) return true;
+      if (c.foeCan2HKOMe && !incapacitated && heal > me.hp && coin(c.rng, 0.5)) return true;
+    } else if (!c.foeCanKOMe && !incapacitated && c.foeCan2HKOMe && !(foeD >= Math.min(me.maxHp, me.hp - foeD + heal))) return true;
+    void st;
+    return false;
+  }
+  function healAmount(c, id) {
+    const { st, me } = c, mm = meta(id), w = st.weather || '';
+    if (mm.eff === 132) return Math.floor(me.maxHp * (/Sun/.test(w) ? 2 / 3 : w ? 1 / 4 : 1 / 2));
+    if (mm.eff === 162) return Math.floor(me.maxHp * [0, 0.25, 0.5, 1][Math.min(3, me.stockpile || 0)]);
+    if (mm.eff === 37) return me.maxHp - me.hp;
+    return Math.floor(me.maxHp / 2);
+  }
+  // ShouldPivot: 'pivot', 'try' (no change) or 'dont'
+  function shouldPivot(c, id) {
+    const { st, me, foe } = c;
+    if (!bench(st, me.side).length) return 'try';
+    if (hazardDamage(st, me.side, me) >= me.maxHp / 4) return 'dont';
+    const sw = (c.ranked || (c.ranked = switchScores(st, me.side, c)))[0];
+    const flags = sw ? sw.flags : 0;
+    const boosted = isDamager(c.cls) && (me.boosts.atk > 0 || me.boosts.spa > 0);
+    const breaksSash = foe.hp === foe.maxHp && (itemName(foe) === 'Focus Sash' || foe.ability === 'Sturdy' || foe.ability === 'Multiscale' || foe.ability === 'Shadow Shield');
+    if (c.hitsFirst(id)) {
+      const koOther = c.attacks(me).some(x => x !== id && c.kos(me, foe, x, 1));
+      if (koOther) return 'dont';
+      if (c.iCanKO) return 'try';
+      if (isDamager(c.cls) && c.iCan2HKO) {
+        if (c.foeCanKOMe) return 'pivot';
+        if (meta(id).cat !== 'X' && ((flags & F.RESIST_ALL && flags & (F.KO | F.HAZARDS)) || breaksSash)) return 'pivot';
+        return 'dont';
+      }
+      if (!boosted) {
+        if (isDamager(c.cls) && meta(id).cat !== 'X' && breaksSash) return 'pivot';
+        if (flags & (F.WALLS | F.RESIST_ALL)) {
+          if (willFaintResidual(st, me)) return 'pivot';
+          if (isDamager(c.cls) && (me.boosts.atk <= -2 || me.boosts.spa <= -2)) return 'pivot';
+          return 'try';
+        }
+      }
+      return 'dont';
+    }
+    if (c.foeCanKOMe) return meta(id).eff === 153 ? 'dont' : 'try';
+    if (c.foeCan2HKOMe) {
+      if ((flags & F.KO && flags & (F.OUTSPEEDS | F.WALLS | F.RESIST_ALL)) || (flags & F.RESIST_ALL && flags & F.HAZARDS) || breaksSash) return 'pivot';
+      return 'dont';
+    }
+    if (isDamager(c.cls) && flags & F.KO && flags & F.OUTSPEEDS) return 'pivot';
+    if (!boosted && flags & (F.OUTSPEEDS | F.WALLS | F.RESIST_ALL)) {
+      if (willFaintResidual(st, me)) return 'pivot';
+      if (isDamager(c.cls) && (me.boosts.atk <= -2 || me.boosts.spa <= -2)) return 'pivot';
+      return 'try';
+    }
+    return 'dont';
+  }
+  const PIVOT_BONUS = { kill: 3, setup: 9, status: 9, stall: 9, baton: 9, cleric: 9, screens: 9, setupScreens: 9, phaze: 9, hazards: 9 };
+
+  /** AIScript_Negatives: moves that would fail, be absorbed or backfire. */
+  function negatives(c, id) {
+    const { st, me, foe } = c, mm = meta(id), n = mm.name, e = mm.eff;
+    const mold = MOLD.has(me.ability);
+    if (mm.cat !== 'X') {
+      if (!mold && ABSORBS[foe.ability] === mm.type && !(foe.ability === 'Levitate')) return -20;
+      if (c.dmg(me, foe, id) === 0 && !(mm.power <= 1)) return -10;   // no effect (type immunity, Levitate, Wonder Guard)
+      if (e === 8 && foe.status !== 'slp') return -10;
+      if (e === 237 && (!c.predicted || meta(c.predicted).cat === 'X')) return -10;
+      if (e === 170 && c.foeStrongest && !c.hitsFirst(id)) return -10;
+      if (e === 7) return -10;   // the explosion check; the positives add some back when it's the right call
+      return 0;
+    }
+    const foeTargeted = !(BOOST_EFFECTS.has(e) || H.SETUP[n] || HEAL_EFFECTS.has(e) || [37, 111, 112, 35, 65, 136, 137, 115, 164, 228, 239, 98, 153, 124, 79, 142, 160, 127].includes(e)) || n === 'Parting Shot';
+    if (foeTargeted && foe.ability === 'Magic Bounce' && !mold) return -10;
+    if (foeTargeted && foe.sub && !mm.sound && me.ability !== 'Infiltrator' && e !== 28) return -10;
+    if (STATUS_EFFECT[e]) return canStatus(st, foe, STATUS_EFFECT[e], n, me) ? 0 : -10;
+    if (e === 187) return !foe.status && !foe.yawn && canStatus(st, foe, 'slp', n, me) ? 0 : -10;
+    if (BOOST_EFFECTS.has(e) || H.SETUP[n]) {
+      const b = H.SETUP[n] || H.EFFECT_BOOST[e] || {};
+      const ups = Object.entries(b).filter(([, v]) => v > 0).map(([k]) => k);
+      if (me.ability === 'Contrary') return -10;
+      if (ups.length && ups.every(k => (me.boosts[k] || 0) >= 6)) return -10;
+      if (n === 'Stockpile' && (me.stockpile || 0) >= 3) return -10;
+      return 0;
+    }
+    if (H.EFFECT_DROP[e]) {
+      const k = Object.keys(H.EFFECT_DROP[e])[0];
+      if ((foe.boosts[k] || 0) <= -6 || ['Clear Body', 'White Smoke', 'Full Metal Body', 'Mirror Armor'].includes(foe.ability) || itemName(foe) === 'Clear Amulet') return -10;
+      if (['Contrary', 'Defiant', 'Competitive'].includes(foe.ability)) return -10;
+      return 0;
+    }
+    if (HEAL_EFFECTS.has(e) || n === 'Strength Sap') return me.hp >= me.maxHp ? -10 : 0;
+    if (e === 37) return me.hp >= me.maxHp || ['Insomnia', 'Vital Spirit', 'Comatose', 'Purifying Salt'].includes(me.ability) || (st.terrain === 'Electric' && grounded(me)) ? -10 : 0;
+    if (e === 112) {
+      const hz = st[foe.side].hazards;
+      const done = (n === 'Stealth Rock' && hz.sr) || (n === 'Spikes' && hz.spikes >= 3) || (n === 'Toxic Spikes' && hz.tspikes >= 2) || (n === 'Sticky Web' && hz.web);
+      return done || alive(st, foe.side).length <= 1 ? -10 : 0;
+    }
+    if (e === 35) return st[me.side].screens.light ? -10 : 0;
+    if (e === 65) return (n === 'Aurora Veil' ? (st[me.side].screens.veil || !/Snow|Hail/.test(st.weather || '')) : st[me.side].screens.reflect) ? -10 : 0;
+    if (e === 111) return me.protectStreak > 0 ? -10 : 0;
+    if (e === 84) return hasType(foe, 'Grass') || foe.seeded ? -10 : 0;
+    if (e === 228 && n === 'Trick Room') return (st.trickRoom ? c.meSpe < c.foeSpe : c.meSpe > c.foeSpe) ? -10 : 0;
+    if (e === 239 && n === 'Tailwind') return st[me.side].tailwind ? -10 : 0;
+    if (e === 98) return me.destinyBond ? -10 : 0;
+    if (e === 79) return me.sub || me.hp <= me.maxHp / 4 ? -10 : 0;
+    if (e === 28) return !bench(st, foe.side).length || foe.ability === 'Suction Cups' ? -10 : 0;
+    if (e === 25) return !Object.values(foe.boosts).some(v => v > 0) ? -10 : 0;
+    if (e === 175) return foe.taunt ? -10 : 0;
+    if (e === 90) return foe.encore || !foe.lastMove ? -10 : 0;
+    if (e === 49 || e === 118 || e === 166) return foe.confused || foe.ability === 'Own Tempo' ? -10 : 0;
+    if (e === 136) return /Rain/.test(st.weather || '') ? -10 : 0;
+    if (e === 137) return /Sun/.test(st.weather || '') ? -10 : 0;
+    if (e === 115) return st.weather === 'Sand' ? -10 : 0;
+    if (e === 164) return /Snow|Hail/.test(st.weather || '') ? -10 : 0;
+    if (e === 153) return !bench(st, me.side).length ? -10 : 0;
+    if (e === 142 && n === 'Belly Drum') return me.hp <= me.maxHp / 2 || me.boosts.atk >= 6 ? -10 : 0;
+    return 0;
+  }
+
+  /** AIScript_Positives for one move, given the score so far. Returns the new score and why. */
+  function positives(c, id, v, out) {
+    const { st, me, foe, cls } = c, mm = meta(id), n = mm.name, e = mm.eff;
+    const add = (x, why) => { v += x; if (out && x) out.push(`${x > 0 ? '+' : ''}${x} ${why}`); };
+    const ec = mm.ec || 0;
+    const blockedBySub = foe.sub && !mm.sound && me.ability !== 'Infiltrator';
+    let st0 = STATUS_EFFECT[e];
+    if (!st0 && ec >= 75 && !blockedBySub) st0 = { 6: 'par', 4: 'brn', 2: 'psn', 209: 'tox', 5: 'frz' }[e];
+    if (e === 1 || e === 187) {
+      // IncreaseSleepViability
+      let skip = badIdeaToStatus(c, 'slp');
+      if (!skip && e === 187) {
+        if (c.iCanKO) skip = true;
+        else if (alive(st, me.side).length === 1 && !me.moves.some(x => meta(x).eff === 111)) skip = c.hitsFirst(id) ? (c.foeCanKOMe || (c.foeCan2HKOMe && !me.moves.some(x => HEAL_EFFECTS.has(meta(x).eff)))) : c.foeCan2HKOMe;
+      }
+      if (!skip) {
+        const a80 = c.acc(me, foe, id) >= 80;
+        const table = { setup: 9, status: 8, baton: 9, cleric: 7, screens: 8, setupScreens: 8, phaze: 9, hazards: 8 };
+        if (cls === 'stall') add(statusBonus(c, 3), 'sleep (staller)');
+        else if (table[cls]) add(a80 ? table[cls] : statusBonus(c, 3), 'sleep');
+      }
+    } else if (st0 === 'par') {
+      if (!badIdeaToStatus(c, 'par')) {
+        const goFirstAfter = c.foeSpe >= c.meSpe && c.foeSpe / 2 < c.meSpe;
+        const flinch = me.moves.some(x => meta(x).eff === 31);
+        add(statusBonus(c, goFirstAfter || flinch || foe.confused ? 2 : 1), 'paralysis');
+      }
+    } else if (st0 === 'brn') {
+      if (!badIdeaToStatus(c, 'brn')) {
+        const predPhysKO = c.predicted && meta(c.predicted).cat === 'P' && c.foeKOsMe;
+        add(statusBonus(c, predPhysKO ? 3 : foe.moves.some(x => meta(x).cat === 'P') ? 2 : 1), 'burn');
+      }
+    } else if (st0 === 'psn' || st0 === 'tox') {
+      if (!badIdeaToStatus(c, st0)) add(statusBonus(c, me.moves.some(x => ['Venoshock', 'Barb Barrage'].includes(meta(x).name)) || me.ability === 'Merciless' ? 2 : 1), 'poison');
+    } else if (e === 160 || n === 'Stockpile') {
+      if (me.moves.some(x => meta(x).eff === 162 || meta(x).eff === 161)) add(statusBonus(c, 2), 'Stockpile (has Swallow or Spit Up)');
+      else if (me.ability !== 'Contrary') {
+        const foePhys = foe.moves.some(x => meta(x).cat === 'P');
+        // the engine's defense branch checks the Attack stage here (AI_DEFENSE_PLUS); ported as written
+        if (foePhys) add(statBonus(c, id, 'atk', 4, 2), 'Stockpile');
+        else if (foe.moves.some(x => meta(x).cat === 'S')) add(statBonus(c, id, 'spd', 4, 1), 'Stockpile');
+      }
+    } else if (BOOST_EFFECTS.has(e) || H.SETUP[n]) {
+      if (me.ability !== 'Contrary') {
+        const p = boostPlan(c, id);
+        if (p.good) add(statBonus(c, id, p.stat, p.limit, p.boost), 'set up');
+      }
+    } else if (e === 142 && n === 'Belly Drum') {
+      if (me.moves.some(x => meta(x).cat === 'P')) add(statBonus(c, id, 'atk', 6, 2), 'Belly Drum');
+    } else if (HEAL_EFFECTS.has(e) || n === 'Strength Sap' || e === 37) {
+      if (shouldRecover(c, id, healAmount(c, id))) add(cls === 'stall' || cls === 'phaze' ? 8 : statusBonus(c, 3), 'heal');
+    } else if (e === 3 && mm.cat !== 'X') {
+      if (shouldRecover(c, id, Math.floor(c.dmg(me, foe, id) / 2))) add(cls === 'stall' ? statusBonus(c, 2) : 3, 'draining heal');
+    } else if (e === 112) {
+      const worth = alive(st, foe.side).length !== 2;
+      const hz = { 'Sticky Web': 7, 'Stealth Rock': 6, 'Toxic Spikes': 5 };
+      if (cls === 'hazards') add(hz[n] || 4, 'hazards');
+      else if (cls === 'setup' || cls === 'status') { if (worth) add(statusBonus(c, 2), 'hazards'); }
+      else if (cls === 'stall' || cls === 'cleric' || isScreener(cls)) add(statusBonus(c, worth ? 2 : 1), 'hazards');
+      else if (cls === 'phaze') add(statusBonus(c, alive(st, foe.side).length === 2 ? 2 : 3), 'hazards');
+      else if (cls === 'baton' && c.hitsFirst(id) && !c.foeCanKOMe) add(4, 'hazards');
+    } else if (e === 35 || e === 65) {
+      const wantPhys = e === 65 && n !== 'Aurora Veil';
+      const useful = n === 'Aurora Veil' || c.foe.moves.some(x => meta(x).cat === (wantPhys ? 'P' : 'S'));
+      if (useful) add(isScreener(cls) ? (n === 'Aurora Veil' ? 8 : 7) : statusBonus(c, 2), 'screen');
+    } else if (e === 127 && ['U-turn', 'Volt Switch', 'Flip Turn', 'Parting Shot'].includes(n)) {
+      const p = c.goodToPivot ? 'now' : shouldPivot(c, id);
+      if (p === 'now') add(9, 'pivot out (wants to switch)');
+      else if (p === 'pivot') add(PIVOT_BONUS[cls] || 3, 'pivot');
+      else if (p === 'dont') add(-9, 'bad time to pivot');
+    } else if (e === 111) {
+      const useful = (takingResidual(st, foe) && !takingResidual(st, me)) || (me.ability === 'Speed Boost' && me.boosts.spe < 6 && c.meSpe <= c.foeSpe)
+        || (me.firstTurn && ['Toxic Orb', 'Flame Orb'].includes(itemName(me)) && ['Poison Heal', 'Guts', 'Toxic Boost', 'Flare Boost', 'Magic Guard'].includes(me.ability));
+      if (useful) add(statusBonus(c, 3), 'Protect');
+    } else if (e === 158) {
+      if (me.firstTurn && !(foe.ability === 'Inner Focus' || foe.ability === 'Shield Dust') && !blockedBySub) add(cls === 'kill' ? 4 : statusBonus(c, 3) || 4, 'Fake Out');
+    } else if (e === 28) {
+      if ((Object.values(foe.boosts).some(x => x >= 2)) && bench(st, foe.side).length) add(cls === 'phaze' ? 8 : statusBonus(c, 2), 'phaze');
+    } else if (e === 25) {
+      if (Object.values(foe.boosts).some(x => x >= 2)) add(cls === 'phaze' ? 15 : 8, 'Haze');
+    } else if (e === 84) {
+      if (!hasType(foe, 'Grass') && !foe.seeded) add(statusBonus(c, 3), 'Leech Seed');
+    } else if (e === 98) {
+      if (!c.hitsFirst(id) && c.foeKOsMe) add(statusBonus(c, 3), 'Destiny Bond');
+    } else if (e === 175) {
+      if (c.predicted && meta(c.predicted).cat === 'X') add(statusBonus(c, 2), 'Taunt');
+    } else if (e === 90) {
+      if (foe.lastMove && meta(foe.lastMove).cat === 'X') add(statusBonus(c, 3), 'Encore a status move');
+    } else if (e === 49 || e === 118 || e === 166) {
+      if (!foe.confused && foe.ability !== 'Own Tempo') add(statusBonus(c, e === 49 ? 1 : 1), 'confusion');
+    } else if (e === 228 && n === 'Trick Room') {
+      if (!st.trickRoom && c.meSpe < c.foeSpe) add(statusBonus(c, 3), 'Trick Room');
+    } else if (e === 239 && n === 'Tailwind') {
+      if (!st[me.side].tailwind && c.meSpe <= c.foeSpe && c.meSpe * 2 > c.foeSpe) add(statusBonus(c, 3), 'Tailwind');
+    } else if ([136, 137, 115, 164].includes(e)) {
+      add(statusBonus(c, 1), 'weather');
+    } else if (H.EFFECT_DROP[e]) {
+      add(statusBonus(c, e === 20 || e === 60 ? 2 : 1), 'lower a stat');
+    } else if (e === 7 && mm.cat !== 'X') {
+      // EFFECT_EXPLOSION: worth it only when it's the only knockout left, or the AI goes down anyway
+      if (c.predicted && meta(c.predicted).eff !== 111) {
+        const otherKO = c.attacks(me).some(x => x !== id && c.kos(me, foe, x, 1));
+        if (!otherKO && (c.foeCanKOMe || (me.hp <= me.maxHp / 4 && itemName(me) === 'Custap Berry'))) add(4, 'explode (would faint anyway)');
+      }
+    } else if (e === 31 && mm.cat !== 'X') {
+      if (c.hitsFirst(id) && ec >= 30 && foe.ability !== 'Inner Focus' && !blockedBySub && isDamager(cls) === false) add(statusBonus(c, 3), 'flinch');
+    }
+    if (mm.cat !== 'X') damageBonus(c, id, v, add);
+    if (me.status === 'frz' && ['Flame Wheel', 'Sacred Fire', 'Flare Blitz', 'Fusion Flare', 'Scald', 'Steam Eruption', 'Burn Up', 'Pyro Ball', 'Scorching Sands', 'Matcha Gotcha'].includes(n)) add(10, 'thaw');
+    return v;
+  }
+
+  /** DamageMoveViabilityIncrease (singles). */
+  function damageBonus(c, id, v0, add) {
+    const { st, me, foe, cls, predicted } = c;
+    const mm = meta(id);
+    const pri = priorityOf(st, me, id);
+    const predSucker = predicted && meta(predicted).eff === 237;
+    const okVsSucker = !predSucker || isDamager(cls) || (pri > 0 && c.meSpe > c.foeSpe);
+    const hasProtect = me.moves.some(x => meta(x).eff === 111);
+    const koFirst = koBestAccuracy(c, id, true);
+    if (koFirst) {
+      if (okVsSucker && (!foe.destinyBond || c.foeCanKOMe)) add(9, 'knocks out first');
+      return;
+    }
+    const foeSelfFaint = willFaintResidual(st, foe);
+    const predHeal = predicted && (HEAL_EFFECTS.has(meta(predicted).eff) || meta(predicted).eff === 37);
+    if (!hasProtect && !c.hitsFirst(id) && koBestAccuracy(c, id, false) && (!foeSelfFaint || predHeal || MOXIE.has(me.ability))) {
+      const last = alive(st, foe.side).length === 1;
+      const slow = { kill: 8, setup: last ? 8 : 6, status: 8, stall: last ? 9 : 8, phaze: last ? 9 : 8,
+        baton: last ? 9 : (!c.foeCan2HKOMe ? 3 : 8), cleric: last ? 9 : (!c.foeCan2HKOMe ? 6 : 7),
+        screens: last ? 9 : (!c.foeCan2HKOMe ? 6 : 9), setupScreens: last ? 9 : (!c.foeCan2HKOMe ? 6 : 9), hazards: last ? 9 : (!c.foeCan2HKOMe ? 3 : 6) };
+      add(slow[cls] || 8, 'knocks out (moves second)');
+      return;
+    }
+    // desperate: the player is about to knock it out, so use the strongest move that goes first
+    const desperateAllowed = !me.aiDesperate || coin(c.rng, foe.lastMove && meta(foe.lastMove).cat === 'X' ? 0.25 : 0.75);
+    const normallySlower = pri > 0 && c.meSpe < c.foeSpe;
+    const hazardsLeft = me.moves.some(x => negatives(c, x) === 0 && meta(x).eff === 112);
+    const fakeOutUseful = me.firstTurn && me.moves.some(x => meta(x).eff === 158);
+    if (desperateAllowed && !hasProtect && c.foeKOsMe && strongestFirst(c, id)
+        && (cls !== 'hazards' || coin(c.rng, 0.5) || !hazardsLeft) && (cls !== 'phaze' || normallySlower) && (cls !== 'stall' || normallySlower)
+        && !c.goodToPivot && !fakeOutUseful) {
+      if (okVsSucker) { add(9, 'last chance: strongest move that goes first'); c.desperate = c.desperate || new Set(); c.desperate.add(id); return; }
+      if (id !== c.myStrongest) return;
+    } else if (id !== c.myStrongest) return;
+    // IsStrongestMove
+    const first = c.hitsFirst(id);
+    if (first || !willFaintResidual(st, foe) || predHeal || MOXIE.has(me.ability)) {
+      if (!foe.destinyBond || c.foeCanKOMe || !first) {
+        const untouched = v0 === 100;
+        if (untouched && c.kos(me, foe, id, 1) && !predHeal && !(predicted && meta(predicted).drain)) {
+          const bonus = { cleric: 5, screens: 6, setupScreens: 6, baton: 6, phaze: 8, stall: 8, hazards: 4 };
+          add(bonus[cls] || 2, 'strongest move, knocks out');
+        } else add(2, 'strongest move');
+      }
+    }
+    void mm;
+  }
+  // MoveKnocksOutPossiblyGoesFirstWithBestAccuracy
+  function koBestAccuracy(c, id, checkFirst) {
+    const { me, foe } = c;
+    const cands = c.attacks(me).filter(x => c.kos(me, foe, x, 1) && (!checkFirst || (c.hitsFirst(x) && meta(x).eff !== 148)));
+    if (!cands.includes(id)) return false;
+    const best = Math.max(...cands.map(x => c.acc(me, foe, x)));
+    return c.acc(me, foe, id) >= best;
+  }
+  // StrongestMoveGoesFirst
+  function strongestFirst(c, id) {
+    const { me, foe } = c;
+    const firsts = c.attacks(me).filter(x => c.hitsFirst(x));
+    if (!firsts.includes(id)) return false;
+    let best = null, bd = -1;
+    for (const x of firsts) { const d = Math.min(c.dmg(me, foe, x), foe.hp); if (d > bd) { bd = d; best = x; } }
+    return best === id || Math.min(c.dmg(me, foe, id), foe.hp) >= bd;
+  }
+
+  function scoreMoves(c, explain) {
+    const { me, st } = c;
+    const list = usable(me, st);
+    return list.map(id => {
+      const why = explain ? [] : null;
+      let v = 100 + negatives(c, id);
+      if (why && v !== 100) why.push(`${v - 100} ${v <= 80 ? 'absorbed or immune' : 'would fail or backfire'}`);
+      v = positives(c, id, v, why);
+      return { id, score: v, why };
+    });
+  }
+
+  // ---------------- switching ----------------
+  /** CalcMostSuitableMonToSwitchInto: score every Pokemon that could come in against the current foe. */
+  function switchScores(st, side, c) {
+    const foe = act(st, other(side));
+    const out = [];
+    if (!foe || foe.fainted) return out;
+    const ctx = c || context(st, side, H.expectedDice());
+    st[side].team.forEach((m, i) => {
+      if (m.fainted || i === st[side].active) return;
+      const entry = hazardDamage(st, side, m);
+      if (entry >= m.hp) return;   // would faint on entry
+      let score = 0, flags = 0;
+      const mSpe = speed(st, m), fSpe = speed(st, foe);
+      if (st.trickRoom ? mSpe <= fSpe : mSpe >= fSpe) { score += SW.OUTSPEEDS; flags |= F.OUTSPEEDS; }
+      const myAtk = m.moves.filter(id => meta(id).cat !== 'X');
+      const koMoves = myAtk.filter(id => ctx.dmg(m, foe, id) >= foe.hp && !(foe.hp === foe.maxHp && (foe.ability === 'Sturdy' || itemName(foe) === 'Focus Sash') && !meta(id).multihit));
+      if (koMoves.length) {
+        score += SW.KO; flags |= F.KO;
+        if (MOXIE.has(m.ability) || TRAPPERS.has(m.ability)) { score += SW.REVENGE; flags |= F.REVENGE; }
+        else if (koMoves.some(id => priorityOf(st, m, id) > 0)) {
+          score += SW.REVENGE; flags |= F.REVENGE;
+          if (!(flags & F.OUTSPEEDS)) { score += SW.OUTSPEEDS; flags |= F.OUTSPEEDS; }
+        } else if (koMoves.some(id => ['Fell Stinger', 'Pursuit'].includes(meta(id).name))) { score += SW.REVENGE; flags |= F.REVENGE; }
+      } else {
+        if (!myAtk.length && !m.moves.length) { out.push({ i, m, score: -1, flags }); return; }
+        const hz = st[side].hazards;
+        if (m.moves.some(id => meta(id).eff === 129 || meta(id).name === 'Defog') && (hz.sr || hz.spikes || hz.tspikes || hz.web) && alive(st, side).length >= 2) { score += SW.HAZARDS; flags |= F.HAZARDS; }
+        if (myAtk.some(id => ctx.dmg(m, foe, id) >= foe.hp / 2)) { score += SW.TWO_HKO; flags |= F.TWO_HKO; }
+      }
+      // defensive check against each of the foe's attacks (priority moves first)
+      const hpIn = Math.max(0, m.hp - entry);
+      const foeAtk = usable(foe, st).filter(id => meta(id).cat !== 'X').sort((a, b) => priorityOf(st, foe, b) - priorityOf(st, foe, a));
+      let faints = false, weak = false, normal = 0;
+      for (const id of foeAtk) {
+        let first = ctx.dmg(foe, m, id), others = first;
+        if (m.disguise) first = 0;
+        else if (first >= hpIn) {
+          faints = true;
+          if (flags & F.OUTSPEEDS && priorityOf(st, foe, id) > 0 && !(st.terrain === 'Psychic' && grounded(m))) flags &= ~F.OUTSPEEDS;
+          break;
+        }
+        if (m.hp === m.maxHp && (m.ability === 'Multiscale' || m.ability === 'Shadow Shield')) others *= 2;
+        if (hpIn <= first + others) weak = true;
+        else if (hpIn <= first + others * 2) normal++;
+      }
+      if (faints) {
+        if (!(flags & F.OUTSPEEDS)) { flags |= F.FAINTS; score = Math.max(0, score - SW.FAINTS); }
+        else if (!(flags & F.KO)) score = Math.max(0, score - SW.FAINTS_OUTSPEEDS);
+        else score = Math.max(0, score - SW.WEAK);
+      } else if (weak) score = Math.max(0, score - SW.WEAK);
+      else if (!normal) { score += SW.RESIST_ALL; flags |= F.RESIST_ALL; }
+      else {
+        const fs = E.rawStats(foe.spec), ms = E.rawStats(m.spec);
+        const stage = s => (s >= 0 ? (2 + s) / 2 : 2 / (2 - s));
+        const atk = fs.atk * stage(foe.boosts.atk), spa = fs.spa * stage(foe.boosts.spa);
+        const phys = foeAtk.some(id => meta(id).cat === 'P'), spec = foeAtk.some(id => meta(id).cat === 'S');
+        const cantWall = (phys && ms.def <= atk) || (spec && ms.spd <= spa);
+        if (!cantWall) { score += SW.WALLS; flags |= F.WALLS; }
+      }
+      out.push({ i, m, score, flags });
+    });
+    return out.sort((a, b) => b.score - a.score || a.i - b.i);
+  }
+  function bestSwitch(st, side, c) { return switchScores(st, side, c)[0] || null; }
+  function wontDoTooMuch(c, cand) {
+    // PredictedMoveWontDoTooMuchToMon
+    const { st, foe } = c;
+    if (cand.flags & F.FAINTS) return false;
+    const p = c.predicted;
+    if (!p || meta(p).cat === 'X' || meta(p).name === 'Pursuit') return true;
+    if (cand.flags & F.RESIST_ALL) return true;
+    if (meta(p).eff === 237) return true;
+    const m = cand.m;
+    const d = (m.disguise ? Math.floor(m.maxHp / 8) : c.dmg(foe, m, p)) + hazardDamage(st, m.side, m);
+    if (d >= m.hp) return false;
+    if (d * 2 < m.hp) return true;
+    return d * 2 >= m.maxHp && m.moves.some(id => HEAL_EFFECTS.has(meta(id).eff)) && speed(st, m) > speed(st, foe);
+  }
+  /** ShouldSwitch (singles): the checks that matter for boss fights, in the engine's order. */
+  function shouldSwitch(c) {
+    const { st, me, foe } = c;
+    const side = me.side;
+    if (!bench(st, side).length) return null;
+    if (me.charging || me.rampage || me.recharge) return null;
+    if (['Shadow Tag', 'Arena Trap'].includes(foe.ability) && !hasType(me, 'Ghost') && (foe.ability !== 'Arena Trap' || grounded(me))) return null;
+    if (foe.ability === 'Magnet Pull' && hasType(me, 'Steel')) return null;
+    const cooldown = st.turn - (me.enteredTurn || 0) <= 1;   // just switched in
+    const ranked = c.ranked || (c.ranked = switchScores(st, side, c));
+    if (!ranked.length) return null;
+    const p = c.predicted;
+    // 1. a teammate absorbs the move the player is about to use
+    if (p && meta(p).cat !== 'X' && !me.absorbCooldown && me.boosts.eva < 3) {
+      const t = meta(p).type;
+      const damagerFoe = isDamager(fightingStyle(st, foe));
+      if (!(damagerFoe ? false : (cooldown || !coin(c.rng, 0.5)))) {
+        const aiFirst = !c.firstVs(foe, me, p, c.myStrongest);
+        if (!(aiFirst && c.iCanKO)) {
+          const big = c.dmg(foe, me, p) >= me.hp / 3;
+          const absorber = ranked.find(r => ABSORBS[r.m.ability] === t && !(r.m.ability === 'Levitate' && t !== 'Ground') && hazardDamage(st, side, r.m) < r.m.hp / 4);
+          if (big && absorber) return { to: absorber.i, why: `${absorber.m.name}'s ${absorber.m.ability} absorbs ${meta(p).name}` };
+        }
+      }
+    }
+    // 2. only bad moves left
+    if (!cooldown && !(me.destinyBond && c.foeKOsMe && !c.firstVs(me, foe, c.myStrongest, p))) {
+      const scores = c.scores || (c.scores = scoreMoves(c, true));
+      if (scores.length && scores.every(s => s.score < 100 - 5)) {
+        for (const r of ranked.slice(0, 2)) if (r.flags & (F.OUTSPEEDS | F.WALLS | F.RESIST_ALL) && wontDoTooMuch(c, r)) return { to: r.i, why: 'only bad moves left' };
+      }
+    }
+    // 3. about to fall asleep from Yawn
+    if (me.yawn === 1 && !me.status && !cooldown) {
+      for (const r of ranked.slice(0, 2)) if (wontDoTooMuch(c, r) && r.flags & (F.WALLS | F.RESIST_ALL | F.KO)) return { to: r.i, why: 'avoid falling asleep' };
+    }
+    // 4. taking heavy end-of-turn damage (bad poison, Leech Seed)
+    if (!cooldown && ((me.status === 'tox' && (me.toxic || 0) >= 2) || me.seeded) && me.hp > me.maxHp / 3) {
+      for (const r of ranked.slice(0, 2)) if (r.flags & (F.WALLS | F.RESIST_ALL) && wontDoTooMuch(c, r)) return { to: r.i, why: 'shake off end-of-turn damage' };
+    }
+    // 5. would be knocked out before moving
+    if (!cooldown && !me.destinyBond && p && meta(p).cat !== 'X' && !(me.status === 'par' && me.hp < me.maxHp / 3 && !['Quick Feet', 'Natural Cure'].includes(me.ability))) {
+      const aiFirst = c.myStrongest && c.firstVs(me, foe, c.myStrongest, p);
+      if (!aiFirst && c.foeKOsMe && hazardDamage(st, side, me) < me.maxHp / 3 && (me.hp > me.maxHp / 5 || ranked[0].score >= SW.MAX)) {
+        for (const r of ranked) {
+          const immune = c.dmg(foe, r.m, p) === 0;
+          if ((r.flags & (F.OUTSPEEDS | F.WALLS | F.RESIST_ALL) && immune)
+            || ((r.flags & (F.WALLS | F.RESIST_ALL) || (r.flags & F.KO && r.flags & F.OUTSPEEDS)) && wontDoTooMuch(c, r)))
+            return { to: r.i, why: 'avoid being knocked out' };
+        }
+      }
+    }
+    // 6. its attacking stat has been cut
+    if (!cooldown && isDamager(c.cls)) {
+      const phys = me.moves.some(id => meta(id).cat === 'P'), spec = me.moves.some(id => meta(id).cat === 'S');
+      const low = (phys && !spec && me.boosts.atk <= -2) || (spec && !phys && me.boosts.spa <= -2) || (phys && spec && me.boosts.atk <= -2 && me.boosts.spa <= -2);
+      if (low) for (const r of ranked.slice(0, 2)) if (r.flags & (F.WALLS | F.RESIST_ALL | F.OUTSPEEDS) && wontDoTooMuch(c, r)) return { to: r.i, why: 'its attack has been lowered' };
+    }
+    return null;
+  }
+
+  function policy(opts) {
+    const o = opts || {};
+    return {
+      kind: 'cfru',
+      /** Returns { type: 'move', id } or { type: 'switch', to }, plus the scores when explain is set. */
+      choose(st, side, rng, explain, peek) {
+        const me = act(st, side);
+        const forced = usable(me, st);
+        if (me.charging || (me.rampage && me.lock) || me.recharge) return { type: 'move', id: forced[0] };
+        const c = context(st, side, rng);
+        const sw = shouldSwitch(c);
+        if (sw) {
+          // with U-turn, Volt Switch or Flip Turn it pivots out instead (PIVOT_IMMEDIATELY)
+          const piv = forced.find(id => meta(id).eff === 127 && ['U-turn', 'Volt Switch', 'Flip Turn', 'Parting Shot'].includes(meta(id).name) && negatives(c, id) === 0);
+          if (piv) c.goodToPivot = true;
+          else {
+            if (!peek && /absorbs/.test(sw.why)) st[side].team[sw.to].absorbCooldown = true;
+            return { type: 'switch', to: sw.to, why: sw.why };
+          }
+        }
+        // scores computed during the switch check are reused unless the pivot decision changed them
+        const scores = (!c.goodToPivot && c.scores) || scoreMoves(c, true);
+        const top = Math.max(...scores.map(s => s.score));
+        const best = scores.filter(s => s.score === top);
+        const pick = best.length === 1 || rng.expected ? best[0] : best[Math.floor(rng() * best.length)];
+        if (!peek) { me.aiDesperate = !!(c.desperate && c.desperate.has(pick.id)); me.absorbCooldown = false; }
+        const res = { type: 'move', id: pick.id };
+        if (explain || o.explain) { res.scores = scores; res.style = c.cls; res.ties = best.length; }
+        return res;
+      },
+      replace(st, side) {
+        const r = bestSwitch(st, side);
+        if (r) return r.i;
+        const i = st[side].team.findIndex((m, k) => !m.fainted && k !== st[side].active);
+        return i >= 0 ? i : null;
+      },
+    };
+  }
+
+  return { policy, fightingStyle, switchScores, residual, STYLE_NAMES: {
+    kill: 'attacker', setup: 'set-up sweeper', status: 'status sweeper', stall: 'staller', baton: 'Baton Passer', cleric: 'cleric',
+    screens: 'screen setter', setupScreens: 'screens + attacks', phaze: 'phazer', hazards: 'hazard setter' } };
+});

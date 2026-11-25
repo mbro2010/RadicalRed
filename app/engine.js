@@ -43,11 +43,35 @@
   const HP_SENSITIVE_MV = /^(Eruption|Water Spout|Dragon Energy|Flail|Reversal|Brine|Wring Out|Crush Grip|Hard Press|Final Gambit|Endeavor)$/;
   const cache = new Map();
   function memo(key, fn) { let v = cache.get(key); if (v === undefined) { v = fn(); if (cache.size > 200000) cache.clear(); cache.set(key, v); } return v; }
+  // frozen specs (the AI builds one per battler per decision) keep their key, so it's built once
+  const frozenKeys = new WeakMap();
   function specKey(spec, hpRelevant) {
+    if (Object.isFrozen(spec)) {
+      let k = frozenKeys.get(spec);
+      if (!k) { k = {}; frozenKeys.set(spec, k); }
+      const slot = hpRelevant ? String(hpRelevant) : '0';
+      return k[slot] || (k[slot] = specKeyRaw(spec, hpRelevant));
+    }
+    return specKeyRaw(spec, hpRelevant);
+  }
+  // how much of current HP a damage roll depends on: pinch abilities only care about 1/3, Multiscale about full HP,
+  // Defeatist and Berserk about half; HP-based moves (Eruption, Flail, ...) need the HP itself
+  const PINCH = new Set(['Blaze', 'Torrent', 'Overgrow', 'Swarm']), FULL_HP = new Set(['Multiscale', 'Shadow Shield', 'Tera Shell']);
+  function hpPart(spec, mode) {
+    const pct = spec.hpPct == null ? 100 : spec.hpPct;
+    if (mode === 'roll') {
+      if (PINCH.has(spec.ab)) return pct <= 100 / 3 ? 'L' : 'H';
+      if (FULL_HP.has(spec.ab)) return pct >= 100 ? 'F' : 'D';
+      if (HP_SENSITIVE_AB.has(spec.ab)) return pct <= 50 ? 'L' : 'H';
+      return '';
+    }
+    return Math.round(pct / 2);
+  }
+  function specKeyRaw(spec, hpRelevant) {
     const b = spec.boosts || {};
     return [spec.s, spec.lv, spec.nat, spec.ab, spec.it || 0, spec.iv ? spec.iv.join('.') : '', b.atk || 0, b.def || 0, b.spa || 0, b.spd || 0, b.spe || 0,
       spec.status || (spec.st ? STATUS_CODE[spec.st] : ''), spec.firstTurn ? 1 : 0, spec.entry === false ? 0 : 1,
-      hpRelevant ? Math.round((spec.hpPct == null ? 100 : spec.hpPct) / 2) : ''].join(',');
+      hpRelevant ? hpPart(spec, hpRelevant) : ''].join(',');
   }
   const HP_TYPES = ['Fighting', 'Flying', 'Poison', 'Ground', 'Rock', 'Bug', 'Ghost', 'Steel', 'Fire', 'Water', 'Grass', 'Electric', 'Psychic', 'Ice', 'Dragon', 'Dark'];
   /** Hidden Power's type from IVs (order hp, atk, def, spa, spd, spe). Perfect IVs give Dark. */
@@ -137,7 +161,7 @@
     const o = opts || {};
     const m = mv(moveId);
     if (!m || m.k === 'X') return null;
-    const hpRel = HP_SENSITIVE_MV.test(m.f) || HP_SENSITIVE_AB.has(attSpec.ab) || HP_SENSITIVE_AB.has(defSpec.ab);
+    const hpRel = HP_SENSITIVE_MV.test(m.f) ? true : (HP_SENSITIVE_AB.has(attSpec.ab) || HP_SENSITIVE_AB.has(defSpec.ab)) ? 'roll' : false;
     const ds = o.defSide || null;
     const key = ['R', specKey(attSpec, hpRel), specKey(defSpec, hpRel), moveId, o.weather || '', o.terrain || '',
       ds ? [ds.isReflect ? 1 : 0, ds.isLightScreen ? 1 : 0, ds.isAuroraVeil ? 1 : 0].join('') : '', o.crit ? 1 : 0, o.hits || 0].join('|');

@@ -185,7 +185,7 @@
   function consume(m) { m.item = null; if (m.ability === 'Unburden') m.unburden = true; }
   function onEntry(st, side, rng) {
     const m = act(st, side);
-    m.firstTurn = true; m.lock = null; m.charging = null; m.invuln = false; m.rampage = 0; m.protectStreak = 0; m.toxic = m.status === 'tox' ? 0 : m.toxic;
+    m.firstTurn = true; m.enteredTurn = st.turn; m.lock = null; m.charging = null; m.invuln = false; m.rampage = 0; m.protectStreak = 0; m.toxic = m.status === 'tox' ? 0 : m.toxic;
     const hz = st[side].hazards;
     if (itemName(m) !== 'Heavy-Duty Boots' && m.ability !== 'Magic Guard') {
       if (hz.sr) { const dmg = Math.floor(m.maxHp * 0.125 * E.typeEff('Rock', m.types)); hurt(st, m, dmg, 'Stealth Rock'); }
@@ -218,6 +218,7 @@
       st[side].lastOut = out.key; st[side].lastOutTurn = st.turn;
       out.boosts = { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, acc: 0, eva: 0 };
       out.lock = null; out.charging = null; out.invuln = false; out.seeded = false; out.yawn = 0; out.rampage = 0; out.sub = 0; out.destinyBond = false; out.stockpile = 0;
+      out.confused = 0; out.taunt = 0; out.encore = 0; out.encoreMove = null; out.lastMove = null;
       if (out.ability === 'Regenerator') out.hp = Math.min(out.maxHp, out.hp + Math.floor(out.maxHp / 3));
       if (out.ability === 'Natural Cure') out.status = '';
       if (out.status === 'tox') out.toxic = 0;
@@ -352,6 +353,18 @@
       else { log(st, `${user.name} is frozen solid`); return; }
     }
     if (user.flinch) { log(st, `${user.name} flinches`); return; }
+    if (user.confused) {
+      user.confused--;
+      if (user.confused <= 0) { user.confused = 0; log(st, `${user.name} snaps out of confusion`); }
+      else if (!rng.expected && rng() < 1 / 3) {   // Gen 7+ odds: one in three
+        const rs = E.rawStats(user.spec);
+        const a = rs.atk * STAGE(user.boosts.atk), d = rs.def * STAGE(user.boosts.def);
+        const lv = user.spec.lv || 50;
+        const base = Math.floor(Math.floor(Math.floor(2 * lv / 5 + 2) * 40 * a / d) / 50) + 2;
+        hurt(st, user, Math.max(1, Math.floor(base * (85 + Math.floor(rng() * 16)) / 100)), 'hurt itself in confusion');
+        return;
+      }
+    }
     if (user.status === 'par' && !rng.expected && rng() < 0.25) { log(st, `${user.name} is fully paralyzed`); return; }
     const mm = meta(moveId);
     st.events.push({ turn: st.turn, type: 'move', side, user: user.key, move: moveId });
@@ -370,6 +383,8 @@
     }
     if (user.charging === moveId) { user.charging = null; user.invuln = false; }
     log(st, `${side === 'p' ? 'Your' : 'Boss'} ${user.name} uses ${mm.name}`, 'move');
+    user.lastMove = moveId;
+    if (mm.cat === 'X' && user.taunt) { log(st, `${user.name} can't use ${mm.name} after the taunt`); return; }
     if (mm.eff === FAKE_OUT && !user.firstTurn) { log(st, 'But it failed'); return; }
     if (mm.eff === SUCKER && (!ctx.targetAction || ctx.targetAction.type !== 'move' || meta(ctx.targetAction.id).cat === 'X' || !ctx.first)) { log(st, 'But it failed'); return; }
     if (mm.name === 'Focus Punch' && user.hitThisTurn) { log(st, `${user.name} loses its focus`); return; }
@@ -487,6 +502,7 @@
       if (FANG[mm.name] && roll(rng, chanceOf(10)) && canStatus(st, target, FANG[mm.name], mm.name, user)) inflict(st, target, FANG[mm.name], rng, mm.name);
       const flinchP = mm.eff === 31 ? ec : (mm.eff === FAKE_OUT ? 100 : 0) + (['King\'s Rock', 'Razor Fang'].includes(itemName(user)) && mm.eff !== 31 ? 10 : 0);
       if (flinchP && ctx.first && target.ability !== 'Inner Focus' && roll(rng, chanceOf(flinchP))) { target.flinch = true; }
+      if (mm.eff === 76 && roll(rng, chanceOf(ec || 100))) confuse(st, target, rng, mm.name);
       if (HIT_DROP[mm.eff] && roll(rng, chanceOf(ec || 100))) applyBoosts(st, target, { [HIT_DROP[mm.eff]]: mm.name === 'Acid Spray' || mm.name === 'Lumina Crash' ? -2 : -1 }, 'foe');
     }
     if (!sheer && HIT_SELF_UP[mm.eff] && roll(rng, chanceOf(mm.eff === 129 ? 100 : (mm.ec || 100)))) applyBoosts(st, user, HIT_SELF_UP[mm.eff]);
@@ -556,6 +572,11 @@
         if (n === 'Shed Tail') { if (user.hp <= user.maxHp / 2) return; hurt(st, user, Math.ceil(user.maxHp / 2), 'Shed Tail'); }
         if (bench(st, user.side).length) pivot(st, user.side, rng);
         return;
+      case 175: if (target && !target.fainted) { if (target.taunt || target.ability === 'Oblivious' || itemName(target) === 'Mental Herb') log(st, 'But it failed'); else { target.taunt = 3; log(st, `${target.name} fell for the taunt`); } } return;
+      case 90: if (target && !target.fainted) { if (!target.lastMove || target.encore || !target.moves.includes(target.lastMove)) log(st, 'But it failed'); else { target.encore = 3; target.encoreMove = target.lastMove; target.lock = null; log(st, `${target.name} must repeat ${meta(target.lastMove).name}`); } } return;
+      case 49: if (target && !target.fainted) confuse(st, target, rng, n); return;
+      case 118: if (target && !target.fainted) { applyBoosts(st, target, { atk: 2 }, 'foe'); confuse(st, target, rng, n); } return;
+      case 166: if (target && !target.fainted) { applyBoosts(st, target, { spa: 1 }, 'foe'); confuse(st, target, rng, n); } return;
       case 28: if (target && !target.fainted && bench(st, target.side).length && target.ability !== 'Suction Cups') { const o = bench(st, target.side); switchIn(st, target.side, st[target.side].team.indexOf(o[rng.expected ? 0 : Math.floor(rng() * o.length)]), rng, 'forced out'); } return;
       default: break;
     }
@@ -573,6 +594,22 @@
     // anything else (Celebrate, Helping Hand, Assist, Trick, ...) has no effect we model
   }
 
+  function confuse(st, target, rng, why) {
+    if (target.confused || target.fainted || target.ability === 'Own Tempo' || (st.terrain === 'Misty' && grounded(target)) || target.sub) return;
+    target.confused = rng.expected ? 3 : 2 + Math.floor(rng() * 4);
+    log(st, `${target.name} becomes confused (${why})`);
+    const it = itemName(target);
+    if (it === 'Persim Berry' || it === 'Lum Berry') { consume(target); target.confused = 0; log(st, `${target.name}'s ${it} cures its confusion`); }
+  }
+  /** HP a Pokemon loses to entry hazards when it switches in on `side`. */
+  function hazardDamage(st, side, m) {
+    const hz = st[side].hazards;
+    if (itemName(m) === 'Heavy-Duty Boots' || m.ability === 'Magic Guard') return 0;
+    let d = 0;
+    if (hz.sr) d += Math.floor(m.maxHp * 0.125 * E.typeEff('Rock', m.types));
+    if (hz.spikes && grounded(m)) d += Math.floor(m.maxHp * [0, 1 / 8, 1 / 6, 1 / 4][hz.spikes]);
+    return d;
+  }
   function pivot(st, side, rng) {
     const pol = st.policies[side];
     const idx = pol.replace(st, side, rng, 'pivot');
@@ -620,6 +657,11 @@
       if (sd.tailwind) sd.tailwind--;
       if (sd.safeguard) sd.safeguard--;
       for (const m of sd.team) { m.flinch = false; m.hitThisTurn = false; if (!m.protect) m.protectStreak = 0; m.protect = false; }
+      const cur = act(st, side);
+      if (cur && !cur.fainted) {
+        if (cur.taunt && --cur.taunt === 0) log(st, `${cur.name}'s taunt wears off`);
+        if (cur.encore && --cur.encore === 0) { cur.encoreMove = null; log(st, `${cur.name}'s encore ends`); }
+      }
       const m = act(st, side); if (m) m.firstTurn = false;
     }
   }
@@ -628,7 +670,9 @@
   function usable(m, st) {
     if (m.charging) return [m.charging];
     if (m.rampage && m.lock) return [m.lock];
+    if (m.encore && m.encoreMove && m.moves.includes(m.encoreMove)) return [m.encoreMove];
     let mv = m.moves.slice();
+    if (m.taunt) mv = mv.filter(id => meta(id).cat !== 'X');
     if (m.lock && mv.includes(m.lock)) return [m.lock];
     if (itemName(m) === 'Assault Vest') mv = mv.filter(id => meta(id).cat !== 'X');
     if (!m.firstTurn) mv = mv.filter(id => meta(id).eff !== FAKE_OUT);
@@ -854,7 +898,7 @@
         }
       }
       // switch: the boss already chose its move against `me`; the newcomer takes it
-      const aiMove = st.policies[other(side)].choose(st, other(side), expectedDice());
+      const aiMove = st.policies[other(side)].choose(st, other(side), expectedDice(), false, true);
       for (const b of bench(st, side)) {
         let entryDmg = 0, pEntry = 0;
         const hz = st[side].hazards;
@@ -913,12 +957,18 @@
     };
   }
 
+  // ---------------- the boss AI, ported from the engine (ai.js) ----------------
+  const AI = (typeof createAI === 'function' ? createAI : require('./ai.js'))({
+    E, meta, usable, act, other, bench, alive, speed, priorityOf, canStatus, hitChance, specNow, fieldOpts, itemName, hasType, grounded,
+    hazardDamage, expectedDice, SETUP, EFFECT_BOOST, EFFECT_DROP });
+  function bossPolicy(opts) { return AI.policy(opts); }
+
   // ---------------- running battles ----------------
   function runBattle(playerSpecs, bossSpecs, opts) {
     const o = opts || {};
     const st = newBattle(playerSpecs, bossSpecs, o);
     const rng = o.expected ? expectedDice() : mulberry32(o.seed || 1);
-    st.policies = { p: o.player || plannerPolicy(o.plannerOpts), a: o.ai || aiPolicy(o.aiNoise == null ? 10 : o.aiNoise) };
+    st.policies = { p: o.player || plannerPolicy(o.plannerOpts), a: o.ai || bossPolicy() };
     st.events.push({ turn: 0, type: 'lead', p: act(st, 'p').key, a: act(st, 'a').key });
     log(st, `You lead with ${act(st, 'p').name}; the boss leads with ${act(st, 'a').name}`, 'switch');
     // entry effects: faster Pokemon's ability first, so the slower one's weather wins
@@ -1064,5 +1114,5 @@
     return { winner: st.winner, turns, faints, totalTurns: st.turn };
   }
 
-  return { meta, makeMon, newBattle, runBattle, simulate, simulateAsync, planFight, scriptOf, plannerPolicy, aiPolicy, speed, mulberry32, expectedDice, specNow, act };
+  return { meta, makeMon, newBattle, runBattle, simulate, simulateAsync, planFight, scriptOf, plannerPolicy, aiPolicy, bossPolicy, AI, speed, mulberry32, expectedDice, specNow, act };
 });
