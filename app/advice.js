@@ -7,6 +7,8 @@
   'use strict';
   const D = E.D;
   const VS = { safe: 3, ok: 2, risky: 1, lose: 0 };
+  const OPT = { tutors: false };   // count move tutor moves as available (you still have to reach the tutor)
+  function setOptions(o) { Object.assign(OPT, o || {}); }
   const CANDIDATE_NATURES = ['Adamant', 'Jolly', 'Modest', 'Timid', 'Bold', 'Impish', 'Calm', 'Careful', 'Brave', 'Quiet', 'Hasty', 'Naive', 'Hardy']
     .map(n => D.natures.findIndex(x => x.n === n)).filter(i => i >= 0);
 
@@ -33,6 +35,7 @@
         if (E.mv(id) && !out.has(id) && !E.isBanned(id, s.g)) out.set(id, { id, how: t < 120 ? `TM${String(t + 1).padStart(2, '0')}` : `HM${String(t - 119).padStart(2, '0')}`, tm: t });
       }
     }
+    if (L && L.u && OPT.tutors) for (const id of L.u) if (E.mv(id) && !out.has(id) && !E.isBanned(id, s.g)) out.set(id, { id, how: 'Move Tutor', tutor: true });
     for (const id of spec.mv || []) if (!out.has(id) && E.mv(id)) out.set(id, { id, how: 'knows it' });
     return [...out.values()];
   }
@@ -162,5 +165,5 @@
     return { steps, upcoming };
   }
 
-  return { natureAdvice, movePlan, available, bestSet, upcomingMajor, fightScore };
+  return { natureAdvice, movePlan, available, bestSet, upcomingMajor, fightScore, setOptions };
 });

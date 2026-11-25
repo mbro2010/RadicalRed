@@ -44,7 +44,7 @@ for (const s of species) {
     i: s.id, n: display, g: s.name, c: m.calc, t: s.types,
     s: STAT.map(k => s.base[k]),
     a: [s.abilities[0], s.abilities[1], s.hiddenAbility].map(x => x ? x.trim() : null),
-    w: m.weightkg || 10,
+    w: m.weightkg || 10, gr: s.growthRate || 0, gd: s.genderRatio,
     ...(battleOnly ? { bo: 1 } : {}),
     ...(m.custom ? { x: 1 } : {}),
   });
@@ -93,6 +93,9 @@ for (const s of outSpecies) {
   if (!L) continue;
   outLearn[s.i] = { l: L.levelup.filter(([, mv]) => mv > 0), t: L.tm };
 }
+// move tutors: learn[species].u = tutor move ids
+const tutors = read('tutors.json');
+for (const [sid, idx] of Object.entries(tutors.species)) if (outLearn[sid]) outLearn[sid].u = idx.map(k => tutors.moves[k].id).filter(Boolean);
 
 // ---------- bosses ----------
 const MILESTONE_AFTER = {414: 'Boulder Badge', 46: 'Archer', 415: 'Cascade Badge', 416: 'Thunder Badge', 417: 'Rainbow Badge',

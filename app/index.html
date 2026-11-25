@@ -6,62 +6,73 @@
 <style>
 /* Layout: sticky header with three tabs (Team, Plan, Battle); single column of cards; editor opens as a full-screen sheet. */
 :root {
-  --bg: #edf1f3; --surface: #ffffff; --surface-2: #f5f8fa; --ink: #18202a; --muted: #5a6573; --line: #d5dde3;
-  --accent: #b8382f; --accent-ink: #ffffff; --accent-soft: #f6e1df; --chip: #e3e9ee;
+  --bg: #f2eee2; --bg-stripe: #ebe6d8; --surface: #fffdf6; --surface-2: #f6f2e6; --ink: #232a36; --muted: #5d6676; --line: #cfc8b4;
+  --box-edge: #485a72; --box-inner: #c5d3e1; --bar: #c8423a; --bar-edge: #8f2a24; --bar-ink: #ffffff;
+  --accent: #c8423a; --accent-ink: #ffffff; --accent-soft: #f6dfda; --chip: #e7e1d1; --btn-shadow: #b9b19c; --cursor: #232a36;
   --safe: #1f7a45; --safe-soft: #dcefe3; --ok: #2b6f8a; --ok-soft: #dcebf1; --risky: #9a5b00; --risky-soft: #fbeed8; --lose: #b8382f; --lose-soft: #f6e1df;
-  --up: #1f7a45; --down: #b8382f;
+  --up: #1f7a45; --down: #b8382f; --hp-hi: #3ec46a; --hp-mid: #e8c22c; --hp-lo: #e0523e; --hp-track: #3a4252;
   --font-display: "Pixelify Sans", "Courier New", monospace;
   --font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-data: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #10151b; --surface: #19212a; --surface-2: #1f2832; --ink: #e5eaf0; --muted: #96a3b1; --line: #2c3744;
-    --accent: #e8695f; --accent-ink: #1a0d0b; --accent-soft: #3a2220; --chip: #24303b;
+    --bg: #11161f; --bg-stripe: #141a24; --surface: #1b2230; --surface-2: #212a3a; --ink: #e6eaf0; --muted: #98a4b4; --line: #303b4d;
+    --box-edge: #8ea6c4; --box-inner: #2c394f; --bar: #8f2d28; --bar-edge: #5e1c19; --bar-ink: #fff3ef;
+    --accent: #ec6e62; --accent-ink: #1a0d0b; --accent-soft: #3a2220; --chip: #263042; --btn-shadow: #0b0f16; --cursor: #e6eaf0;
     --safe: #63c48f; --safe-soft: #173226; --ok: #6fb7d3; --ok-soft: #16303b; --risky: #e6a64b; --risky-soft: #3a2c16; --lose: #ef7d74; --lose-soft: #3a2220;
-    --up: #63c48f; --down: #ef7d74; color-scheme: dark;
+    --up: #63c48f; --down: #ef7d74; --hp-track: #0d1118; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #10151b; --surface: #19212a; --surface-2: #1f2832; --ink: #e5eaf0; --muted: #96a3b1; --line: #2c3744;
-  --accent: #e8695f; --accent-ink: #1a0d0b; --accent-soft: #3a2220; --chip: #24303b;
+  --bg: #11161f; --bg-stripe: #141a24; --surface: #1b2230; --surface-2: #212a3a; --ink: #e6eaf0; --muted: #98a4b4; --line: #303b4d;
+  --box-edge: #8ea6c4; --box-inner: #2c394f; --bar: #8f2d28; --bar-edge: #5e1c19; --bar-ink: #fff3ef;
+  --accent: #ec6e62; --accent-ink: #1a0d0b; --accent-soft: #3a2220; --chip: #263042; --btn-shadow: #0b0f16; --cursor: #e6eaf0;
   --safe: #63c48f; --safe-soft: #173226; --ok: #6fb7d3; --ok-soft: #16303b; --risky: #e6a64b; --risky-soft: #3a2c16; --lose: #ef7d74; --lose-soft: #3a2220;
-  --up: #63c48f; --down: #ef7d74; color-scheme: dark;
+  --up: #63c48f; --down: #ef7d74; --hp-track: #0d1118; color-scheme: dark;
 }
 * { box-sizing: border-box; }
-body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45;
+body { background: var(--bg) repeating-linear-gradient(135deg, var(--bg) 0 14px, var(--bg-stripe) 14px 28px); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 56px; }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
 button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .wrap { max-width: 880px; margin: 0 auto; display: grid; gap: 14px; }
-header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 12px 8px; display: grid; gap: 10px; border-bottom: 1px solid var(--line); }
+header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 10px 8px; display: grid; gap: 8px; }
+.titlebar { background: var(--bar); color: var(--bar-ink); border: 3px solid var(--bar-edge); border-radius: 10px; padding: 8px 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; box-shadow: inset 0 -4px 0 rgba(0,0,0,.18); }
+.titlebar .ball { width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(var(--bar-ink) 0 44%, #232a36 44% 56%, var(--bar-ink) 56%); border: 2px solid #232a36; position: relative; flex: none; }
+.titlebar .ball::after { content: ""; position: absolute; inset: 6px; border-radius: 50%; background: var(--bar-ink); border: 2px solid #232a36; }
 .brand { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-h1 { font-family: var(--font-display); font-size: 24px; line-height: 1; margin: 0; }
-h1 .accent { color: var(--accent); }
-.status { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
-.pill { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--chip); white-space: nowrap; font-variant-numeric: tabular-nums; }
+h1 { font-family: var(--font-display); font-size: 24px; line-height: 1; margin: 0; letter-spacing: .02em; }
+h1 .accent { color: inherit; opacity: .85; }
+.titlebar .muted { color: inherit; opacity: .85; }
+.status { display: flex; gap: 6px; flex-wrap: wrap; }
+.pill { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--chip); color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .pill.cap { background: var(--accent-soft); color: var(--accent); }
 .pill.warn { background: var(--risky-soft); color: var(--risky); }
-.tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; background: var(--chip); padding: 4px; border-radius: 12px; }
-.tabs button { border: 0; background: transparent; padding: 8px 6px; border-radius: 9px; font-weight: 600; font-size: 14px; }
-.tabs button[aria-selected="true"] { background: var(--surface); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
-h2 { font-family: var(--font-display); font-size: 20px; margin: 0; text-wrap: balance; }
+.tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; background: var(--surface); padding: 4px; border-radius: 10px; border: 3px solid var(--box-edge); box-shadow: inset 0 0 0 2px var(--box-inner); }
+.tabs button { border: 0; background: transparent; padding: 7px 4px 7px 14px; border-radius: 6px; font-family: var(--font-display); font-weight: 700; font-size: 16px; position: relative; text-align: left; }
+.tabs button::before { content: ""; position: absolute; left: 4px; top: 50%; margin-top: -5px; border: 5px solid transparent; border-left: 7px solid var(--cursor); visibility: hidden; }
+.tabs button[aria-selected="true"]::before { visibility: visible; }
+.tabs button[aria-selected="true"] { background: var(--surface-2); }
+@media (max-width: 380px) { .tabs button { font-size: 14px; padding-left: 12px; } }
+h2 { font-family: var(--font-display); font-size: 21px; margin: 0; text-wrap: balance; letter-spacing: .01em; }
 h3 { font-size: 15px; margin: 0; }
 .muted { color: var(--muted); }
 .small { font-size: 13px; }
 .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .grow { flex: 1 1 auto; min-width: 0; }
-.btn { border: 1px solid var(--line); background: var(--surface); padding: 8px 12px; border-radius: 10px; font-weight: 600; font-size: 14px; }
-.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-.btn.ghost { background: transparent; }
+.btn { border: 2px solid var(--box-edge); background: var(--surface); padding: 7px 12px; border-radius: 8px; font-weight: 600; font-size: 14px; box-shadow: 0 3px 0 var(--btn-shadow); transition: transform .05s; }
+.btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--btn-shadow); }
+.btn.primary { background: var(--accent); border-color: var(--bar-edge); color: var(--accent-ink); }
+.btn.ghost { background: transparent; box-shadow: none; border-color: var(--line); }
 .btn.small { padding: 5px 9px; font-size: 13px; }
 .btn:disabled { opacity: .5; cursor: default; }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; display: grid; gap: 8px; min-width: 0; }
+.card { background: var(--surface); border: 3px solid var(--box-edge); box-shadow: inset 0 0 0 2px var(--box-inner); border-radius: 10px; padding: 12px 14px; display: grid; gap: 8px; min-width: 0; }
 .section { display: grid; gap: 10px; }
 .section > .head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-.empty { padding: 20px; text-align: center; color: var(--muted); background: var(--surface); border: 1px dashed var(--line); border-radius: 12px; display: grid; gap: 10px; justify-items: center; }
+.empty { padding: 20px; text-align: center; color: var(--muted); background: var(--surface); border: 3px dashed var(--box-inner); border-radius: 10px; display: grid; gap: 10px; justify-items: center; }
 .banner { padding: 10px 12px; border-radius: 10px; background: var(--risky-soft); color: var(--risky); font-size: 13.5px; }
 .type { font-size: 10.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 2px 6px; border-radius: 5px; display: inline-block; }
 .types { display: inline-flex; gap: 4px; flex-wrap: wrap; }
@@ -135,9 +146,9 @@ footer p { margin: 0; max-width: 72ch; }
 .progress span { display: block; height: 100%; background: var(--accent); transition: width .2s; }
 .odds { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .odds > div { display: grid; gap: 2px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 8px; text-align: center; }
-.odds .big { font-family: var(--font-display); font-size: 24px; line-height: 1; font-variant-numeric: tabular-nums; }
+.odds .big { font-family: var(--font-display); font-size: 26px; line-height: 1; font-variant-numeric: tabular-nums; }
 ol.script { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
-.turn { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: grid; gap: 6px; min-width: 0; }
+.turn { background: var(--surface); border: 3px solid var(--box-edge); box-shadow: inset 0 0 0 2px var(--box-inner); border-radius: 10px; padding: 10px 12px; display: grid; gap: 6px; min-width: 0; }
 .turn.sac { border-color: var(--risky); }
 .turn .t-head { font-size: 13px; color: var(--muted); }
 .turn .t-head b { color: var(--ink); }
@@ -150,26 +161,70 @@ ol.script { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8
 .tm { display: flex; gap: 6px; align-items: center; font-size: 13px; padding: 4px 6px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); }
 .tm .num { font-family: var(--font-data); font-size: 11.5px; color: var(--muted); }
 input.search { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; }
+/* sprites from your own ROM (sprites/); missing files just leave these empty */
+.ico { width: 32px; height: 32px; flex: none; display: inline-block; vertical-align: middle; background-image: url(sprites/icons.png); background-repeat: no-repeat;
+  background-size: calc(32px * var(--icols, 40)) auto; background-position: calc(-32px * var(--x)) calc(-32px * var(--y)); image-rendering: pixelated; }
+.ico.x2 { width: 64px; height: 64px; background-size: calc(64px * var(--icols, 40)) auto; background-position: calc(-64px * var(--x)) calc(-64px * var(--y)); }
+.spr { width: 64px; height: 64px; flex: none; display: inline-block; background-image: url(sprites/front.png); background-repeat: no-repeat;
+  background-size: calc(64px * var(--fcols, 32)) auto; background-position: calc(-64px * var(--x)) calc(-64px * var(--y)); image-rendering: pixelated; }
+.spr.x2 { width: 128px; height: 128px; background-size: calc(128px * var(--fcols, 32)) auto; background-position: calc(-128px * var(--x)) calc(-128px * var(--y)); }
+.spr.flip { transform: scaleX(-1); }
+.hp { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px; font-family: var(--font-display); font-size: 12px; font-weight: 700; }
+.hp .track { height: 8px; border-radius: 6px; background: var(--hp-track); border: 2px solid var(--box-edge); overflow: hidden; }
+.hp .track i { display: block; height: 100%; background: var(--hp-hi); border-radius: 3px; }
+.hp .track i.mid { background: var(--hp-mid); }
+.hp .track i.lo { background: var(--hp-lo); }
+.slot { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 10px; align-items: center; }
+.slot .who { display: grid; gap: 2px; min-width: 0; }
+.slot .who b { font-family: var(--font-display); font-size: 17px; font-weight: 700; overflow-wrap: anywhere; }
+.arena { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: end; background: linear-gradient(var(--surface-2) 0 62%, var(--chip) 62%); border-radius: 8px; padding: 8px; }
+.arena .side { display: grid; justify-items: center; gap: 4px; min-width: 0; text-align: center; }
+.arena .plate { width: 100%; background: var(--surface); border: 2px solid var(--box-edge); border-radius: 8px; padding: 4px 8px; display: grid; gap: 2px; text-align: left; }
+.arena .plate b { font-family: var(--font-display); font-size: 15px; overflow-wrap: anywhere; }
+.area { padding: 0; gap: 0; overflow: hidden; }
+.area > summary { list-style: none; cursor: pointer; padding: 10px 14px; display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; }
+.area > summary::-webkit-details-marker { display: none; }
+.area > summary .nm { font-family: var(--font-display); font-size: 18px; font-weight: 700; }
+.area > summary .st { display: flex; align-items: center; gap: 6px; justify-self: end; }
+.area .body { padding: 0 14px 12px; display: grid; gap: 10px; }
+.area.done > summary .nm::after { content: " ✓"; color: var(--safe); }
+.enc { display: grid; gap: 4px; }
+.enc-row { display: grid; grid-template-columns: 32px 1fr auto; gap: 8px; align-items: center; padding: 3px 6px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); }
+.enc-row .nm { font-weight: 600; font-size: 14px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.enc-row .meta { font-family: var(--font-data); font-size: 11.5px; color: var(--muted); }
+.enc-row.dupe { opacity: .55; }
+.seg { display: inline-flex; border: 2px solid var(--box-edge); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; background: var(--surface); padding: 4px 10px; font-size: 13px; font-weight: 600; }
+.seg button[aria-pressed="true"] { background: var(--box-edge); color: var(--surface); }
+.team-icons { display: flex; flex-wrap: wrap; gap: 2px; align-items: center; }
+.team-icons .t { display: inline-flex; flex-direction: column; align-items: center; font-family: var(--font-data); font-size: 10.5px; color: var(--muted); }
+.badge-row { display: flex; gap: 4px; flex-wrap: wrap; }
+.badge-row .bd { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--box-edge); background: var(--chip); display: grid; place-items: center; font-size: 11px; font-weight: 700; }
+.badge-row .bd.on { background: var(--hp-mid); color: #232a36; }
+.check { display: grid; gap: 6px; }
+.dropzone { border: 3px dashed var(--box-inner); border-radius: 10px; padding: 16px; text-align: center; display: grid; gap: 8px; justify-items: center; }
 </style>
 
 <div class="wrap">
   <header class="top">
-    <div class="brand">
+    <div class="titlebar">
+      <span class="ball" aria-hidden="true"></span>
       <h1>Nuzlocke <span class="accent">Coach</span></h1>
       <span class="muted small">Radical Red 4.1 · Hardcore</span>
-      <div class="status" id="status"><span class="pill">Loading…</span></div>
     </div>
+    <div class="status" id="status"><span class="pill">Loading…</span></div>
     <nav class="tabs" role="tablist" aria-label="Sections">
-      <button role="tab" id="tab-team" aria-selected="true" data-tab="team">Team</button>
+      <button role="tab" id="tab-team" aria-selected="true" data-tab="team">Party</button>
+      <button role="tab" id="tab-routes" aria-selected="false" data-tab="routes">Routes</button>
       <button role="tab" id="tab-plan" aria-selected="false" data-tab="plan">Plan</button>
       <button role="tab" id="tab-battle" aria-selected="false" data-tab="battle">Battle</button>
     </nav>
   </header>
   <main id="main"><div class="empty">Loading game data and the damage calculator…</div></main>
   <footer>
-    <p><b>Where the numbers come from.</b> Stats, types, abilities, moves, learnsets and every boss team are read from the Radical Red 4.1 ROM. Damage uses the open-source Smogon damage calculator (Gen 9 rules) fed with those values. Risk percentages count every damage roll, multi-hit count, crit and miss, assuming the boss uses its strongest move on you each turn.</p>
-    <p><b>Battle plans.</b> The Plan tab simulates the whole fight hundreds of times: damage rolls, crits, misses, speed, status, stat changes, hazards, weather, terrain, healing, berries and other key items and abilities. The boss AI is an approximation of Radical Red's: it takes KOs, otherwise attacks hard, and sets up, statuses, heals, lays hazards or pivots when that looks good.</p>
-    <p><b>Limits.</b> Radical Red's own abilities and moves are modeled from their in-game descriptions and flagged when an effect isn't calculated. Confusion, Encore, Taunt and a few rare items aren't simulated. Move tutor moves aren't in move advice yet. Double battles are treated as singles.</p>
+    <p><b>Where the numbers come from.</b> Stats, types, abilities, moves, learnsets, evolutions, wild encounters, trainers and every boss team are read from the Radical Red 4.1 ROM. Damage uses the open-source Smogon damage calculator (Gen 9 rules) fed with those values. Sprites are decoded from your own copy of the game.</p>
+    <p><b>Battle plans.</b> The Plan tab simulates the whole fight hundreds of times: damage rolls, crits, misses, speed, status, confusion, stat changes, hazards, weather, terrain, healing, berries, Mega Evolution, Z-Moves and other key items and abilities. The boss AI is ported from the battle AI of the engine Radical Red is built on (Complete Fire Red Upgrade): the same move scores, fighting styles and switching rules. Radical Red may have private changes to it that the public source doesn't show.</p>
+    <p><b>Limits.</b> Double battles are planned as singles. Radical Red's own abilities and moves are modeled from their in-game descriptions and flagged when an effect isn't calculated. Your own Z-Moves aren't planned yet.</p>
   </footer>
 </div>
 <div class="sheet" id="sheet" hidden></div>
@@ -177,6 +232,8 @@ input.search { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--l
 <script src="https://cdn.jsdelivr.net/npm/@smogon/calc@0.12.0/dist/data/production.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@smogon/calc@0.12.0/dist/production.min.js"></script>
 <script src="engine.js"></script>
+<script src="ai.js"></script>
 <script src="sim.js"></script>
+<script src="save.js"></script>
 <script src="advice.js"></script>
 <script src="app.js"></script>

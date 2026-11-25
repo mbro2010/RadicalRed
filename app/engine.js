@@ -69,7 +69,7 @@
   }
   function specKeyRaw(spec, hpRelevant) {
     const b = spec.boosts || {};
-    return [spec.s, spec.lv, spec.nat, spec.ab, spec.it || 0, spec.iv ? spec.iv.join('.') : '', b.atk || 0, b.def || 0, b.spa || 0, b.spd || 0, b.spe || 0,
+    return [spec.s, spec.lv, spec.nat, spec.ab, spec.it || 0, spec.iv ? spec.iv.join('.') : '', spec.ev ? spec.ev.join('.') : '', b.atk || 0, b.def || 0, b.spa || 0, b.spd || 0, b.spe || 0,
       spec.status || (spec.st ? STATUS_CODE[spec.st] : ''), spec.firstTurn ? 1 : 0, spec.entry === false ? 0 : 1,
       hpRelevant ? hpPart(spec, hpRelevant) : ''].join(',');
   }
@@ -100,7 +100,7 @@
     const ab = abilityInfo(spec.ab);
     const item = spec.it ? (D.items[spec.it] || {}).c : null;
     const ivs = {}; const evs = {};
-    STAT.forEach((k, i) => { ivs[k] = spec.iv ? spec.iv[i] : 31; evs[k] = 0; });
+    STAT.forEach((k, i) => { ivs[k] = spec.iv ? spec.iv[i] : 31; evs[k] = spec.ev ? spec.ev[i] || 0 : 0; });
     const boosts = Object.assign({}, spec.boosts || {});
     if (spec.ab === 'Valiant Shield' && spec.entry !== false) boosts.def = Math.min(6, (boosts.def || 0) + 1);
     const opts = {
@@ -234,7 +234,7 @@
     return {
       move: m, moveName: m.f, type: r.type, eff: r.eff, hp, cur,
       min, max, minPct: 100 * min / hp, maxPct: 100 * max / hp,
-      critMax: Math.max(...rc.rolls), critMaxPct: 100 * Math.max(...rc.rolls) / hp,
+      critMax: Math.max(...rc.rolls), critMaxPct: 100 * Math.max(...rc.rolls) / hp, critMinPct: 100 * Math.min(...rc.rolls) / hp,
       hits: r.hits, acc: m.a, priority: r.priority,
       ko: { text, n: min >= cur ? 1 : n, chance: koAll }, sashed, notes,
       critChance: ALWAYS_CRIT.has(m.f) ? 1 : HIGH_CRIT.has(m.f) ? 0.125 : 1 / 24,
@@ -443,6 +443,7 @@
     if (L) {
       for (const [lv, id] of L.l) if (lv <= level && mv(id)) out.set(id, lv === 0 ? 'Evolution' : `Lv ${lv}`);
       for (const t of L.t) { const id = D.tms[t]; if (mv(id) && !out.has(id)) out.set(id, t < 120 ? `TM${String(t + 1).padStart(2, '0')}` : `HM${String(t - 119).padStart(2, '0')}`); }
+      for (const id of L.u || []) if (mv(id) && !out.has(id)) out.set(id, 'Move Tutor');
     }
     const list = [];
     for (const [id, how] of out) list.push({ id, how, banned: isBanned(id, s && s.g) });

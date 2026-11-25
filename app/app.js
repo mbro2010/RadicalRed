@@ -10,9 +10,10 @@
   const main = $('#main');
   const sheet = $('#sheet');
 
-  let D = null, E = null, SIM = null, ADV = null;
+  let D = null, E = null, SIM = null, ADV = null, SR = null;
+  let SPR = null;   // sprite index (sprites/index.json); without it the page simply shows no sprites
   const S = {
-    roster: [], run: { beaten: [], tms: [] }, tab: 'team', planBoss: null, example: false, plans: {}, planning: null,
+    roster: [], run: { beaten: [], tms: [], enc: {}, dupes: true, checks: [] }, tab: 'team', routeFilter: 'todo', openArea: null, encTime: null, planBoss: null, example: false, plans: {}, planning: null,
     battle: { boss: null, them: 0, me: null, themHp: 100, meHp: 100, themBoost: {}, meBoost: {}, weather: 'auto', themStatus: '', meStatus: '' },
   };
 
@@ -21,6 +22,23 @@
   function textOn(hex) { const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16); return (0.299 * r + 0.587 * g + 0.114 * b) > 150 ? '#1b1b1b' : '#ffffff'; }
   function typeChip(t) { const c = TYPE_COLORS[t] || '#888888'; return `<span class="type" style="background:${c};color:${textOn(c)}">${esc(t)}</span>`; }
   function typesHTML(ts) { return `<span class="types">${ts.map(typeChip).join('')}</span>`; }
+  function sprEntry(sid) {
+    if (!SPR) return null;
+    let e = SPR.species[sid];
+    if (!e) { const sp = E.sp(sid); const base = sp && D.species.find(x => x.g === sp.g && SPR.species[x.i]); e = base ? SPR.species[base.i] : null; }
+    return e;
+  }
+  function icon(sid, cls) {
+    const e = sprEntry(sid); if (!e || e.i == null) return '';
+    const c = SPR.iconCols;
+    return `<span class="ico ${cls || ''}" style="--x:${e.i % c};--y:${Math.floor(e.i / c)};--icols:${c}" aria-hidden="true"></span>`;
+  }
+  function front(sid, cls) {
+    const e = sprEntry(sid); if (!e || e.f == null) return '';
+    const c = SPR.frontCols;
+    return `<span class="spr ${cls || ''}" style="--x:${e.f % c};--y:${Math.floor(e.f / c)};--fcols:${c}" aria-hidden="true"></span>`;
+  }
+  function hpBar(p) { p = Math.max(0, Math.min(100, p)); return `<div class="hp"><span>HP</span><div class="track"><i class="${p <= 20 ? 'lo' : p <= 50 ? 'mid' : ''}" style="width:${p}%"></i></div></div>`; }
   function pct(x) { return x >= 99.95 ? '100' : x.toFixed(x < 10 ? 1 : 0); }
   function fmtRisk(r) { if (r <= 0) return '0%'; if (r < 0.001) return '<0.1%'; return (100 * r).toFixed(r < 0.1 ? 1 : 0) + '%'; }
   function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
@@ -43,7 +61,7 @@
   function party() { return S.roster.filter(m => m.box === 'party'); }
   function milestonesDone() { return D.bosses.filter(b => b.ms && S.run.beaten.includes(b.i)).length; }
   function capNow() { return D.caps.hardcore[Math.min(milestonesDone(), 17)]; }
-  function nextBoss() { const b = D.bosses.find(b => !S.run.beaten.includes(b.i)); return b ? b.i : D.bosses.length - 1; }
+  function nextBoss() { const b = D.bosses.find(b => !b.route && !S.run.beaten.includes(b.i)); return b ? b.i : D.routeStart - 1; }
   /** Battles that are alternatives of each other (the rival's three starter versions, repeated gym entries):
    *  same trainer name and cap, next to each other in the table. */
   function variantsOf(i) {
@@ -76,19 +94,21 @@
           });
           roster.sort((a, b) => (a.ord || 0) - (b.ord || 0));
           if (!S.example || roster.length) { S.roster = roster; S.example = false; }
-          S.run = { beaten: Array.isArray(run.beaten) ? run.beaten.slice() : [], tms: Array.isArray(run.tms) ? run.tms.slice() : [] };
+          S.run = { beaten: Array.isArray(run.beaten) ? run.beaten.slice() : [], tms: Array.isArray(run.tms) ? run.tms.slice() : [],
+            enc: run.enc && typeof run.enc === 'object' ? Object.assign({}, run.enc) : {}, dupes: run.dupes !== false, checks: Array.isArray(run.checks) ? run.checks.slice(-50) : [], tutors: !!run.tutors };
+          ADV.setOptions({ tutors: S.run.tutors });
           render();
         }, err => { clearTimeout(this.timer); this.note = 'Saving to your account stopped working (' + err.code + '). Reload to try again.'; renderStatus(); });
       } else {
         this.mode = 'local';
-        try { const v = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); if (v) { S.roster = v.roster || []; S.run = Object.assign({ beaten: [], tms: [] }, v.run || {}); } } catch (e) { /* storage blocked */ }
+        try { const v = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); if (v) { S.roster = v.roster || []; S.run = Object.assign({ beaten: [], tms: [], enc: {}, dupes: true, checks: [], tutors: false }, v.run || {}); ADV.setOptions({ tutors: S.run.tutors }); } } catch (e) { /* storage blocked */ }
         render();
       }
     },
     saveLocal() { try { localStorage.setItem(LS_KEY, JSON.stringify({ roster: S.roster, run: S.run })); } catch (e) { this.note = 'This browser blocked saving.'; } },
     async saveMon(m) {
       if (S.example) return;
-      const body = { s: m.s, nick: m.nick || '', lv: m.lv, nat: m.nat, ab: m.ab, it: m.it || null, mv: m.mv, box: m.box, met: m.met || '', ord: m.ord || Date.now() };
+      const body = { s: m.s, nick: m.nick || '', lv: m.lv, nat: m.nat, ab: m.ab, it: m.it || null, mv: m.mv, box: m.box, met: m.met || '', ord: m.ord || Date.now(), pid: m.pid || null };
       if (this.mode === 'db') { try { await this.col.doc(m.key).set(body); } catch (e) { flash('Couldn’t save to your account (' + e.code + ').'); } }
       else this.saveLocal();
     },
@@ -99,7 +119,7 @@
     },
     async saveRun() {
       if (S.example) return;
-      if (this.mode === 'db') { try { await this.col.doc('run').set({ beaten: S.run.beaten, tms: S.run.tms || [] }); } catch (e) { flash('Couldn’t save progress (' + e.code + ').'); } }
+      if (this.mode === 'db') { try { await this.col.doc('run').set({ beaten: S.run.beaten, tms: S.run.tms || [], enc: S.run.enc || {}, dupes: S.run.dupes !== false, checks: (S.run.checks || []).slice(-50), tutors: !!S.run.tutors }); } catch (e) { flash('Couldn’t save progress (' + e.code + ').'); } }
       else this.saveLocal();
     },
   };
@@ -129,6 +149,7 @@
     if (!D) return;
     renderStatus();
     if (S.tab === 'team') renderTeam();
+    else if (S.tab === 'routes') renderRoutes();
     else if (S.tab === 'plan') renderPlan();
     else renderBattle();
   }
@@ -139,10 +160,12 @@
     const moves = (m.mv || []).map(id => moveChip(id, E.isBanned(id, s.g) ? 'banned in Hardcore' : '')).join('');
     const over = m.lv > capNow() ? `<span class="tag ban">above cap ${capNow()}</span>` : '';
     const moveTo = m.box === 'party' ? 'box' : 'party';
+    const evo = evoSummary(m.s);
     return `<div class="card" data-key="${esc(m.key)}">
-      <div class="mon-head"><span class="mon-name">${esc(monName(m))}</span>${typesHTML(s.t)}<span class="lv">Lv ${m.lv}</span>${over}</div>
+      <div class="slot">${icon(m.s, 'x2')}<div class="who"><b>${esc(monName(m))}</b><div class="row" style="gap:6px">${typesHTML(s.t)}<span class="lv">Lv ${m.lv}</span>${over}${m.box === 'dead' ? '<span class="tag ban">fainted</span>' : ''}</div></div></div>
       <dl class="kv"><dt>Ability</dt><dd>${esc(m.ab || '—')}${ab.x ? ' <span class="tag">Radical Red ability</span>' : ''}</dd>
-        <dt>Item</dt><dd>${esc(E.itemName(m.it) || '—')}</dd><dt>Nature</dt><dd>${esc(natureText(m.nat))}</dd>${m.met ? `<dt>Caught</dt><dd>${esc(m.met)}</dd>` : ''}</dl>
+        <dt>Item</dt><dd>${esc(E.itemName(m.it) || '—')}</dd><dt>Nature</dt><dd>${esc(natureText(m.nat))}</dd>${m.met ? `<dt>Caught</dt><dd>${esc(m.met)}</dd>` : ''}
+        ${evo.length ? `<dt>Evolves</dt><dd>${evo.map(esc).join('<br>')}</dd>` : ''}</dl>
       <div class="moves">${moves || '<span class="muted small">No moves entered</span>'}</div>
       ${m.box === 'dead' ? '' : `<div class="row">
         <button class="btn small" data-act="edit">Edit</button>
@@ -160,10 +183,10 @@
     if (!S.roster.length) {
       html += `<div class="empty"><h2>Add the Pokémon you have</h2>
         <p class="small" style="max-width:46ch;margin:0">Enter each Pokémon as you catch it: species, level, nature, ability, item and moves. The Plan and Battle tabs then work out lineups and turns against every Hardcore boss.</p>
-        <div class="row" style="justify-content:center"><button class="btn primary" data-act="add">Add a Pokémon</button><button class="btn" data-act="example">Try an example team</button></div></div>`;
+        <div class="row" style="justify-content:center"><button class="btn primary" data-act="add">Add a Pokémon</button><button class="btn" data-act="import">Import save file</button><button class="btn" data-act="example">Try an example team</button></div></div>`;
       main.innerHTML = html; wireTeam(); return;
     }
-    html += `<div class="row"><button class="btn primary" data-act="add">Add a Pokémon</button><span class="muted small">${p.length}/6 in party · ${box.length} in box · ${dead.length} fainted</span></div>`;
+    html += `<div class="row"><button class="btn primary" data-act="add">Add a Pokémon</button><button class="btn" data-act="import">Import save file</button><span class="muted small">${p.length}/6 in party · ${box.length} in box · ${dead.length} fainted</span></div>`;
     html += `<section class="section"><div class="head"><h2>Party</h2></div>${p.length ? p.map(monCard).join('') : '<div class="empty small">No Pokémon in your party. Move some from your box.</div>'}</section>`;
     if (box.length) html += `<section class="section"><div class="head"><h2>Box</h2></div>${box.map(monCard).join('')}</section>`;
     if (dead.length) html += `<details class="more"><summary>Fainted (${dead.length})</summary><div class="section" style="margin-top:8px">${dead.map(monCard).join('')}</div></details>`;
@@ -177,6 +200,7 @@
     const owned = new Set(S.run.tms || []);
     return `<details class="more" id="tmcase" ${S.tmOpen ? 'open' : ''}><summary>TMs you have (${owned.size})</summary>
       <p class="note">Tick each TM when you get it. Move advice only suggests TMs you have, so it never recommends a move you can't teach yet.</p>
+      <label class="row small" style="flex-wrap:nowrap;gap:6px"><input type="checkbox" id="tutors" ${S.run.tutors ? 'checked' : ''}> <span>Also suggest move tutor moves (${'126'} tutors, read from the ROM; you still have to reach the tutor)</span></label>
       <input class="search" id="tm-filter" placeholder="Filter by move or number" style="margin:6px 0;width:100%">
       <div class="tmgrid">${D.tms.map((id, i) => {
         const m = E.mv(id); if (!m) return '';
@@ -187,6 +211,7 @@
   function wireTMCase() {
     const box = $('#tmcase'); if (!box) return;
     box.addEventListener('toggle', () => { S.tmOpen = box.open; });
+    const tu = $('#tutors'); if (tu) tu.onchange = () => { S.run.tutors = tu.checked; ADV.setOptions({ tutors: tu.checked }); store.saveRun(); };
     const f = $('#tm-filter');
     f.addEventListener('input', () => { const q = f.value.trim().toLowerCase(); box.querySelectorAll('.tm').forEach(el => { el.hidden = q && !el.dataset.q.includes(q); }); });
     let t = null;
@@ -220,12 +245,21 @@
           <p class="small" style="margin:0">${esc(na.reason)}${best.nat !== m.nat && cur ? ` Compared with ${esc(D.natures[m.nat].n)}: ${na.changes.length ? esc(na.changes.slice(0, 4).join('; ')) : 'fewer close calls, no matchup flips'}.` : ''}</p>
           <p class="note" style="margin:0">Tested against ${esc(bossList)}, at each fight's level cap with its best moves. Radical Red has a free Nature Change service, in the same menu as “Set Mon To Lvl Cap”.</p>
           <div class="chips">${na.ranked.map(r => `<span class="tag">${esc(D.natures[r.nat].n)} ${r.total.toFixed(1)}</span>`).join('')}</div></div>`;
+      const evo = evoSummary(m.s);
+      if (evo.length) {
+        const lvEvo = (D.evo[m.s] || []).filter(([, method, param]) => [4, 8, 9, 10, 20, 21, 22, 23, 31, 32].includes(method) && param > m.lv);
+        const when = lvEvo.map(([to, , param]) => {
+          const by = na.bosses.find(i => D.bosses[i].cap >= param);
+          return `${E.sp(to).n} at Lv ${param}${by != null ? ` (in time for ${D.bosses[by].n}, cap ${D.bosses[by].cap})` : ' (after the next big fights)'}`;
+        });
+        html += `<div class="card"><div class="lbl">Evolution</div><div class="small">${evo.map(esc).join('<br>')}</div>${when.length ? `<p class="note" style="margin:0">Next: ${esc(when.join('; '))}. Evolving changes its stats and moves, so check this page again afterwards.</p>` : ''}</div>`;
+      }
       html += `<section class="section"><h2>When to learn what</h2>${mp.steps.map(st => {
         const b = D.bosses[st.boss];
         const adds = st.add.filter(x => !E.mv(x.id) || true);
         return `<div class="card"><div class="mon-head"><span class="mon-name">Before ${esc(b.n)}</span><span class="pill cap">cap ${st.cap}</span></div>
           <div class="moves">${st.set.map(x => moveChip(x.id, esc(x.how))).join('') || '<span class="muted small">No damaging moves available.</span>'}</div>
-          ${adds.length ? `<div class="small">${adds.map(x => `Learn <b>${esc(E.mv(x.id).f)}</b> ${x.how.startsWith('Lv') ? (x.alreadyPassed ? `(it learned this at ${esc(x.how)}: ask the Move Maniac, 2 Tiny Mushrooms or 1 Big Mushroom)` : `when it reaches ${esc(x.how)}`) : x.how === 'on evolution' ? '(learned on evolution or from the Move Maniac)' : `with ${esc(x.how)}`}`).join('<br>')}</div>` : '<div class="small muted">No change needed.</div>'}
+          ${adds.length ? `<div class="small">${adds.map(x => `Learn <b>${esc(E.mv(x.id).f)}</b> ${x.how.startsWith('Lv') ? (x.alreadyPassed ? `(it learned this at ${esc(x.how)}: ask the Move Maniac, 2 Tiny Mushrooms or 1 Big Mushroom)` : `when it reaches ${esc(x.how)}`) : x.how === 'on evolution' ? '(learned on evolution or from the Move Maniac)' : x.how === 'Move Tutor' ? 'from a move tutor' : `with ${esc(x.how)}`}`).join('<br>')}</div>` : '<div class="small muted">No change needed.</div>'}
           ${st.drop.length ? `<div class="small muted">Replace: ${st.drop.map(id => esc(E.mv(id).f)).join(', ')}</div>` : ''}</div>`;
       }).join('')}</section>`;
       html += `<section class="section"><h2>Level-up moves still to come</h2><div class="card"><div class="moves">${mp.upcoming.length ? mp.upcoming.map(u => moveChip(u.id, `Lv ${u.lv}${u.banned ? ' · banned in Hardcore' : ''}`)).join('') : '<span class="muted small">None left.</span>'}</div>
@@ -240,6 +274,7 @@
       const act = btn.dataset.act;
       const card = btn.closest('[data-key]'); const m = card ? S.roster.find(x => x.key === card.dataset.key) : null;
       if (act === 'add') openEditor(null);
+      else if (act === 'import') openImport();
       else if (act === 'example') loadExample();
       else if (act === 'edit') openEditor(m);
       else if (act === 'advice') openAdvice(m);
@@ -314,7 +349,7 @@
       if (q && res.length < 6) {
         for (const m of D.moves) {
           if (res.length >= 10) break;
-          if (match(m) && !known.some(k => k.id === m.i)) res.push({ id: m.i, label: esc(m.f), sub: 'tutor/egg?' + (s && E.isBanned(m.i, s.g) ? ' · banned' : '') });
+          if (match(m) && !known.some(k => k.id === m.i)) res.push({ id: m.i, label: esc(m.f), sub: 'egg or event move?' + (s && E.isBanned(m.i, s.g) ? ' · banned' : '') });
         }
       }
       return res;
@@ -322,8 +357,18 @@
   }
 
   // ---------------- editor sheet ----------------
-  function openEditor(existing) {
+  function wildMoves(sid, lv) {
+    const L = D.learn[sid]; if (!L) return [];
+    const k = [];
+    for (const [l, id] of L.l) if (l <= lv && E.mv(id) && !k.includes(id)) { k.push(id); if (k.length > 4) k.shift(); }
+    return k;
+  }
+  function openEditor(existing, prefill) {
     const m = existing ? JSON.parse(JSON.stringify(existing)) : { key: 'mon-' + uid(), s: null, lv: Math.max(5, capNow() - 3), nat: 0, ab: null, it: null, mv: [], box: party().length < 6 ? 'party' : 'box', nick: '', met: '' };
+    if (!existing && prefill) {
+      Object.assign(m, { s: prefill.s, lv: prefill.lv, met: prefill.met || '' });
+      const sp = E.sp(prefill.s); m.ab = sp ? sp.a[0] : null; m.mv = wildMoves(prefill.s, prefill.lv);
+    }
     const isNew = !existing;
     function draw() {
       const s = m.s ? E.sp(m.s) : null;
@@ -401,7 +446,9 @@
         if (S.example) { S.example = false; S.roster = []; }
         const idx = S.roster.findIndex(x => x.key === m.key);
         if (idx >= 0) S.roster[idx] = m; else { m.ord = Date.now(); S.roster.push(m); }
-        close(); render(); await store.saveMon(m);
+        close();
+        if (prefill && prefill.onSave) prefill.onSave(m);
+        render(); await store.saveMon(m);
       };
     }
     function close() { sheet.hidden = true; sheet.innerHTML = ''; document.body.style.overflow = ''; }
@@ -413,11 +460,14 @@
 
   // ---------------- PLAN ----------------
   function bossOptions(sel) {
-    return D.bosses.map(b => `<option value="${b.i}" ${b.i === sel ? 'selected' : ''}>${S.run.beaten.includes(b.i) ? '✓ ' : ''}#${b.i + 1} ${esc(bossLabel(b))} · cap ${b.cap}</option>`).join('');
+    const cur = D.bosses[sel];
+    const extra = cur && cur.route ? `<option value="${cur.i}" selected>${esc(cur.n)} (${esc(cur.cls)}) · ${esc((cur.areas || []).join(', '))}</option>` : '';
+    return extra + D.bosses.filter(b => !b.route).map(b => `<option value="${b.i}" ${b.i === sel ? 'selected' : ''}>${S.run.beaten.includes(b.i) ? '✓ ' : ''}#${b.i + 1} ${esc(bossLabel(b))} · cap ${b.cap}</option>`).join('');
   }
   function theirSetHTML(t) {
     const s = E.sp(t.s);
-    return `<div class="mon-head"><span class="mon-name">${esc(s.n)}</span>${typesHTML(s.t)}<span class="lv">Lv ${t.lv}</span>${t.rel != null ? `<span class="tag">your top ${t.rel ? (t.rel > 0 ? '+' : '−') + Math.abs(t.rel) : ''}</span>` : ''}</div>
+    const mega = SIM.megaTarget({ spec: t, item: t.it }) ;
+    return `<div class="slot">${icon(t.s, 'x2')}<div class="who"><b>${esc(s.n)}</b><div class="row" style="gap:6px">${typesHTML(s.t)}<span class="lv">Lv ${t.lv}</span>${t.rel != null ? `<span class="tag">your top ${t.rel ? (t.rel > 0 ? '+' : '−') + Math.abs(t.rel) : ''}</span>` : ''}${mega ? `<span class="tag ban">Mega Evolves: ${esc(E.sp(mega).n)}</span>` : ''}${/ Z$/.test(E.itemName(t.it) || '') ? '<span class="tag ban">Z-Move</span>' : ''}</div></div></div>
       <div class="small muted">${esc(t.ab)} · ${esc(E.itemName(t.it) || 'no item')} · ${esc(D.natures[t.nat].n)}${t.st ? ' · starts ' + esc({ 8: 'poisoned', 16: 'burned', 64: 'paralyzed', 128: 'badly poisoned' }[t.st] || 'statused') : ''}</div>
       <div class="moves">${t.mv.map(id => moveChip(id)).join('')}</div>`;
   }
@@ -435,6 +485,7 @@
   function renderPlan() {
     if (S.planBoss == null) S.planBoss = nextBoss();
     const b = D.bosses[S.planBoss];
+    if (b.route) b.cap = capNow();
     const roster = alive();
     let html = `<section class="section">
       <div class="field"><label for="plan-boss">Boss</label><select id="plan-boss" class="inline">${bossOptions(S.planBoss)}</select></div>
@@ -649,12 +700,15 @@
     const themSpec = Object.assign({}, team[B.them], { hpPct: B.themHp, boosts: B.themBoost, status: B.themStatus || (team[B.them].st ? E.STATUS_CODE[team[B.them].st] : ''), entry: false });
     let weather = B.weather === 'auto' ? (E.WEATHER_SETTERS[themSpec.ab] || E.WEATHER_SETTERS[meSpec.ab] || E.teamWeather(team) || null) : (B.weather === 'none' ? null : B.weather);
     const statusSel = (id, v) => `<select id="${id}" class="inline">${[['', 'Healthy'], ['par', 'Paralyzed'], ['brn', 'Burned'], ['psn', 'Poisoned'], ['tox', 'Badly poisoned'], ['slp', 'Asleep'], ['frz', 'Frozen']].map(([k, l]) => `<option value="${k}" ${v === k ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
+    const arena = `<div class="arena"><div class="side">${front(meM.s, 'x2 flip')}<div class="plate"><b>${esc(monName(meM))}</b><span class="small">Lv ${meM.lv}</span>${hpBar(B.meHp)}</div></div>
+      <div class="side">${front(team[B.them].s, 'x2')}<div class="plate"><b>${esc(E.sp(team[B.them].s).n)}</b><span class="small">Lv ${team[B.them].lv}</span>${hpBar(B.themHp)}</div></div></div>`;
     const quick = `<section class="section">
       <div class="field"><label for="bt-boss">Boss</label><select id="bt-boss" class="inline">${bossOptions(B.boss)}</select></div>
+      ${arena}
       <div class="two">
-      <div class="card"><div class="lbl">Their Pokémon</div><div class="chips">${team.map((t, j) => `<button class="chipbtn" data-them="${j}" aria-pressed="${j === B.them}">${esc(E.sp(t.s).n)}</button>`).join('')}</div>
+      <div class="card"><div class="lbl">Their Pokémon</div><div class="chips">${team.map((t, j) => `<button class="chipbtn" data-them="${j}" aria-pressed="${j === B.them}">${icon(t.s)}${esc(E.sp(t.s).n)}</button>`).join('')}</div>
         <div class="field"><label for="bt-themhp">Their HP: ${B.themHp}%</label><input type="range" id="bt-themhp" min="1" max="100" value="${B.themHp}"></div></div>
-      <div class="card"><div class="lbl">Your Pokémon</div><div class="chips">${p.map(m => `<button class="chipbtn" data-me="${esc(m.key)}" aria-pressed="${m.key === B.me}">${esc(monName(m))}</button>`).join('')}</div>
+      <div class="card"><div class="lbl">Your Pokémon</div><div class="chips">${p.map(m => `<button class="chipbtn" data-me="${esc(m.key)}" aria-pressed="${m.key === B.me}">${icon(m.s)}${esc(monName(m))}</button>`).join('')}</div>
         <div class="field"><label for="bt-mehp">Your HP: ${B.meHp}%</label><input type="range" id="bt-mehp" min="1" max="100" value="${B.meHp}"></div></div>
       </div></section>`;
     const changed = B.themStatus || B.meStatus || B.weather !== 'auto' || Object.values(B.themBoost).some(Boolean) || Object.values(B.meBoost).some(Boolean);
@@ -687,12 +741,18 @@
     Object.assign(lm.boosts, B.meBoost); Object.assign(lf.boosts, B.themBoost);
     lm.status = B.meStatus; lf.status = themSpec.status; lm.firstTurn = false; lf.firstTurn = false;
     if (weather) { live.weather = weather; live.weatherTurns = 5; }
-    live.policies = { p: SIM.plannerPolicy(), a: SIM.aiPolicy(0) };
+    live.policies = { p: SIM.plannerPolicy(), a: SIM.bossPolicy() };
+    live.turn = 3; lf.enteredTurn = 0; lm.enteredTurn = 0;
     const options = live.policies.p.evaluate(live, 'p');
-    const theirPick = live.policies.a.choose(live, 'a', SIM.expectedDice());
+    const theirPick = live.policies.a.choose(live, 'a', SIM.expectedDice(), true, true);
+    const theirText = theirPick.type === 'switch' ? `switch to ${esc(E.sp(team[theirPick.to].s).n)} (${esc(theirPick.why || '')})`
+      : `${theirPick.z ? 'Z-' : ''}${esc(E.mv(theirPick.id) ? E.mv(theirPick.id).f : '—')}`;
+    const why = theirPick.scores ? `<details class="more"><summary>Why the boss picks this</summary><div class="small" style="display:grid;gap:2px;margin-top:4px">${theirPick.scores.slice().sort((a, b) => b.score - a.score).map(x =>
+      `<div><span class="num">${x.score}</span> ${esc(E.mv(x.id).f)}${x.why && x.why.length ? ' <span class="muted">(' + esc(x.why.join('; ')) + ')</span>' : ''}</div>`).join('')}
+      <div class="note">Every move starts at 100; the highest score is used, ties at random. Fighting style: ${esc(SIM.AI.STYLE_NAMES[theirPick.style] || theirPick.style || '—')}.</div></div></details>` : '';
     const rec = options[0];
     html += `<section class="section"><div class="card rec"><div class="lbl">Do this</div><h3>${rec ? esc(rec.label) : 'No options'}${rec ? ' ' + riskBadge(rec.risk) : ''}</h3>
-      <p class="small" style="margin:0">${mySpe > theirSpe ? 'You move first' : mySpe === theirSpe ? 'Speed tie: either can move first' : 'They move first'} (Spe ${mySpe} vs ${theirSpe}; priority moves go first). Their most likely move: <b>${esc(E.mv(theirPick.id) ? E.mv(theirPick.id).f : '—')}</b>.${rec && rec.type === 'switch' ? ` Coming in costs about ${Math.round(rec.entryPct || 0)}% HP.` : ''}</p>
+      <p class="small" style="margin:0">${mySpe > theirSpe ? 'You move first' : mySpe === theirSpe ? 'Speed tie: either can move first' : 'They move first'} (Spe ${mySpe} vs ${theirSpe}; priority moves go first). The boss AI's pick: <b>${theirText}</b>.${rec && rec.type === 'switch' ? ` Coming in costs about ${Math.round(rec.entryPct || 0)}% HP.` : ''}</p>${why}
       <div class="answers">${options.slice(0, 4).map(o => `<div class="answer"><div class="top"><b>${esc(o.label)}</b>${riskBadge(o.risk)}</div>${o.mu && o.mu.best ? `<span class="small num">${esc(o.mu.best.moveName)} ${pct(o.mu.best.minPct)}–${pct(o.mu.best.maxPct)}%, KO in ${isFinite(o.mu.toKOthem) ? o.mu.toKOthem : '∞'}</span>` : ''}</div>`).join('')}</div>
       <p class="note" style="margin:0">Risk = chance the Pokémon you'd have in faints before it wins this matchup, counting every roll, crit, multi-hit count and miss. Options are ranked by expected losses for your whole team, so sometimes the pick is a sacrifice that sets up a free switch.</p></div></section>`;
     html += adjust;
@@ -707,8 +767,45 @@
       return `<tr><td>${esc(m.f)}<div class="note">${esc(r.d.type)} · ${m.a ? m.a + '% acc' : 'never misses'}${r.d.hits > 1 ? ' · up to ' + r.d.hits + ' hits' : ''}</div></td><td class="n">≤${pct(r.d.maxPct)}%<div class="note">crit ≤${pct(r.d.critMaxPct)}%</div></td><td class="n">${fmtRisk(r.p1)}</td></tr>`;
     }).join('')}</tbody></table>
     <p class="note" style="margin:0">Damage shown is the most a move can do (top roll, most hits). The KO column counts every roll, hit count, crit and miss.</p></div></section>`;
+    html += realityHTML(meSpec, themSpec, weather, meM);
     main.innerHTML = html;
     wireBattle();
+    wireReality(meSpec, themSpec, weather, meM);
+  }
+  // ---------------- reality check: does an observed hit match the numbers? ----------------
+  function realityHTML(meSpec, themSpec, weather, meM) {
+    const checks = S.run.checks || [];
+    const bad = checks.filter(c => !c.ok);
+    const opts = [...meSpec.mv.map(id => ['me:' + id, `Your ${monName(meM)}: ${E.mv(id).f}`]), ...(themSpec.mv || []).map(id => ['them:' + id, `Their ${E.sp(themSpec.s).n}: ${E.mv(id).f}`])]
+      .filter(([k]) => E.mv(+k.split(':')[1]).k !== 'X');
+    return `<section class="section"><details class="more" id="rc" ${S.rcOpen ? 'open' : ''}><summary>Reality check: did a hit match the numbers?</summary><div class="card check" style="margin-top:8px">
+      <p class="small" style="margin:0">After a hit, enter how much HP it took (the bar's drop, in %). The Coach compares it with every possible roll for the current HP, boosts and weather above. A miss on the range points at something it doesn't know: an ability, item or effect.</p>
+      <div class="fields"><div class="field wide"><label for="rc-move">Hit</label><select id="rc-move" class="inline">${opts.map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join('')}</select></div>
+        <div class="field"><label for="rc-pct">HP lost (%)</label><input id="rc-pct" type="number" min="0" max="100" inputmode="decimal"></div>
+        <div class="field"><span class="lbl">Critical hit?</span><label class="row small" style="flex-wrap:nowrap;gap:6px;padding:8px 0"><input type="checkbox" id="rc-crit"> Yes, it was a crit</label></div></div>
+      <div class="row"><button class="btn" id="rc-go">Check</button><span id="rc-out" class="small"></span></div>
+      ${checks.length ? `<div class="note">${checks.length} checked so far, ${bad.length} outside the predicted range.${bad.slice(-3).map(c => ` ${esc(c.t)}`).join(';')}</div>` : ''}
+    </div></details></section>`;
+  }
+  function wireReality(meSpec, themSpec, weather) {
+    const rc = $('#rc'); if (!rc) return;
+    rc.addEventListener('toggle', () => { S.rcOpen = rc.open; });
+    const go = $('#rc-go'); if (!go) return;
+    go.onclick = () => {
+      const v = $('#rc-move').value; if (!v) return;
+      const [side, id] = v.split(':');
+      const obs = parseFloat($('#rc-pct').value); if (!isFinite(obs)) { $('#rc-out').textContent = 'Enter the HP it lost.'; return; }
+      const crit = $('#rc-crit').checked;
+      const att = side === 'me' ? meSpec : themSpec, def = side === 'me' ? themSpec : meSpec;
+      const d = E.damage(att, def, +id, { weather });
+      if (!d) return;
+      const lo = crit ? d.critMinPct : d.minPct, hi = crit ? d.critMaxPct : d.maxPct;
+      const ok = obs >= Math.floor(lo) - 1 && obs <= Math.ceil(hi) + 1;
+      $('#rc-out').innerHTML = ok ? `<span class="verdict v-safe">matches</span> predicted ${pct(lo)}–${pct(hi)}%` : `<span class="verdict v-lose">outside</span> predicted ${pct(lo)}–${pct(hi)}%. Check the HP, boosts, weather and item above; if they're right, something isn't modeled.`;
+      const t = `${E.sp(att.s).n} ${E.mv(+id).f} → ${E.sp(def.s).n}: saw ${obs}%, expected ${pct(lo)}–${pct(hi)}%${crit ? ' (crit)' : ''}`;
+      S.run.checks = (S.run.checks || []).concat([{ t, ok, at: Date.now() }]).slice(-50);
+      if (!S.example) store.saveRun();
+    };
   }
   function wireBattle() {
     const B = S.battle;
@@ -729,6 +826,226 @@
     $('#bt-reset').onclick = () => { Object.assign(B, { themHp: 100, meHp: 100, themBoost: {}, meBoost: {}, themStatus: '', meStatus: '' }); render(); };
   }
 
+  // ---------------- evolutions ----------------
+  /** "Level 36 → Venusaur", "item: Fire Stone → Flareon": every way this species evolves, from the ROM. */
+  function evoSummary(sid) {
+    return (D.evo[sid] || []).map(([to, , , how]) => `${how.replace(/^item: /, '').replace(/^Level /, 'Lv ')} → ${E.sp(to) ? E.sp(to).n : '?'}`);
+  }
+  let FAMILY = null;   // species id -> id of the first stage of its evolution family
+  function familyOf(sid) {
+    if (!FAMILY) {
+      FAMILY = new Map();
+      const parent = new Map();
+      for (const [from, list] of Object.entries(D.evo)) for (const [to] of list) if (!parent.has(to)) parent.set(to, +from);
+      for (const [from, list] of Object.entries(D.mega || {})) for (const [, to] of list) parent.set(to, +from);
+      for (const sp of D.species) { let r = sp.i, guard = 0; while (parent.has(r) && guard++ < 6) r = parent.get(r); FAMILY.set(sp.i, r); }
+    }
+    return FAMILY.get(sid) || sid;
+  }
+  /** Evolution families you already have (for the dupes clause): every Pokemon caught, including fainted ones. */
+  function ownedFamilies() {
+    const set = new Set(S.roster.map(m => familyOf(m.s)));
+    for (const e of Object.values(S.run.enc || {})) if (e && e.r === 'caught' && e.s) set.add(familyOf(e.s));
+    return set;
+  }
+  /** What this species is by a given level through level-up evolutions. */
+  function evolvedBy(sid, lv) {
+    let s = sid, guard = 0;
+    while (guard++ < 4) {
+      const next = (D.evo[s] || []).find(([, method, param]) => [4, 8, 9, 10, 11, 12, 13, 20, 21, 22, 23, 31, 32].includes(method) && param <= lv);
+      if (!next) break;
+      s = next[0];
+    }
+    return s;
+  }
+
+  // ---------------- ROUTES: first encounter per area ----------------
+  const METHOD_LABEL = { land: 'Grass / cave', water: 'Surfing', rock: 'Rock Smash', fish: 'Fishing' };
+  function gameTimeNow() { const h = new Date().getHours(); return h >= 4 && h < 17 ? 'day' : 'night'; }
+  function areaSpecies(a) {
+    const out = new Set();
+    for (const part of a.parts) for (const t of Object.values(part.k)) for (const rows of Object.values(t)) for (const r of rows) out.add(r[0]);
+    return [...out];
+  }
+  function areaHasTime(a) { return a.parts.some(p => Object.values(p.k).some(t => t.day || t.night)); }
+  function encRows(rows, owned, area) {
+    return rows.map(r => {
+      const [sid, lo, hi, pctv, rod] = r;
+      const sp = E.sp(sid); if (!sp) return '';
+      const dupe = S.run.dupes !== false && owned.has(familyOf(sid));
+      return `<div class="enc-row ${dupe ? 'dupe' : ''}">${icon(sid)}<div><div class="nm">${esc(sp.n)} ${typesHTML(sp.t)}${dupe ? '<span class="tag">dupe</span>' : ''}</div>
+        <div class="meta">Lv ${lo === hi ? lo : lo + '–' + hi} · ${pctv}%${rod ? ' · ' + esc(rod) : ''}</div></div>
+        <div class="row" style="gap:4px;flex-wrap:nowrap"><button class="btn small" data-got="${sid}" data-lv="${hi}" data-area="${esc(area)}">Caught</button><button class="btn small ghost" data-fail="${sid}" data-area="${esc(area)}" aria-label="Didn't catch ${esc(sp.n)}">✕</button></div></div>`;
+    }).join('');
+  }
+  function routeTrainers(a) { return D.bosses.filter(b => b.route && (b.areas || []).includes(a.n)); }
+  function areaCard(a) {
+    const e = (S.run.enc || {})[a.n];
+    const owned = ownedFamilies();
+    const when = S.encTime || gameTimeNow();
+    let status = '<span class="tag">not yet</span>';
+    if (e && e.r === 'caught') status = `${icon(e.s)}<span class="verdict v-safe">${esc(E.sp(e.s) ? E.sp(e.s).n : 'caught')}</span>`;
+    else if (e && e.r === 'failed') status = `${e.s ? icon(e.s) : ''}<span class="verdict v-lose">missed${e.s && E.sp(e.s) ? ': ' + esc(E.sp(e.s).n) : ''}</span>`;
+    else if (e && e.r === 'skipped') status = '<span class="verdict v-ok">skipped</span>';
+    const open = S.openArea === a.n;
+    let body = '';
+    if (open) {
+      const timed = areaHasTime(a);
+      if (timed) body += `<div class="row small"><span class="seg" role="group" aria-label="Time of day"><button data-time="day" aria-pressed="${when === 'day'}">Day 4:00–16:59</button><button data-time="night" aria-pressed="${when === 'night'}">Night 17:00–3:59</button></span><span class="note">My Boy! uses your phone's clock.</span></div>`;
+      a.parts.forEach((part, k) => {
+        const label = a.parts.length > 1 ? `<div class="lbl">Part ${k + 1} of ${a.parts.length}</div>` : '';
+        let inner = '';
+        for (const [kind, t] of Object.entries(part.k)) {
+          const rows = t.any || t[when] || t.day || t.night;
+          if (!rows || !rows.length) continue;
+          inner += `<div class="lbl">${METHOD_LABEL[kind] || kind}${t.any || !timed ? '' : ` (${when === 'day' ? 'day' : 'night'})`}</div><div class="enc">${encRows(rows, owned, a.n)}</div>`;
+        }
+        if (inner) body += label + inner;
+      });
+      const tr = routeTrainers(a);
+      if (tr.length) body += `<div class="lbl">Trainers here (${tr.length})</div><div class="enc">${tr.map(b => `<div class="enc-row" style="grid-template-columns:1fr auto">
+          <div><div class="nm">${esc(b.cls)} ${esc(b.n)}${b.dbl ? ' <span class="tag">double</span>' : ''}</div>
+          <div class="team-icons">${b.party.map(m => `<span class="t">${icon(m.s) || esc(E.sp(m.s).n)}<span>${m.lv != null ? 'Lv ' + m.lv : 'top' + (m.rel ? (m.rel > 0 ? '+' : '−') + Math.abs(m.rel) : '')}</span></span>`).join('')}</div></div>
+          <button class="btn small" data-plan="${b.i}">Plan</button></div>`).join('')}</div>`;
+      body += `<div class="row"><button class="btn small" data-best="${esc(a.n)}">Best catch here</button>${e ? `<button class="btn small ghost" data-undo="${esc(a.n)}">Undo this encounter</button>` : `<button class="btn small ghost" data-skip="${esc(a.n)}">No encounter here</button>`}</div>
+        <div id="best-${encodeURIComponent(a.n)}"></div>`;
+    }
+    return `<details class="card area ${e ? 'done' : ''}" data-area="${esc(a.n)}" ${open ? 'open' : ''}><summary><span class="nm">${esc(a.n)}</span><span class="st">${status}</span>
+      <span class="note">${areaSpecies(a).length} species · from Lv ${a.minLv}${routeTrainers(a).length ? ' · ' + routeTrainers(a).length + ' trainers' : ''}</span></summary><div class="body">${body}</div></details>`;
+  }
+  function renderRoutes() {
+    const enc = S.run.enc || {};
+    const areas = D.areas;
+    const doneN = areas.filter(a => enc[a.n]).length, caught = Object.values(enc).filter(e => e && e.r === 'caught').length;
+    const list = S.routeFilter === 'todo' ? areas.filter(a => !enc[a.n] || a.n === S.openArea) : areas;
+    main.innerHTML = `<section class="section">
+      <div class="card"><div class="row"><h2 class="grow">Routes</h2><span class="pill">${doneN}/${areas.length} done · ${caught} caught</span></div>
+        <p class="small" style="margin:0">Nuzlocke rule: only the first Pokémon you meet in each area counts. Open an area, then tap <b>Caught</b> on what you got (it goes into your party with its level and the moves a wild one knows) or <b>✕</b> if it fainted or fled. Encounter tables, levels and odds are read from the ROM, including the separate day and night tables.</p>
+        <div class="row small"><span class="seg" role="group" aria-label="Show"><button data-filter="todo" aria-pressed="${S.routeFilter === 'todo'}">Still to do</button><button data-filter="all" aria-pressed="${S.routeFilter !== 'todo'}">All areas</button></span>
+          <label class="row" style="gap:6px;flex-wrap:nowrap"><input type="checkbox" id="dupes" ${S.run.dupes !== false ? 'checked' : ''}> <span>Dupes clause: mark species you already have</span></label></div></div>
+      ${list.map(areaCard).join('') || '<div class="empty">Every area is done. Switch to “All areas” to review them.</div>'}
+    </section>`;
+    wireRoutes();
+  }
+  function setEnc(area, val) {
+    if (S.example) { S.example = false; S.roster = []; }
+    S.run.enc = Object.assign({}, S.run.enc || {});
+    if (val) S.run.enc[area] = val; else delete S.run.enc[area];
+    store.saveRun();
+  }
+  function wireRoutes() {
+    main.querySelectorAll('details.area').forEach(d => d.addEventListener('toggle', () => {
+      if (d.open && S.openArea !== d.dataset.area) { S.openArea = d.dataset.area; renderRoutes(); const el = main.querySelector(`details.area[data-area="${CSS.escape(S.openArea)}"]`); if (el) el.scrollIntoView({ block: 'nearest' }); }
+      else if (!d.open && S.openArea === d.dataset.area) S.openArea = null;
+    }));
+    main.querySelectorAll('[data-filter]').forEach(b => b.onclick = () => { S.routeFilter = b.dataset.filter; renderRoutes(); });
+    main.querySelectorAll('[data-time]').forEach(b => b.onclick = () => { S.encTime = b.dataset.time; renderRoutes(); });
+    const du = $('#dupes'); if (du) du.onchange = () => { S.run.dupes = du.checked; store.saveRun(); renderRoutes(); };
+    main.querySelectorAll('[data-got]').forEach(b => b.onclick = () => {
+      const sid = +b.dataset.got, area = b.dataset.area;
+      openEditor(null, { s: sid, lv: +b.dataset.lv, met: area, onSave: m => setEnc(area, { s: sid, r: 'caught', key: m.key }) });
+    });
+    main.querySelectorAll('[data-fail]').forEach(b => b.onclick = () => { setEnc(b.dataset.area, { s: +b.dataset.fail, r: 'failed' }); renderRoutes(); });
+    main.querySelectorAll('[data-skip]').forEach(b => b.onclick = () => { setEnc(b.dataset.skip, { r: 'skipped' }); renderRoutes(); });
+    main.querySelectorAll('[data-undo]').forEach(b => b.onclick = () => { setEnc(b.dataset.undo, null); renderRoutes(); });
+    main.querySelectorAll('[data-plan]').forEach(b => b.onclick = () => { S.planBoss = +b.dataset.plan; S.tab = 'plan'; selectTab('plan'); render(); window.scrollTo(0, 0); });
+    main.querySelectorAll('[data-best]').forEach(b => b.onclick = () => bestCatch(D.areas.find(a => a.n === b.dataset.best)));
+  }
+  /** Encounter planner: which species here would help most in the next two big fights, as what it evolves into by then. */
+  function bestCatch(a) {
+    const box = document.getElementById('best-' + encodeURIComponent(a.n)); if (!box) return;
+    box.innerHTML = '<div class="note">Testing each species against your next big fights…</div>';
+    setTimeout(() => {
+      const majors = ADV.upcomingMajor(nextBoss(), 2);
+      const tms = S.run.tms || [];
+      const owned = ownedFamilies();
+      const ranked = areaSpecies(a).map(sid => {
+        let total = 0; const notes = [];
+        for (const bi of majors) {
+          const b = D.bosses[bi];
+          const as = evolvedBy(sid, b.cap);
+          const sp = E.sp(as);
+          const spec = { key: 'cand', s: as, lv: b.cap, nat: 0, ab: sp.a[0], it: null, mv: [] };
+          const f = ADV.fightScore(spec, bi, tms);
+          total += f.score;
+          const wins = f.per.filter(x => x.verdict === 'safe' || x.verdict === 'ok').length;
+          notes.push(`${as !== sid ? 'as ' + sp.n + ', ' : ''}handles ${wins} of ${b.n}'s ${f.per.length} at Lv ${b.cap}`);
+        }
+        return { sid, total, notes, dupe: S.run.dupes !== false && owned.has(familyOf(sid)) };
+      }).sort((x, y) => (x.dupe - y.dupe) || (y.total - x.total));
+      box.innerHTML = `<div class="card" style="box-shadow:none;border-width:2px"><div class="lbl">Most useful catches for ${majors.map(i => esc(D.bosses[i].n)).join(' and ')}</div>
+        ${ranked.slice(0, 4).map((r, k) => `<div class="slot">${icon(r.sid)}<div class="who"><span><b style="font-size:15px">${k + 1}. ${esc(E.sp(r.sid).n)}</b>${r.dupe ? ' <span class="tag">dupe</span>' : ''}</span><span class="small muted">${esc(r.notes.join('; '))}</span></div><span class="num">${r.total.toFixed(1)}</span></div>`).join('')}
+        <p class="note" style="margin:0">Each species is tested at the level cap of those fights, evolved by level-up where it would be by then, with its best level-up moves and your TMs, against the bosses' exact Hardcore teams. You can't choose your first encounter, but this tells you which result to hope for and which to keep in your party.</p></div>`;
+    }, 30);
+  }
+  function selectTab(t) { document.querySelectorAll('.tabs button').forEach(o => o.setAttribute('aria-selected', o.dataset.tab === t ? 'true' : 'false')); }
+
+  // ---------------- import from a save file ----------------
+  const BADGES = ['Boulder Badge', 'Cascade Badge', 'Thunder Badge', 'Rainbow Badge', 'Soul Badge', 'Marsh Badge', 'Volcano Badge', 'Earth Badge'];
+  function openImport() {
+    document.body.style.overflow = 'hidden';
+    sheet.hidden = false;
+    const close = () => { sheet.hidden = true; sheet.innerHTML = ''; document.body.style.overflow = ''; };
+    let parsed = null;
+    function draw(msg) {
+      const p = parsed;
+      sheet.innerHTML = `<div class="inner"><div class="row"><h2 class="grow">Import from your save file</h2><button class="btn ghost" id="im-close">Close</button></div>
+        <div class="card"><p class="small" style="margin:0">In My Boy!, save in-game, then export the save: menu → <b>Export save</b> (it makes a <b>.sav</b> file). Pick that file here. Nothing is uploaded: the file is read on your phone.</p>
+          <div class="dropzone"><input type="file" id="im-file" accept=".sav,.srm,.sa1,application/octet-stream"><span class="note">Beta: Radical Red's save layout was read from the engine source, not yet checked against a real save. Check the preview before importing.</span></div>
+          ${msg ? `<div class="banner">${esc(msg)}</div>` : ''}</div>
+        ${p ? `<div class="card"><h3>Your party (${p.party.length})</h3>${p.party.map(m => { const sp = E.sp(m.s); return `<div class="slot">${icon(m.s, 'x2')}<div class="who"><b>${esc(m.nick ? m.nick + ' (' + sp.n + ')' : sp.n)}</b>
+              <span class="small">Lv ${m.lv} · ${esc(natureText(m.nat))} · ${esc(m.ab || '')}${m.it ? ' · ' + esc(E.itemName(m.it)) : ''}</span>
+              <span class="small muted">${m.mv.map(id => esc(E.mv(id) ? E.mv(id).f : '?')).join(', ')}</span></div>${m.maxHp ? `<div style="width:90px">${hpBar(100 * m.hp / m.maxHp)}</div>` : ''}</div>`; }).join('') || '<p class="muted small">No party Pokémon found.</p>'}
+            <p class="small" style="margin:0">PC boxes: ${p.boxes.length} Pokémon. Badges: ${p.badges.length}.</p>
+            ${p.notes.map(n => `<div class="note">${esc(n)}</div>`).join('')}
+            <label class="row small"><input type="checkbox" id="im-boxes" ${p.boxes.length ? '' : 'disabled'}> Also import the ${p.boxes.length} Pokémon in your PC boxes</label>
+            <label class="row small"><input type="checkbox" id="im-badges" checked ${p.badges.length ? '' : 'disabled'}> Mark the gyms of your ${p.badges.length} badges as beaten</label>
+            <div class="row"><button class="btn primary" id="im-go">Import</button><span class="note">Pokémon already in the Coach are updated (matched by the game's personality value); the rest are added. Nothing is deleted.</span></div></div>` : ''}
+      </div>`;
+      $('#im-close').onclick = close;
+      $('#im-file').onchange = async ev => {
+        const f = ev.target.files[0]; if (!f) return;
+        try { parsed = SR.read(await f.arrayBuffer()); draw(''); }
+        catch (e) { parsed = null; draw(e.message || String(e)); }
+      };
+      const go = $('#im-go');
+      if (go) go.onclick = async () => {
+        if (S.example) { S.example = false; S.roster = []; }
+        const take = p.party.map(m => Object.assign({}, m, { box: 'party' })).concat($('#im-boxes').checked ? p.boxes.map(m => Object.assign({}, m, { box: 'box' })) : []);
+        const changed = [];
+        let partyCount = 0;
+        for (const t of take) {
+          let m = t.pid ? S.roster.find(r => r.pid === t.pid && r.box !== 'dead') : null;
+          const fields = { s: t.s, lv: t.lv, nat: t.nat, ab: t.ab, it: t.it, mv: t.mv.slice(0, 4), nick: t.nick || (m && m.nick) || '', pid: t.pid };
+          if (m) Object.assign(m, fields);
+          else { m = Object.assign({ key: 'mon-' + uid(), met: 'Imported', ord: Date.now() + changed.length }, fields); S.roster.push(m); }
+          m.box = t.box === 'party' && partyCount < 6 ? 'party' : (m.box === 'party' && t.box !== 'party' ? 'box' : t.box === 'party' ? 'box' : m.box || 'box');
+          if (m.box === 'party') partyCount++;
+          changed.push(m);
+        }
+        // anything else still marked as in the party goes to the box, so the party matches the game
+        for (const r of S.roster) if (r.box === 'party' && !changed.includes(r)) r.box = 'box';
+        if ($('#im-badges').checked) for (const k of p.badges) { const b = D.bosses.find(x => x.ms === BADGES[k]); if (b && !S.run.beaten.includes(b.i)) S.run.beaten.push(b.i); }
+        close(); render();
+        for (const m of S.roster) await store.saveMon(m);
+        await store.saveRun();
+        flash(`Imported ${changed.length} Pokémon from your save.`);
+      };
+    }
+    draw('');
+  }
+
+  /** Regular trainers on each route become plannable fights after the bosses (they never count as progress). */
+  function addRouteTrainers() {
+    D.routeStart = D.bosses.length;
+    for (const [tid, t] of Object.entries(D.trainers || {})) {
+      const party = t.party.filter(m => E.sp(m.s)).map(m => ({ s: m.s, lv: m.lv, rel: m.rel, iv: m.iv || [31, 31, 31, 31, 31, 31], ev: m.ev || null,
+        nat: m.nat != null ? m.nat : 0, ab: m.ab || E.sp(m.s).a[0], it: m.it || null, mv: (m.mv || []).filter(id => E.mv(id)) }));
+      if (!party.length) continue;
+      D.bosses.push({ i: D.bosses.length, id: +tid, n: t.n, cls: t.cls, cat: 'trainer', dbl: t.dbl, cap: null, party, route: true, areas: t.a });
+    }
+  }
+
   // ---------------- boot ----------------
   async function boot() {
     try { const t = localStorage.getItem('rrcoach:tab'); if (t) { S.tab = t; document.querySelectorAll('.tabs button').forEach(o => o.setAttribute('aria-selected', o.dataset.tab === t ? 'true' : 'false')); } } catch (e) {}
@@ -740,6 +1057,11 @@
     E = window.createEngine(window.calc, D);
     SIM = window.createSim(E);
     ADV = window.createAdvice(E);
+    SR = window.createSaveReader ? window.createSaveReader(D) : null;
+    addRouteTrainers();
+    const sprites = fetch('sprites/index.json').then(r => (r.ok ? r.json() : null)).catch(() => null);
+    SPR = await Promise.race([sprites, new Promise(res => setTimeout(() => res(null), 4000))]);
+    if (!SPR) sprites.then(v => { if (v) { SPR = v; render(); } });
     render();
     store.init();
   }

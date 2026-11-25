@@ -168,3 +168,21 @@ Move struct byte 9 is the Z-move power. Radical Red adds 15 abilities of its own
 - Flags `0x38` and `0x53` (inferred from level consistency)
 - Level-up learnsets (3-byte entries: u16 move, u8 level), needed for regular trainers that use default moves
 - Type chart and battle-mechanic changes, needed for the damage calculator
+
+## Evolutions, encounters, maps, trainers, tutors, sprites
+
+- **Evolution table**: pointer at literal `0x08042F6C`; 16 entries of 8 bytes per species (DPE layout: method u16, parameter u16, target u16, extra u16). Method `0xFE` is Mega Evolution (parameter = stone item; extra 0) and `0xFD` Gigantamax. Methods follow CFRU's `enum EvolutionMethods`.
+- **Wild encounters**: the main table `gWildMonHeaders` (pointer at `0x08082990`, now at `0x0872C984`, 134 maps) plus two clock tables at `0x09166428` and `0x09166AB8` (83 maps each). The code at `0x090C3550` reads the clock (`0x03005EA0`, hour at +6): `0x0908CC04` is true from 20:00 to 3:59 and `0x0908CFDC` from 17:00 to 19:59; either picks the `0x09166428` table, otherwise `0x09166AB8`. A map missing from the chosen table, or a method left empty in it, falls back to the main table. Headers are 20 bytes (group, map, padding, then land, water, Rock Smash and fishing pointers); slots use the FireRed odds (grass 20/20/10/10/10/10/5/5/4/4/1/1, surfing and Rock Smash 60/30/5/4/1, fishing Old Rod 70/30, Good Rod 60/20/20, Super Rod 40/40/15/4/1).
+- **Maps**: `gMapGroups` pointer at `0x0805524C` (43 groups). Map header byte `0x14` is the region-map section; names are the vanilla table at `0x083F1CAC`, indexed by section - `0x58`. Radical Red renamed the Monean Chamber slot to "Oak's Lab"; its Unown table is ignored.
+- **Trainer locations**: each map's object events (24 bytes; script pointer at +16) are scanned for `trainerbattle` (0x5C, trainer id at +2), following `goto`/`call`.
+- **Move tutors**: 128 tutor moves (u16) at the pointer in `0x08120BE4`; compatibility at the pointer in `0x08120C30`, 16 bytes of bit flags per species.
+- **Sprites**: from the ROM header: front pictures `0x08000128` (LZ77, 64x64 4bpp), palettes `0x08000130` (LZ77), icons `0x08000138` (32x32 4bpp, first frame), icon palette numbers `0x0800013C`, icon palettes `0x08000140`.
+- **Hardcore abilities**: the game's description of Hardcore Mode (`0x0910D9B9`) says it "restricts certain abilities and moves from the player". The ability list isn't a plain table (no list near the move lists); it's still to be found in the code that tests flag `0x1034`.
+
+## Save files
+
+FireRed layout: two 14-sector slots of 4 KB, footer at `0xFF4` (section id, checksum, `0x08012025`, counter); the higher counter wins. SaveBlock1 is sections 1-4 (party count `0x34`, party `0x38`, flags `0xEE0`, badges are flags `0x820`-`0x827`); the PC is sections 5-13 (current box, then 14 x 30 box Pokémon of 80 bytes). CFRU keeps Pokémon unencrypted in a fixed growth/attacks/EVs/misc order, with the hidden-ability flag in bit 31 of the IV word; `app/save.js` also accepts the vanilla encrypted layout.
+
+## The boss AI port
+
+`app/ai.js` follows CFRU's `src/Battle_AI`: `ai_negatives.c` (moves that fail or are absorbed: -10/-20), `ai_positives.c` (per-effect bonuses, `DamageMoveViabilityIncrease`), `ai_advanced.c` (`PredictFightingStyle`, `IncreaseStatusViability`, `IncreaseStatViability`, `ShouldTryToSetUpStat`, `ShouldRecover`, `ShouldPivot`, `IncreaseViabilityForSlowKOMove`), `ai_util.c` (`CalcStrongestMove`, `MoveKnocksOutPossiblyGoesFirstWithBestAccuracy`, `CalcShouldAIUseZMove`) and `ai_switching.c` (`ShouldSwitch`, `CalcMostSuitableMonToSwitchInto`, with the weights in `include/new/ai_switching.h`). The AI judges damage at the 93% roll (`AI_CalcDmg`) and only assumes crits for moves that always crit. Bosses use AI flags 7 (bad-move and positive scripts; the semi-smart script is skipped).

@@ -57,7 +57,7 @@ for i in range(N_SPECIES):
         'types': sorted(set([TYPES.get(b[6], f'#{b[6]}'), TYPES.get(b[7], f'#{b[7]}')]), key=lambda t: (t != TYPES.get(b[6]), t)),
         'abilities': [ability_name[b[22]] if b[22] else None, ability_name[b[23]] if b[23] else None],
         'hiddenAbility': ability_name[b[26]] if b[26] else None,
-        'catchRate': b[8], 'genderRatio': b[16],
+        'catchRate': b[8], 'genderRatio': b[16], 'growthRate': b[19],
     })
 
 # ---- moves ----
