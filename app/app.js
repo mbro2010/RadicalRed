@@ -1558,7 +1558,7 @@
     const nb = nextF ? D.bosses[fightOf(nextF.step.g)] : null;
     const wild = s.areas.filter(n => FLOW.isWild(n));
     const older = FLOW.stillOpen(S.run, s.k).filter(n => !s.areas.includes(n));
-    const title = s.post ? 'Areas after the Champion' : wild.length <= 3 ? wild.join(', ').replace(/, ([^,]*)$/, ' and $1') : 'New areas';
+    const title = s.post ? 'Areas after the Champion' : wild.length <= 4 ? wild.join(', ').replace(/, ([^,]*)$/, ' and $1') : 'New areas';
     const card = n => areaCard(D.areas.find(a => a.n === n), FLOW.needOf(n));
     let h = `<div class="card rec"><div class="lbl">Catch</div><h2>${esc(title)}</h2>
       <p class="small" style="margin:0">Only your first encounter in each area counts. Open an area and tap <b>Caught</b> on what you got (it joins your team with the level and moves a wild one has), or <b>✕</b> if it fainted or fled. Gifts, one-time encounters and items are listed in each area.</p></div>`;

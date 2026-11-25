@@ -109,7 +109,10 @@ function category(t) {
   return 'other';
 }
 const HC = caps.hardcore;
-const bossLoc = read('trainer_locations.json');   // where each fight is, when its trainer stands on a map
+// where each fight is: the map its trainer stands on, else the map whose scripts start it (rivals, admins, leaders)
+const standing = read('trainer_locations.json');
+const scripted = fs.existsSync(path.join(D, 'fight_places.json')) ? read('fight_places.json') : { fights: {}, given: {} };
+const bossLoc = Object.assign({}, scripted.fights, standing);
 let done = 0;
 const bosses = order.map((tid, i) => {
   const t = trainers[tid];
@@ -256,6 +259,8 @@ const out = {
     condSpecies: restrictions.conditionalAllowedSpecies,
   },
   bosses, caps: { hardcore: HC, normal: caps.normal },
+  // where scripts hand over the fishing rods (Radical Red moves them earlier than FireRed)
+  rods: Object.fromEntries(['Old Rod', 'Good Rod', 'Super Rod'].map(n => [n, scripted.given[Object.keys(items).find(k => items[k] === n)] || []])),
   evo: outEvo, mega: outMega, areas: outAreas, trainers: outTrainers, finds: outFinds, mart: finds.mart, tmWhere, itemWhere,
 };
 fs.mkdirSync(path.dirname(OUT), { recursive: true });

@@ -4,9 +4,10 @@
  * rival). Inside a chapter come the areas to catch in and the fights, in story order. The fights and their order
  * are the boss table's (the game's own progression); fights with the same trainer and cap next to each other are
  * versions of one fight (the rival's three, a leader's alternate teams), except generic Grunts and Goons, who are
- * separate trainers. Areas are placed by FireRed's map order, checked against where the bosses stand and the wild
- * levels; areas with only fishing or surfing come up once a rod or Surf is likely in hand. Nothing here locks you
- * in: an area can be logged from any step, and fights can be taken in another order.
+ * separate trainers. Areas are placed by FireRed's map order, checked against where each boss fight starts in the
+ * ROM's scripts (every area comes before the fights held there) and the wild levels; areas with only fishing or
+ * surfing come up once you'd have a rod (Radical Red hands out the Old Rod in Viridian City) or Surf. Nothing here
+ * locks you in: an area can be logged from any step, and fights can be taken in another order.
  *
  * Pure functions over the game data and a run's state, so the page and the tests share them. */
 (function (root, factory) {
@@ -17,12 +18,12 @@
   const ROD = 'rod', SURF = 'surf';
   // [area, the fight it comes before (trainer, level cap, which of that name at that cap), what you need there]
   const PLACES = [
-    ['Route 1', 'Terry', 16], ['Viridian City', 'Terry', 16], ['Route 22', 'Terry', 16],
-    ['Route 2', 'Brendan', 16], ['Viridian Forest', 'Sammy', 16], ['Pewter City', 'Falkner', 16],
+    ['Route 1', 'Terry', 16], ['Viridian City', 'Terry', 16], ['Pallet Town', 'Terry', 16, 0, ROD], ['Route 22', 'Terry', 16],
+    ['Route 2', 'Brendan', 16], ['Viridian Forest', 'Brendan', 16], ['Pewter City', 'Falkner', 16],
     ['Route 3', 'Sally', 23], ['Mt. Moon', 'Miguel', 23],
-    ['Route 4', 'Terry', 28], ['Route 24', 'Cale', 28], ['Route 25', 'Bugsy', 28],
+    ['Route 4', 'Terry', 28], ['Cerulean City', 'Terry', 28, 0, ROD], ['Route 24', 'Cale', 28], ['Route 25', 'Bugsy', 28],
     ['Route 5', 'Jeff', 36], ['Underground Path', 'Jeff', 36], ['Route 6', 'Jeff', 36],
-    ['Vermilion City', 'Ann', 36, 0, ROD], ['S.S. Anne', 'Ann', 36, 0, ROD], ['Pallet Town', 'Ann', 36, 0, ROD], ['Cerulean City', 'Ann', 36, 0, ROD],
+    ['Vermilion City', 'Ann', 36, 0, ROD], ['S.S. Anne', 'Ann', 36, 0, ROD],
     ['Route 11', 'Whitney', 36], ["Diglett's Cave", 'Whitney', 36],
     ['Route 9', 'Alicia', 44], ['Route 10', 'Dana', 44], ['Rock Tunnel', 'Dana', 44],
     ['Lavender Town', 'Aidan', 44], ['Route 8', 'Aidan', 44],
@@ -30,13 +31,13 @@
     ['Rocket Hideout', 'Grunt', 47, 1],
     ['Pokémon Tower', 'Ruth', 56],
     ['Route 12', 'Luca', 56], ['Route 17', 'William', 56], ['Route 18', 'William', 56], ['Route 13', 'Sebastian', 56],
-    ['Route 14', 'Terry', 56], ['Route 15', 'Terry', 56], ['Fuchsia City', 'Terry', 56, 0, ROD], ['Safari Zone', 'Terry', 56],
+    ['Route 14', 'Terry', 56], ['Route 15', 'Terry', 56], ['Fuchsia City', 'Terry', 56, 0, ROD], ['Route 19', 'Terry', 56, 0, ROD], ['Safari Zone', 'Terry', 56],
     ['Saffron City', 'Terry', 56], ['Silph Co.', 'Terry', 56],
     ['Power Plant', 'Kid', 68, 0, SURF],
-    ['Route 19', 'Pryce', 73, 0, SURF], ['Route 20', 'Pryce', 73, 0, SURF], ['Seafoam Islands', 'Pryce', 73, 0, SURF],
-    ['Cinnabar Island', 'Ted', 76, 0, SURF], ['Route 21', 'Ted', 76, 0, SURF], ['Pokémon Mansion', 'Ted', 76, 0, SURF],
+    ['Route 20', 'Pryce', 73, 0, SURF], ['Seafoam Islands', 'Pryce', 73, 0, SURF],
+    ['Cinnabar Island', 'May', 73, 0, SURF], ['Route 21', 'May', 73, 0, SURF], ['Pokémon Mansion', 'Ted', 76, 0, SURF],
     ['Cerulean Cave', 'Grunt', 79],
-    ['Route 23', 'Naomi', 85], ['Victory Road', 'Naomi', 85], ['Indigo Plateau', 'Lorelei', 85],
+    ['Route 23', 'Brendan', 82], ['Victory Road', 'Naomi', 85], ['Indigo Plateau', 'Lorelei', 85],
   ];
   // the Sevii Islands and everything else not listed: after the Champion (their wild Pokémon are at the last cap)
   const LONE = /^(Grunt|Goon)$/;
@@ -79,8 +80,9 @@
   for (const [n, name, cap, nth, need] of PLACES) if (areaByName.has(n)) place.set(n, { before: anchor(name, cap, nth), need: need || null });
   const postAreas = D.areas.map(a => a.n).filter(n => !place.has(n));
   /** What getting an encounter there takes, beyond walking in. */
+  const rodAt = ((D.rods || {})['Old Rod'] || [])[0];
   function needOf(n) {
-    if (waterOnly(n)) return 'Only fishing or surfing here';
+    if (waterOnly(n)) return rodAt ? `Only fishing or surfing here (Old Rod: ${rodAt})` : 'Only fishing or surfing here';
     const p = place.get(n);
     return p && p.need === SURF ? 'Needs Surf to reach' : '';
   }

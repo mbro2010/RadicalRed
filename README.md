@@ -53,6 +53,7 @@ node tools/map_names.js data                 # prints every match that needed re
 python3 tools/extract_world.py data         # evolutions, encounters, map names, trainer locations
 python3 tools/extract_tutors.py data
 python3 tools/extract_finds.py data          # gifts, one-time encounters, items, shops
+python3 tools/extract_fight_places.py data   # where each scripted fight starts, and who hands over key items
 python3 tools/extract_starters.py data
 node tools/build_app_data.js data app/rrdata.json
 node tools/starter_tiers.js data app/rrdata.json app/starters.json   # about a minute

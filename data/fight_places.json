@@ -1,0 +1,2754 @@
+{
+"fights": {
+"2": [
+"Two Island"
+],
+"3": [
+"Treasure Beach"
+],
+"4": [
+"Viridian Forest"
+],
+"5": [
+"Route 5"
+],
+"6": [
+"Cerulean City"
+],
+"7": [
+"Viridian City"
+],
+"8": [
+"Route 25"
+],
+"9": [
+"Lavender Town"
+],
+"10": [
+"Lavender Town"
+],
+"11": [
+"Lavender Town"
+],
+"12": [
+"Lavender Town"
+],
+"13": [
+"Lavender Town"
+],
+"14": [
+"Celadon City"
+],
+"15": [
+"Route 15"
+],
+"16": [
+"Celadon City"
+],
+"17": [
+"Celadon City"
+],
+"18": [
+"Route 8"
+],
+"19": [
+"Cerulean Cave"
+],
+"20": [
+"Cerulean Cave"
+],
+"21": [
+"Viridian Forest"
+],
+"24": [
+"Indigo Plateau"
+],
+"25": [
+"Saffron City"
+],
+"26": [
+"Route 23"
+],
+"27": [
+"Lavender Town"
+],
+"28": [
+"Pok\u00e9mon Tower"
+],
+"32": [
+"Cerulean City"
+],
+"35": [
+"Saffron City"
+],
+"38": [
+"Viridian City"
+],
+"40": [
+"One Island"
+],
+"41": [
+"Mt. Ember"
+],
+"42": [
+"Mt. Ember"
+],
+"43": [
+"Rock Tunnel"
+],
+"44": [
+"Viridian Forest"
+],
+"45": [
+"Pewter City"
+],
+"46": [
+"Mt. Moon"
+],
+"47": [
+"Route 25"
+],
+"48": [
+"Cerulean City"
+],
+"49": [
+"Route 11"
+],
+"50": [
+"S.S. Anne"
+],
+"51": [
+"Vermilion City"
+],
+"52": [
+"Lavender Town"
+],
+"53": [
+"Silph Co."
+],
+"56": [
+"Pewter City"
+],
+"57": [
+"Fuchsia City"
+],
+"58": [
+"Route 20"
+],
+"59": [
+"Route 20"
+],
+"60": [
+"Route 20"
+],
+"61": [
+"Cinnabar Island"
+],
+"62": [
+"Cinnabar Island"
+],
+"63": [
+"Cinnabar Island"
+],
+"64": [
+"Cinnabar Island"
+],
+"65": [
+"Celadon City"
+],
+"66": [
+"Power Plant"
+],
+"67": [
+"Cerulean Cave"
+],
+"68": [
+"Cerulean Cave"
+],
+"69": [
+"Cerulean Cave"
+],
+"70": [
+"Cerulean Cave"
+],
+"71": [
+"Cerulean Cave"
+],
+"72": [
+"Cerulean Cave"
+],
+"73": [
+"Cerulean Cave"
+],
+"74": [
+"Viridian City"
+],
+"75": [
+"Kindle Road"
+],
+"76": [
+"Two Island"
+],
+"77": [
+"Pok\u00e9mon League"
+],
+"78": [
+"Pok\u00e9mon League"
+],
+"79": [
+"Seafoam Islands"
+],
+"80": [
+"Pok\u00e9mon League"
+],
+"81": [
+"Pok\u00e9mon League"
+],
+"82": [
+"Pok\u00e9mon Tower"
+],
+"83": [
+"Pok\u00e9mon League"
+],
+"84": [
+"Pok\u00e9mon League"
+],
+"85": [
+"Berry Forest"
+],
+"86": [
+"Pok\u00e9mon League"
+],
+"87": [
+"Pok\u00e9mon League"
+],
+"88": [
+"Berry Forest"
+],
+"89": [
+"Route 3"
+],
+"90": [
+"Route 3"
+],
+"91": [
+"Mt. Moon"
+],
+"92": [
+"Route 24"
+],
+"93": [
+"Route 25"
+],
+"94": [
+"Route 25"
+],
+"95": [
+"Route 25"
+],
+"96": [
+"S.S. Anne"
+],
+"97": [
+"Route 11"
+],
+"98": [
+"Route 11"
+],
+"99": [
+"Route 11"
+],
+"100": [
+"Route 11"
+],
+"102": [
+"Viridian Forest"
+],
+"103": [
+"Viridian Forest"
+],
+"104": [
+"Viridian Forest"
+],
+"105": [
+"Route 3"
+],
+"106": [
+"Route 3"
+],
+"107": [
+"Route 3"
+],
+"108": [
+"Mt. Moon"
+],
+"109": [
+"Mt. Moon"
+],
+"110": [
+"Route 24"
+],
+"111": [
+"Route 6"
+],
+"112": [
+"Route 6"
+],
+"113": [
+"Pok\u00e9mon Tower"
+],
+"114": [
+"Route 9"
+],
+"115": [
+"Route 9"
+],
+"116": [
+"Route 3"
+],
+"117": [
+"Route 3"
+],
+"118": [
+"Route 3"
+],
+"119": [
+"Route 4"
+],
+"120": [
+"Mt. Moon"
+],
+"121": [
+"Mt. Moon"
+],
+"122": [
+"Route 24"
+],
+"123": [
+"Route 24"
+],
+"124": [
+"Pok\u00e9mon Tower"
+],
+"125": [
+"Route 25"
+],
+"126": [
+"S.S. Anne"
+],
+"127": [
+"S.S. Anne"
+],
+"128": [
+"Route 8"
+],
+"129": [
+"Route 8"
+],
+"130": [
+"Route 8"
+],
+"131": [
+"Route 8"
+],
+"132": [
+"Celadon City"
+],
+"133": [
+"Celadon City"
+],
+"134": [
+"S.S. Anne"
+],
+"135": [
+"S.S. Anne"
+],
+"136": [
+"S.S. Anne"
+],
+"137": [
+"S.S. Anne"
+],
+"138": [
+"S.S. Anne"
+],
+"139": [
+"S.S. Anne"
+],
+"140": [
+"S.S. Anne"
+],
+"141": [
+"Vermilion City"
+],
+"142": [
+"Pewter City"
+],
+"143": [
+"Route 24"
+],
+"144": [
+"Route 24"
+],
+"145": [
+"Route 6"
+],
+"146": [
+"Route 6"
+],
+"147": [
+"Cape Brink"
+],
+"148": [
+"Route 9"
+],
+"149": [
+"Route 9"
+],
+"150": [
+"Cerulean City"
+],
+"151": [
+"Route 6"
+],
+"152": [
+"Route 6"
+],
+"153": [
+"Route 25"
+],
+"154": [
+"Route 9"
+],
+"155": [
+"Route 9"
+],
+"156": [
+"Route 10"
+],
+"157": [
+"Route 10"
+],
+"158": [
+"Rock Tunnel"
+],
+"159": [
+"Rock Tunnel"
+],
+"160": [
+"Celadon City"
+],
+"162": [
+"Route 10"
+],
+"163": [
+"Route 10"
+],
+"164": [
+"Rock Tunnel"
+],
+"165": [
+"Rock Tunnel"
+],
+"166": [
+"Rock Tunnel"
+],
+"167": [
+"Victory Road"
+],
+"168": [
+"Rock Tunnel"
+],
+"169": [
+"Mt. Moon"
+],
+"170": [
+"Mt. Moon"
+],
+"171": [
+"Route 8"
+],
+"172": [
+"Route 8"
+],
+"173": [
+"Route 8"
+],
+"174": [
+"Berry Forest"
+],
+"175": [
+"Berry Forest"
+],
+"176": [
+"Berry Forest"
+],
+"177": [
+"Cinnabar Island"
+],
+"178": [
+"Cinnabar Island"
+],
+"179": [
+"Cinnabar Island"
+],
+"180": [
+"Cinnabar Island"
+],
+"181": [
+"Mt. Moon"
+],
+"182": [
+"Route 25"
+],
+"183": [
+"Route 25"
+],
+"184": [
+"Route 25"
+],
+"185": [
+"Route 9"
+],
+"186": [
+"Route 9"
+],
+"187": [
+"Route 10"
+],
+"188": [
+"Route 10"
+],
+"189": [
+"Rock Tunnel"
+],
+"190": [
+"Rock Tunnel"
+],
+"191": [
+"Rock Tunnel"
+],
+"192": [
+"Rock Tunnel"
+],
+"193": [
+"Rock Tunnel"
+],
+"194": [
+"Rock Tunnel"
+],
+"195": [
+"Route 13"
+],
+"196": [
+"Route 14"
+],
+"197": [
+"Route 15"
+],
+"198": [
+"Route 15"
+],
+"199": [
+"Route 16"
+],
+"200": [
+"Pallet Town"
+],
+"201": [
+"Route 16"
+],
+"202": [
+"Route 16"
+],
+"203": [
+"Route 17"
+],
+"204": [
+"Route 17"
+],
+"205": [
+"Route 17"
+],
+"206": [
+"Route 18"
+],
+"207": [
+"Route 14"
+],
+"208": [
+"Route 14"
+],
+"209": [
+"Route 14"
+],
+"210": [
+"Pallet Town"
+],
+"213": [
+"Cinnabar Island"
+],
+"214": [
+"Cinnabar Island"
+],
+"215": [
+"Cinnabar Island"
+],
+"216": [
+"Pok\u00e9mon Mansion"
+],
+"218": [
+"Pok\u00e9mon Mansion"
+],
+"219": [
+"Pok\u00e9mon Mansion"
+],
+"220": [
+"Vermilion City"
+],
+"221": [
+"Route 11"
+],
+"222": [
+"Route 11"
+],
+"223": [
+"S.S. Anne"
+],
+"224": [
+"S.S. Anne"
+],
+"225": [
+"Route 12"
+],
+"226": [
+"Route 12"
+],
+"227": [
+"Route 12"
+],
+"228": [
+"Route 12"
+],
+"229": [
+"Route 21"
+],
+"230": [
+"Route 21"
+],
+"231": [
+"Route 21"
+],
+"232": [
+"Route 21"
+],
+"233": [
+"Route 12"
+],
+"234": [
+"Cerulean City"
+],
+"235": [
+"Route 19"
+],
+"236": [
+"Route 19"
+],
+"237": [
+"Route 19"
+],
+"238": [
+"Route 19"
+],
+"239": [
+"Route 19"
+],
+"240": [
+"Route 19"
+],
+"241": [
+"Route 19"
+],
+"242": [
+"Route 20"
+],
+"243": [
+"Route 20"
+],
+"244": [
+"Route 20"
+],
+"245": [
+"Route 21"
+],
+"246": [
+"Route 21"
+],
+"247": [
+"Route 21"
+],
+"248": [
+"Route 21"
+],
+"249": [
+"Route 16"
+],
+"250": [
+"Route 16"
+],
+"251": [
+"Route 16"
+],
+"252": [
+"Route 17"
+],
+"253": [
+"Route 17"
+],
+"254": [
+"Route 17"
+],
+"255": [
+"Route 17"
+],
+"256": [
+"Route 17"
+],
+"258": [
+"Route 11"
+],
+"259": [
+"Route 11"
+],
+"260": [
+"Route 11"
+],
+"261": [
+"Route 11"
+],
+"262": [
+"Route 8"
+],
+"264": [
+"Route 8"
+],
+"265": [
+"Celadon City"
+],
+"266": [
+"Celadon City"
+],
+"267": [
+"Celadon City"
+],
+"268": [
+"Route 13"
+],
+"270": [
+"Route 20"
+],
+"271": [
+"Route 20"
+],
+"272": [
+"Route 20"
+],
+"273": [
+"Route 15"
+],
+"274": [
+"Route 15"
+],
+"276": [
+"Route 19"
+],
+"277": [
+"Route 19"
+],
+"278": [
+"Route 19"
+],
+"279": [
+"Route 20"
+],
+"280": [
+"Saffron City"
+],
+"281": [
+"Saffron City"
+],
+"282": [
+"Saffron City"
+],
+"283": [
+"Saffron City"
+],
+"285": [
+"Route 12"
+],
+"286": [
+"Silph Co."
+],
+"287": [
+"Victory Road"
+],
+"288": [
+"Fuchsia City"
+],
+"289": [
+"Fuchsia City"
+],
+"290": [
+"Victory Road"
+],
+"291": [
+"Water Path"
+],
+"292": [
+"Fuchsia City"
+],
+"293": [
+"Fuchsia City"
+],
+"294": [
+"Fuchsia City"
+],
+"295": [
+"Fuchsia City"
+],
+"296": [
+"Viridian City"
+],
+"297": [
+"Viridian City"
+],
+"298": [
+"Victory Road"
+],
+"300": [
+"Route 13"
+],
+"301": [
+"Route 13"
+],
+"302": [
+"Route 13"
+],
+"303": [
+"Route 14"
+],
+"304": [
+"Route 14"
+],
+"305": [
+"Route 15"
+],
+"306": [
+"Route 15"
+],
+"307": [
+"Route 18"
+],
+"308": [
+"Route 18"
+],
+"309": [
+"Route 18"
+],
+"310": [
+"Route 20"
+],
+"313": [
+"Route 14"
+],
+"314": [
+"Route 14"
+],
+"315": [
+"Route 14"
+],
+"316": [
+"Route 14"
+],
+"317": [
+"Saffron City"
+],
+"318": [
+"Saffron City"
+],
+"319": [
+"Saffron City"
+],
+"320": [
+"Saffron City"
+],
+"321": [
+"Saffron City"
+],
+"322": [
+"Viridian City"
+],
+"323": [
+"Viridian City"
+],
+"324": [
+"Viridian City"
+],
+"325": [
+"Victory Road"
+],
+"326": [
+"Pallet Town"
+],
+"327": [
+"Pallet Town"
+],
+"328": [
+"Pallet Town"
+],
+"329": [
+"Route 22"
+],
+"330": [
+"Route 22"
+],
+"331": [
+"Route 22"
+],
+"332": [
+"Cerulean City"
+],
+"333": [
+"Cerulean City"
+],
+"334": [
+"Cerulean City"
+],
+"335": [
+"Pok\u00e9mon Mansion"
+],
+"336": [
+"Silph Co."
+],
+"337": [
+"Silph Co."
+],
+"338": [
+"Silph Co."
+],
+"339": [
+"Silph Co."
+],
+"340": [
+"Silph Co."
+],
+"341": [
+"Silph Co."
+],
+"342": [
+"Silph Co."
+],
+"343": [
+"Silph Co."
+],
+"344": [
+"Silph Co."
+],
+"345": [
+"Silph Co."
+],
+"346": [
+"Pok\u00e9mon Mansion"
+],
+"347": [
+"Pok\u00e9mon Mansion"
+],
+"348": [
+"Rocket Hideout"
+],
+"349": [
+"Silph Co."
+],
+"351": [
+"Mt. Moon"
+],
+"352": [
+"Mt. Moon"
+],
+"353": [
+"Mt. Moon"
+],
+"354": [
+"Mt. Moon"
+],
+"355": [
+"Cerulean City"
+],
+"356": [
+"Route 24"
+],
+"357": [
+"Celadon City"
+],
+"358": [
+"Rocket Hideout"
+],
+"359": [
+"Rocket Hideout"
+],
+"360": [
+"Rocket Hideout"
+],
+"361": [
+"Rocket Hideout"
+],
+"362": [
+"Rocket Hideout"
+],
+"363": [
+"Rocket Hideout"
+],
+"364": [
+"Rocket Hideout"
+],
+"365": [
+"Rocket Hideout"
+],
+"366": [
+"Rocket Hideout"
+],
+"367": [
+"Rocket Hideout"
+],
+"368": [
+"Rocket Hideout"
+],
+"369": [
+"Pok\u00e9mon Tower"
+],
+"370": [
+"Pok\u00e9mon Tower"
+],
+"371": [
+"Pok\u00e9mon Tower"
+],
+"373": [
+"Silph Co."
+],
+"374": [
+"Silph Co."
+],
+"375": [
+"Silph Co."
+],
+"376": [
+"Silph Co."
+],
+"377": [
+"Silph Co."
+],
+"378": [
+"Silph Co."
+],
+"379": [
+"Silph Co."
+],
+"380": [
+"Silph Co."
+],
+"381": [
+"Silph Co."
+],
+"382": [
+"Silph Co."
+],
+"383": [
+"Silph Co."
+],
+"384": [
+"Silph Co."
+],
+"385": [
+"Silph Co."
+],
+"386": [
+"Silph Co."
+],
+"387": [
+"Silph Co."
+],
+"388": [
+"Silph Co."
+],
+"389": [
+"Silph Co."
+],
+"390": [
+"Silph Co."
+],
+"391": [
+"Silph Co."
+],
+"392": [
+"Viridian City"
+],
+"393": [
+"Victory Road"
+],
+"394": [
+"Victory Road"
+],
+"396": [
+"Victory Road"
+],
+"400": [
+"Viridian City"
+],
+"401": [
+"Viridian City"
+],
+"402": [
+"Celadon City"
+],
+"403": [
+"Victory Road"
+],
+"404": [
+"Victory Road"
+],
+"406": [
+"Victory Road"
+],
+"414": [
+"Pewter City"
+],
+"415": [
+"Cerulean City"
+],
+"416": [
+"Vermilion City"
+],
+"417": [
+"Celadon City"
+],
+"418": [
+"Fuchsia City"
+],
+"419": [
+"Cinnabar Island"
+],
+"420": [
+"Saffron City"
+],
+"421": [
+"S.S. Anne"
+],
+"422": [
+"S.S. Anne"
+],
+"423": [
+"Vermilion City"
+],
+"429": [
+"Pok\u00e9mon Tower"
+],
+"430": [
+"Pok\u00e9mon Tower"
+],
+"431": [
+"Pok\u00e9mon Tower"
+],
+"432": [
+"Silph Co."
+],
+"433": [
+"Silph Co."
+],
+"434": [
+"Silph Co."
+],
+"435": [
+"Route 22"
+],
+"436": [
+"Route 22"
+],
+"437": [
+"Route 22"
+],
+"438": [
+"Pok\u00e9mon League"
+],
+"439": [
+"Pok\u00e9mon League"
+],
+"440": [
+"Pok\u00e9mon League"
+],
+"441": [
+"Pok\u00e9mon Tower"
+],
+"442": [
+"Pok\u00e9mon Tower"
+],
+"443": [
+"Pok\u00e9mon Tower"
+],
+"444": [
+"Pok\u00e9mon Tower"
+],
+"445": [
+"Pok\u00e9mon Tower"
+],
+"446": [
+"Pok\u00e9mon Tower"
+],
+"447": [
+"Pok\u00e9mon Tower"
+],
+"448": [
+"Pok\u00e9mon Tower"
+],
+"449": [
+"Pok\u00e9mon Tower"
+],
+"450": [
+"Pok\u00e9mon Tower"
+],
+"451": [
+"Pok\u00e9mon Tower"
+],
+"452": [
+"Pok\u00e9mon Tower"
+],
+"453": [
+"Pok\u00e9mon Tower"
+],
+"454": [
+"Pok\u00e9mon Mansion"
+],
+"455": [
+"Pok\u00e9mon Mansion"
+],
+"462": [
+"Saffron City"
+],
+"463": [
+"Saffron City"
+],
+"464": [
+"Saffron City"
+],
+"465": [
+"Route 9"
+],
+"466": [
+"Route 13"
+],
+"467": [
+"Route 13"
+],
+"468": [
+"Route 13"
+],
+"469": [
+"Route 13"
+],
+"470": [
+"Route 17"
+],
+"471": [
+"Route 25"
+],
+"472": [
+"Route 20"
+],
+"473": [
+"Route 20"
+],
+"474": [
+"Rock Tunnel"
+],
+"475": [
+"Rock Tunnel"
+],
+"476": [
+"Rock Tunnel"
+],
+"477": [
+"Route 12"
+],
+"478": [
+"Route 15"
+],
+"479": [
+"Route 15"
+],
+"480": [
+"Route 15"
+],
+"481": [
+"Route 15"
+],
+"482": [
+"S.S. Anne"
+],
+"483": [
+"S.S. Anne"
+],
+"484": [
+"Route 8"
+],
+"485": [
+"Victory Road"
+],
+"486": [
+"Route 12"
+],
+"487": [
+"Route 14"
+],
+"488": [
+"Route 15"
+],
+"489": [
+"Route 16"
+],
+"490": [
+"Route 19"
+],
+"491": [
+"Route 21"
+],
+"516": [
+"Rocket Warehouse"
+],
+"517": [
+"Green Path"
+],
+"518": [
+"Kindle Road"
+],
+"519": [
+"Bond Bridge"
+],
+"520": [
+"Water Labyrinth"
+],
+"521": [
+"Canyon Entrance"
+],
+"522": [
+"Canyon Entrance"
+],
+"523": [
+"Bond Bridge"
+],
+"524": [
+"Ruin Valley"
+],
+"525": [
+"Resort Gorgeous"
+],
+"526": [
+"Resort Gorgeous"
+],
+"527": [
+"Three Island"
+],
+"528": [
+"Three Island"
+],
+"529": [
+"Three Island"
+],
+"531": [
+"Viridian Forest"
+],
+"532": [
+"Viridian Forest"
+],
+"534": [
+"Pok\u00e9mon Mansion"
+],
+"535": [
+"Route 8"
+],
+"536": [
+"Route 8"
+],
+"537": [
+"Mt. Ember"
+],
+"538": [
+"Mt. Ember"
+],
+"539": [
+"Icefall Cave"
+],
+"540": [
+"Outcast Island"
+],
+"541": [
+"Rocket Warehouse"
+],
+"542": [
+"Rocket Warehouse"
+],
+"543": [
+"Rocket Warehouse"
+],
+"544": [
+"Rocket Warehouse"
+],
+"545": [
+"Rocket Warehouse"
+],
+"546": [
+"Treasure Beach"
+],
+"547": [
+"Kindle Road"
+],
+"548": [
+"Kindle Road"
+],
+"549": [
+"Kindle Road"
+],
+"550": [
+"Kindle Road"
+],
+"551": [
+"Kindle Road"
+],
+"552": [
+"Kindle Road"
+],
+"553": [
+"Kindle Road"
+],
+"554": [
+"Kindle Road"
+],
+"555": [
+"Kindle Road"
+],
+"556": [
+"Kindle Road"
+],
+"557": [
+"Kindle Road"
+],
+"558": [
+"Bond Bridge"
+],
+"559": [
+"Bond Bridge"
+],
+"560": [
+"Bond Bridge"
+],
+"561": [
+"Bond Bridge"
+],
+"562": [
+"Resort Gorgeous"
+],
+"563": [
+"Resort Gorgeous"
+],
+"564": [
+"Resort Gorgeous"
+],
+"565": [
+"Resort Gorgeous"
+],
+"566": [
+"Resort Gorgeous"
+],
+"567": [
+"Five Isle Meadow"
+],
+"568": [
+"Five Isle Meadow"
+],
+"569": [
+"Five Isle Meadow"
+],
+"570": [
+"Memorial Pillar"
+],
+"571": [
+"Memorial Pillar"
+],
+"572": [
+"Memorial Pillar"
+],
+"573": [
+"Outcast Island"
+],
+"574": [
+"Outcast Island"
+],
+"575": [
+"Outcast Island"
+],
+"576": [
+"Outcast Island"
+],
+"577": [
+"Water Path"
+],
+"578": [
+"Water Path"
+],
+"579": [
+"Water Path"
+],
+"580": [
+"Water Path"
+],
+"581": [
+"Water Path"
+],
+"582": [
+"Ruin Valley"
+],
+"583": [
+"Ruin Valley"
+],
+"584": [
+"Ruin Valley"
+],
+"585": [
+"Ruin Valley"
+],
+"586": [
+"Trainer Tower"
+],
+"587": [
+"Trainer Tower"
+],
+"588": [
+"Canyon Entrance"
+],
+"589": [
+"Canyon Entrance"
+],
+"590": [
+"Canyon Entrance"
+],
+"591": [
+"Sevault Canyon"
+],
+"592": [
+"Mt. Ember"
+],
+"593": [
+"Sevault Canyon"
+],
+"595": [
+"Mt. Ember"
+],
+"596": [
+"Sevault Canyon"
+],
+"597": [
+"Mt. Ember"
+],
+"598": [
+"Sevault Canyon"
+],
+"599": [
+"Sevault Canyon"
+],
+"600": [
+"Sevault Canyon"
+],
+"601": [
+"Sevault Canyon"
+],
+"602": [
+"Tanoby Ruins"
+],
+"603": [
+"Tanoby Ruins"
+],
+"604": [
+"Tanoby Ruins"
+],
+"605": [
+"Tanoby Ruins"
+],
+"606": [
+"Lost Cave"
+],
+"607": [
+"Lost Cave"
+],
+"608": [
+"Lost Cave"
+],
+"609": [
+"Pattern Bush"
+],
+"610": [
+"Pattern Bush"
+],
+"611": [
+"Pattern Bush"
+],
+"612": [
+"Pattern Bush"
+],
+"613": [
+"Pattern Bush"
+],
+"614": [
+"Pattern Bush"
+],
+"615": [
+"Pattern Bush"
+],
+"616": [
+"Pattern Bush"
+],
+"617": [
+"Pattern Bush"
+],
+"618": [
+"Pattern Bush"
+],
+"619": [
+"Pattern Bush"
+],
+"620": [
+"Pattern Bush"
+],
+"742": [
+"Three Island"
+],
+"920": [
+"Navel Rock"
+],
+"32781": [
+"One Island"
+]
+},
+"given": {
+"4": [
+"Viridian Forest",
+"Pallet Town"
+],
+"6": [
+"Viridian Forest",
+"Fuchsia City"
+],
+"9": [
+"Viridian Forest"
+],
+"10": [
+"Viridian Forest"
+],
+"11": [
+"Viridian Forest"
+],
+"12": [
+"Viridian Forest"
+],
+"14": [
+"Viridian Forest",
+"Mt. Moon"
+],
+"15": [
+"Viridian Forest",
+"Route 9"
+],
+"16": [
+"Viridian Forest"
+],
+"17": [
+"Viridian Forest",
+"Pok\u00e9mon Tower"
+],
+"18": [
+"Viridian Forest",
+"Mt. Moon"
+],
+"26": [
+"Viridian Forest"
+],
+"27": [
+"Viridian Forest"
+],
+"28": [
+"Viridian Forest"
+],
+"30": [
+"Viridian Forest"
+],
+"31": [
+"Viridian Forest"
+],
+"32": [
+"Viridian Forest"
+],
+"33": [
+"Viridian Forest"
+],
+"38": [
+"Viridian Forest"
+],
+"39": [
+"Viridian Forest"
+],
+"40": [
+"Viridian Forest"
+],
+"41": [
+"Viridian Forest"
+],
+"42": [
+"Viridian Forest"
+],
+"43": [
+"Viridian Forest"
+],
+"45": [
+"Viridian Forest"
+],
+"46": [
+"Viridian Forest"
+],
+"47": [
+"Viridian Forest"
+],
+"52": [
+"Viridian Forest"
+],
+"53": [
+"Viridian Forest"
+],
+"54": [
+"Viridian Forest"
+],
+"55": [
+"Viridian Forest",
+"Rocket Hideout"
+],
+"56": [
+"Viridian Forest"
+],
+"60": [
+"Viridian Forest",
+"Route 4"
+],
+"73": [
+"Viridian Forest"
+],
+"74": [
+"Viridian Forest"
+],
+"75": [
+"Viridian Forest"
+],
+"76": [
+"Viridian Forest"
+],
+"77": [
+"Viridian Forest"
+],
+"78": [
+"Viridian Forest"
+],
+"79": [
+"Viridian Forest"
+],
+"80": [
+"Viridian Forest"
+],
+"81": [
+"Viridian Forest"
+],
+"82": [
+"Viridian Forest"
+],
+"83": [
+"Viridian Forest"
+],
+"84": [
+"Viridian Forest"
+],
+"87": [
+"Viridian Forest"
+],
+"88": [
+"Viridian Forest"
+],
+"89": [
+"Viridian Forest"
+],
+"90": [
+"Viridian Forest"
+],
+"91": [
+"Viridian Forest"
+],
+"92": [
+"Viridian Forest",
+"Pok\u00e9mon Tower"
+],
+"95": [
+"Viridian Forest",
+"Route 11"
+],
+"96": [
+"Viridian Forest",
+"Route 3"
+],
+"97": [
+"Viridian Forest",
+"Route 4"
+],
+"99": [
+"Viridian Forest",
+"S.S. Anne"
+],
+"100": [
+"Viridian Forest"
+],
+"103": [
+"Route 2",
+"Pallet Town"
+],
+"104": [
+"Route 2",
+"Pallet Town"
+],
+"111": [
+"Fuchsia City",
+"Pallet Town"
+],
+"133": [
+"Pewter City",
+"Pallet Town"
+],
+"134": [
+"Route 3",
+"Pallet Town"
+],
+"135": [
+"Route 2",
+"Pallet Town"
+],
+"136": [
+"Viridian Forest"
+],
+"137": [
+"Route 2",
+"Pallet Town"
+],
+"138": [
+"Route 3",
+"Pallet Town"
+],
+"139": [
+"Route 2",
+"Pallet Town"
+],
+"140": [
+"Viridian Forest"
+],
+"142": [
+"Route 3",
+"Pallet Town"
+],
+"153": [
+"Viridian City"
+],
+"168": [
+"Fuchsia City",
+"Pallet Town"
+],
+"170": [
+"Fuchsia City",
+"Pallet Town"
+],
+"171": [
+"Fuchsia City",
+"Pallet Town"
+],
+"176": [
+"Route 6",
+"Pallet Town"
+],
+"181": [
+"Route 4"
+],
+"182": [
+"Viridian Forest",
+"Pewter City"
+],
+"184": [
+"Lavender Town"
+],
+"185": [
+"Route 2",
+"Pallet Town"
+],
+"186": [
+"Pallet Town",
+"Cinnabar Island"
+],
+"188": [
+"Route 2",
+"Pallet Town"
+],
+"189": [
+"Celadon City"
+],
+"191": [
+"Cinnabar Island"
+],
+"192": [
+"Route 2",
+"Pallet Town"
+],
+"194": [
+"Route 9",
+"Pallet Town"
+],
+"198": [
+"Mt. Moon"
+],
+"200": [
+"Fuchsia City",
+"Pallet Town"
+],
+"201": [
+"Water Path"
+],
+"202": [
+"Route 2",
+"Pallet Town"
+],
+"204": [
+"Route 2",
+"Pallet Town"
+],
+"205": [
+"Viridian Forest"
+],
+"206": [
+"Viridian Forest",
+"Rocket Hideout"
+],
+"207": [
+"Viridian Forest"
+],
+"208": [
+"Route 2",
+"Pallet Town"
+],
+"209": [
+"Route 2",
+"Pallet Town"
+],
+"210": [
+"Route 2",
+"Pallet Town"
+],
+"211": [
+"Route 2",
+"Pallet Town"
+],
+"213": [
+"Route 2",
+"Pallet Town"
+],
+"214": [
+"Route 2",
+"Pallet Town"
+],
+"215": [
+"Cerulean City",
+"Pallet Town"
+],
+"216": [
+"Viridian Forest"
+],
+"218": [
+"Rocket Warehouse"
+],
+"219": [
+"Route 2",
+"Pallet Town"
+],
+"220": [
+"Lost Cave"
+],
+"221": [
+"Lost Cave"
+],
+"223": [
+"Fuchsia City",
+"Pallet Town"
+],
+"225": [
+"Route 24",
+"Pallet Town"
+],
+"241": [
+"Route 3",
+"Pallet Town"
+],
+"242": [
+"Route 2",
+"Pallet Town"
+],
+"251": [
+"Viridian City"
+],
+"252": [
+"Pallet Town",
+"Vermilion City"
+],
+"261": [
+"Route 11"
+],
+"262": [
+"Viridian City"
+],
+"263": [
+"Vermilion City"
+],
+"264": [
+"Fuchsia City"
+],
+"265": [
+"Route 25"
+],
+"267": [
+"One Island"
+],
+"277": [
+"Seafoam Islands"
+],
+"280": [
+"One Island"
+],
+"289": [
+"Cerulean Cave"
+],
+"290": [
+"Route 14"
+],
+"291": [
+"Cerulean City"
+],
+"292": [
+"Route 12"
+],
+"293": [
+"Route 4"
+],
+"295": [
+"Pok\u00e9mon Mansion"
+],
+"296": [
+"Silph Co."
+],
+"297": [
+"Mt. Moon"
+],
+"298": [
+"Silph Co."
+],
+"299": [
+"Indigo Plateau"
+],
+"300": [
+"Rocket Hideout"
+],
+"302": [
+"Pok\u00e9mon Mansion"
+],
+"303": [
+"Viridian Forest"
+],
+"306": [
+"Route 15"
+],
+"307": [
+"Celadon City"
+],
+"310": [
+"Pok\u00e9mon Mansion"
+],
+"311": [
+"Rock Tunnel"
+],
+"313": [
+"Power Plant"
+],
+"314": [
+"Saffron City"
+],
+"315": [
+"Route 12"
+],
+"316": [
+"Cerulean City"
+],
+"317": [
+"Saffron City"
+],
+"318": [
+"Lavender Town"
+],
+"319": [
+"S.S. Anne"
+],
+"320": [
+"Safari Zone"
+],
+"322": [
+"Route 3"
+],
+"324": [
+"Rocket Warehouse",
+"Fuchsia City"
+],
+"325": [
+"Victory Road"
+],
+"326": [
+"Cinnabar Island"
+],
+"327": [
+"Pewter City"
+],
+"328": [
+"Route 4"
+],
+"329": [
+"Silph Co."
+],
+"330": [
+"Route 10",
+"Memorial Pillar"
+],
+"331": [
+"Route 25"
+],
+"332": [
+"Diglett's Cave",
+"Route 2"
+],
+"333": [
+"Route 24"
+],
+"334": [
+"Diglett's Cave"
+],
+"336": [
+"Route 12"
+],
+"337": [
+"Rocket Hideout"
+],
+"338": [
+"Victory Road"
+],
+"339": [
+"S.S. Anne"
+],
+"340": [
+"Route 16"
+],
+"341": [
+"Safari Zone"
+],
+"342": [
+"Fuchsia City"
+],
+"343": [
+"Route 2"
+],
+"344": [
+"Fuchsia City"
+],
+"345": [
+"Icefall Cave",
+"Ember Spa"
+],
+"347": [
+"Pewter City"
+],
+"348": [
+"Safari Zone"
+],
+"349": [
+"Viridian City"
+],
+"350": [
+"Lavender Town"
+],
+"351": [
+"Pok\u00e9mon Mansion"
+],
+"352": [
+"Vermilion City"
+],
+"353": [
+"Saffron City"
+],
+"354": [
+"Pewter City"
+],
+"355": [
+"Silph Co."
+],
+"356": [
+"Rocket Hideout"
+],
+"357": [
+"Mt. Moon"
+],
+"358": [
+"Mt. Moon"
+],
+"359": [
+"Rocket Hideout"
+],
+"360": [
+"Cerulean City"
+],
+"361": [
+"Pallet Town",
+"One Island"
+],
+"363": [
+"Cerulean City"
+],
+"366": [
+"Viridian City"
+],
+"367": [
+"Route 16",
+"One Island"
+],
+"368": [
+"One Island"
+],
+"369": [
+"Celadon City"
+],
+"373": [
+"Mt. Ember"
+],
+"374": [
+"Rocket Warehouse"
+],
+"376": [
+"Pewter City"
+],
+"377": [
+"Route 20"
+],
+"379": [
+"Safari Zone"
+],
+"380": [
+"Safari Zone"
+],
+"382": [
+"Route 2"
+],
+"383": [
+"Safari Zone"
+],
+"384": [
+"Safari Zone"
+],
+"385": [
+"Saffron City"
+],
+"386": [
+"Pok\u00e9mon Tower"
+],
+"387": [
+"Route 7"
+],
+"388": [
+"Route 6"
+],
+"391": [
+"Two Island"
+],
+"392": [
+"Victory Road"
+],
+"393": [
+"Silph Co."
+],
+"394": [
+"S.S. Anne"
+],
+"395": [
+"Seafoam Islands"
+],
+"396": [
+"Pewter City"
+],
+"397": [
+"Viridian City"
+],
+"398": [
+"Silph Co."
+],
+"401": [
+"Safari Zone"
+],
+"402": [
+"Route 24"
+],
+"403": [
+"Mt. Moon"
+],
+"405": [
+"Rock Tunnel"
+],
+"406": [
+"Viridian Forest"
+],
+"410": [
+"Route 13"
+],
+"411": [
+"Celadon City"
+],
+"414": [
+"Route 25"
+],
+"415": [
+"Pok\u00e9mon Mansion"
+],
+"417": [
+"Vermilion City"
+],
+"419": [
+"Mt. Ember"
+],
+"420": [
+"Berry Forest"
+],
+"421": [
+"Route 5"
+],
+"422": [
+"Seafoam Islands"
+],
+"423": [
+"Route 11"
+],
+"424": [
+"Route 10"
+],
+"425": [
+"Route 16"
+],
+"426": [
+"Route 9"
+],
+"428": [
+"Rock Tunnel"
+],
+"429": [
+"Underground Path",
+"Saffron City"
+],
+"430": [
+"Rocket Hideout"
+],
+"431": [
+"Route 8"
+],
+"434": [
+"Power Plant"
+],
+"437": [
+"Mt. Ember"
+],
+"438": [
+"Celadon City"
+],
+"439": [
+"Route 17"
+],
+"440": [
+"Silph Co."
+],
+"441": [
+"Saffron City"
+],
+"442": [
+"Celadon City"
+],
+"444": [
+"Viridian City"
+],
+"445": [
+"Viridian City"
+],
+"446": [
+"Route 2",
+"Pallet Town"
+],
+"447": [
+"Route 2",
+"Pallet Town"
+],
+"448": [
+"Route 24",
+"Pallet Town"
+],
+"449": [
+"Route 2",
+"Pallet Town"
+],
+"450": [
+"Route 2",
+"Pallet Town"
+],
+"451": [
+"Pewter City",
+"Pallet Town"
+],
+"452": [
+"Route 2",
+"Pallet Town"
+],
+"453": [
+"Route 6",
+"Pallet Town"
+],
+"454": [
+"Route 2",
+"Pallet Town"
+],
+"455": [
+"Route 2",
+"Pallet Town"
+],
+"456": [
+"Viridian Forest"
+],
+"457": [
+"Route 2",
+"Pallet Town"
+],
+"458": [
+"Route 9",
+"Pallet Town"
+],
+"459": [
+"Cerulean City",
+"Pallet Town"
+],
+"460": [
+"Route 4",
+"Pallet Town"
+],
+"461": [
+"Route 9",
+"Pallet Town"
+],
+"462": [
+"Route 2",
+"Pallet Town"
+],
+"467": [
+"Route 6",
+"Pallet Town"
+],
+"479": [
+"Rock Tunnel"
+],
+"480": [
+"Cinnabar Island"
+],
+"481": [
+"Cinnabar Island"
+],
+"482": [
+"Cinnabar Island"
+],
+"484": [
+"One Island"
+],
+"506": [
+"Route 2",
+"Pallet Town"
+],
+"529": [
+"Fuchsia City",
+"Pallet Town"
+],
+"530": [
+"Fuchsia City",
+"Pallet Town"
+],
+"532": [
+"One Island"
+],
+"580": [
+"Two Island"
+],
+"581": [
+"One Island"
+],
+"582": [
+"Rock Tunnel"
+],
+"584": [
+"Three Isle Path"
+],
+"586": [
+"Kindle Road"
+],
+"587": [
+"Pok\u00e9mon Tower"
+],
+"588": [
+"Three Island"
+],
+"590": [
+"Cerulean City"
+],
+"593": [
+"Berry Forest"
+],
+"594": [
+"Seafoam Islands"
+],
+"597": [
+"Mt. Ember"
+],
+"598": [
+"One Island"
+],
+"599": [
+"One Island"
+],
+"600": [
+"Pallet Town"
+],
+"601": [
+"One Island"
+],
+"602": [
+"One Island"
+],
+"604": [
+"One Island"
+],
+"605": [
+"Pok\u00e9mon Tower"
+],
+"606": [
+"Berry Forest"
+],
+"607": [
+"Pok\u00e9mon Tower"
+],
+"608": [
+"One Island"
+],
+"609": [
+"One Island"
+],
+"610": [
+"One Island"
+],
+"611": [
+"One Island"
+],
+"613": [
+"One Island"
+],
+"614": [
+"Cerulean Cave",
+"One Island"
+],
+"615": [
+"Celadon City"
+],
+"619": [
+"Silph Co."
+],
+"620": [
+"Power Plant"
+],
+"621": [
+"Power Plant"
+],
+"622": [
+"Pok\u00e9mon Mansion"
+],
+"623": [
+"Seafoam Islands"
+],
+"625": [
+"Route 13"
+],
+"626": [
+"Safari Zone"
+],
+"655": [
+"Route 11"
+],
+"657": [
+"One Island"
+],
+"659": [
+"Berry Forest"
+],
+"660": [
+"Treasure Beach"
+],
+"661": [
+"Kindle Road"
+],
+"662": [
+"Pok\u00e9mon Tower"
+],
+"663": [
+"Rock Tunnel"
+],
+"666": [
+"Three Island"
+],
+"674": [
+"Mt. Moon"
+],
+"675": [
+"Viridian City"
+],
+"677": [
+"Celadon City"
+],
+"680": [
+"Route 15"
+],
+"683": [
+"Saffron City"
+],
+"685": [
+"Saffron City"
+],
+"686": [
+"Route 3",
+"Pallet Town"
+],
+"689": [
+"Route 9",
+"Pallet Town"
+],
+"690": [
+"Fuchsia City",
+"Pallet Town"
+],
+"691": [
+"Fuchsia City",
+"Pallet Town"
+],
+"692": [
+"Route 4",
+"Pallet Town"
+],
+"693": [
+"Fuchsia City",
+"Pallet Town"
+],
+"695": [
+"Route 20",
+"Pallet Town"
+],
+"696": [
+"Pallet Town",
+"Cinnabar Island"
+],
+"698": [
+"Lavender Town"
+],
+"700": [
+"Route 11",
+"Pallet Town"
+],
+"702": [
+"Route 8",
+"Pallet Town"
+],
+"703": [
+"Cerulean City",
+"Pallet Town"
+],
+"704": [
+"Viridian City"
+],
+"707": [
+"Route 2",
+"Pallet Town"
+],
+"709": [
+"Viridian City"
+],
+"710": [
+"Route 9",
+"Pallet Town"
+],
+"711": [
+"Cinnabar Island"
+],
+"714": [
+"Viridian City"
+],
+"716": [
+"Cerulean City",
+"Pallet Town"
+],
+"717": [
+"Viridian City"
+],
+"718": [
+"Celadon City",
+"Pallet Town"
+],
+"719": [
+"Fuchsia City",
+"Pallet Town"
+],
+"720": [
+"Route 10",
+"Pallet Town"
+],
+"721": [
+"Viridian Forest"
+],
+"725": [
+"Victory Road"
+],
+"727": [
+"Route 3",
+"Pallet Town"
+],
+"742": [
+"Fuchsia City"
+],
+"747": [
+"Cerulean City"
+]
+}
+}
