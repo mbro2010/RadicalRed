@@ -170,13 +170,21 @@ ol.path::before { content: ""; position: absolute; left: 9px; top: 8px; bottom: 
 .dbl .balls { display: none; }
 .balls i { width: 2.6cqw; height: 2.6cqw; min-width: 7px; min-height: 7px; border-radius: 50%; border: .35cqw solid var(--st-box-edge); background: linear-gradient(var(--ball-red) 0 44%, var(--st-box-edge) 44% 56%, var(--ball-white) 56%); }
 .balls i.out { filter: grayscale(1); opacity: .45; }
-.stcap { position: absolute; left: 50%; top: 2.5%; transform: translateX(-50%); max-width: 94%; padding: .6cqw 2.4cqw; border-radius: 99px; background: var(--st-text-bg); color: var(--st-text-ink); font-size: max(10px, 3.1cqw); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .92; }
-.tbox { position: relative; display: flex; align-items: flex-start; min-height: 15cqw; padding: 2.6cqw 6cqw 2.6cqw 3.6cqw; background: var(--st-text-bg); color: var(--st-text-ink); border-top: .8cqw solid var(--st-text-edge); font-family: var(--font-display); font-size: max(13px, 4.3cqw); line-height: 1.3; text-shadow: .35cqw .35cqw 0 var(--st-text-shade); }
+.stcap { display: block; padding: 1.2cqw 3.4cqw; background: var(--st-text-bg); color: var(--st-text-ink); border-bottom: .5cqw solid var(--st-text-edge); font-size: max(11px, 3.2cqw); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tbox { position: relative; display: flex; align-items: flex-start; min-height: calc(2.6em + 5.2cqw); padding: 2.6cqw 6cqw 2.6cqw 3.6cqw; background: var(--st-text-bg); color: var(--st-text-ink); border-top: .8cqw solid var(--st-text-edge); font-family: var(--font-display); font-size: max(13px, 4.3cqw); line-height: 1.3; text-shadow: .35cqw .35cqw 0 var(--st-text-shade); }
 .tbox .more { position: absolute; right: 3cqw; bottom: 2.4cqw; width: 0; height: 0; border: 1.1cqw solid transparent; border-top: 1.4cqw solid var(--ball-red); border-bottom: 0; visibility: hidden; }
 .stage.busy .tbox .more { visibility: visible; }
 .pop { position: absolute; z-index: 3; transform: translate(-50%, -50%); font-family: var(--font-display); font-weight: 700; font-size: max(12px, 5cqw); color: var(--pop-dmg); text-shadow: 0 .4cqw 0 var(--st-box-edge), .3cqw 0 0 var(--st-box-edge), -.3cqw 0 0 var(--st-box-edge); pointer-events: none; opacity: 0; }
 .pop.heal { color: var(--pop-heal); }
 .pop.soft { font-size: max(11px, 4cqw); }
+.fightmenu { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr; align-content: center; gap: 1.6cqw 3cqw; padding: 2.4cqw 4cqw; background: var(--st-box); color: var(--st-box-ink); text-shadow: none; border-top: .8cqw solid var(--st-text-edge); }
+.fm { position: relative; min-width: 0; padding-left: 4.4cqw; font-size: max(11px, 3.7cqw); line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-bottom: .5cqw solid var(--t); }
+.fm.on::before { content: "▶"; position: absolute; left: 0; font-size: .8em; top: .15em; }
+.fm.chosen { color: var(--accent); }
+/* watching fights play out */
+.theater { gap: 10px; }
+.th-out { display: grid; gap: 4px; font-size: 13.5px; }
+.th-sum b { font-family: var(--font-display); font-size: 16px; }
 /* the command box under the screen: your four moves, the Coach's pick marked */
 .cmd { display: grid; gap: 8px; background: var(--surface); border: 3px solid var(--box-edge); box-shadow: inset 0 0 0 2px var(--box-inner); border-radius: 10px; padding: 10px 12px; }
 .cmd-q { font-family: var(--font-display); font-size: 17px; }
@@ -237,7 +245,7 @@ ol.path::before { content: ""; position: absolute; left: 9px; top: 8px; bottom: 
   .pop { animation: pop calc(.95s / var(--spd)) ease-out forwards; }
   @keyframes pop { 0% { opacity: 0; transform: translate(-50%, -20%) scale(.6); } 15% { opacity: 1; transform: translate(-50%, -60%) scale(1.15); } 100% { opacity: 0; transform: translate(-50%, -180%) scale(1); } }
   .stcap.cap-in { animation: cap-in .3s ease-out; }
-  @keyframes cap-in { from { opacity: 0; transform: translate(-50%, -60%); } }
+  @keyframes cap-in { from { opacity: 0; } }
   .stage.busy .tbox .more { animation: blink 1s steps(2) infinite; }
   @keyframes blink { 50% { opacity: 0; } }
 }

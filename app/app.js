@@ -742,9 +742,10 @@
     setTimeout(() => {
       if (S.screen !== 'fight' || S.planBoss !== bi) return;   // you moved on meanwhile
       const P = matchups();
-      main.innerHTML = html + battlePlanHTML(planKey()) + planExtrasHTML(P, false)
+      main.innerHTML = html + battlePlanHTML(planKey()) + theaterHTML() + planExtrasHTML(P, false)
         + `<section class="section" id="live"><div class="head"><h2>Play it live</h2></div>${liveBlockHTML(bi)}</section>`;
       wirePlan(P);
+      wireTheater();
       wireLiveBlock(bi);
     }, 30);
   }
@@ -782,9 +783,6 @@
     const causes = Object.entries(o.causes).sort((a, b) => b[1] - a[1]).slice(0, 4);
     if (causes.length) h += `<div class="card"><h3>What can go wrong</h3>${causes.map(([k, n]) => `<div class="small">${esc(k)} <span class="muted">· ${Math.round(100 * n / o.runs)}% of battles</span></div>`).join('')}</div>`;
     const sc = res.script;
-    h += `<div class="card watch"><div class="row"><button class="btn primary" id="bp-watch">▶ Watch the fight</button><span class="note">The most likely way it goes, played out with your team and theirs.</span></div>
-      <div class="stage-host" id="bp-stage" hidden></div>
-      <div class="row small" id="bp-ctl" hidden><button class="btn small" id="bp-pause">Pause</button><button class="btn small" id="bp-next">Next turn</button><button class="btn small" id="bp-speed">Speed 1×</button><button class="btn small ghost" id="bp-close">Close</button></div></div>`;
     h += `<details class="more" open><summary>Turn by turn: the most likely way it goes</summary><ol class="script">${sc.turns.map(t => {
       const d = t.decision;
       const lines = t.lines.filter(l => !/^(Your|Boss) .* uses /.test(l.text) || true).map(l => `<div class="${l.kind === 'faint' ? 'ev faint' : l.kind === 'crit' ? 'ev crit' : 'ev'}">${esc(l.text)}</div>`).join('');
@@ -828,38 +826,124 @@
     const key = planKey();
     const go = $('#bp-go'); if (go) go.onclick = () => runPlan(key);
     const redo = $('#bp-redo'); if (redo) redo.onclick = () => { delete S.plans[key]; runPlan(key); };
-    const watch = $('#bp-watch'); if (watch) watch.onclick = () => watchPlan(S.plans[key]);
   }
-  /** Play the plan's most likely battle on the battle screen, turn by turn, with the Coach's move as a caption. */
-  async function watchPlan(res) {
-    const host = $('#bp-stage'), ctl = $('#bp-ctl'), watch = $('#bp-watch');
-    if (!res || !res.script || !host || !window.createStage) return;
-    if (planStage) planStage.destroy();
+  // ---------------- watching fights play out: the most likely battle, a new one with real luck, one that goes wrong ----------------
+  const theater = {};   // per fight and team: how the battles you watched went
+  /** Who fights: the plan's six and lead when there is a plan, else your party as it is, your first Pokémon leading. */
+  function theaterInputs() {
+    const key = planKey();
+    const res = S.plans[key];
+    const { specs, team } = planInputs();
+    const doubles = !!D.bosses[S.planBoss].dbl;
+    if (res && res.lineup) {
+      return { key, res, team, doubles, planned: true, specs: res.lineup.map(i => specs[i]).filter(Boolean),
+        lead: doubles ? [].concat(res.lead).map(l => res.lineup.indexOf(l)) : res.lineup.indexOf(res.lead) };
+    }
+    const p = party().length ? party() : alive().slice(0, 6);
+    return { key, res: null, team, doubles, planned: false, specs: p.map(m => specOf(m, { label: monName(m) })), lead: doubles ? [0, 1] : 0 };
+  }
+  function tallyText(x) { return `${x.n} simulated battle${x.n === 1 ? '' : 's'} watched for this fight: ${x.won} won, ${x.clean} without a loss.`; }
+  function theaterHTML() {
+    if (!alive().length) return '';
+    const T = theaterInputs();
+    if (!T.specs.length) return '';
+    const o = T.res && T.res.odds;
+    const tl = theater[T.key];
+    return `<div class="card theater"><div class="lbl">Watch it play out</div>
+      <div class="row">${T.res ? '<button class="btn primary" data-watch="likely">▶ Most likely battle</button>' : ''}
+        <button class="btn${T.res ? ' small' : ' primary'}" data-watch="random">▶ ${T.res ? 'A new battle' : 'Simulate the battle'}</button>
+        ${!o || o.pNoLoss < 0.999 ? '<button class="btn small" data-watch="bad">▶ One that goes wrong</button>' : ''}</div>
+      <p class="note" style="margin:0">${T.planned ? 'The plan’s six and lead' : 'Your party as it is now, your first Pokémon leading (plan the fight for the Coach’s six and lead)'}, with your moves, against their exact team. Every new battle has its own luck: damage rolls, critical hits, misses and the boss AI’s choices.</p>
+      <div class="stage-host" id="th-stage" hidden></div>
+      <div class="row small" id="th-ctl" hidden><button class="btn small" id="th-pause">Pause</button><button class="btn small" id="th-next">Next turn</button><button class="btn small" id="th-speed">Speed ${S.thSpeed || 1}×</button><button class="btn small ghost" id="th-close">Close</button></div>
+      <div class="th-out" id="th-out" aria-live="polite">${tl ? `<div class="note">${tallyText(tl)}</div>` : ''}</div></div>`;
+  }
+  function wireTheater() {
+    main.querySelectorAll('[data-watch]').forEach(b => b.onclick = () => watchBattle(b.dataset.watch));
+    if (S.autoWatch && S.autoWatch === planKey() && $('[data-watch="likely"]')) { S.autoWatch = null; watchBattle('likely'); }
+  }
+  /** A battle with real luck, run on the page in small batches so it stays responsive; 'bad' looks for one you lose a Pokémon in. */
+  async function sampleOnPage(T, mode, onProgress) {
+    const tick = () => new Promise(r => setTimeout(r, 0));
+    const base = { lead: T.lead, doubles: T.doubles, seed: (Math.floor(Math.random() * 4294967295) >>> 0) || 1 };
+    await tick();
+    if (mode !== 'bad') return SIM.sampleBattle(T.specs, T.team, base);
+    let seed = base.seed, tried = 0;
+    while (tried < 150) {
+      const r = SIM.sampleBattle(T.specs, T.team, Object.assign({}, base, { seed, mode: 'bad', tries: 6 }));
+      tried += r.script ? r.tries : 6;
+      if (r.script) return Object.assign(r, { tries: tried });
+      seed = r.seed; onProgress(tried); await tick();
+    }
+    return { script: null, tries: tried };
+  }
+  const usedMove = text => { const z = /Z-Move \(Z-(.+?)\)/.exec(text); return z ? z[1] : ((/ uses (.+)$/.exec(text) || [])[1] || ''); };
+  function battleSummary(sc) {
+    const lost = sc.faints || [];
+    const head = sc.winner === 'p' ? `You won in ${sc.totalTurns} turns${lost.length ? '' : ' without losing anyone'}.` : sc.winner === 'a' ? `You lost on turn ${sc.totalTurns}.` : `Nobody won in ${sc.totalTurns} turns.`;
+    return `<div class="th-sum"><b>${esc(head)}</b>${lost.length ? ` Fainted: ${lost.map(f => `${esc(f.name)} (turn ${f.turn}${f.cause ? ', ' + esc(f.cause) : ''})`).join(', ')}.` : ''}</div>`;
+  }
+  let theaterRun = 0;
+  /** Play a battle on the battle screen as if someone were playing it: the move menu each turn, then the turn. */
+  async function watchBattle(mode) {
+    const T = theaterInputs();
+    const host = $('#th-stage'), ctl = $('#th-ctl'), out = $('#th-out');
+    if (!host || !T.specs.length || !window.createStage) return;
+    const run = ++theaterRun;
+    if (planStage) { planStage.destroy(); planStage = null; }
+    let script = null, title = '';
+    if (mode === 'likely') { script = T.res && T.res.script; title = 'The most likely battle: average damage rolls, no critical hits or misses.'; }
+    else {
+      out.innerHTML = `<div class="note">${mode === 'bad' ? 'Looking for a battle where something goes wrong…' : 'Simulating a battle…'}</div>`;
+      const r = await sampleOnPage(T, mode, n => { if (run === theaterRun) out.innerHTML = `<div class="note">Looking for a battle where something goes wrong… ${n} tried</div>`; });
+      if (run !== theaterRun || !$('#th-stage')) return;   // another battle started, or the page moved on
+      if (!r.script) { out.innerHTML = `<div class="note">In ${r.tries} simulated battles you never lost a Pokémon.</div>`; return; }
+      script = r.script;
+      title = mode === 'bad' ? `A battle where something goes wrong (found ${r.tries === 1 ? 'on the first try' : `in ${r.tries} tries`}).` : 'A new simulated battle with its own luck.';
+    }
+    if (!script) return;
     const b = D.bosses[S.planBoss];
-    host.hidden = false; ctl.hidden = false; watch.hidden = true;
-    const stage = planStage = window.createStage(host, stageOpts(b, res.doubles));
-    let speed = 1, paused = false;
-    $('#bp-pause').onclick = () => { paused = !paused; if (paused) stage.pause(); else stage.resume(); $('#bp-pause').textContent = paused ? 'Resume' : 'Pause'; };
-    $('#bp-next').onclick = () => { if (paused) { paused = false; stage.resume(); $('#bp-pause').textContent = 'Pause'; } stage.skip(); };
-    $('#bp-speed').onclick = () => { speed = speed >= 3 ? 1 : speed + 1; stage.setSpeed(speed); $('#bp-speed').textContent = `Speed ${speed}×`; };
-    $('#bp-close').onclick = () => { stage.destroy(); if (planStage === stage) planStage = null; host.hidden = true; ctl.hidden = true; watch.hidden = false; };
+    host.hidden = false; ctl.hidden = false;
+    const stage = planStage = window.createStage(host, stageOpts(b, T.doubles));
+    stage.setSpeed(S.thSpeed || 1);
+    let paused = false;
+    const pauseBtn = $('#th-pause');
+    pauseBtn.onclick = () => { paused = !paused; if (paused) stage.pause(); else stage.resume(); pauseBtn.textContent = paused ? 'Resume' : 'Pause'; };
+    $('#th-next').onclick = () => { if (paused) { paused = false; stage.resume(); pauseBtn.textContent = 'Pause'; } stage.skip(); };
+    $('#th-speed').onclick = () => { S.thSpeed = (S.thSpeed || 1) >= 3 ? 1 : (S.thSpeed || 1) + 1; stage.setSpeed(S.thSpeed); $('#th-speed').textContent = `Speed ${S.thSpeed}×`; };
+    $('#th-close').onclick = () => { theaterRun++; stage.destroy(); if (planStage === stage) planStage = null; host.hidden = true; ctl.hidden = true; };
+    out.innerHTML = `<div class="note">${esc(title)}</div>`;
     host.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    const turns = res.script.turns || [];
+    const turns = script.turns || [];
     const first = turns.length && turns[0].lines.length ? turns[0].lines[0].snap : null;
     stage.show({ p: [], a: [], pl: first ? first.pl : [], al: first ? first.al : [] });
     await stage.intro();
+    let last = null;
     for (const t of turns) {
       if (!stage.alive) return;
       const d = t.decision;
       stage.caption(d ? `Turn ${t.turn}: ${d.lines ? d.lines.join(' · ') : d.action}` : '');
+      // singles: the move menu first, the cursor walking onto the move the Coach picked
+      const firstMine = t.lines.find(l => l.who && l.who.side === 'p' && (l.kind === 'move' || l.kind === 'switch'));
+      if (!T.doubles && d && last && firstMine && firstMine.kind === 'move') {
+        const me = (last.p || []).find(e => e.i === firstMine.who.i);
+        const moves = me && me.mv ? me.mv.map(id => E.mv(id)).filter(Boolean) : [];
+        const name = usedMove(firstMine.text);
+        const pick = moves.findIndex(m => m.f === name || m.n === name);
+        if (pick >= 0) { stage.text(`What will ${me.n.replace(/ \(.*\)$/, '')} do?`); await stage.wait(380); await stage.menu(moves.map(m => ({ n: m.f, c: TYPE_COLORS[m.t] || '#888888' })), pick); }
+      }
       await stage.play(t.lines);
+      if (t.lines.length) last = t.lines[t.lines.length - 1].snap;
       await stage.wait(420);
     }
-    if (!stage.alive) return;
-    const sc = res.script;
-    stage.caption(sc.winner === 'p' ? `You win in ${sc.totalTurns} turns` : sc.winner === 'a' ? 'The boss wins this line' : 'Nobody wins this line');
-    await stage.say(sc.winner === 'p' ? `${b.cls} ${b.n} was defeated!` : sc.winner === 'a' ? 'You blacked out… Look at the dangers above.' : 'The battle stalls out.');
-    if (stage.alive) { watch.hidden = false; watch.textContent = '▶ Watch it again'; }
+    if (!stage.alive || run !== theaterRun) return;
+    stage.caption(script.winner === 'p' ? `You win in ${script.totalTurns} turns` : script.winner === 'a' ? 'The boss wins this one' : 'Nobody wins this one');
+    await stage.say(script.winner === 'p' ? `${b.cls} ${b.n} was defeated!` : script.winner === 'a' ? 'You have no Pokémon left to fight…' : 'The battle stalls out.');
+    if (mode !== 'likely') {
+      const x = theater[T.key] || (theater[T.key] = { n: 0, won: 0, clean: 0 });
+      x.n++; if (script.winner === 'p') { x.won++; if (!(script.faints || []).length) x.clean++; }
+    }
+    if ($('#th-out') === out) out.innerHTML = battleSummary(script) + (theater[T.key] ? `<div class="note">${tallyText(theater[T.key])}</div>` : '');
   }
   async function runPlan(key) {
     if (S.planning) return;
@@ -873,6 +957,7 @@
         const st = $('#bp-status'); if (st) st.textContent = text;
       } });
       S.plans[key] = Object.assign(res, { roster });
+      S.autoWatch = key;
     } catch (e) {
       flash('Planning failed: ' + (e && e.message ? e.message : e));
     } finally {
@@ -1820,7 +1905,7 @@
       ${focusHTML(st, g)}
     </div>`;
     h += `<div class="sub"><span class="n">1</span>Get your team ready</div>${prepHTML(cap)}`;
-    h += `<div class="sub"><span class="n">2</span>Plan the fight</div>${alive().length ? battlePlanHTML(planKey(), true) + '<div id="fight-more" class="section"><div class="note">Working out every matchup…</div></div>' : '<div class="empty">Add your Pokémon first.</div>'}`;
+    h += `<div class="sub"><span class="n">2</span>Plan the fight</div>${alive().length ? battlePlanHTML(planKey(), true) + theaterHTML() + '<div id="fight-more" class="section"><div class="note">Working out every matchup…</div></div>' : '<div class="empty">Add your Pokémon first.</div>'}`;
     h += `<div class="sub"><span class="n">3</span>Play it turn by turn</div><section class="section" id="live">${liveBlockHTML(bi)}</section>`;
     h += `<div class="sub"><span class="n">4</span>Log the result</div><div id="result">${resultHTML(g, bi)}</div>`;
     return h;
@@ -1892,6 +1977,7 @@
       const from = monName(m); evolveMon(m, +b.dataset.to); flash(`${from} evolved into ${E.sp(m.s).n}. Check its moves and ability.`); render(); await store.saveMon(m);
     });
     wireBattlePlan();
+    wireTheater();
     wireLiveBlock(bi);
     on('#res-won', () => { S.resultForm = { g: g.first, fainted: [] }; render(); const r = $('#result'); if (r) r.scrollIntoView({ block: 'center' }); });
     on('#res-skip', () => { S.run.skipped = [...new Set((S.run.skipped || []).concat(g.first))]; S.focus = null; S.resultForm = null; render(); store.saveRun(); });

@@ -22,7 +22,8 @@
   const slots = { p: [], a: [] };   // per side and position: { i, s, mon, box } as shown now
 
   host.innerHTML = `<div class="stage t-${o.terrain || 'grass'}${o.doubles ? ' dbl' : ''}">
-    <div class="scene"><div class="plat far"></div><div class="plat near"></div><div class="balls foe"></div><div class="balls you"></div><div class="stcap" hidden></div></div>
+    <div class="stcap" hidden></div>
+    <div class="scene"><div class="plat far"></div><div class="plat near"></div><div class="balls foe"></div><div class="balls you"></div></div>
     <div class="tbox"><span class="txt" aria-live="polite"></span><span class="more" aria-hidden="true"></span></div></div>`;
   const stage = host.firstElementChild, scene = stage.querySelector('.scene'), txt = stage.querySelector('.txt'), cap = stage.querySelector('.stcap');
   stage.addEventListener('click', () => { if (busy) skip(); });
@@ -278,6 +279,27 @@
   function caption(text) { cap.hidden = !text; cap.textContent = text || ''; if (text) anim(cap, 'cap-in'); }
   function destroy() { alive = false; resume(); host.innerHTML = ''; }
   function text(t) { txt.textContent = t || ''; }
-  return { show, play, intro, say, text, skip, pause, resume, caption, destroy, wait,
+  const escHTML = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  /** Your turn as the game shows it: the move menu, and the cursor walking onto the chosen move.
+   *  moves: [{ n: name, c: type color }], pick: index of the move used. */
+  async function menu(moves, pick) {
+    if (!alive || skipping || !moves || !moves.length || pick < 0 || pick >= moves.length) return;
+    const box = stage.querySelector('.tbox');
+    const m = document.createElement('div');
+    m.className = 'fightmenu';
+    m.setAttribute('aria-hidden', 'true');
+    m.innerHTML = moves.map((mv, k) => `<span class="fm${k === 0 ? ' on' : ''}" style="--t:${escHTML(mv.c)}">${escHTML(mv.n)}</span>`).join('');
+    box.appendChild(m);
+    const items = [...m.children];
+    const route = reduce ? [pick] : pick === 0 ? [0] : pick === 1 ? [0, 1] : pick === 2 ? [0, 2] : [0, 1, 3];
+    for (let s = 0; s < route.length; s++) {
+      items.forEach((el, k) => el.classList.toggle('on', k === route[s]));
+      await wait(s === 0 ? 300 : 210);
+    }
+    items[pick].classList.add('chosen');
+    await wait(300);
+    m.remove();
+  }
+  return { show, play, intro, say, text, menu, skip, pause, resume, caption, destroy, wait,
     setSpeed(v) { speed = v; stage.style.setProperty('--spd', v); }, get busy() { return busy; }, get alive() { return alive; } };
 });

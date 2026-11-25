@@ -148,7 +148,7 @@
   function snapshot(st) {
     const side = sd => (st[sd].slots || []).map((i, k) => {
       const m = st[sd].team[i];
-      return m ? { i, k, s: m.spec.s, n: m.name, lv: m.spec.lv, hp: m.hp, mhp: m.maxHp, st: m.status || '', f: m.fainted ? 1 : 0 } : null;
+      return m ? { i, k, s: m.spec.s, n: m.name, lv: m.spec.lv, hp: m.hp, mhp: m.maxHp, st: m.status || '', f: m.fainted ? 1 : 0, mv: (m.moves || []).slice() } : null;
     }).filter(Boolean);
     return { p: side('p'), a: side('a'), pl: st.p.team.map(m => (m.fainted ? 0 : 1)), al: st.a.team.map(m => (m.fainted ? 0 : 1)) };
   }
@@ -1289,6 +1289,25 @@
     return st;
   }
 
+  /** One battle with real luck (damage rolls, crits, misses, the boss AI's own picks), recorded for the battle screen.
+   *  mode 'bad': try new seeds (up to tries) for a battle where you lose a Pokemon or the fight, to watch what goes
+   *  wrong. Returns the script, the seed (the next untried one when nothing was found) and how many were tried. */
+  function sampleBattle(playerSpecs, bossSpecs, opts) {
+    const o = opts || {};
+    let seed = (o.seed >>> 0) || 1;
+    const tries = o.mode === 'bad' ? (o.tries || 150) : 1;
+    const base = { lead: o.lead, plannerOpts: o.plannerOpts, maxTurns: o.maxTurns || 60, doubles: o.doubles };
+    for (let k = 0; k < tries; k++, seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) {
+      if (o.mode === 'bad') {
+        const st = runBattle(playerSpecs, bossSpecs, Object.assign({ seed }, base));
+        if (st.winner === 'p' && !st.p.team.some(m => m.fainted)) continue;
+      }
+      const rec = runBattle(playerSpecs, bossSpecs, Object.assign({ seed, record: true }, base));
+      return { script: scriptOf(rec), seed, tries: k + 1 };
+    }
+    return { script: null, seed, tries };
+  }
+
   /** Many simulated battles of one lineup: odds and the most common losses. */
   function simulate(playerSpecs, bossSpecs, opts) {
     const o = Object.assign({ runs: 200, seed: 7 }, opts || {});
@@ -1446,5 +1465,5 @@
     return { winner: st.winner, turns, faints, totalTurns: st.turn };
   }
 
-  return { meta, snapshot, makeMon, newBattle, runBattle, simulate, simulateAsync, planFight, scriptOf, plannerPolicy, doublesPlanner, aiPolicy, bossPolicy, AI, megaTarget, zKind, usable, actives, cloneState, playTurn, begin, switchIn, speed, mulberry32, expectedDice, specNow, act };
+  return { meta, snapshot, sampleBattle, makeMon, newBattle, runBattle, simulate, simulateAsync, planFight, scriptOf, plannerPolicy, doublesPlanner, aiPolicy, bossPolicy, AI, megaTarget, zKind, usable, actives, cloneState, playTurn, begin, switchIn, speed, mulberry32, expectedDice, specNow, act };
 });
