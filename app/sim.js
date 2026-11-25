@@ -140,7 +140,18 @@
   function itemName(m) { return m.item ? E.itemName(m.item) : null; }
   function hasType(m, t) { return m.types.includes(t); }
   function grounded(m) { return !hasType(m, 'Flying') && m.ability !== 'Levitate' && itemName(m) !== 'Air Balloon'; }
-  function log(st, text, kind) { if (st.opts.record) st.log.push({ turn: st.turn, text, kind: kind || '' }); }
+  /** A recorded event: its text and kind, who it's about, and the field right after it (what replays draw). */
+  function log(st, text, kind, who) {
+    if (st.opts.record) st.log.push({ turn: st.turn, text, kind: kind || '', who: who ? { side: who.side, i: who.idx } : null, snap: snapshot(st) });
+  }
+  /** Who is out on each side and how they stand: species, name, level, HP, status; plus who is still able to fight. */
+  function snapshot(st) {
+    const side = sd => (st[sd].slots || []).map((i, k) => {
+      const m = st[sd].team[i];
+      return m ? { i, k, s: m.spec.s, n: m.name, lv: m.spec.lv, hp: m.hp, mhp: m.maxHp, st: m.status || '', f: m.fainted ? 1 : 0 } : null;
+    }).filter(Boolean);
+    return { p: side('p'), a: side('a'), pl: st.p.team.map(m => (m.fainted ? 0 : 1)), al: st.a.team.map(m => (m.fainted ? 0 : 1)) };
+  }
 
   /** The engine spec of a battler right now (boosts, status, HP, item). */
   function specNow(m) {
@@ -193,7 +204,7 @@
         if (m.ability === 'Competitive') m.boosts.spa = Math.min(6, m.boosts.spa + 2);
       }
     }
-    if (changed && st.opts.record) log(st, `${m.name}: ${Object.entries(boosts).filter(([, v]) => v).map(([k, v]) => `${k.toUpperCase()} ${v > 0 ? '+' : ''}${v}`).join(', ')}`);
+    if (changed && st.opts.record) log(st, `${m.name}: ${Object.entries(boosts).filter(([, v]) => v).map(([k, v]) => `${k.toUpperCase()} ${v > 0 ? '+' : ''}${v}`).join(', ')}`, 'boost', m);
     return changed;
   }
   function setWeather(st, w, m) {
@@ -259,7 +270,7 @@
     const m = act(st, side, slot);
     m.slot = slot;
     st.events.push({ turn: st.turn, type: 'switch', side, to: m.key, why: why || '', slot });
-    log(st, `${side === 'p' ? 'You send out' : 'Boss sends out'} ${m.name}`, 'switch');
+    log(st, `${side === 'p' ? 'You send out' : 'Boss sends out'} ${m.name}`, 'switch', m);
     onEntry(st, side, rng, slot);
   }
 
@@ -268,7 +279,7 @@
     if (dmg <= 0 || m.fainted) return 0;
     const d = Math.min(m.hp, dmg);
     m.hp -= d;
-    if (cause && st.opts.record) log(st, `${m.name} loses ${Math.round(100 * d / m.maxHp)}% (${cause})`);
+    if (cause && st.opts.record) log(st, `${m.name} loses ${Math.round(100 * d / m.maxHp)}% (${cause})`, 'hurt', m);
     if (m.hp <= 0) faint(st, m, cause);
     else berryCheck(st, m);
     return d;
@@ -277,16 +288,16 @@
     if (m.fainted || amt <= 0 || m.hp >= m.maxHp) return;
     const before = m.hp;
     m.hp = Math.min(m.maxHp, m.hp + Math.floor(amt));
-    if (st.opts.record && m.hp > before) log(st, `${m.name} restores ${Math.round(100 * (m.hp - before) / m.maxHp)}% (${cause})`);
+    if (st.opts.record && m.hp > before) log(st, `${m.name} restores ${Math.round(100 * (m.hp - before) / m.maxHp)}% (${cause})`, 'heal', m);
   }
   function faint(st, m, cause) {
     if (m.ability === 'Phoenix Down' && !m.usedPhoenix) {   // Radical Red: revives to half HP on its first faint
       m.usedPhoenix = true; m.hp = Math.floor(m.maxHp / 2); m.status = '';
-      log(st, `${m.name} rises again with Phoenix Down!`); return;
+      log(st, `${m.name} rises again with Phoenix Down!`, 'heal', m); return;
     }
     m.hp = 0; m.fainted = true; m.status = '';
     st.events.push({ turn: st.turn, type: 'faint', side: m.side, key: m.key, name: m.name, cause: cause || '' });
-    log(st, `${m.name} faints${cause ? ' (' + cause + ')' : ''}`, 'faint');
+    log(st, `${m.name} faints${cause ? ' (' + cause + ')' : ''}`, 'faint', m);
   }
   function berryCheck(st, m) {
     const it = itemName(m);
@@ -316,7 +327,7 @@
     target.status = status;
     if (status === 'slp') target.sleep = rng.expected ? 2 : 1 + Math.floor(rng() * 3);
     if (status === 'tox') target.toxic = 0;
-    log(st, `${target.name} is ${{ brn: 'burned', par: 'paralyzed', psn: 'poisoned', tox: 'badly poisoned', slp: 'asleep', frz: 'frozen' }[status]}${why ? ' (' + why + ')' : ''}`);
+    log(st, `${target.name} is ${{ brn: 'burned', par: 'paralyzed', psn: 'poisoned', tox: 'badly poisoned', slp: 'asleep', frz: 'frozen' }[status]}${why ? ' (' + why + ')' : ''}`, 'status', target);
     const cure = itemName(target);
     if (cure === 'Lum Berry' || CURE_BERRY[cure] === status) { consume(target); target.status = ''; target.sleep = 0; log(st, `${target.name}'s ${cure} cures it`); }
   }
@@ -438,10 +449,10 @@
     const zk = ctx.z ? zKind(st, user, moveId) : null;
     if (zk) {
       st[side].zUsed = true;
-      log(st, `${side === 'p' ? 'Your' : 'Boss'} ${user.name} unleashes its Z-Move (Z-${mm.name})!`, 'move');
+      log(st, `${side === 'p' ? 'Your' : 'Boss'} ${user.name} unleashes its Z-Move (Z-${mm.name})!`, 'move', user);
       st.events.push({ turn: st.turn, type: 'zmove', side, user: user.key, move: moveId });
       if (zk === 'evoboost') { user.lastMove = moveId; applyBoosts(st, user, { atk: 2, def: 2, spa: 2, spd: 2, spe: 2 }); return; }
-    } else log(st, `${side === 'p' ? 'Your' : 'Boss'} ${user.name} uses ${mm.name}`, 'move');
+    } else log(st, `${side === 'p' ? 'Your' : 'Boss'} ${user.name} uses ${mm.name}`, 'move', user);
     user.lastMove = moveId;
     if (mm.cat === 'X' && user.taunt) { log(st, `${user.name} can't use ${mm.name} after the taunt`); return; }
     if (mm.eff === FAKE_OUT && !user.firstTurn) { log(st, 'But it failed'); return; }
@@ -508,7 +519,7 @@
     }
     if (target.invuln && !(mm.name === 'Earthquake' || mm.name === 'Surf' || mm.name === 'Thunder' || mm.name === 'Hurricane')) { log(st, `${target.name} avoids the attack`); return none; }
     if (!zk && !roll(rng, hitChance(st, user, target, mm))) {
-      log(st, `${user.name}'s attack misses ${target.name}`, 'miss');
+      log(st, `${user.name}'s attack misses ${target.name}`, 'miss', user);
       if (mm.name === 'High Jump Kick' || mm.name === 'Jump Kick' || mm.name === 'Supercell Slam') hurt(st, user, Math.floor(user.maxHp / 2), 'crash');
       return none;
     }
@@ -551,7 +562,7 @@
     target.hitThisTurn = true;
     const dealt = Math.min(target.hp, dmg);
     target.hp -= dealt;
-    if (st.opts.record) log(st, `${target.name} loses ${Math.round(100 * dealt / target.maxHp)}% (${Math.round(100 * target.hp / target.maxHp)}% left)`, 'dmg');
+    if (st.opts.record) log(st, `${target.name} loses ${Math.round(100 * dealt / target.maxHp)}% (${Math.round(100 * target.hp / target.maxHp)}% left)`, 'dmg', target);
     // item and ability reactions on the target
     const tItem = itemName(target);
     if (tItem === 'Air Balloon') { consume(target); log(st, `${target.name}'s Air Balloon pops`); }
@@ -611,7 +622,7 @@
     const n = mm.name, e = mm.eff;
     const foeTargeted = !(e in EFFECT_BOOST) && !SETUP[n] && ![HEAL_HALF, HEAL_WEATHER, 37, PROTECT_EFF, HAZARD, 35, 65, 136, 137, 115, 164, 228, 239, 98, 97, 153, 124, 79, 142, 109, 176, 180, 235, 177].includes(e) || n === 'Strength Sap' || n === 'Parting Shot' || n === 'Leech Seed';
     if (foeTargeted && target && target.protect) { log(st, `${target.name} protects itself`); return; }
-    if (foeTargeted && target && !target.fainted && !roll(rng, hitChance(st, user, target, mm))) { log(st, `${user.name}'s ${n} misses`, 'miss'); return; }
+    if (foeTargeted && target && !target.fainted && !roll(rng, hitChance(st, user, target, mm))) { log(st, `${user.name}'s ${n} misses`, 'miss', user); return; }
     if (foeTargeted && target && user.ability === 'Prankster' && hasType(target, 'Dark')) { log(st, 'It does not affect Dark types'); return; }
     if (n === 'Stockpile') { if ((user.stockpile || 0) >= 3) { log(st, 'But it failed'); return; } user.stockpile = (user.stockpile || 0) + 1; }
     if (SETUP[n] || EFFECT_BOOST[e]) {
@@ -731,7 +742,7 @@
     if (m.side === 'p') ab = E.hardcoreAbility(ab, to);   // Hardcore changes some of your abilities, Mega forms included
     m.spec = Object.assign({}, m.spec, { s: to, ab });
     m.types = s.t.slice(); m.ability = ab;
-    log(st, `${m.name} Mega Evolves into ${s.n}!`, 'switch');
+    log(st, `${m.name} Mega Evolves into ${s.n}!`, 'mega', m);
     m.name = s.n;
     st.events.push({ turn: st.turn, type: 'mega', side, key: m.key, to });
     abilityOnEntry(st, side, m);
@@ -1435,5 +1446,5 @@
     return { winner: st.winner, turns, faints, totalTurns: st.turn };
   }
 
-  return { meta, makeMon, newBattle, runBattle, simulate, simulateAsync, planFight, scriptOf, plannerPolicy, doublesPlanner, aiPolicy, bossPolicy, AI, megaTarget, zKind, usable, actives, cloneState, playTurn, begin, switchIn, speed, mulberry32, expectedDice, specNow, act };
+  return { meta, snapshot, makeMon, newBattle, runBattle, simulate, simulateAsync, planFight, scriptOf, plannerPolicy, doublesPlanner, aiPolicy, bossPolicy, AI, megaTarget, zKind, usable, actives, cloneState, playTurn, begin, switchIn, speed, mulberry32, expectedDice, specNow, act };
 });

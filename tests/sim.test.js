@@ -1,4 +1,4 @@
-const { SIM, E, test, assert, mon, bossSpecs, mid } = require('./lib');
+const { SIM, E, test, assert, mon, bossSpecs, mid, D } = require("./lib");
 test('sim: a full expected battle ends', () => {
   const st = SIM.runBattle([mon('Squirtle', 16), mon('Pidgey', 15), mon('Mankey', 16)], bossSpecs(414, 16), { expected: true, record: true });
   assert(st.over && ['p', 'a'].includes(st.winner), 'battle finished: ' + st.winner);
@@ -25,4 +25,19 @@ test('sim: the planner uses your Z-Move when it wins the fight', () => {
   const foe = mon('Venusaur', 44, { moves: ['Earth Power', 'Sludge Bomb'] });
   const st = SIM.runBattle([me], [foe], { expected: true, record: true });
   assert(st.events.some(e => e.type === 'zmove' && e.side === 'p'), 'player used a Z-Move');
+});
+test('sim: recorded events say who acted and how the field stands (for battle replays)', () => {
+  const st = SIM.newBattle([mon('Charmander', 16, { moves: ['Ember', 'Scratch'] })], bossSpecs(D.bosses[D.bosses.findIndex(b => b.n === 'Brock')].id, 16), { record: true });
+  st.policies = { p: SIM.plannerPolicy(), a: SIM.bossPolicy() };
+  SIM.begin(st, SIM.expectedDice());
+  for (let k = 0; k < 3 && !st.over; k++) SIM.playTurn(st, SIM.expectedDice());
+  const kinds = new Set(st.log.map(l => l.kind));
+  assert(kinds.has('switch') && kinds.has('move') && kinds.has('dmg'), 'kinds: ' + [...kinds].join(','));
+  for (const l of st.log) {
+    assert(l.snap && Array.isArray(l.snap.p) && Array.isArray(l.snap.a), 'every event has a snapshot');
+    if (l.kind === 'move' || l.kind === 'dmg' || l.kind === 'faint') assert(l.who && (l.who.side === 'p' || l.who.side === 'a') && l.who.i >= 0, 'who for ' + l.kind);
+  }
+  const hit = st.log.find(l => l.kind === 'dmg');
+  const tgt = hit.snap[hit.who.side].find(x => x.i === hit.who.i);
+  assert(tgt && tgt.hp < tgt.mhp && E.sp(tgt.s), 'damage shows in the snapshot');
 });

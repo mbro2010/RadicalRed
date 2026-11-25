@@ -1,8 +1,9 @@
-"""Decode Pokemon front sprites and menu icons from your own ROM into two PNG atlases for the Coach app.
+"""Decode Pokemon front and back sprites and menu icons from your own ROM into PNG atlases for the Coach app.
 
-The tables come from the ROM header (0x08000128 front pictures, 0x08000130 palettes, 0x08000138 icons,
-0x0800013C icon palette numbers, 0x08000140 icon palettes). Front pictures are LZ77-compressed 64x64 4bpp
-tiles with a compressed 16-color palette; icons are uncompressed 32x32 4bpp frames.
+The tables come from the ROM header (0x08000128 front pictures, 0x0800012C back pictures, 0x08000130 palettes,
+0x08000138 icons, 0x0800013C icon palette numbers, 0x08000140 icon palettes). Front and back pictures are
+LZ77-compressed 64x64 4bpp tiles sharing one compressed 16-color palette; icons are two uncompressed 32x32 4bpp
+frames (the menu animation), kept one above the other in 32x64 cells.
 
 The output is game art: keep it on your own device or in a private page. It is not committed to the
 repository (app/sprites/ is in .gitignore).
@@ -20,7 +21,7 @@ from rom import rom, u8, u16, u32, isptr  # noqa: E402
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join('app', 'sprites')
 G = 0x08000000
-FRONT, PALS, ICONS, ICON_PAL_IDS, ICON_PALS = (u32(a) - G for a in (0x128, 0x130, 0x138, 0x13C, 0x140))
+FRONT, BACK, PALS, ICONS, ICON_PAL_IDS, ICON_PALS = (u32(a) - G for a in (0x128, 0x12C, 0x130, 0x138, 0x13C, 0x140))
 NAMES = u32(0x144) - G
 N_SPECIES = 1376
 
@@ -99,7 +100,7 @@ for k in range(icon_pal_count):
     p = u32(ICON_PALS + 8 * k)
     icon_pals.append(palette(rom[p - G:p - G + 32]) if isptr(p) else palette(bytes(32)))
 
-fronts, icons, index = [], [], {}
+fronts, backs, icons, index = [], [], [], {}
 for s in range(1, N_SPECIES):
     if rom[NAMES + 11 * s] in (0xFF, 0xAC):      # unnamed slot
         continue
@@ -108,34 +109,49 @@ for s in range(1, N_SPECIES):
     if isptr(fp) and isptr(pp):
         data, praw = lz77(fp - G), lz77(pp - G)
         if data and praw and len(data) >= 2048:
-            px = tiles_to_rgba(data, 8, 8, palette(praw))
+            pal = palette(praw)
+            px = tiles_to_rgba(data, 8, 8, pal)
             if not blank(px):
                 entry['f'] = len(fronts)
                 fronts.append(px)
+                bp = u32(BACK + 8 * s)
+                bdata = lz77(bp - G) if isptr(bp) else None
+                if bdata and len(bdata) >= 2048:
+                    bpx = tiles_to_rgba(bdata, 8, 8, pal)
+                    if not blank(bpx):
+                        entry['b'] = len(backs)
+                        backs.append(bpx)
     ip = u32(ICONS + 4 * s)
     if isptr(ip):
         o = ip - G
-        px = tiles_to_rgba(rom[o:o + 512], 4, 4, icon_pals[u8(ICON_PAL_IDS + s)])
-        if not blank(px):
+        px = tiles_to_rgba(rom[o:o + 1024], 4, 8, icon_pals[u8(ICON_PAL_IDS + s)])
+        if not blank(px[:32]):
             entry['i'] = len(icons)
             icons.append(px)
     if entry:
         index[s] = entry
 
 
-def atlas(sprites, size, cols):
+def atlas(sprites, size, cols, height=None):
+    height = height or size
     rows = (len(sprites) + cols - 1) // cols
-    out = [[(0, 0, 0, 0)] * (cols * size) for _ in range(rows * size)]
+    out = [[(0, 0, 0, 0)] * (cols * size) for _ in range(rows * height)]
     for k, px in enumerate(sprites):
-        ox, oy = (k % cols) * size, (k // cols) * size
-        for y in range(size):
+        ox, oy = (k % cols) * size, (k // cols) * height
+        for y in range(height):
             out[oy + y][ox:ox + size] = px[y]
-    return out
+    return out, rows
 
 
 FRONT_COLS, ICON_COLS = 32, 40
-a = write_png(os.path.join(OUT, 'front.png'), atlas(fronts, 64, FRONT_COLS))
-b = write_png(os.path.join(OUT, 'icons.png'), atlas(icons, 32, ICON_COLS))
+fa, front_rows = atlas(fronts, 64, FRONT_COLS)
+ba, back_rows = atlas(backs, 64, FRONT_COLS)
+ia, icon_rows = atlas(icons, 32, ICON_COLS, 64)
+a = write_png(os.path.join(OUT, 'front.png'), fa)
+c = write_png(os.path.join(OUT, 'back.png'), ba)
+b = write_png(os.path.join(OUT, 'icons.png'), ia)
 with open(os.path.join(OUT, 'index.json'), 'w') as f:
-    json.dump({'frontCols': FRONT_COLS, 'iconCols': ICON_COLS, 'species': index}, f, separators=(',', ':'))
-print(f'{len(fronts)} front sprites ({a // 1024} KB), {len(icons)} icons ({b // 1024} KB), {icon_pal_count} icon palettes')
+    json.dump({'frontCols': FRONT_COLS, 'frontRows': front_rows, 'backRows': back_rows, 'iconCols': ICON_COLS, 'iconRows': icon_rows,
+               'iconFrames': 2, 'species': index}, f, separators=(',', ':'))
+print(f'{len(fronts)} front sprites ({a // 1024} KB), {len(backs)} back sprites ({c // 1024} KB), '
+      f'{len(icons)} two-frame icons ({b // 1024} KB), {icon_pal_count} icon palettes')

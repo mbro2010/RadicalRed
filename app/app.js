@@ -157,8 +157,82 @@
       else this.saveLocal();
     },
   };
-  let flashMsg = '';
-  function flash(msg) { flashMsg = msg; renderStatus(); setTimeout(() => { flashMsg = ''; renderStatus(); }, 6000); }
+  // ---------------- messages and celebrations ----------------
+  const REDUCE = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  let toastTimer = null;
+  /** A message in a game-style text box that slides up from the bottom, then goes away. */
+  function flash(msg) {
+    let el = $('#toast');
+    if (!el) {
+      el = document.createElement('div'); el.id = 'toast'; el.className = 'toast'; el.setAttribute('role', 'status');
+      el.onclick = () => el.classList.remove('on');
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('on'), 4500);
+  }
+  let celeTimer = null;
+  /** A moment worth marking (a catch, a win, the Hall of Fame), over the page; tap or wait to go on. */
+  function celebrate(html, ms, cls) {
+    let el = $('#cele');
+    if (!el) {
+      el = document.createElement('div'); el.id = 'cele'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-live', 'polite');
+      el.onclick = () => closeCele();
+      document.body.appendChild(el);
+    }
+    el.className = 'cele ' + (cls || '');
+    el.innerHTML = `<div class="cele-card">${html}<span class="cele-tap">Tap to continue</span></div>`;
+    el.hidden = false; void el.offsetWidth; el.classList.add('on');
+    clearTimeout(celeTimer); celeTimer = setTimeout(closeCele, REDUCE ? Math.min(ms, 2600) : ms);
+  }
+  function closeCele() {
+    const el = $('#cele'); if (!el) return;
+    el.classList.remove('on'); clearTimeout(celeTimer);
+    setTimeout(() => { if (!el.classList.contains('on')) { el.hidden = true; el.innerHTML = ''; } }, 260);
+  }
+  function celebrateCatch(sid, how) {
+    const sp = E.sp(sid); if (!sp) return;
+    const line = how === 'starter' ? `You chose ${sp.n}!` : how === 'gift' ? `You received ${sp.n}!` : `Gotcha! ${sp.n} was caught!`;
+    const sub = how === 'starter' ? 'Your partner for this run.' : how === 'box' ? 'Sent to your box.' : 'Added to your party.';
+    celebrate(`<div class="catch-scene"><div class="catch-mon">${front(sid, 'x2')}</div><div class="pball" aria-hidden="true"><i></i></div>
+        <div class="stars" aria-hidden="true">${[0, 1, 2, 3, 4, 5].map(k => `<i style="--k:${k}"></i>`).join('')}</div></div>
+      <div class="cele-text">${esc(line)}</div><div class="cele-sub">${esc(sub)}</div>`, 3600, 'is-catch');
+  }
+  function celebrateWin(b, capBefore, capAfter, dead) {
+    const badge = b.ms && /Badge/.test(b.ms) ? b.ms : null;
+    celebrate(`<div class="cele-kicker">${esc(b.cls)} ${esc(b.n)} was defeated!</div>
+      ${badge ? `<div class="badge-big">${badgeSVG(badge)}</div><div class="cele-text">You earned the ${esc(badge)}!</div>` : `<div class="cele-text">${b.ms ? 'Milestone cleared!' : 'Victory!'}</div>`}
+      ${capAfter !== capBefore ? `<div class="capchg">Level cap <b class="from">${capBefore}</b> → <b class="to">${capAfter}</b></div>` : ''}
+      ${dead.length ? `<div class="lost">${dead.map(m => `<span class="t">${icon(m.s)}<span>${esc(monShort(m))}</span></span>`).join('')}<span class="small muted">fainted</span></div>` : '<div class="cele-sub">No losses.</div>'}`,
+    badge || capAfter !== capBefore ? 4400 : 2600, 'is-win');
+  }
+  function celebrateHoF() {
+    const team = party().length ? party() : alive().slice(0, 6);
+    celebrate(`<div class="cele-kicker">Welcome to the Hall of Fame!</div>
+      <div class="hof">${team.map((m, k) => `<span class="hof-mon" style="--k:${k}">${front(m.s)}<span>${esc(monShort(m))}<small>Lv ${m.lv}</small></span></span>`).join('')}</div>
+      <div class="cele-text">Run #${S.run.no || S.history.length + 1} beat the Champion.</div>`, 7000, 'is-hof');
+  }
+  /** The eight gym badges as small shapes in their colors (off: an outline). */
+  function badgeSVG(name, off) {
+    const k = BADGES.indexOf(name);
+    const star = (n, r1, r2) => Array.from({ length: n * 2 }, (_, i) => { const a = Math.PI * i / n - Math.PI / 2, r = i % 2 ? r2 : r1; return `${(12 + r * Math.cos(a)).toFixed(1)},${(12 + r * Math.sin(a)).toFixed(1)}`; }).join(' ');
+    const shapes = [
+      '<path d="M8 2h8l6 6v8l-6 6H8l-6-6V8z"/>',
+      '<path d="M12 2c4 6 7 9.5 7 13a7 7 0 0 1-14 0c0-3.5 3-7 7-13z"/>',
+      `<polygon points="${star(8, 11, 5)}"/>`,
+      '<circle class="p1" cx="12" cy="6.5" r="5"/><circle class="p2" cx="17.5" cy="12" r="5"/><circle class="p3" cx="12" cy="17.5" r="5"/><circle class="p4" cx="6.5" cy="12" r="5"/><circle class="c" cx="12" cy="12" r="3"/>',
+      '<path d="M12 21C5 15 2 11.5 2 8a5 5 0 0 1 10-1 5 5 0 0 1 10 1c0 3.5-3 7-10 13z"/>',
+      '<circle cx="12" cy="12" r="10"/><circle class="c" cx="12" cy="12" r="4.5"/>',
+      '<path d="M12 1c2.5 4.5 7 7.5 7 13a7 7 0 0 1-14 0c0-3 1.4-5.2 3-6.8.3 2 1.3 3.2 2.4 3.6C9.6 7.6 10.5 4 12 1z"/>',
+      '<path d="M12 1l9 11-9 11-9-11z"/>',
+    ];
+    return `<svg viewBox="0 0 24 24" class="badge b${k}${off ? ' off' : ''}" role="img" aria-label="${esc(name)}${off ? ' (not yet)' : ''}">${shapes[k] || '<circle cx="12" cy="12" r="10"/>'}</svg>`;
+  }
+  function badgesHTML() {
+    const got = new Set(D.bosses.filter(b => b.ms && /Badge/.test(b.ms) && S.run.beaten.includes(b.i)).map(b => b.ms));
+    return `<div class="badges" aria-label="Badges: ${got.size} of 8">${BADGES.map(n => badgeSVG(n, !got.has(n))).join('')}</div>`;
+  }
 
   function renderStatus() {
     const el = $('#status'); if (!el || !D) return;
@@ -167,7 +241,7 @@
       : store.mode === 'db' ? '<span class="pill">Saved to your account</span>'
       : store.mode === 'local' ? '<span class="pill warn">Saved on this device only</span>' : '<span class="pill">Loading…</span>';
     el.innerHTML = `<span class="pill cap">Cap ${capNow()}</span><span class="pill">Next: ${esc(nb.n)}</span>${where}` +
-      (store.note || flashMsg ? `<span class="pill warn">${esc(flashMsg || store.note)}</span>` : '');
+      (store.note ? `<span class="pill warn">${esc(store.note)}</span>` : '');
   }
 
   // ---------------- screens: your run, and the tools in the menu ----------------
@@ -176,6 +250,7 @@
     S.screen = SCREENS[screen] ? screen : 'run';
     toggleMenu(false);
     render();
+    main.classList.remove('screen-in'); void main.offsetWidth; main.classList.add('screen-in');
     window.scrollTo(0, 0);
   }
   function toggleMenu(open) {
@@ -193,6 +268,7 @@
 
   function render() {
     if (!D) return;
+    stopStages();
     renderStatus();
     const scr = S.screen || 'run';
     const back = $('#backbar');
@@ -706,6 +782,9 @@
     const causes = Object.entries(o.causes).sort((a, b) => b[1] - a[1]).slice(0, 4);
     if (causes.length) h += `<div class="card"><h3>What can go wrong</h3>${causes.map(([k, n]) => `<div class="small">${esc(k)} <span class="muted">· ${Math.round(100 * n / o.runs)}% of battles</span></div>`).join('')}</div>`;
     const sc = res.script;
+    h += `<div class="card watch"><div class="row"><button class="btn primary" id="bp-watch">▶ Watch the fight</button><span class="note">The most likely way it goes, played out with your team and theirs.</span></div>
+      <div class="stage-host" id="bp-stage" hidden></div>
+      <div class="row small" id="bp-ctl" hidden><button class="btn small" id="bp-pause">Pause</button><button class="btn small" id="bp-next">Next turn</button><button class="btn small" id="bp-speed">Speed 1×</button><button class="btn small ghost" id="bp-close">Close</button></div></div>`;
     h += `<details class="more" open><summary>Turn by turn: the most likely way it goes</summary><ol class="script">${sc.turns.map(t => {
       const d = t.decision;
       const lines = t.lines.filter(l => !/^(Your|Boss) .* uses /.test(l.text) || true).map(l => `<div class="${l.kind === 'faint' ? 'ev faint' : l.kind === 'crit' ? 'ev crit' : 'ev'}">${esc(l.text)}</div>`).join('');
@@ -749,6 +828,38 @@
     const key = planKey();
     const go = $('#bp-go'); if (go) go.onclick = () => runPlan(key);
     const redo = $('#bp-redo'); if (redo) redo.onclick = () => { delete S.plans[key]; runPlan(key); };
+    const watch = $('#bp-watch'); if (watch) watch.onclick = () => watchPlan(S.plans[key]);
+  }
+  /** Play the plan's most likely battle on the battle screen, turn by turn, with the Coach's move as a caption. */
+  async function watchPlan(res) {
+    const host = $('#bp-stage'), ctl = $('#bp-ctl'), watch = $('#bp-watch');
+    if (!res || !res.script || !host || !window.createStage) return;
+    if (planStage) planStage.destroy();
+    const b = D.bosses[S.planBoss];
+    host.hidden = false; ctl.hidden = false; watch.hidden = true;
+    const stage = planStage = window.createStage(host, stageOpts(b, res.doubles));
+    let speed = 1, paused = false;
+    $('#bp-pause').onclick = () => { paused = !paused; if (paused) stage.pause(); else stage.resume(); $('#bp-pause').textContent = paused ? 'Resume' : 'Pause'; };
+    $('#bp-next').onclick = () => { if (paused) { paused = false; stage.resume(); $('#bp-pause').textContent = 'Pause'; } stage.skip(); };
+    $('#bp-speed').onclick = () => { speed = speed >= 3 ? 1 : speed + 1; stage.setSpeed(speed); $('#bp-speed').textContent = `Speed ${speed}×`; };
+    $('#bp-close').onclick = () => { stage.destroy(); if (planStage === stage) planStage = null; host.hidden = true; ctl.hidden = true; watch.hidden = false; };
+    host.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    const turns = res.script.turns || [];
+    const first = turns.length && turns[0].lines.length ? turns[0].lines[0].snap : null;
+    stage.show({ p: [], a: [], pl: first ? first.pl : [], al: first ? first.al : [] });
+    await stage.intro();
+    for (const t of turns) {
+      if (!stage.alive) return;
+      const d = t.decision;
+      stage.caption(d ? `Turn ${t.turn}: ${d.lines ? d.lines.join(' · ') : d.action}` : '');
+      await stage.play(t.lines);
+      await stage.wait(420);
+    }
+    if (!stage.alive) return;
+    const sc = res.script;
+    stage.caption(sc.winner === 'p' ? `You win in ${sc.totalTurns} turns` : sc.winner === 'a' ? 'The boss wins this line' : 'Nobody wins this line');
+    await stage.say(sc.winner === 'p' ? `${b.cls} ${b.n} was defeated!` : sc.winner === 'a' ? 'You blacked out… Look at the dangers above.' : 'The battle stalls out.');
+    if (stage.alive) { watch.hidden = false; watch.textContent = '▶ Watch it again'; }
   }
   async function runPlan(key) {
     if (S.planning) return;
@@ -895,7 +1006,9 @@
     const st = SIM.newBattle(specs, bossSpecs, { doubles, lead, record: true });
     st.policies = { p: doubles ? SIM.doublesPlanner() : SIM.plannerPolicy(), a: SIM.bossPolicy() };
     SIM.begin(st, SIM.expectedDice());
-    S.live = { bi, doubles, st, step: 'choose', turns: [], checks: [], next: null, pred: null };
+    // the opening plays on the battle screen: an empty field, then both sides send out their leads
+    const intro = { p: [], a: [], pl: st.p.team.map(() => 1), al: st.a.team.map(() => 1) };
+    S.live = { bi, doubles, st, step: 'choose', turns: [], checks: [], next: null, pred: null, anim: { from: intro, lines: st.log.slice(), intro: true } };
   }
   function actionLabel(st, side, a) {
     if (!a) return '—';
@@ -946,11 +1059,8 @@
         <div class="row"><button class="btn primary" id="lv-start">Start the battle</button></div></div>`;
     }
     const L = S.live, st = L.st, b = D.bosses[L.bi];
-    const slotRow = side => SIM.actives(st, side).map(m => `<div class="side">${front(m.spec.s, side === 'p' ? 'flip' : '')}<div class="plate"><b>${esc(m.name)}</b><span class="small">Lv ${m.spec.lv}${m.status ? ' · ' + esc(m.status.toUpperCase()) : ''}</span>${hpBar(pctOf(m))}</div></div>`).join('');
-    const arena = st.size > 1
-      ? `<div class="arena" style="grid-template-columns:1fr 1fr">${slotRow('a')}</div><div class="arena" style="grid-template-columns:1fr 1fr">${slotRow('p')}</div>`
-      : `<div class="arena">${slotRow('p')}${slotRow('a')}</div>`;
-    let html = `<div class="row"><h3 class="grow" style="font-family:var(--font-display);font-size:18px">vs ${esc(b.n)} · turn ${st.turn + 1}</h3><button class="btn small ghost" id="lv-end">End battle</button></div>${arena}`;
+    let html = `<div class="row"><h3 class="grow" style="font-family:var(--font-display);font-size:18px">vs ${esc(b.n)} · turn ${st.turn + 1}</h3><button class="btn small ghost" id="lv-end">End battle</button></div>
+      <div class="stage-host" id="lv-stage"></div>`;
     if (st.over) {
       const won = st.winner === 'p';
       const fallen = st.p.team.filter(m => m.fainted);
@@ -963,26 +1073,43 @@
           <button class="btn ghost" id="lv-close">Close</button></div></div>`;
     } else if (L.step === 'choose') {
       // recommendation and the AI's likely move
-      let recs, pred, alts = '';
+      let recs, pred, alts = '', opts = null;
       if (L.doubles) {
         const d = st.policies.p.decide(st, 'p');
         recs = d.acts; pred = d.ai;
         alts = d.alts.slice(1).map(x => `<div class="small muted">or: ${x.combo.map(a => esc(actionLabel(st, 'p', a))).join(' + ')}</div>`).join('');
       } else {
-        const opts = st.policies.p.evaluate(st, 'p');
+        opts = st.policies.p.evaluate(st, 'p');
         recs = opts[0] ? [opts[0].type === 'switch' ? { type: 'switch', to: opts[0].to } : { type: 'move', id: opts[0].id, z: !!opts[0].z }] : [];
         pred = [st.policies.a.choose(st, 'a', SIM.expectedDice(), true, true)];
         alts = opts.slice(1, 3).map(x => `<div class="small muted">or: ${esc(x.label)} ${riskBadge(x.risk)}</div>`).join('');
       }
       L.pred = pred;
       const mine = SIM.actives(st, 'p'), theirs = SIM.actives(st, 'a');
-      html += `<div class="card rec"><div class="lbl">Do this</div>
+      if (!L.doubles) {
+        // the command box: your moves, the Coach's pick marked, each with its risk this turn
+        const me = mine[0], cur = recs[0];
+        const riskOf = id => { const x = opts.find(o => o.type !== 'switch' && o.id === id && !o.z); return x ? x.risk : null; };
+        const sw = opts.find(o => o.type === 'switch' && cur && cur.type === 'switch' && o.to === cur.to);
+        html += `<div class="cmd"><div class="cmd-q">What will <b>${esc(me.name.replace(/ \(.*\)$/, ''))}</b> do?</div>
+          <div class="cmd-moves">${SIM.usable(me, st).map(id => {
+            const mv = E.mv(id); if (!mv) return '';
+            const pick = cur && cur.type === 'move' && cur.id === id && !cur.z;
+            const r = riskOf(id);
+            return `<button class="mvbtn${pick ? ' pick' : ''}" data-mvpick="m:${id}" aria-pressed="${pick}" style="--t:${TYPE_COLORS[mv.t] || '#888888'}"><span class="mvn">${esc(mv.f)}</span><span class="mvm">${esc(mv.t)}${r != null ? ' · ' + (r <= 1e-9 ? 'safe' : r >= 0.995 ? 'loses' : fmtRisk(r) + ' risk') : ''}</span>${pick ? '<span class="cp">Coach pick</span>' : ''}</button>`;
+          }).join('')}</div>
+          ${cur && (cur.type === 'switch' || cur.z) ? `<p class="small" style="margin:0"><b>Coach pick: ${esc(actionLabel(st, 'p', cur))}</b>${sw ? ' ' + riskBadge(sw.risk) : ''}</p>` : ''}
+          <p class="small" style="margin:0">The boss will most likely use <b>${theirs.map((m, k) => `${esc(m.name)}: ${esc(actionLabel(st, 'a', pred[k]))}`).join('; ')}</b>.</p></div>`;
+      } else html += `<div class="card rec"><div class="lbl">Do this</div>
         ${mine.map((m, k) => `<h3>${esc(m.name)}: ${esc(actionLabel(st, 'p', recs[k]))}</h3>`).join('')}${alts}
-        <p class="small" style="margin:0">The boss AI will most likely use: ${theirs.map((m, k) => `<b>${esc(m.name)}</b>: ${esc(actionLabel(st, 'a', pred[k]))}`).join('; ')}.</p></div>
-        <div class="card"><div class="lbl">What happened this turn?</div>
-          <div class="small muted">You used</div>${mine.map(m => actionSelect(st, 'p', m.slot, recs[mine.indexOf(m)], 'lvp' + m.slot)).join('')}
+        <p class="small" style="margin:0">The boss AI will most likely use: ${theirs.map((m, k) => `<b>${esc(m.name)}</b>: ${esc(actionLabel(st, 'a', pred[k]))}`).join('; ')}.</p></div>`;
+      html += `
+<div class="card"><div class="lbl">What happened this turn?</div>
+          <div class="small muted">${L.doubles ? 'You used' : 'You used (tap a move above, or pick a switch here)'}</div>${mine.map(m => actionSelect(st, 'p', m.slot, recs[mine.indexOf(m)], 'lvp' + m.slot)).join('')}
           <div class="small muted">They used</div>${theirs.map(m => actionSelect(st, 'a', m.slot, pred[theirs.indexOf(m)], 'lva' + m.slot)).join('')}
           <div class="row"><button class="btn primary" id="lv-play">Play the turn</button><span class="note">Pick a different move if the boss did something else: that's how the AI check learns.</span></div></div>`;
+    } else if (L.step === 'anim') {
+      html += `<div class="card"><div class="row"><span class="grow small muted">Playing the turn the Coach expects. Tap the screen to skip.</span><button class="btn small" id="lv-skip">Skip</button></div></div>`;
     } else if (L.step === 'check') {
       const nx = L.next;
       const row = (side, m) => `<div class="row" style="gap:6px;flex-wrap:nowrap">${icon(m.spec.s)}<span class="grow small"><b>${esc(m.name)}</b></span>
@@ -1014,6 +1141,50 @@
     const start = $('#lv-start');
     if (start) start.onclick = () => { const lead = (S.liveLead || [0, 1]).slice(0, n); liveStart(bi, n > 1 ? lead : lead[0]); render(); scrollToLive(); };
     wireLive();
+    mountLiveStage();
+  }
+  // ---------------- the battle screen (stage.js) for live battles and plan replays ----------------
+  let liveStage = null, planStage = null;
+  /** Where a fight happens decides the backdrop: caves, the sea, gyms and buildings, or grass. */
+  function terrainOf(b) {
+    const loc = (b && b.loc && b.loc[0]) || '';
+    if (/Mt\. Moon|Tunnel|Cave|Victory Road|Seafoam|Mt\. Ember|Icefall|Diglett|Chamber|Lost Cave|Altering/.test(loc)) return 'cave';
+    if (/Route (19|20|21)$|Beach|Sea/.test(loc)) return 'water';
+    if (/Silph|Hideout|Tower|League|S\.S\. Anne|Mansion|Power Plant|Warehouse|Game Corner|Dept|Plateau/.test(loc)) return 'indoor';
+    if (b && /Leader|Elite Four|Champion/.test(b.cls) && !/^Route/.test(loc)) return 'indoor';
+    return 'grass';
+  }
+  function stageOpts(b, doubles) {
+    const fc = (SPR && SPR.frontCols) || 32;
+    return { sprite: sid => { const e = sprEntry(sid); return e ? { f: e.f, b: e.b } : null; },
+      sheets: { fc, fr: (SPR && SPR.frontRows) || 43, bc: fc, br: (SPR && SPR.backRows) || 43 },
+      foe: b ? `${b.cls} ${b.n}` : 'The trainer', terrain: terrainOf(b), doubles: !!doubles };
+  }
+  function stopStages() {
+    if (liveStage) { liveStage.destroy(); liveStage = null; }
+    if (planStage) { planStage.destroy(); planStage = null; }
+  }
+  /** The live battle's screen: plays the opening or the turn just entered, else shows where things stand. */
+  function mountLiveStage() {
+    const host = $('#lv-stage'), L = S.live;
+    if (!host || !L || !window.createStage) return;
+    const stage = liveStage = window.createStage(host, stageOpts(D.bosses[L.bi], L.doubles));
+    const prompt = () => {
+      const st = L.st;
+      if (st.over) stage.text(st.winner === 'p' ? `${D.bosses[L.bi].n} was defeated!` : 'You have no Pokémon left to fight…');
+      else if (L.step === 'check') stage.text('Did it go like this? Fix anything different below.');
+      else { const me = SIM.actives(st, 'p'); stage.text(me.length === 1 ? `What will ${me[0].name.replace(/ \(.*\)$/, '')} do?` : 'What will your Pokémon do?'); }
+    };
+    if (!L.anim) { stage.show(SIM.snapshot(L.step === 'check' && L.next ? L.next : L.st)); prompt(); return; }
+    const a = L.anim;
+    stage.show(a.from);
+    (async () => {
+      if (a.intro) await stage.intro();
+      await stage.play(a.lines);
+      if (liveStage !== stage || !stage.alive || S.live !== L) return;   // the page moved on meanwhile
+      L.anim = null;
+      if (L.step === 'anim') { L.step = 'check'; render(); scrollToLive(); } else prompt();
+    })();
   }
   function scrollToLive() { const el = $('#live'); if (el) el.scrollIntoView({ block: 'start' }); }
   function wireLive() {
@@ -1057,9 +1228,19 @@
       const before = nx.log.length;
       SIM.playTurn(nx, SIM.expectedDice());
       L.lastLines = nx.log.slice(before);
-      L.next = nx; L.step = 'check';
-      render();
+      L.next = nx; L.step = 'anim';
+      L.anim = { from: SIM.snapshot(st), lines: L.lastLines };
+      render(); scrollToLive();
     };
+    const skipBtn = $('#lv-skip'); if (skipBtn) skipBtn.onclick = () => { if (liveStage) liveStage.skip(); };
+    main.querySelectorAll('[data-mvpick]').forEach(btn => btn.onclick = () => {
+      const me = SIM.actives(st, 'p')[0]; const sel = me && $('#lvp' + me.slot);
+      if (!sel) return;
+      sel.value = btn.dataset.mvpick;
+      main.querySelectorAll('[data-mvpick]').forEach(o => o.setAttribute('aria-pressed', o === btn ? 'true' : 'false'));
+    });
+    const mySel = (() => { const me = SIM.actives(st, 'p')[0]; return me ? $('#lvp' + me.slot) : null; })();
+    if (mySel) mySel.addEventListener('change', () => main.querySelectorAll('[data-mvpick]').forEach(o => o.setAttribute('aria-pressed', o.dataset.mvpick === mySel.value ? 'true' : 'false')));
     const back = $('#lv-back'); if (back) back.onclick = () => { L.step = 'choose'; L.next = null; render(); };
     const conf = $('#lv-confirm');
     if (conf) conf.onclick = () => {
@@ -1374,14 +1555,14 @@
     const du = $('#dupes'); if (du) du.onchange = () => { S.run.dupes = du.checked; store.saveRun(); render(); };
     main.querySelectorAll('[data-got]').forEach(b => b.onclick = () => {
       const sid = +b.dataset.got, area = b.dataset.area;
-      openEditor(null, { s: sid, lv: +b.dataset.lv, met: area, onSave: m => setEnc(area, { s: sid, r: 'caught', key: m.key }) });
+      openEditor(null, { s: sid, lv: +b.dataset.lv, met: area, onSave: m => { setEnc(area, { s: sid, r: 'caught', key: m.key }); celebrateCatch(m.s, m.box); } });
     });
     main.querySelectorAll('[data-fail]').forEach(b => b.onclick = () => { setEnc(b.dataset.area, { s: +b.dataset.fail, r: 'failed' }); render(); });
     main.querySelectorAll('[data-skip]').forEach(b => b.onclick = () => { setEnc(b.dataset.skip, { r: 'skipped' }); render(); });
     main.querySelectorAll('[data-undo]').forEach(b => b.onclick = () => { setEnc(b.dataset.undo, null); render(); });
     main.querySelectorAll('[data-plan]').forEach(b => b.onclick = () => { S.planBoss = +b.dataset.plan; go('fight'); });
     main.querySelectorAll('[data-best]').forEach(b => b.onclick = () => bestCatch(D.areas.find(a => a.n === b.dataset.best)));
-    main.querySelectorAll('[data-gift]').forEach(b => b.onclick = () => openEditor(null, { s: +b.dataset.gift, lv: +b.dataset.lv, met: `${b.dataset.area} (gift)` }));
+    main.querySelectorAll('[data-gift]').forEach(b => b.onclick = () => openEditor(null, { s: +b.dataset.gift, lv: +b.dataset.lv, met: `${b.dataset.area} (gift)`, onSave: m => celebrateCatch(m.s, 'gift') }));
     main.querySelectorAll('[data-tmown]').forEach(b => b.onclick = () => {
       const t = +b.dataset.tmown; const set = new Set(S.run.tms || []);
       if (set.has(t)) set.delete(t); else set.add(t);
@@ -1429,12 +1610,14 @@
   function scrollToNow() { const el = $('#now'); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
   function monShort(m) { return m.nick || (E.sp(m.s) || {}).n || '?'; }
   function partyStrip(cap) {
-    return `<div class="party-strip">${party().map(m => `<button class="pmon" data-edit="${esc(m.key)}" aria-label="Edit ${esc(monName(m))}">${icon(m.s)}<span class="nm">${esc(monShort(m))}</span><span class="lv${m.lv > cap ? ' over' : m.lv < cap ? ' under' : ''}">Lv ${m.lv}</span></button>`).join('')}</div>`;
+    return `<div class="party-strip">${party().map(m => `<button class="pmon" data-edit="${esc(m.key)}" aria-label="Edit ${esc(monName(m))}">${icon(m.s, 'hop')}<span class="nm">${esc(monShort(m))}</span><span class="lv${m.lv > cap ? ' over' : m.lv < cap ? ' under' : ''}">Lv ${m.lv}</span></button>`).join('')}</div>`;
   }
 
+  let entering = false;
   function renderRun() {
     if (!store.ready && !S.example) { main.innerHTML = '<div class="empty">Loading your run…</div>'; return; }
     const P = runProgress();
+    entering = lastNow !== P.current;
     const wiped = !S.example && S.roster.length > 0 && !alive().length;
     let html = '';
     if (S.example) html += `<div class="banner" style="display:grid;gap:8px"><span>This is the example team: nothing is saved and it isn't part of a run.</span><div><button class="btn small" id="ex-clear">Clear the example</button></div></div>`;
@@ -1452,6 +1635,7 @@
     const box = S.roster.filter(m => m.box === 'box').length;
     return `<section class="card runhead">
       <div class="row"><h2 class="grow">Run #${no}</h2><span class="pill">${r.milestones} of 16 milestones</span></div>
+      ${badgesHTML()}
       ${party().length ? partyStrip(r.cap) : ''}
       <div class="row small"><span class="muted grow">${S.roster.length ? `${party().length}/6 in party · ${box} in box · ${r.fainted} fainted · ${r.caught} caught` : 'No Pokémon yet'}</span><button class="btn small ghost" data-go="team">Team &amp; PC</button></div>
     </section>`;
@@ -1470,7 +1654,8 @@
       if (c.post && !S.run.postgame) continue;
       if (c.k > curCh + 1) break;
       const sts = c.steps.map(k => P.steps[k]);
-      const title = `<span class="ch-cap">Cap ${c.cap}</span><span class="ch-t">${esc(FLOW.chapterTitle(c))}</span>`;
+      const endB = c.end ? D.bosses[c.end.first] : null;
+      const title = `<span class="ch-cap">Cap ${c.cap}</span>${endB && /Badge/.test(endB.ms) ? badgeSVG(endB.ms, !S.run.beaten.some(i => c.end.members.includes(i))) : ''}<span class="ch-t">${esc(FLOW.chapterTitle(c))}</span>`;
       if (c.k < curCh) {
         const won = sts.filter(s => s.won).length;
         const lost = S.roster.filter(m => m.died && sts.some(s => s.step.kind === 'fight' && s.step.g.first === m.died.fight)).length;
@@ -1487,7 +1672,7 @@
   }
   function stepHTML(st, isNow, P) {
     const s = st.step;
-    if (isNow) return `<li class="step now" id="now"><span class="dot" aria-hidden="true"></span><div class="now-body">${stepBodyHTML(st, P)}</div></li>`;
+    if (isNow) return `<li class="step now${entering ? ' enter' : ''}" id="now"><span class="dot" aria-hidden="true"></span><div class="now-body">${stepBodyHTML(st, P)}</div></li>`;
     const state = st.done ? 'done' : st.passed ? 'passed' : 'todo';
     const canOpen = (st.done || st.passed) && (s.kind === 'areas' || s.kind === 'fight');
     const opened = canOpen && S.openStep === s.id;
@@ -1626,11 +1811,11 @@
     const b = D.bosses[bi];
     const cap = capNow();
     const team = E.bossTeam(bi, topLevel());
-    let h = `<div class="card rec">
+    let h = `<div class="card rec fight-head">
       <div class="lbl">${g === st.step.g ? (b.ms ? 'Next fight · raises the level cap' : 'Next fight') : 'Fighting out of order'}</div>
       <div class="row"><h2 class="grow">${esc(b.n)}</h2>${b.dbl ? '<span class="pill warn">Double battle</span>' : ''}</div>
       <div class="small muted">${esc(b.cls)}${b.loc ? ' · ' + esc(b.loc.join(', ')) : ''} · cap ${cap}${b.ms ? ` · a win raises it to ${b.capAfter}` : ''}</div>
-      <div class="team-icons">${team.map(m => `<span class="t">${icon(m.s) || esc(E.sp(m.s).n)}<span>Lv ${m.lv}</span></span>`).join('')}</div>
+      <div class="vs-team">${team.map((m, k) => `<span class="vs-mon" style="--k:${k}" title="${esc(E.sp(m.s).n)}">${front(m.s, 's48') || icon(m.s)}<span>Lv ${m.lv}</span></span>`).join('')}</div>
       ${g.members.length > 1 ? variantHTML(g, bi) : ''}
       ${focusHTML(st, g)}
     </div>`;
@@ -1654,8 +1839,9 @@
     if (S.live && g.members.includes(S.live.bi)) S.live = null;
     S.resultForm = null; S.focus = null; S.openStep = null; S.extraArea = null;
     const cap = capNow();
-    flash(`${b.n} beaten${dead.length ? `; ${dead.map(monShort).join(', ')} fainted` : ' with no losses'}.${cap !== capBefore ? ` The level cap is now ${cap}.` : ''}`);
     render();
+    if (FLOW.champ && g.first === FLOW.champ.first) celebrateHoF();
+    else celebrateWin(b, capBefore, cap, dead);
     for (const m of dead) await store.saveMon(m);
     await store.saveRun();
   }
@@ -1927,7 +2113,7 @@
     main.querySelectorAll('[data-tier]').forEach(b => b.onclick = () => { S.tierPick = S.tierPick === +b.dataset.tier ? null : +b.dataset.tier; render(); });
     main.querySelectorAll('[data-choose]').forEach(b => b.onclick = () => {
       const sid = +b.dataset.choose;
-      openEditor(null, { s: sid, lv: 5, met: 'Starter', onSave: () => { S.run.starter = sid; if (!S.run.started) S.run.started = Date.now(); S.tierPick = null; store.saveRun(); } });
+      openEditor(null, { s: sid, lv: 5, met: 'Starter', onSave: m => { S.run.starter = sid; if (!S.run.started) S.run.started = Date.now(); S.tierPick = null; store.saveRun(); celebrateCatch(m.s, 'starter'); } });
     });
   }
   /** End the run: how it ended and where, saved to your history; the next run starts fresh. at: the fight it ended at. */
