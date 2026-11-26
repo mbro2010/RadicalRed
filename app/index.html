@@ -703,6 +703,8 @@ input.search { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--l
 .seg { display: inline-flex; border: 2px solid var(--box-edge); border-radius: 8px; overflow: hidden; }
 .seg button { border: 0; background: var(--surface); padding: 4px 10px; font-size: 13px; font-weight: 600; }
 .seg button[aria-pressed="true"] { background: var(--box-edge); color: var(--surface); }
+.seg.mode-pick { display: grid; grid-template-columns: 1fr 1fr; }
+.seg.mode-pick button { padding: 8px 6px; font-size: 14px; }
 .team-icons { display: flex; flex-wrap: wrap; gap: 2px; align-items: center; }
 .team-icons .t { display: inline-flex; flex-direction: column; align-items: center; font-family: var(--font-data); font-size: 10.5px; color: var(--muted); }
 .badge-row { display: flex; gap: 4px; flex-wrap: wrap; }
@@ -721,7 +723,7 @@ input.search { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--l
     <div class="titlebar">
       <span class="ball" aria-hidden="true"></span>
       <h1>Nuzlocke <span class="accent">Coach</span></h1>
-      <span class="muted small">Radical Red 4.1 · Hardcore</span>
+      <span class="muted small" id="mode-line">Radical Red 4.1 · Hardcore</span>
       <button class="menu-btn" id="menu-btn" aria-expanded="false" aria-controls="menu"><span class="bars" aria-hidden="true"></span>Menu</button>
     </div>
     <nav class="menu" id="menu" hidden aria-label="Coach tools">

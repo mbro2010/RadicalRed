@@ -83,7 +83,14 @@
 
   /** Hardcore and Restricted Mode change some of your Pokemon's abilities (decoded from the game's code at 0x09079584,
    *  which the ability getters call when flag 0x1034 or 0x103C is set). Applied to your side only, as the game describes it. */
+  // The difficulty: 'hardcore' (Hardcore Mode) or 'normal' (Normal Mode with Minimal Grinding). Hardcore bans some
+  // moves and changes some abilities for the player; outside Hardcore, bosses whose level follows yours come in 2
+  // levels lower (until the game is cleared). Minimal Grinding drops trainer EVs in both (the data has none).
+  let MODE = 'hardcore', REL = 0;
+  function setMode(mode, cleared) { MODE = mode === 'normal' ? 'normal' : 'hardcore'; REL = MODE === 'normal' && !cleared ? -2 : 0; }
+  function getMode() { return MODE; }
   function hardcoreAbility(ab, sid) {
+    if (MODE !== 'hardcore') return ab;
     switch (ab) {
       case 'Drizzle': case 'Primordial Sea': return 'Adaptability';
       case 'Drought': case 'Desolate Land': return 'Sheer Force';
@@ -429,7 +436,7 @@
   function bossTeam(bossIndex, playerTop) {
     const b = D.bosses[bossIndex];
     return b.party.map(m => Object.assign({}, m, {
-      lv: m.lv != null ? m.lv : Math.max(1, Math.min(100, (playerTop || b.cap) + m.rel)),
+      lv: m.lv != null ? m.lv : Math.max(1, Math.min(100, (playerTop || b.cap) + m.rel + REL)),
     }));
   }
 
@@ -494,6 +501,7 @@
     return L ? L.l.filter(([lv, id]) => lv > level && mv(id)).slice(0, 6).map(([lv, id]) => ({ id, lv })) : [];
   }
   function isBanned(moveId, speciesName) {
+    if (MODE !== 'hardcore') return false;   // only Hardcore restricts your moves
     if (banned.has(moveId)) return true;
     if (condBanned.has(moveId) && !condOK.has(speciesName)) return true;
     return false;
@@ -525,6 +533,6 @@
   }
 
   return { C, gen, D, sp, mv, itemName, hardcoreAbility, natureName, abilityInfo, buildMon, damage, damageDist, faintChance, speedOf, matchup,
-    bossTeam, planBoss, teamWeather, learnable, upcoming, isBanned, suggestMoves, maxHP, rawStats, rawRolls, typeEff, hiddenPowerType,
+    bossTeam, planBoss, teamWeather, learnable, upcoming, isBanned, suggestMoves, maxHP, rawStats, rawRolls, typeEff, hiddenPowerType, setMode, getMode,
     STATUS_CODE, WEATHER_SETTERS, HIGH_CRIT, ALWAYS_CRIT, STAT_MULT, clearCache: () => cache.clear() };
 });

@@ -15,7 +15,8 @@
   function newRun(no, keep) {
     keep = keep || {};
     return { beaten: [], tms: [], enc: {}, dupes: keep.dupes !== false, checks: [], tutors: !!keep.tutors, no, started: null, starter: null,
-      aiChecks: keep.aiChecks || null, bag: [], skipped: [], passed: [], variants: {}, postgame: false, care: !!keep.care, tr: {}, at: null };
+      aiChecks: keep.aiChecks || null, bag: [], skipped: [], passed: [], variants: {}, postgame: false, care: !!keep.care, tr: {}, at: null,
+      mode: keep.mode === 'normal' ? 'normal' : 'hardcore' };
   }
   let SPR = null;   // sprite index (sprites/index.json); without it the page simply shows no sprites
   const S = {
@@ -83,7 +84,40 @@
   function alive() { return S.roster.filter(m => m.box !== 'dead'); }
   function party() { return S.roster.filter(m => m.box === 'party'); }
   function milestonesDone() { return D.bosses.filter(b => b.ms && S.run.beaten.includes(b.i)).length; }
-  function capNow() { return D.caps.hardcore[Math.min(milestonesDone(), 17)]; }
+  function capNow() { return D.caps[modeNow()][Math.min(milestonesDone(), 17)]; }
+  // ---------------- difficulty: Hardcore Mode, or Normal Mode with Minimal Grinding (nuzlocke rules either way) ----------------
+  const modeNow = () => (S.run && S.run.mode === 'normal' ? 'normal' : 'hardcore');
+  const MODE_NAME = { hardcore: 'Hardcore', normal: 'Normal · Minimal Grinding' };
+  let appliedMode = null;
+  /** Put the difficulty's boss teams, level caps and rules in place: Normal Mode builds its bosses from the regular
+   *  trainer table (b.np), Hardcore from its own table (b.party as loaded); caps by milestone (b.mi). */
+  function syncMode() {
+    const mode = modeNow(), key = mode + (S.run && S.run.postgame ? '+' : '');
+    if (!D || appliedMode === key) return;
+    if (appliedMode && appliedMode.replace('+', '') !== mode) S.live = null;   // a battle set up for the other difficulty
+    appliedMode = key;
+    E.setMode(mode, !!(S.run && S.run.postgame));
+    const caps = D.caps[mode];
+    for (const b of D.bosses) {
+      if (b.route) continue;
+      if (!b.hp) {
+        b.hp = b.party; b.hdbl = b.dbl; b.hv = b.v;
+        // the regular trainer table leaves some natures and abilities to the game (a fixed personality value, a random
+        // slot): neutral nature and the first ability, as for route trainers
+        if (b.np) b.np = b.np.filter(m => E.sp(m.s)).map(m => Object.assign({}, m, { nat: m.nat != null ? m.nat : 0, ab: m.ab || E.sp(m.s).a[0],
+          iv: m.iv || [31, 31, 31, 31, 31, 31], mv: (m.mv || []).filter(id => E.mv(id)) }));
+      }
+      b.party = mode === 'normal' && b.np && b.np.length ? b.np : b.hp;
+      b.dbl = mode === 'normal' && b.np && b.np.length ? b.ndbl : b.hdbl;
+      if (b.cat === 'rival') b.v = mode === 'normal' ? (b.nv || b.hv) : b.hv;
+      b.cap = caps[b.mi];
+      if (b.ms) b.capAfter = caps[b.mi + 1];
+    }
+    FLOW = window.createFlow(D, mode);
+    // everything worked out for the other difficulty
+    CATCH.clear(); TUNE.clear(); CANDS.clear(); CARE = null; planCache = { key: '', plan: null }; S.plans = {};
+    TIERS = null; tiersLoading = null;
+  }
   /** The next fight on the path: the first boss you haven't beaten or skipped. */
   function nextBoss() {
     const skipped = new Set(S.run.skipped || []);
@@ -110,7 +144,7 @@
       no: run.no || (histLen + 1), started: run.started || null, starter: run.starter || null, aiChecks: run.aiChecks || null, bag: Array.isArray(run.bag) ? run.bag.slice() : [],
       skipped: Array.isArray(run.skipped) ? run.skipped.slice() : [], passed: Array.isArray(run.passed) ? run.passed.slice() : [],
       variants: run.variants && typeof run.variants === 'object' ? Object.assign({}, run.variants) : {}, postgame: !!run.postgame, care: run.care != null ? !!run.care : run.anyItems !== false,
-      tr: run.tr && typeof run.tr === 'object' ? Object.assign({}, run.tr) : {}, at: run.at || null };
+      tr: run.tr && typeof run.tr === 'object' ? Object.assign({}, run.tr) : {}, at: run.at || null, mode: run.mode === 'normal' ? 'normal' : 'hardcore' };
   }
   const store = {
     mode: 'loading', ready: false, col: null, unsub: null, timer: null, note: '',
@@ -220,7 +254,7 @@
       if (!S.run.started && S.roster.length) S.run.started = Math.min(...S.roster.map(m => m.ord || Date.now()));
       if (this.mode === 'db') { try { await this.put('run', plain({ beaten: S.run.beaten, tms: S.run.tms || [], enc: S.run.enc || {}, dupes: S.run.dupes !== false, checks: (S.run.checks || []).slice(-50), tutors: !!S.run.tutors, aiChecks: S.run.aiChecks || null, bag: S.run.bag || [],
         no: S.run.no || 1, started: S.run.started || null, starter: S.run.starter || null,
-        skipped: S.run.skipped || [], passed: S.run.passed || [], variants: S.run.variants || {}, postgame: !!S.run.postgame, care: !!S.run.care, tr: S.run.tr || {}, at: S.run.at || null })); } catch (e) { flash('Couldn’t save progress (' + e.code + ').'); } }
+        skipped: S.run.skipped || [], passed: S.run.passed || [], variants: S.run.variants || {}, postgame: !!S.run.postgame, care: !!S.run.care, tr: S.run.tr || {}, at: S.run.at || null, mode: modeNow() })); } catch (e) { flash('Couldn’t save progress (' + e.code + ').'); } }
       else this.saveLocal();
     },
   };
@@ -311,7 +345,8 @@
     const where = S.example ? '<span class="pill warn">Example team, not saved</span>'
       : store.mode === 'db' ? '<span class="pill">Saved to your account</span>'
       : store.mode === 'local' ? '<span class="pill warn">Saved on this device only</span>' : '<span class="pill">Loading…</span>';
-    el.innerHTML = `<span class="pill cap">Cap ${capNow()}</span><span class="pill">Next: ${esc(nb.n)}</span>${where}` +
+    const ml = $('#mode-line'); if (ml) ml.textContent = `Radical Red 4.1 · ${MODE_NAME[modeNow()]}`;
+    el.innerHTML = `<span class="pill cap">Cap ${capNow()}</span><span class="pill">${modeNow() === 'normal' ? 'Normal' : 'Hardcore'}</span><span class="pill">Next: ${esc(nb.n)}</span>${where}` +
       (store.note ? `<span class="pill warn">${esc(store.note)}</span>` : '');
   }
 
@@ -340,6 +375,7 @@
 
   function render() {
     if (!D) return;
+    syncMode();
     stopStages();
     renderStatus();
     const scr = S.screen || 'run';
@@ -684,12 +720,12 @@
   let CARE = null;
   /** The care package so far: packages in run order (got or not), items handed over (id -> where) and items still to come. */
   function careState() {
-    const key = JSON.stringify([!!S.run.care, S.run.beaten, Object.keys(S.run.enc || {}), S.run.passed, S.run.skipped, !!S.run.postgame, !!S.run.started]);
+    const key = JSON.stringify([modeNow(), !!S.run.care, S.run.beaten, Object.keys(S.run.enc || {}), S.run.passed, S.run.skipped, !!S.run.postgame, !!S.run.started]);
     if (CARE && CARE.key === key) return CARE;
     const P = runProgress();
     const list = (D.care || []).map(pk => ({ pk, got: carePassed(pk, P), at: careOrder(pk, P) })).sort((a, b) => a.at - b.at);
     const now = new Map(), later = new Map();
-    if (S.run.care) for (const x of list) for (const [id] of x.pk.items) {
+    if (S.run.care) for (const x of list) for (const [id] of (modeNow() === 'normal' && x.pk.n ? x.pk.n : x.pk.items)) {
       if (x.got) { if (!now.has(id)) now.set(id, careWhere(x.pk)); }
       else if (!later.has(id)) later.set(id, careWhere(x.pk));
     }
@@ -703,7 +739,7 @@
     const names = pk => pk.items.map(([id, q]) => E.itemName(id) + (q !== 10 ? ` ×${q}` : '')).join(', ');
     return `<details class="more"><summary>Care package: ${C.list.filter(x => x.got).length} of ${C.list.length} so far${next ? ` · next ${esc(careWhere(next.pk))}` : ''}</summary>
       <div class="care-list">${C.list.map(x => `<div class="care-row${x.got ? ' got' : ''}"><span class="care-mark" aria-hidden="true">${x.got ? '✓' : '○'}</span><div><b>${esc(careWhere(x.pk).replace(/^in /, ''))}</b><span class="small muted"> ${esc(names(x.pk))}</span></div></div>`).join('')}</div>
-      <p class="note" style="margin:0">Hardcore Mode leaves some items out (weather rocks, terrain seeds, Weakness Policy, Throat Spray, Air Balloon, Terrain Extender, EV items). Each checkpoint is a spot you walk over in that area, except the three after gym wins and Mom's after the Champion.</p></details>`;
+      <p class="note" style="margin:0">${modeNow() === 'normal' ? 'Normal Mode with Minimal Grinding adds weather rocks, terrain seeds, Weakness Policy, Throat Spray, Air Balloon and Terrain Extender to Hardcore’s lists (no EV items: Minimal Grinding).' : 'Hardcore Mode leaves some items out (weather rocks, terrain seeds, Weakness Policy, Throat Spray, Air Balloon, Terrain Extender, EV items).'} Each checkpoint is a spot you walk over in that area, except the three after gym wins and Mom's after the Champion.</p></details>`;
   }
   /** Items the advice may hand out: the care package so far, what you've ticked, and what your team holds. */
   function itemPool() {
@@ -1225,7 +1261,7 @@
   }
   let planCache = { key: '', plan: null };
   /** What a plan depends on: the fight and every Pokemon you could bring. */
-  function planKey() { return JSON.stringify([S.planBoss, alive().map(r => [r.key, r.s, r.lv, r.nat, r.ab, r.it, r.mv, r.box])]); }
+  function planKey() { return JSON.stringify([modeNow(), S.planBoss, alive().map(r => [r.key, r.s, r.lv, r.nat, r.ab, r.it, r.mv, r.box, r.iv, r.ev])]); }
   /** One-on-one numbers for the fight you're planning (cached until your team changes). */
   function matchups() {
     const key = planKey();
@@ -1356,7 +1392,7 @@
         else if (onProgress) onProgress(m.progress, m.text);
       };
       planWorker.onerror = () => { clearTimeout(timer); fallback(); };
-      planWorker.postMessage({ id, specs, team, opts: rest });
+      planWorker.postMessage({ id, specs, team, opts: Object.assign({}, rest, { mode: modeNow(), cleared: !!S.run.postgame }) });
     });
   }
   function wireBattlePlan() {
@@ -1512,7 +1548,7 @@
       return `<div class="card"><div class="mon-head"><span class="mon-name">${esc(monName(m))}</span><span class="lv">Lv ${m.lv}</span></div>
         <div class="lbl">Best from level-up moves (Move Relearner)</div><div class="moves">${list(now)}</div>
         ${tmOnly.length ? `<div class="lbl">If you have the TM</div><div class="moves">${tmOnly.map(x => { const t = /^TM(\d+)/.test(x.how) ? +x.how.slice(2) - 1 : /^HM(\d+)/.test(x.how) ? 119 + +x.how.slice(2) : null; return moveChip(x.id, x.how + (t != null && tmWhere(t, 2) ? ' · ' + tmWhere(t, 2) : '')); }).join('')}</div>` : ''}</div>`;
-    }).join('')}<p class="note">Picked to cover the most of this boss team with guaranteed damage, accuracy included. Hardcore-banned moves are left out.</p></div></details>`;
+    }).join('')}<p class="note">Picked to cover the most of this boss team with guaranteed damage, accuracy included.${modeNow() === 'hardcore' ? ' Hardcore-banned moves are left out.' : ''}</p></div></details>`;
   }
   function claudeSection() {
     return `<section class="section" id="claude-sec" hidden><div class="head"><h2>Game plan from Claude</h2></div>
@@ -1588,7 +1624,7 @@
     const b = D.bosses[S.planBoss];
     const roster = alive();
     const lines = [];
-    lines.push('You are coaching a hardcore nuzlocke of Pokémon Radical Red 4.1 in Hardcore Mode. Rules: a fainted Pokémon is gone for good; no items in battle; set mode (no free switch after a KO); level caps. The boss AI leads with its first Pokémon and, after each KO, sends whichever of its Pokémon it judges best.');
+    lines.push(`You are coaching a hardcore nuzlocke of Pokémon Radical Red 4.1 in ${modeNow() === 'normal' ? 'Normal Mode with Minimal Grinding' : 'Hardcore Mode'}. Rules: a fainted Pokémon is gone for good; no items in battle; set mode (no free switch after a KO); level caps. The boss AI leads with its first Pokémon and, after each KO, sends whichever of its Pokémon it judges best.`);
     lines.push(`\nBoss: ${b.n} (${b.cls})${b.dbl ? ', double battle (the numbers below treat it as singles)' : ''}. Level cap ${b.cap}.`);
     lines.push('Their team in order:');
     P.team.forEach((t, j) => lines.push(`${j + 1}. ${setLine(t)}`));
@@ -2836,7 +2872,7 @@
     return `<b>${TIME_TEXT[C.time]}: catch now${how}.</b> Hoping for ${esc(h.join(' or '))}.${small}`;
   }
   const CATCH = new Map();
-  function catchKey(a) { return a.n + '|' + JSON.stringify([alive().map(m => [m.s, m.lv, m.mv]), S.run.beaten, Object.keys(S.run.enc || {}), (S.run.tms || []).length, S.run.dupes !== false]); }
+  function catchKey(a) { return a.n + '|' + JSON.stringify([modeNow(), alive().map(m => [m.s, m.lv, m.mv]), S.run.beaten, Object.keys(S.run.enc || {}), (S.run.tms || []).length, S.run.dupes !== false]); }
   function catchFor(a) { const k = catchKey(a); if (!CATCH.has(k)) { if (CATCH.size > 200) CATCH.clear(); CATCH.set(k, catchAdvice(a)); } return CATCH.get(k); }
   /** Fill in the verdicts on the page, one route at a time, so it stays responsive. */
   function fillCatch() {
@@ -2869,7 +2905,7 @@
       box.innerHTML = `<div class="card catch-card" style="box-shadow:none;border-width:2px">
         ${C.opts.slice().sort((x, y) => (y.open.now - x.open.now) || (y.expect - x.expect)).map(o => `<details class="more" ${o === C.pick || o === C.wait ? 'open' : ''}><summary>${esc(o.label)}${when(o)}${o.open.now ? '' : ` · later${o.open.when ? ', ' + esc(o.open.when) : ''}`} · expected +${o.expect.toFixed(1)}</summary>
           <div class="section" style="margin-top:6px">${o.ranked.slice(0, 4).map(fmt).join('')}<div class="small muted">Judged for ${o.majors.map(i => esc(D.bosses[i].n)).join(' and ')}.</div></div></details>`).join('')}
-        <p class="note" style="margin:0">The number is what a species adds to your team: matchups against those bosses' exact Hardcore teams that it wins or saves and your Pokémon don't, at the level cap, evolved by level-up where it would be by then. “Expected” weighs each species by how often it appears.</p></div>`;
+        <p class="note" style="margin:0">The number is what a species adds to your team: matchups against those bosses' exact teams that it wins or saves and your Pokémon don't, at the level cap, evolved by level-up where it would be by then. “Expected” weighs each species by how often it appears.</p></div>`;
     }, 30);
   }
   /** Your team's gaps for the catch step: what the next big fights have that you can't answer yet. */
@@ -3105,10 +3141,10 @@
     const no = S.run.no || S.history.length + 1;
     const box = S.roster.filter(m => m.box === 'box').length;
     return `<section class="card runhead">
-      <div class="row"><h2 class="grow">Run #${no}</h2><span class="pill">${r.milestones} of 16 milestones</span></div>
+      <div class="row"><h2 class="grow">Run #${no}</h2><span class="pill">${esc(MODE_NAME[modeNow()])}</span><span class="pill">${r.milestones} of 16 milestones</span></div>
       ${badgesHTML()}
       ${party().length ? partyStrip(r.cap) : ''}
-      <div class="row small"><span class="muted grow">${S.roster.length ? `${party().length}/6 in party · ${box} in box · ${r.fainted} fainted · ${r.caught} caught` : 'No Pokémon yet'}</span><button class="btn small ghost" data-go="team">Pokémon</button>${S.run.started || S.roster.length ? '<button class="btn small ghost" data-go="newrun">Start a new run</button>' : ''}</div>
+      <div class="row small"><span class="muted grow">${S.roster.length ? `${party().length}/6 in party · ${box} in box · ${r.fainted} fainted · ${r.caught} caught` : 'No Pokémon yet'}</span><button class="btn small ghost" data-go="team">Pokémon</button>${S.run.started || S.roster.length ? '<button class="btn small ghost" data-go="newrun">Start a new run</button>' : ''}${S.run.started ? `<button class="btn small ghost" data-modeswitch="1">Difficulty: ${modeNow() === 'normal' ? 'Normal' : 'Hardcore'}</button>` : ''}</div>
     </section>`;
   }
   function wipeHTML() {
@@ -3193,6 +3229,9 @@
     const best = H.length ? Math.max(...H.map(h => (h.progress || {}).milestones || 0)) : 0;
     return `<div class="card rec"><h2>Start run #${no}</h2>
       <p class="small" style="margin:0">The Coach takes you through the run in order: choose your starter, log the first encounter on each route, then for each fight get your team ready, plan it, play it turn by turn and log how it went. Then the next routes and the next fight, until you win or wipe.</p>
+      <div class="lbl">Difficulty: what you picked in the game</div>
+      <div class="seg mode-pick" role="group" aria-label="Difficulty"><button data-mode="hardcore" aria-pressed="${modeNow() === 'hardcore'}">Hardcore</button><button data-mode="normal" aria-pressed="${modeNow() === 'normal'}">Normal + Minimal Grinding</button></div>
+      <p class="note" style="margin:0">${modeNow() === 'normal' ? 'Normal Mode with Minimal Grinding: the regular boss teams (Brock has 4 Pokémon), level caps 15, 22, 27, 34…, no boss EVs, every move and ability allowed.' : 'Hardcore Mode: its own boss teams (Brock has 6 Pokémon), level caps 16, 23, 28, 36…, no boss EVs, 82 moves banned and some of your abilities changed.'} Nuzlocke rules either way: a fainted Pokémon is gone, no items in battle, set mode, level caps.</p>
       <div class="lbl">Rules</div>
       <label class="row small" style="flex-wrap:nowrap;gap:8px"><input type="checkbox" id="r-dupes" ${S.run.dupes !== false ? 'checked' : ''}> Dupes clause: flag Pokémon from families you already caught</label>
       <label class="row small" style="flex-wrap:nowrap;gap:8px"><input type="checkbox" id="r-tutors" ${S.run.tutors ? 'checked' : ''}> Move tutors: let move advice suggest tutor moves</label>
@@ -3200,7 +3239,7 @@
       ${H.length ? `<p class="note" style="margin:0">${H.length} past run${H.length > 1 ? 's' : ''}, furthest ${best} of 16 milestones. <button class="linkbtn" data-go="runs">See past runs</button></p>` : ''}</div>`;
   }
   function starterHTML() {
-    return `<div class="card rec"><h2>Choose your starter</h2><p class="small" style="margin:0">Your starter carries the early game. These are all 27 that Oak's Lab offers, ranked for Hardcore against the game's own boss teams. Tap one for details, then choose it.</p></div>
+    return `<div class="card rec"><h2>Choose your starter</h2><p class="small" style="margin:0">Your starter carries the early game. These are all 27 that Oak's Lab offers, ranked for ${modeNow() === 'normal' ? 'Normal Mode' : 'Hardcore'} against the game's own boss teams. Tap one for details, then choose it.</p></div>
       ${tierListHTML(true)}
       <div class="row"><button class="btn small ghost" id="st-skip">Already have your team? Skip this</button></div>`;
   }
@@ -3271,7 +3310,7 @@
   }
   /** Coach's nature and held item for each party Pokemon, worked out one at a time after the page shows. */
   const TUNE = new Map();
-  function tuneKey(m) { return JSON.stringify([m.key, m.s, m.lv, m.nat, m.ab, m.it || 0, m.mv, !!m.noEvo, S.planBoss, capNow(), topLevel(), careState().key, (S.run.bag || []).length, (S.run.tms || []).length]); }
+  function tuneKey(m) { return JSON.stringify([modeNow(), m.key, m.s, m.lv, m.nat, m.ab, m.it || 0, m.mv, !!m.noEvo, S.planBoss, capNow(), topLevel(), careState().key, (S.run.bag || []).length, (S.run.tms || []).length]); }
   function tuneRowHTML(m) {
     const r = TUNE.get(tuneKey(m));
     const head = `${icon(m.s)}<b>${esc(monShort(m))}</b>`;
@@ -3392,6 +3431,12 @@
     const du = $('#r-dupes'); if (du) du.onchange = () => { S.run.dupes = du.checked; store.saveRun(); };
     const tu = $('#r-tutors'); if (tu) tu.onchange = () => { S.run.tutors = tu.checked; ADV.setOptions({ tutors: S.run.tutors }); store.saveRun(); };
     on('#run-start', () => { if (S.example) { S.example = false; S.roster = []; } S.run.started = Date.now(); render(); store.saveRun(); });
+    main.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { if (b.dataset.mode === modeNow()) return; S.run.mode = b.dataset.mode; render(); store.saveRun(); });
+    main.querySelectorAll('[data-modeswitch]').forEach(b => b.onclick = () => {
+      // changing the difficulty mid-run: the boss teams and level caps change with it
+      if (!b.dataset.armed) { b.dataset.armed = '1'; b.textContent = `Confirm: switch to ${modeNow() === 'normal' ? 'Hardcore' : 'Normal + Minimal Grinding'}`; b.classList.add('primary'); return; }
+      S.run.mode = modeNow() === 'normal' ? 'hardcore' : 'normal'; flash(`Difficulty: ${MODE_NAME[modeNow()]}. Boss teams and level caps changed with it.`); render(); store.saveRun();
+    });
     on('#run-import', () => openImport());
     // starter
     wireTiers();
@@ -3531,7 +3576,7 @@
     return {
       milestones: milestonesDone(), cap: capNow(), beaten: S.run.beaten.length, lastBeaten: last ? last.n : null,
       caught: enc.filter(e => e && e.r === 'caught').length, missed: enc.filter(e => e && e.r === 'failed').length, areas: enc.length,
-      alive: alive().length, fainted: S.roster.filter(m => m.box === 'dead').length,
+      alive: alive().length, fainted: S.roster.filter(m => m.box === 'dead').length, mode: modeNow(),
     };
   }
   function teamIcons(team) {
@@ -3540,7 +3585,8 @@
   let TIERS = null, tiersLoading = null;
   function loadTiers() {
     if (TIERS || tiersLoading) return tiersLoading;
-    tiersLoading = fetch('starters.json').then(r => (r.ok ? r.json() : null)).then(v => { TIERS = v; if (S.screen === 'runs' || S.screen === 'run') render(); }).catch(() => { TIERS = { error: true }; });
+    const want = modeNow();
+    tiersLoading = fetch(want === 'normal' ? 'starters-normal.json' : 'starters.json').then(r => (r.ok ? r.json() : null)).then(v => { if (modeNow() !== want) return; TIERS = v; if (S.screen === 'runs' || S.screen === 'run') render(); }).catch(() => { TIERS = { error: true }; });
     return tiersLoading;
   }
   const TIER_COLORS = { S: '#e0523e', A: '#e8963a', B: '#e8c22c', C: '#5bb36a', D: '#5b8fd6' };
@@ -3570,7 +3616,7 @@
         ${pick.first != null ? bar(pick.first, 'First fights') : ''}${bar(pick.early, 'Early game')}${bar(pick.late, 'Rest of the run')}
         ${(pick.fights || []).some(f => f[5] != null) ? `<div class="small"><b>The first fights, alone</b> (one on one from full HP · against their whole team, no items):
           <ul class="first-fights">${(pick.fights || []).filter(f => f[5] != null).map(f => `<li><b>${esc(f[0])}</b> (cap ${f[1]}): beats ${(+f[3]).toFixed(f[3] % 1 ? 1 : 0)} of ${f[4]} one on one · knocks out ${(f[5] * f[4]).toFixed(1)} of ${f[4]} in a row</li>`).join('')}</ul>
-          <span class="muted">Your catches have to cover the rest: no starter beats Hardcore Brock alone.</span></div>` : ''}
+          <span class="muted">Your catches have to cover the rest.</span></div>` : ''}
         <dl class="kv"><dt>Nature</dt><dd>${esc(pick.nature)} tested best (set it free with the Nature Change service)</dd>
           <dt>Ability</dt><dd>${esc(pick.ability || '—')}${pick.hidden ? ` · hidden: ${esc(pick.hidden)}` : ''}</dd>
           <dt>Rival</dt><dd>He takes the ${esc(pick.rival)} line, so his ${esc(pick.rival)} fights are the ones scored here</dd>
@@ -3580,10 +3626,10 @@
         ${choose ? `<div class="row"><button class="btn primary" data-choose="${pick.s}">Choose ${esc(pick.name)}</button><span class="note">Then set the nature and ability you got.</span></div>` : ''}
       </div>`;
     }
-    return `<div class="card"><p class="small" style="margin:0">All 27 starters Oak's Lab offers (the generation setting changes the three balls), ranked for Hardcore from the game's data. Each one is tested at every major fight's level cap up to the Champion (${TIERS.fights} fights), evolved by level as it would be by then, with its best level-up moves and nature, one-on-one against each of the boss's Pokémon. The first fights (the rival, Falkner, Brock and Archer) are also played out whole, the starter alone against their whole team, and count 40%: a nuzlocke ends at its first wipe, and that's when your starter is most of your team. Tap one for details.</p>
+    return `<div class="card"><p class="small" style="margin:0">All 27 starters Oak's Lab offers (the generation setting changes the three balls), ranked for ${esc(MODE_NAME[modeNow()])} from the game's data. Each one is tested at every major fight's level cap up to the Champion (${TIERS.fights} fights), evolved by level as it would be by then, with its best level-up moves and nature, one-on-one against each of the boss's Pokémon. The first fights (the rival, Falkner, Brock and Archer) are also played out whole, the starter alone against their whole team, and count 40%: a nuzlocke ends at its first wipe, and that's when your starter is most of your team. Tap one for details.</p>
       <div class="row small"><span class="seg" role="group" aria-label="Rank by"><button data-tiersort="run" aria-pressed="${!byFirst}">Whole run</button><button data-tiersort="first" aria-pressed="${byFirst}">First fights</button></span>${byFirst ? '<span class="muted">Their Pokémon knocked out in a row, alone, no items</span>' : ''}</div>
       ${rows}${detail}
-      <p class="note" style="margin:0">Scores run from 3 (beats every boss Pokémon safely) to −1 (loses to all of them); one Pokémon alone rarely beats a whole Hardcore team, so even the best sit near 1. TMs and tutors aren't assumed, so Pokémon that rely on them can do better than this.</p></div>`;
+      <p class="note" style="margin:0">Scores run from 3 (beats every boss Pokémon safely) to −1 (loses to all of them); one Pokémon alone rarely beats a whole boss team, so even the best sit near 1. TMs and tutors aren't assumed, so Pokémon that rely on them can do better than this.</p></div>`;
   }
   /** What your runs say: where you lose Pokemon, how each starter did, who you rely on, encounter luck, the AI check. */
   function insightsHTML() {
@@ -3648,7 +3694,7 @@
         const p = h.progress || {};
         const days = h.started && h.ended ? Math.max(1, Math.round((h.ended - h.started) / 86400000)) : null;
         const deaths = (h.team || []).filter(m => m.box === 'dead');
-        return `<div class="card" data-hist="${esc(h.id)}"><div class="row"><b class="grow" style="font-family:var(--font-display);font-size:18px">Run #${h.no || '?'}</b><span class="verdict ${cls}">${label}</span></div>
+        return `<div class="card" data-hist="${esc(h.id)}"><div class="row"><b class="grow" style="font-family:var(--font-display);font-size:18px">Run #${h.no || '?'}</b><span class="tag">${h.mode === 'normal' ? 'Normal' : 'Hardcore'}</span><span class="verdict ${cls}">${label}</span></div>
           <div class="small">${fmtDate(h.started)} – ${fmtDate(h.ended)}${days ? ` · ${days} day${days > 1 ? 's' : ''}` : ''}${h.starter && E.sp(h.starter) ? ` · starter ${esc(E.sp(h.starter).n)}` : ''}</div>
           <dl class="kv"><dt>Reached</dt><dd>${p.milestones || 0} of 16 milestones · cap ${p.cap || '—'}${p.lastBeaten ? ` · last beat ${esc(p.lastBeaten)}` : ''}</dd>
             ${h.endedAt ? `<dt>Ended at</dt><dd>${esc(h.endedAt)}</dd>` : ''}
@@ -3715,7 +3761,7 @@
     const h = {
       id: uid(), no, result, endedAt: endedAt || '', notes: notes || '', starter,
       started: S.run.started || (S.roster.length ? Math.min(...S.roster.map(m => m.ord || Date.now())) : Date.now()), ended: Date.now(),
-      progress: { milestones: r.milestones, cap: r.cap, beaten: r.beaten, lastBeaten: r.lastBeaten },
+      progress: { milestones: r.milestones, cap: r.cap, beaten: r.beaten, lastBeaten: r.lastBeaten }, mode: r.mode,
       enc: { caught: r.caught, missed: r.missed, areas: r.areas },
       team: S.roster.map(m => ({ s: m.s, lv: m.lv, nick: m.nick || '', box: m.box, met: m.met || '', died: m.died || null })),
     };

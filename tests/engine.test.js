@@ -67,3 +67,18 @@ test('advice: status and stat moves count when they turn a fight (Sleep Powder o
   const r = SIM.statusRisk({ hitsTaken: 2, toKOme: 2, risk: 1 }, 'par');
   assert(Math.abs(r - 0.5625) < 1e-9, 'paralysis odds: ' + r);
 });
+
+test('engine: Normal Mode drops Hardcore\'s move bans and ability changes; level-following bosses come 2 lower', () => {
+  const ban = D.bans.moves[0];
+  const rel = D.bosses.findIndex(b => b.party.some(m => m.rel != null));
+  const relMon = D.bosses[rel].party.findIndex(m => m.rel != null);
+  try {
+    assert(E.isBanned(ban, 'Pikachu') && E.hardcoreAbility('Drizzle', sid('Politoed')) === 'Adaptability', 'Hardcore rules');
+    const hard = E.bossTeam(rel, 30)[relMon].lv;
+    E.setMode('normal');
+    assert(!E.isBanned(ban, 'Pikachu') && E.hardcoreAbility('Drizzle', sid('Politoed')) === 'Drizzle', 'no Hardcore rules in Normal');
+    assert(E.bossTeam(rel, 30)[relMon].lv === hard - 2, 'two levels lower outside Hardcore');
+    E.setMode('normal', true);
+    assert(E.bossTeam(rel, 30)[relMon].lv === hard, 'not once the game is cleared');
+  } finally { E.setMode('hardcore'); }
+});

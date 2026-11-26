@@ -13,7 +13,7 @@
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory;
   else root.createFlow = factory;
-})(typeof self !== 'undefined' ? self : this, function createFlow(D) {
+})(typeof self !== 'undefined' ? self : this, function createFlow(D, mode) {
   'use strict';
   const ROD = 'rod', SURF = 'surf';
   // [area, the fight it comes before (trainer, level cap, which of that name at that cap), what you need there]
@@ -43,7 +43,7 @@
   // the Sevii Islands and everything else not listed: after the Champion (their wild Pokémon are at the last cap)
   const LONE = /^(Grunt|Goon)$/;
   const RIVAL_POS = { Squirtle: 0, Bulbasaur: 1, Charmander: 2 };   // order of the rival's three teams in each fight
-  const CAPS = D.caps.hardcore;
+  const CAPS = D.caps[mode === 'normal' ? 'normal' : 'hardcore'];   // the level caps of the difficulty played
 
   // ---- fights: the boss table in order, versions of one fight grouped ----
   const groups = [];
@@ -72,7 +72,8 @@
     return isWild(n) && a.parts.every(p => Object.entries(p.k).every(([k, t]) => k === 'water' || k === 'fish' || !hasRows(t)));
   }
   function anchor(name, cap, nth) {
-    const hits = D.bosses.filter(b => !b.route && b.n === name && b.cap === cap);
+    // PLACES name a fight by its Hardcore cap: the milestones before it say which, in either difficulty
+    const hits = D.bosses.filter(b => !b.route && b.n === name && (b.mi != null ? D.caps.hardcore[b.mi] : b.cap) === cap);
     const b = hits[nth || 0];
     if (!b) throw new Error(`flow: no fight "${name}" at cap ${cap}`);
     return groupOf.get(b.i).first;

@@ -97,6 +97,47 @@ for (const s of outSpecies) {
 const tutors = read('tutors.json');
 for (const [sid, idx] of Object.entries(tutors.species)) if (outLearn[sid]) outLearn[sid].u = idx.map(k => tutors.moves[k].id).filter(Boolean);
 
+// ---------- teams from the regular trainer table ----------
+// Outside Hardcore, a boss (and every regular trainer, in any mode) gets its team from the record used in every mode
+// when there is one, else from the regular trainer table, with its EV/IV/nature spread (party builder, NOTES.md).
+// Minimal Grinding (always on in Hardcore, and the Normal Mode the Coach supports) skips the EVs, so none are kept.
+const TYPE_NAMES = { 0: 'Normal', 1: 'Fighting', 2: 'Flying', 3: 'Poison', 4: 'Ground', 5: 'Rock', 6: 'Bug', 7: 'Ghost', 8: 'Steel',
+  10: 'Fire', 11: 'Water', 12: 'Grass', 13: 'Electric', 14: 'Psychic', 15: 'Ice', 16: 'Dragon', 17: 'Dark' };
+const HP_ORDER = ['Fighting', 'Flying', 'Poison', 'Ground', 'Rock', 'Bug', 'Ghost', 'Steel', 'Fire', 'Water', 'Grass', 'Electric', 'Psychic', 'Ice', 'Dragon', 'Dark'];
+/** IVs of 31 or 30 that give a Hidden Power type (as many 31s as possible), in the app's order hp, atk, def, spa, spd, spe. */
+function hpIVs(type) {
+  let best = null;
+  for (let bits = 0; bits < 64; bits++) {
+    const b = [0, 1, 2, 3, 4, 5].map(i => (bits >> i) & 1);   // hp, atk, def, spe, spa, spd
+    if (HP_ORDER[Math.floor((b[0] + 2 * b[1] + 4 * b[2] + 8 * b[3] + 16 * b[4] + 32 * b[5]) * 15 / 63)] !== type) continue;
+    const n = b.filter(Boolean).length;
+    if (!best || n > best.n) best = { n, b };
+  }
+  const iv = (best ? best.b : [1, 1, 1, 1, 1, 1]).map(x => (x ? 31 : 30));
+  return [iv[0], iv[1], iv[2], iv[4], iv[5], iv[3]];
+}
+const ivList = v => [v.hp, v.atk, v.def, v.spa, v.spd, v.spe];
+function regularTeam(t) {
+  const ov = (t.alwaysOverride || [])[0];
+  if (ov) return { dbl: ov.double ? 1 : 0, party: ov.party.map(m => ({ s: m.speciesId, lv: m.level ?? null, rel: m.relativeToPlayerMax ?? null,
+    nat: m.natureId, ab: m.ability, it: m.itemId || null, mv: m.moveIds, iv: ivList(m.ivs) })) };
+  return { dbl: t.double ? 1 : 0, party: t.party.map(m => {
+    const sp = m.spread || {};
+    return { s: m.speciesId, lv: m.level ?? null, rel: m.relativeToPlayerMax ?? null, nat: sp.natureId ?? null,
+      ab: typeof m.ability === 'string' && !/^random/.test(m.ability) ? m.ability : null,   // a random slot: the app uses slot 1
+      it: m.itemId || (m.item && itemIdByName[m.item]) || null,
+      mv: m.moveIds && m.moveIds.length ? m.moveIds : defaultMoves(m.speciesId, m.level || 1),
+      iv: m.ivs === 'spread' ? hpIVs(TYPE_NAMES[sp.hiddenPowerTypeCode]) : m.ivs && typeof m.ivs === 'object' ? ivList(m.ivs) : null };
+  }) };
+}
+function defaultMoves(sid, lv) {
+  const L = outLearn[sid];
+  if (!L) return [];
+  const known = [];
+  for (const [l, mv] of L.l) if (l <= lv && !known.includes(mv)) { known.push(mv); if (known.length > 4) known.shift(); }
+  return known;
+}
+
 // ---------- bosses ----------
 const MILESTONE_AFTER = {414: 'Boulder Badge', 46: 'Archer', 415: 'Cascade Badge', 416: 'Thunder Badge', 417: 'Rainbow Badge',
   348: 'Giovanni, Rocket Hideout', 53: 'Archer', 349: 'Giovanni, Silph Co.', 420: 'Marsh Badge', 418: 'Soul Badge', 61: 'May',
@@ -126,12 +167,18 @@ const bosses = order.map((tid, i) => {
       ...(m.raw.b27 ? { st: m.raw.b27 } : {}),
     })),
   };
+  b.mi = done;   // milestones done before this fight: the level cap in any mode is caps[mode][mi]
+  // Normal Mode (with Minimal Grinding): the same fight, from the regular trainer table
+  const nt = regularTeam(t);
+  b.np = nt.party; b.ndbl = nt.dbl;
   if (MILESTONE_AFTER[tid]) { b.ms = MILESTONE_AFTER[tid]; b.capAfter = HC[done + 1]; done++; }
   return b;
 });
 for (const b of bosses) if (b.cat === 'rival') {
   const last = b.party[b.party.length - 1];
   b.v = (outSpecies.find(s => s.i === last.s) || {}).n;
+  const nlast = b.np[b.np.length - 1];
+  if (nlast) b.nv = (outSpecies.find(s => s.i === nlast.s) || {}).n;
 }
 
 // ---------- evolutions and Mega Evolution ----------
@@ -197,28 +244,12 @@ outAreas.sort((a, b) => {
 // ---------- regular trainers on each area ----------
 const locations = read('trainer_locations.json');
 const bossIds = new Set(order);
-function defaultMoves(sid, lv) {
-  const L = outLearn[sid];
-  if (!L) return [];
-  const known = [];
-  for (const [l, mv] of L.l) if (l <= lv && !known.includes(mv)) { known.push(mv); if (known.length > 4) known.shift(); }
-  return known;
-}
 const outTrainers = {};
 for (const [tid, places] of Object.entries(locations)) {
   const t = trainers[tid];
   if (!t || bossIds.has(+tid)) continue;
-  const ov = (t.alwaysOverride || [])[0];
-  const party = ov ? ov.party.map(m => ({ s: m.speciesId, lv: m.level ?? null, rel: m.relativeToPlayerMax ?? null, nat: m.natureId, ab: m.ability, it: m.itemId || null, mv: m.moveIds,
-      iv: [m.ivs.hp, m.ivs.atk, m.ivs.def, m.ivs.spa, m.ivs.spd, m.ivs.spe] }))
-    : t.party.map(m => {
-      const sp = m.spread || {};
-      return { s: m.speciesId, lv: m.level, nat: sp.natureId ?? null, ab: m.ability || null, it: m.itemId || (m.item && itemIdByName[m.item]) || null,
-        mv: m.moveIds && m.moveIds.length ? m.moveIds : defaultMoves(m.speciesId, m.level),
-        iv: m.ivs ? [m.ivs.hp, m.ivs.atk, m.ivs.def, m.ivs.spa, m.ivs.spd, m.ivs.spe] : null,
-        ev: sp.evs ? [sp.evs.hp, sp.evs.atk, sp.evs.def, sp.evs.spa, sp.evs.spd, sp.evs.spe] : null };
-    });
-  outTrainers[tid] = { n: t.name, cls: t.class, dbl: (ov ? ov.double : t.double) ? 1 : 0, a: places, party };
+  const team = regularTeam(t);
+  outTrainers[tid] = { n: t.name, cls: t.class, dbl: team.dbl, a: places, party: team.party };
 }
 
 // ---------- gifts, static encounters, items, shops, and where each TM is ----------
@@ -262,9 +293,10 @@ const out = {
   // where scripts hand over the fishing rods (Radical Red moves them earlier than FireRed)
   rods: Object.fromEntries(['Old Rod', 'Good Rod', 'Super Rod'].map(n => [n, scripted.given[Object.keys(items).find(k => items[k] === n)] || []])),
   evo: outEvo, mega: outMega, areas: outAreas, trainers: outTrainers, finds: outFinds, mart: finds.mart, tmWhere, itemWhere,
-  // the care package cheat (code SO2Toxic): what each checkpoint hands over in Hardcore Mode, and where or after which badge
+  // the care package cheat (code SO2Toxic): what each checkpoint hands over in Hardcore Mode (items) and in Normal Mode
+  // with Minimal Grinding (n), and where or after which badge
   care: fs.existsSync(path.join(D, 'care_package.json')) ? read('care_package.json').packages.map(p => Object.assign(
-    { area: p.area, items: p.items.filter(([id]) => items[id]) }, p.after ? { after: p.after } : {})) : [],
+    { area: p.area, items: p.items.filter(([id]) => items[id]), n: (p.normal || p.items).filter(([id]) => items[id]) }, p.after ? { after: p.after } : {})) : [],
 };
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, JSON.stringify(out));

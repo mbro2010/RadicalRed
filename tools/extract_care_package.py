@@ -8,7 +8,8 @@ Typing a code upstairs in your house (Pallet Town, map 4.1) runs the cheat-code 
 
 Some items in a package depend on the game mode: `checkflag F; call_if FALSE` adds items only when F is not set.
 Choosing Hardcore Mode sets 0x1034 (Hardcore), 0x1032 (Minimal Grinding) and 0x10BE (no weather rocks, terrain
-seeds, Weakness Policy, Throat Spray...), so Hardcore players get the base lists only.
+seeds, Weakness Policy, Throat Spray...), so Hardcore players get the base lists only. Normal Mode with Minimal
+Grinding sets only 0x1032, so each package is also walked with that flag alone (`normal`).
 
 Each package is placed by walking every map's scripts (script_walk.entry_points) to the `checkflag 0x103F` that
 gives it. A package handed over after a gym win records the badge set on the way (flags 0x820-0x827); the one in
@@ -31,6 +32,7 @@ OUT = sys.argv[1] if len(sys.argv) > 1 else 'data'
 maps = json.load(open(os.path.join(OUT, 'maps.json')))
 CARE_FLAG = 0x103F
 HARDCORE_FLAGS = {0x1034, 0x1032, 0x10BE}
+NORMAL_MG_FLAGS = {0x1032}                 # Normal Mode with Minimal Grinding
 CODE_SCRIPT = 0x105013F            # SO2Toxic's own script: hands over packages for checkpoints already passed
 
 
@@ -138,9 +140,10 @@ for site, sub in sorted(sites.items()):
     area, trainer, badge = placed[site]
     hard = items_of(sub, HARDCORE_FLAGS)
     other = [x for x in items_of(sub, set()) if x not in hard]
+    normal = items_of(sub, NORMAL_MG_FLAGS)
     if not hard and not other:
         continue
-    pk = {'area': area, 'items': hard, 'otherModes': other, 'script': hex(site)}
+    pk = {'area': area, 'items': hard, 'otherModes': other, 'normal': normal, 'script': hex(site)}
     if badge is not None:
         pk['after'] = BADGES[badge] + ' Badge'
         if trainer is not None:
@@ -159,4 +162,4 @@ packages = keep
 
 with open(os.path.join(OUT, 'care_package.json'), 'w') as fh:
     json.dump({'code': 'SO2Toxic', 'flag': hex(CARE_FLAG), 'packages': packages}, fh, indent=1)
-print(f'{len(packages)} care packages placed; Hardcore items: {sum(len(p["items"]) for p in packages)}')
+print(f'{len(packages)} care packages placed; Hardcore items: {sum(len(p["items"]) for p in packages)}; Normal (Minimal Grinding): {sum(len(p["normal"]) for p in packages)}')

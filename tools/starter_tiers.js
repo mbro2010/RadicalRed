@@ -16,7 +16,8 @@
 // to 36) + 35% the rest of the run: a nuzlocke ends at its first wipe, and the first fights are where your starter is
 // most of your team.
 //
-// usage: node tools/starter_tiers.js data app/rrdata.json app/starters.json
+// usage: node tools/starter_tiers.js data app/rrdata.json app/starters.json [hardcore|normal]
+//   normal: Normal Mode with Minimal Grinding (its own boss teams and level caps; no move bans or ability changes)
 const fs = require('fs');
 const path = require('path');
 const C = require('@smogon/calc');
@@ -24,7 +25,11 @@ const C = require('@smogon/calc');
 const DATA = process.argv[2] || 'data';
 const D = JSON.parse(fs.readFileSync(process.argv[3] || 'app/rrdata.json', 'utf8'));
 const OUT = process.argv[4] || 'app/starters.json';
+const MODE = process.argv[5] === 'normal' ? 'normal' : 'hardcore';
 const E = require(path.resolve(__dirname, '../app/engine.js'))(C, D);
+// the difficulty's boss teams and caps (Normal Mode's teams come from the regular trainer table: b.np)
+if (MODE === 'normal') for (const b of D.bosses) { if (b.np && b.np.length) { b.party = b.np; b.dbl = b.ndbl; if (b.nv) b.v = b.nv; } b.cap = D.caps.normal[b.mi]; }
+E.setMode(MODE);
 const SIM = require(path.resolve(__dirname, '../app/sim.js'))(E);
 const ADV = require(path.resolve(__dirname, '../app/advice.js'))(E, SIM);
 /** The starter alone against a boss's whole team: the share of their team it knocks out before it falls (mean of runs). */
@@ -43,8 +48,8 @@ const starters = JSON.parse(fs.readFileSync(path.join(DATA, 'starters.json'), 'u
 const VS = { safe: 3, ok: 2, risky: 1, lose: 0 };
 const NATURES = ['Adamant', 'Jolly', 'Modest', 'Timid'].map(n => D.natures.findIndex(x => x.n === n));
 const LEVEL_EVO = new Set([4, 8, 9, 10, 11, 12, 13, 20, 21, 22, 23, 31, 32]);
-const EARLY_CAP = 36;
-const FIRST_CAP = 23;
+const EARLY_CAP = D.caps[MODE][3];   // the fourth milestone's cap: 36 in Hardcore, 34 in Normal
+const FIRST_CAP = D.caps[MODE][1];   // the second: 23 in Hardcore, 22 in Normal
 
 function evolvedBy(sid, lv) {
   let s = sid;
@@ -69,7 +74,7 @@ function stages(sid) {
 
 // the fights: major bosses up to the Champion; same-name same-cap groups are variants
 const bosses = D.bosses.filter(b => !b.route);
-const champ = bosses.reduce((last, b) => (b.cat === 'rival' && b.cap === 85 ? b.i : last), -1);
+const champ = bosses.reduce((last, b) => (b.cat === 'rival' && b.mi === 16 ? b.i : last), -1);
 const groups = [];
 for (const b of bosses) {
   if (b.i > champ) break;
@@ -165,10 +170,11 @@ for (const r of results) {
   r.rank = results.indexOf(r) + 1;
 }
 const out = {
-  method: 'Each starter at every major fight\'s Hardcore level cap up to the Champion, evolved by level, with its best level-up moves and best nature, one-on-one against each boss Pokemon (rival fights use the team you would face); the first fights (caps 16 and 23) are also played out whole, the starter alone against their whole team (' + SWEEP_RUNS + ' simulated battles each, no items). Overall = 40% the first fights + 25% the rest of the early game (caps to 36) + 35% the rest of the run.',
+  method: 'Each starter at every major fight\'s level cap (' + (MODE === 'normal' ? 'Normal Mode with Minimal Grinding' : 'Hardcore Mode') + ') up to the Champion, evolved by level, with its best level-up moves and best nature, one-on-one against each boss Pokemon (rival fights use the team you would face); the first fights (caps 16 and 23) are also played out whole, the starter alone against their whole team (' + SWEEP_RUNS + ' simulated battles each, no items). Overall = 40% the first fights + 25% the rest of the early game (caps to 36) + 35% the rest of the run.',
   fights: groups.length, early: groups.filter(g => g.cap <= EARLY_CAP).length, starters: results,
 };
+out.mode = MODE;
 fs.writeFileSync(OUT, JSON.stringify(out));
-fs.writeFileSync(path.join(DATA, 'starter_tiers.json'), JSON.stringify(out, null, 1));
+fs.writeFileSync(path.join(DATA, MODE === 'normal' ? 'starter_tiers_normal.json' : 'starter_tiers.json'), JSON.stringify(out, null, 1));
 console.log(`${results.length} starters over ${groups.length} fights in ${((Date.now() - t0) / 1000).toFixed(0)}s`);
 for (const r of results) console.log(r.tier, r.rank, r.name, r.overall, 'early', r.early, 'late', r.late, r.nature, '| best', r.best.map(b => b.name).join(', '), '| worst', r.worst.map(b => b.name).join(', '));

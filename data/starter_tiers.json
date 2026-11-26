@@ -1,5 +1,5 @@
 {
- "method": "Each starter at every major fight's Hardcore level cap up to the Champion, evolved by level, with its best level-up moves and best nature, one-on-one against each boss Pokemon (rival fights use the team you would face); the first fights (caps 16 and 23) are also played out whole, the starter alone against their whole team (40 simulated battles each, no items). Overall = 40% the first fights + 25% the rest of the early game (caps to 36) + 35% the rest of the run.",
+ "method": "Each starter at every major fight's level cap (Hardcore Mode) up to the Champion, evolved by level, with its best level-up moves and best nature, one-on-one against each boss Pokemon (rival fights use the team you would face); the first fights (caps 16 and 23) are also played out whole, the starter alone against their whole team (40 simulated battles each, no items). Overall = 40% the first fights + 25% the rest of the early game (caps to 36) + 35% the rest of the run.",
  "fights": 36,
  "early": 9,
  "starters": [
@@ -10473,5 +10473,6 @@
    "tier": "D",
    "rank": 27
   }
- ]
+ ],
+ "mode": "hardcore"
 }

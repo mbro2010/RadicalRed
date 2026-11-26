@@ -91,3 +91,9 @@ test('flow: water-only areas follow where Radical Red hands out the rods', () =>
   assert(first.areas.includes('Pallet Town') && first.areas.includes('Viridian City'), 'Pallet Town fishing with the Old Rod from the start');
   assert(F.needOf('Pallet Town').includes('Old Rod: Viridian City'), F.needOf('Pallet Town'));
 });
+
+test('flow: Normal Mode chapters follow its level caps', () => {
+  const createFlow = require('../app/flow.js');
+  const F = createFlow(Object.assign({}, D, { bosses: D.bosses.map(b => Object.assign({}, b, { cap: D.caps.normal[b.mi] })) }), 'normal');
+  assert(F.chapters[0].cap === 15 && F.chapters[1].cap === 22, 'normal chapter caps: ' + F.chapters.slice(0, 3).map(c => c.cap));
+});

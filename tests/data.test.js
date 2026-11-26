@@ -50,3 +50,26 @@ test('data: the care package cheat (SO2Toxic) by checkpoint, Hardcore lists', ()
   const all = D.care.flatMap(p => p.items.map(([id]) => name(id)));
   for (const n of ['WeaknessPol.', 'Heat Rock', 'Throat Spray', 'Air Balloon', 'Protein']) assert(!all.includes(n), 'Hardcore leaves out ' + n);
 });
+
+test('data: Normal Mode with Minimal Grinding (the regular trainer table, its own caps and care package)', () => {
+  // every boss fight has its Normal Mode team and its place in the milestones
+  assert(D.bosses.every(b => Array.isArray(b.np) && b.np.length && b.mi >= 0 && b.mi <= 16), 'normal teams and milestone index');
+  assert(D.caps.normal.slice(0, 4).join() === '15,22,27,34', 'normal caps ' + D.caps.normal.slice(0, 4));
+  const brock = D.bosses.find(b => b.n === 'Brock');
+  assert(brock.party.length === 6 && brock.np.length === 4, 'Hardcore Brock has 6, Normal Brock 4');
+  assert(brock.np.map(m => E.sp(m.s).g).join() === 'Geodude,Vulpix,Onix,Archen', 'Normal Brock: ' + brock.np.map(m => E.sp(m.s).n));
+  assert(brock.np.every(m => !m.ev), 'Minimal Grinding: no EVs');
+  // Hidden Power from a spread: IVs that give the set type (Normal Brock's Vulpix has Hidden Power Grass)
+  const vulpix = brock.np.find(m => E.sp(m.s).g === 'Vulpix');
+  assert(E.hiddenPowerType(vulpix.iv) === 'Grass', 'HP Grass from the spread: ' + E.hiddenPowerType(vulpix.iv));
+  // the rival's team follows your starter in Normal Mode too (Squirtle, Bulbasaur, Charmander lines)
+  const rivals = D.bosses.filter(b => b.cat === 'rival' && b.mi === 0).slice(0, 3);
+  assert(rivals.map(b => b.nv).join() === 'Squirtle,Bulbasaur,Charmander', 'rival lines ' + rivals.map(b => b.nv));
+  // the care package: Normal with Minimal Grinding adds weather rocks and terrain seeds, never EV items
+  const name = id => D.items[id] && D.items[id].n;
+  const fuchsia = D.care.find(p => p.area === 'Fuchsia City');
+  assert(fuchsia.n.some(([id]) => name(id) === 'Damp Rock') && !fuchsia.items.some(([id]) => name(id) === 'Damp Rock'), 'Damp Rock in Normal only');
+  assert(D.care.every(p => p.n.length >= p.items.length), 'Normal lists hold Hardcore\'s');
+  const N = require('../app/starters-normal.json');
+  assert(N.starters.length === 27 && N.mode === 'normal' && N.starters.every(s => 'SABCD'.includes(s.tier)), 'Normal tier list');
+});
