@@ -3,7 +3,7 @@
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory;
   else root.createAdvice = factory;
-})(typeof self !== 'undefined' ? self : this, function createAdvice(E) {
+})(typeof self !== 'undefined' ? self : this, function createAdvice(E, SIM) {
   'use strict';
   const D = E.D;
   const VS = { safe: 3, ok: 2, risky: 1, lose: 0 };
@@ -40,8 +40,55 @@
     return [...out.values()];
   }
 
+  const clampB = v => Math.max(-6, Math.min(6, v));
+  const STATUS_IMMUNE = { par: ['Electric'], brn: ['Fire'], psn: ['Poison', 'Steel'], tox: ['Poison', 'Steel'], frz: ['Ice'] };
+  const verdictOf = r => (r <= 1e-9 ? 'safe' : r <= 0.05 ? 'ok' : r <= 0.35 ? 'risky' : 'lose');
+  /** One on one against `foe`: attack straight away, or first use one of its status or stat moves (taking one free hit
+   *  for it: sleep, paralysis, a burn, confusion, raising its own stats or lowering theirs), then attack. The plan with
+   *  the least risk: { score, verdict, risk, via (the move used first, or null) }. */
+  function duelPlan(spec, foe, mv, opts) {
+    const me = Object.assign({}, spec, { mv });
+    const base = E.matchup(me, foe, opts);
+    const best = { score: VS[base.verdict] - base.risk, verdict: base.verdict, risk: base.risk, via: null };
+    if (!SIM || !SIM.statusEffect) return best;
+    const t = base.threat, hp = E.maxHP(me);
+    const hitPct = t ? 100 * (t.min + t.max) / 2 / hp : 0;
+    const pFaint = !t ? 0 : t.min >= hp ? 1 : t.max >= hp ? (t.max - hp + 1) / Math.max(1, t.max - t.min + 1) : 0;
+    const foeTypes = (E.sp(foe.s) || {}).t || [];
+    for (const id of mv) {
+      const fx = SIM.statusEffect(id), m = E.mv(id);
+      if (!fx || fx.heal) continue;
+      if (fx.status && (foe.status || (STATUS_IMMUNE[fx.status] || []).some(x => foeTypes.includes(x)) || E.typeEff(m.t, foeTypes) === 0)) continue;
+      if (fx.status === 'slp' && ['Insomnia', 'Vital Spirit', 'Sweet Veil', 'Comatose'].includes(foe.ab)) continue;
+      const me2 = Object.assign({}, me, { hpPct: Math.max(1, 100 - hitPct), boosts: Object.assign({}, me.boosts), entry: false });
+      const foe2 = Object.assign({}, foe, { boosts: Object.assign({}, foe.boosts), entry: false });
+      if (fx.self) for (const [k, v] of Object.entries(fx.self)) me2.boosts[k] = clampB((me2.boosts[k] || 0) + v);
+      if (fx.foe && !['Clear Body', 'White Smoke', 'Full Metal Body'].includes(foe.ab)) for (const [k, v] of Object.entries(fx.foe)) foe2.boosts[k] = clampB((foe2.boosts[k] || 0) + v);
+      if (fx.status) foe2.status = fx.status;
+      const mu = E.matchup(me2, foe2, Object.assign({}, opts, { entry: false }));
+      if (!mu.best || !isFinite(mu.toKOthem)) continue;   // still no way to knock it out: nothing gained
+      let r = pFaint + (1 - pFaint) * SIM.statusRisk(mu, fx.status || (fx.conf ? 'conf' : ''));
+      r = r * fx.acc + (1 - fx.acc) * Math.min(1, pFaint * 2 + base.risk);   // a miss is a hit taken for nothing
+      const verdict = verdictOf(r);
+      const score = VS[verdict] - r;
+      if (score > best.score + 0.05) Object.assign(best, { score, verdict, risk: r, via: id });
+    }
+    return best;
+  }
+  /** A whole moveset against a boss team: each of their Pokemon handled the best way it can (see duelPlan). */
+  function setValue(spec, team, mv) {
+    let v = 0;
+    const per = [];
+    for (const foe of team) {
+      const P = duelPlan(spec, foe, mv);
+      v += P.score;
+      per.push(P);
+    }
+    return { v, per };
+  }
+
   /** Greedy four-move pick that covers a boss team best (guaranteed damage × accuracy). */
-  function bestSet(spec, team, pool) {
+  function bestSet(spec, team, pool, withStatus) {
     const scored = pool.filter(x => E.mv(x.id).k !== 'X').map(x => ({ ...x,
       per: team.map(t => { const d = E.damage(Object.assign({}, spec, { mv: [x.id] }), t, x.id); return d ? Math.min(100, d.minPct) * (d.acc ? d.acc / 100 : 1) : 0; }) }));
     const picked = [], bestPer = team.map(() => 0);
@@ -67,7 +114,26 @@
       const m = E.mv(x.id);
       if (m && m.k === 'X' && USEFUL.has(m.e) && !picked.some(p => p.id === x.id)) picked.push(Object.assign({ status: true }, x));
     }
-    return picked;
+    if (!withStatus || !SIM) return picked;
+    // then: would a status or stat move (setting up, Thunder Wave, Growl, Sleep Powder…) handle their team better than
+    // one of these? Each swap is played out against every one of their Pokemon; up to two such moves.
+    const cands = pool.filter(x => SIM.statusEffect(x.id) && !(SIM.statusEffect(x.id) || {}).heal && !picked.some(p => p.id === x.id));
+    let cur = picked.slice(), curV = setValue(spec, team, cur.map(x => x.id)).v;
+    for (let round = 0; round < 2 && cands.length; round++) {
+      let bestSwap = null;
+      for (const c of cands) {
+        if (cur.some(p => p.id === c.id)) continue;
+        const tries = cur.length < 4 ? [cur.concat(Object.assign({ status: true }, c))] : cur.map((p, k) => cur.slice(0, k).concat(Object.assign({ status: true }, c), cur.slice(k + 1)));
+        for (const set of tries) {
+          if (!set.some(x => E.mv(x.id).k !== 'X')) continue;   // it still needs a way to do damage
+          const v = setValue(spec, team, set.map(x => x.id)).v;
+          if (v > curV + 0.3 && (!bestSwap || v > bestSwap.v)) bestSwap = { set, v };
+        }
+      }
+      if (!bestSwap) break;
+      cur = bestSwap.set; curV = bestSwap.v;
+    }
+    return cur;
   }
 
   /** How well this Pokemon (at the boss's cap, with its best moves) handles a boss team. */
@@ -148,7 +214,7 @@
       const at = Object.assign({}, spec, { lv: Math.min(lv, b.cap) });
       const team = E.bossTeam(bi, b.cap);
       const pool = available(at, at.lv, ownedTMs);
-      const set = bestSet(at, team, pool);
+      const set = bestSet(at, team, pool, true);
       const ids = set.map(x => x.id);
       const add = set.filter(x => !prev.includes(x.id));
       // only replace as many old moves as there are new ones (a moveset holds four)
@@ -166,9 +232,9 @@
   }
 
   /** A move offered at level-up: is it worth a slot, and which move should go? Each way of fitting it in is played
-   *  against the next big fights' teams at their level cap: matchups first (safe/ok/risky/lose), then how much damage
-   *  the four moves do to each of their Pokemon; status moves that do something useful (sleep, paralysis, healing,
-   *  Leech Seed and the like) count for a little. */
+   *  against the next big fights' teams at their level cap: for each of their Pokemon the best way to handle it (attack,
+   *  or set up, paralyze, put to sleep, lower its stats first: see duelPlan), then how much damage the four moves do.
+   *  So a status or stat move wins a slot when it turns a fight around, not only a stronger attack. */
   function learnAdvice(spec, newId, fromBoss, count) {
     const known = (spec.mv || []).filter(id => E.mv(id));
     const nm = E.mv(newId);
@@ -176,33 +242,44 @@
     if (known.includes(newId)) return { learn: false, forget: null, reason: 'It already knows it.' };
     if (known.length < 4) return { learn: true, forget: null, reason: 'It has a free move slot.' };
     const bosses = upcomingMajor(fromBoss, count || 2);
-    const USEFUL = new Set([1, 33, 66, 67, 167, 187, 84, 32, 132, 37, 158, 156]);
     const teams = bosses.map(bi => ({ bi, cap: D.bosses[bi].cap, team: E.bossTeam(bi, D.bosses[bi].cap) }));
     const value = mv => {
       let v = 0;
-      for (const { cap, team } of teams) {
+      const per = [];
+      for (const { bi, cap, team } of teams) {
         const s = Object.assign({}, spec, { mv, lv: Math.max(spec.lv, cap) });
         for (const foe of team) {
-          const m = E.matchup(s, foe);
-          v += 10 * (VS[m.verdict] - m.risk);
+          const P = duelPlan(s, foe, mv);
+          v += 10 * P.score;
+          per.push(Object.assign({ bi, foe: E.sp(foe.s).n }, P));
           let best = 0;
           for (const id of mv) { const mm = E.mv(id); if (!mm || mm.k === 'X') continue; const d = E.damage(Object.assign({}, s, { mv: [id] }), foe, id); if (d) best = Math.max(best, Math.min(100, d.minPct) * (d.acc ? d.acc / 100 : 1)); }
           v += best / 25;
         }
       }
-      for (const id of mv) { const mm = E.mv(id); if (mm && mm.k === 'X') v += USEFUL.has(mm.e) ? 3 : -0.2; }   // a status move that does nothing here goes first
-      return v;
+      // a status move that does nothing against these fights is dead weight
+      for (const id of mv) { const mm = E.mv(id); if (mm && mm.k === 'X' && !per.some(p => p.via === id)) v -= 0.2; }
+      return { v, per };
     };
     const now = value(known);
-    const options = known.map(id => ({ forget: id, v: value(known.filter(x => x !== id).concat(newId)) })).sort((a, b) => b.v - a.v);
+    const options = known.map(id => Object.assign({ forget: id }, value(known.filter(x => x !== id).concat(newId)))).sort((a, b) => b.v - a.v);
     const best = options[0];
     const names = teams.map(t => D.bosses[t.bi].n).join(' and ');
-    if (best && best.v > now + 0.5) {
-      return { learn: true, forget: best.forget, gain: best.v - now,
-        reason: `${nm.f} does more against ${names} than ${E.mv(best.forget).f} does.` };
+    if (best && best.v > now.v + 0.5) {
+      // what changes: their Pokemon it now handles better, and whether the new move is how
+      // what changes: their Pokemon it now handles better (a better verdict, or the same with less risk), and how
+      const pct = r => (r <= 1e-9 ? '0%' : r < 0.01 ? '<1%' : Math.round(100 * r) + '%');
+      const diffs = best.per.map((p, k) => ({ p, q: now.per[k], d: (VS[p.verdict] - p.risk) - (VS[now.per[k].verdict] - now.per[k].risk) })).filter(x => x.d > 0.02).sort((a, b) => b.d - a.d);
+      const say = x => `${D.bosses[x.p.bi].n}'s ${x.p.foe} (${x.q.verdict === x.p.verdict ? `${pct(x.q.risk)} → ${pct(x.p.risk)} risk` : `${x.q.verdict} → ${x.p.verdict}`})`;
+      const viaNew = diffs.filter(x => x.p.via === newId);
+      const reason = nm.k === 'X' && viaNew.length
+        ? `Using ${nm.f} first makes ${viaNew.length === 1 ? 'a matchup' : viaNew.length + ' matchups'} safer: ${viaNew.slice(0, 3).map(say).join(', ')}. ${E.mv(best.forget).f} matters least.`
+        : diffs.length ? `With ${nm.f} instead of ${E.mv(best.forget).f}: ${diffs.slice(0, 3).map(say).join(', ')}.`
+        : `${nm.f} does more against ${names} than ${E.mv(best.forget).f} does.`;
+      return { learn: true, forget: best.forget, gain: best.v - now.v, reason };
     }
-    return { learn: false, forget: null, gain: best ? best.v - now : 0, reason: `What it knows already does as well against ${names}.` };
+    return { learn: false, forget: null, gain: best ? best.v - now.v : 0, reason: `What it knows already does as well against ${names}.` };
   }
 
-  return { natureAdvice, movePlan, learnAdvice, available, bestSet, upcomingMajor, fightScore, setOptions };
+  return { natureAdvice, movePlan, learnAdvice, available, bestSet, upcomingMajor, fightScore, setOptions, duelPlan, setValue };
 });

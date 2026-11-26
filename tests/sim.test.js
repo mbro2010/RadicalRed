@@ -1,4 +1,4 @@
-const { SIM, E, test, assert, mon, bossSpecs, mid, D } = require("./lib");
+const { SIM, E, test, assert, mon, bossSpecs, mid, sid, D } = require("./lib");
 test('sim: a full expected battle ends', () => {
   const st = SIM.runBattle([mon('Squirtle', 16), mon('Pidgey', 15), mon('Mankey', 16)], bossSpecs(414, 16), { expected: true, record: true });
   assert(st.over && ['p', 'a'].includes(st.winner), 'battle finished: ' + st.winner);
@@ -55,4 +55,22 @@ test('sim: sampled battles have real luck, replay the same from a seed, and can 
   assert(bad.script && (bad.script.winner !== 'p' || bad.script.faints.length), 'found one that goes wrong');
   const p = a.script.turns[0].lines[0].snap.p[0];
   assert(Array.isArray(p.mv) && p.mv.length, 'snapshots carry the moves for the move menu');
+});
+
+test('sim: the planner sets up when it makes the fight safer, and attacks when setting up gains nothing', () => {
+  const falkner = D.bosses.findIndex(b => b.n === 'Falkner');
+  const mk = (n, lv, mv) => ({ key: n, s: sid(n), lv, nat: 0, ab: E.sp(sid(n)).a[0], it: null, mv: mv.map(mid) });
+  const top = (mine, foeName) => {
+    const foe = E.bossTeam(falkner, 16).find(t => E.sp(t.s).n === foeName);
+    const st = SIM.newBattle([mine], [Object.assign({ key: 'b', label: foeName }, foe)], { lead: 0, record: false });
+    st.policies = { p: SIM.plannerPolicy(), a: SIM.bossPolicy() };
+    SIM.begin(st, SIM.expectedDice());
+    return st.policies.p.evaluate(st, 'p');
+  };
+  // Shell Smash lets Shellder move first and knock Yanma out; attacking straight away loses
+  const a = top(mk('Shellder', 16, ['Shell Smash', 'Ice Shard', 'Water Gun', 'Icicle Spear']), 'Yanma');
+  assert(a[0].label === 'Use Shell Smash' && a[0].risk < 0.05, 'Shell Smash first: ' + a.slice(0, 2).map(x => x.label + ' ' + x.risk.toFixed(2)).join(', '));
+  // Growth does nothing for a Bulbasaur that loses to Wattrel either way: no setting up in a lost fight
+  const b = top(mk('Bulbasaur', 16, ['Vine Whip', 'Growth', 'Tackle', 'Razor Leaf']), 'Wattrel');
+  assert(b[0].label !== 'Use Growth', 'no Growth in a lost fight: ' + b.slice(0, 2).map(x => x.label + ' ' + x.risk.toFixed(2)).join(', '));
 });

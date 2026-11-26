@@ -15,7 +15,7 @@
   function newRun(no, keep) {
     keep = keep || {};
     return { beaten: [], tms: [], enc: {}, dupes: keep.dupes !== false, checks: [], tutors: !!keep.tutors, no, started: null, starter: null,
-      aiChecks: keep.aiChecks || null, bag: [], skipped: [], passed: [], variants: {}, postgame: false, care: !!keep.care };
+      aiChecks: keep.aiChecks || null, bag: [], skipped: [], passed: [], variants: {}, postgame: false, care: !!keep.care, tr: {}, at: null };
   }
   let SPR = null;   // sprite index (sprites/index.json); without it the page simply shows no sprites
   const S = {
@@ -109,7 +109,8 @@
       enc: run.enc && typeof run.enc === 'object' ? Object.assign({}, run.enc) : {}, dupes: run.dupes !== false, checks: Array.isArray(run.checks) ? run.checks.slice(-50) : [], tutors: !!run.tutors,
       no: run.no || (histLen + 1), started: run.started || null, starter: run.starter || null, aiChecks: run.aiChecks || null, bag: Array.isArray(run.bag) ? run.bag.slice() : [],
       skipped: Array.isArray(run.skipped) ? run.skipped.slice() : [], passed: Array.isArray(run.passed) ? run.passed.slice() : [],
-      variants: run.variants && typeof run.variants === 'object' ? Object.assign({}, run.variants) : {}, postgame: !!run.postgame, care: run.care != null ? !!run.care : run.anyItems !== false };
+      variants: run.variants && typeof run.variants === 'object' ? Object.assign({}, run.variants) : {}, postgame: !!run.postgame, care: run.care != null ? !!run.care : run.anyItems !== false,
+      tr: run.tr && typeof run.tr === 'object' ? Object.assign({}, run.tr) : {}, at: run.at || null };
   }
   const store = {
     mode: 'loading', ready: false, col: null, unsub: null, timer: null, note: '',
@@ -142,7 +143,7 @@
             const d = ch.doc;
             if (d.metadata && d.metadata.hasPendingWrites) continue;
             const body = ch.type === 'removed' ? null : d.data();
-            if (this.mine.has(d.id) && this.mine.get(d.id) === (body == null ? null : canon(body))) continue;
+            if (this.mine.has(d.id) && this.mine.get(d.id).includes(body == null ? null : canon(body))) continue;   // one of its own recent saves, even an older one arriving late
             if (this.applyDoc(d.id, body)) changed = true;
           }
           if (changed) render();
@@ -190,8 +191,9 @@
       return false;
     },
     /** Write one document, remembering what was written so its echo isn't mistaken for a change from elsewhere. */
-    async put(id, body) { this.mine.set(id, canon(body)); await this.col.doc(id).set(body); },
-    async drop(id) { this.mine.set(id, null); await this.col.doc(id).delete(); },
+    remember(id, v) { const a = (this.mine.get(id) || []).concat([v]).slice(-12); this.mine.set(id, a); },
+    async put(id, body) { this.remember(id, canon(body)); await this.col.doc(id).set(body); },
+    async drop(id) { this.remember(id, null); await this.col.doc(id).delete(); },
     saveLocal() { try { localStorage.setItem(LS_KEY, JSON.stringify({ roster: S.roster, run: S.run, history: S.history })); } catch (e) { this.note = 'This browser blocked saving.'; } },
     async saveHist(h) {
       if (this.mode === 'db') { try { const body = plain(Object.assign({}, h, { id: undefined })); await this.put('hist-' + h.id, body); } catch (e) { flash('Couldn’t save the run to your history (' + e.code + ').'); } }
@@ -218,7 +220,7 @@
       if (!S.run.started && S.roster.length) S.run.started = Math.min(...S.roster.map(m => m.ord || Date.now()));
       if (this.mode === 'db') { try { await this.put('run', plain({ beaten: S.run.beaten, tms: S.run.tms || [], enc: S.run.enc || {}, dupes: S.run.dupes !== false, checks: (S.run.checks || []).slice(-50), tutors: !!S.run.tutors, aiChecks: S.run.aiChecks || null, bag: S.run.bag || [],
         no: S.run.no || 1, started: S.run.started || null, starter: S.run.starter || null,
-        skipped: S.run.skipped || [], passed: S.run.passed || [], variants: S.run.variants || {}, postgame: !!S.run.postgame, care: !!S.run.care })); } catch (e) { flash('Couldn’t save progress (' + e.code + ').'); } }
+        skipped: S.run.skipped || [], passed: S.run.passed || [], variants: S.run.variants || {}, postgame: !!S.run.postgame, care: !!S.run.care, tr: S.run.tr || {}, at: S.run.at || null })); } catch (e) { flash('Couldn’t save progress (' + e.code + ').'); } }
       else this.saveLocal();
     },
   };
@@ -1705,7 +1707,7 @@
       html += `<div class="card rec"><h3>${won ? 'You won!' : 'The battle is over.'}</h3>
         <p class="small" style="margin:0">The boss AI did what the Coach predicted ${ok} of ${n} time${n === 1 ? '' : 's'}.</p>
         ${fallen.length ? `<p class="small" style="margin:0">Fainted: ${fallen.map(m => esc(m.name)).join(', ')}.</p>` : ''}
-        <div class="row">${S.screen === 'run' && !b.route ? `<button class="btn primary" id="lv-log">${won ? `Log the win${fallen.length ? ` and ${fallen.length} fainted` : ''}` : 'Log the loss'}</button>` : `${won && !S.run.beaten.includes(L.bi) && !b.route ? `<button class="btn primary" id="lv-beaten">Mark ${esc(b.n)} as beaten</button>` : ''}
+        <div class="row">${S.screen === 'run' ? `<button class="btn primary" id="lv-log">${won ? `Log the win${fallen.length ? ` and ${fallen.length} fainted` : ''}` : 'Log the loss'}</button>` : `${won && !S.run.beaten.includes(L.bi) && !b.route ? `<button class="btn primary" id="lv-beaten">Mark ${esc(b.n)} as beaten</button>` : ''}
           ${fallen.length && !S.example ? `<button class="btn" id="lv-dead">Mark ${fallen.length} fainted Pokémon as dead</button>` : ''}`}
           <button class="btn ghost" id="lv-close">Close</button></div></div>`;
     } else if (L.step === 'choose') {
@@ -2376,9 +2378,10 @@
     if (L.step === 'choose' && !st.over) { lvActsInit(L); renderReport(); }
     const logb = $('#lv-log');
     if (logb) logb.onclick = () => {
-      const g = FLOW.groupOf(L.bi);
-      if (st.winner === 'p') { S.resultForm = { g: g ? g.first : L.bi, fainted: st.p.team.filter(m => m.fainted).map(m => m.key) }; render(); const r = $('#result'); if (r) r.scrollIntoView({ block: 'start' }); }
-      else openEndRun('wipe', D.bosses[L.bi]);
+      const b = D.bosses[L.bi], g = FLOW.groupOf(L.bi);
+      const key = b.route ? 'tr:' + b.id : g ? g.first : L.bi;
+      if (st.winner === 'p') { S.resultForm = { g: key, fainted: st.p.team.filter(m => m.fainted).map(m => m.key) }; setFightTab(key, 'result'); render(); keepInView($('#result')); }
+      else openEndRun('wipe', b);
     };
   }
   function stepper(side, stat, val) {
@@ -2570,14 +2573,18 @@
   }
   function areaHasTime(a) { return a.parts.some(p => Object.values(p.k).some(t => t.day || t.night)); }
   function routeTrainers(a) { return D.bosses.filter(b => b.route && (b.areas || []).includes(a.n)); }
-  function areaCard(a, need) {
+  /** The highest fixed level in a trainer's team (null when every level follows yours). */
+  function trainerTopLv(b) { const lv = b.party.filter(m => m.lv != null).map(m => m.lv); return lv.length ? Math.max(...lv) : null; }
+  /** Trainers here you'd fight at this level cap: the rest (a gym you come back to, the sea routes) wait for later. */
+  function trainersNow(a, cap) { return routeTrainers(a).filter(b => { const t = trainerTopLv(b); return t == null || t <= cap + 4; }); }
+  function areaCard(a, need, pin) {
     const e = (S.run.enc || {})[a.n];
     const owned = ownedFamilies();
     let status = a.fo || !areaSpecies(a).length ? '' : '<span class="tag">not yet</span>';
     if (e && e.r === 'caught') status = `${icon(e.s)}<span class="verdict v-safe">${esc(E.sp(e.s) ? E.sp(e.s).n : 'caught')}</span>`;
     else if (e && e.r === 'failed') status = `${e.s ? icon(e.s) : ''}<span class="verdict v-lose">missed${e.s && E.sp(e.s) ? ': ' + esc(E.sp(e.s).n) : ''}</span>`;
     else if (e && e.r === 'skipped') status = '<span class="verdict v-ok">skipped</span>';
-    const open = S.openArea === a.n;
+    const open = !!pin || S.openArea === a.n;
     let body = '';
     if (open) {
       a.parts.forEach((part, k) => {
@@ -2619,7 +2626,7 @@
         <div id="best-${encodeURIComponent(a.n)}"></div>`;
     }
     const advise = !e && !a.fo && areaSpecies(a).length && (S.screen === 'run' || open);
-    return `<details class="card area ${e ? 'done' : ''}" data-area="${esc(a.n)}" ${open ? 'open' : ''}><summary><span class="nm">${esc(a.n)}</span><span class="st">${status}</span>
+    return `<details class="card area ${e ? 'done' : ''}" data-area="${esc(a.n)}" ${pin ? 'data-pin="1"' : ''} ${open ? 'open' : ''}><summary><span class="nm">${esc(a.n)}</span><span class="st">${status}</span>
       <span class="note">${a.fo || !areaSpecies(a).length ? 'no wild Pokémon · gifts and items' : `${areaSpecies(a).length} species`}${routeTrainers(a).length ? ' · ' + routeTrainers(a).length + (routeTrainers(a).length === 1 ? ' trainer' : ' trainers') : ''}${need ? ' · ' + esc(need) : ''}</span>
       ${advise ? catchLineHTML(a) : ''}</summary><div class="body">${body}</div></details>`;
   }
@@ -2648,6 +2655,7 @@
   function wireRoutes() {
     fillCatch();
     main.querySelectorAll('details.area').forEach(d => d.addEventListener('toggle', () => {
+      if (d.dataset.pin) return;   // an area's own page keeps it open
       if (d.open && S.openArea !== d.dataset.area) { S.openArea = d.dataset.area; render(); const el = main.querySelector(`details.area[data-area="${CSS.escape(S.openArea)}"]`); if (el) el.scrollIntoView({ block: 'nearest' }); }
       else if (!d.open && S.openArea === d.dataset.area) S.openArea = null;
     }));
@@ -2802,8 +2810,14 @@
       if (Math.abs(d - n) > Math.max(0.3, 0.1 * Math.max(d, n))) time = d > n ? 'day' : 'night';
     }
     const pick = bestNow ? (time === 'any' ? bestNow : now.find(o => o.time === time) || bestNow) : null;
-    const wait = bestLater && (!pick || bestLater.expect > pick.expect * 1.3 + 0.4) ? bestLater : null;
-    return { opts, pick, wait, time, timed: times.length > 1 };
+    // Waiting means fighting the next bosses without this Pokémon. With a small team a body now is worth a lot, and the
+    // further away the rod or Surf is, the better the later catch has to be. Only a much better one, with a team of 4+.
+    const n = alive().length;
+    const body = n <= 2 ? 3 : n <= 3 ? 2 : n <= 5 ? 1 : 0.4;
+    const chOf = k => ((FLOW.steps[Math.min(k, FLOW.steps.length - 1)] || {}).ch || 0);
+    const far = bestLater ? Math.max(0, chOf(bestLater.open.at) - chOf(P.current)) : 0;
+    const wait = bestLater && (!pick || (n >= 4 && bestLater.expect > (pick.expect + body) * 1.5 + 0.5 * far)) ? bestLater : null;
+    return { opts, pick, wait, time, timed: times.length > 1, body, far };
   }
   const TIME_TEXT = { day: 'Go by day (4 AM–5 PM on your phone’s clock)', night: 'Go at night (5 PM–4 AM on your phone’s clock)', any: 'Any time of day' };
   /** The verdict for a route, in one or two sentences. */
@@ -2815,9 +2829,11 @@
     }
     if (!C.pick) return 'Nothing to meet here yet.';
     const h = hope(C.pick);
+    const better = C.opts.filter(o => !o.open.now).sort((x, y) => y.expect - x.expect)[0];
+    const small = better && better.expect > C.pick.expect * 1.3 + 0.4 && alive().length < 4 ? ` Better ones come ${better.label === 'Surfing' ? 'with Surf' : `with the ${esc(better.label)}`}, but your team is small: take one now.` : '';
     const how = C.pick.label === 'Grass / cave' ? '' : C.pick.label === 'Surfing' ? ' by surfing' : ` with the ${esc(C.pick.label)}`;
-    if (!h.length) return `<b>${TIME_TEXT[C.time]}: catch now${how}.</b> Nothing here covers a gap in your team, but a backup is better than nothing.`;
-    return `<b>${TIME_TEXT[C.time]}: catch now${how}.</b> Hoping for ${esc(h.join(' or '))}.`;
+    if (!h.length) return `<b>${TIME_TEXT[C.time]}: catch now${how}.</b> Nothing here covers a gap in your team, but a backup is better than nothing.${small}`;
+    return `<b>${TIME_TEXT[C.time]}: catch now${how}.</b> Hoping for ${esc(h.join(' or '))}.${small}`;
   }
   const CATCH = new Map();
   function catchKey(a) { return a.n + '|' + JSON.stringify([alive().map(m => [m.s, m.lv, m.mv]), S.run.beaten, Object.keys(S.run.enc || {}), (S.run.tms || []).length, S.run.dupes !== false]); }
@@ -2885,20 +2901,199 @@
   }
 
   let entering = false;
+  // ---------------- the run, one screen at a time ----------------
+  // Each step of the path becomes pages: the start, your starter, then each new area (and its trainers) on a page of
+  // its own, then the fight (get ready, plan, battle, result). Back and Next walk them; your place is saved with the run.
+  function runPages(P) {
+    const pages = [];
+    const cur = P.current < P.steps.length ? P.steps[P.current] : null;
+    const curCh = cur ? cur.step.ch : -1;
+    P.steps.forEach((st, k) => {
+      const s = st.step;
+      if ((k > P.current && s.ch !== curCh) || (s.post && !S.run.postgame && s.kind !== 'champion')) return;
+      const base = { k, st, ch: s.ch };
+      if (s.kind === 'areas') {
+        for (const n of s.areas) {
+          const a = D.areas.find(x => x.n === n); if (!a) continue;
+          pages.push(Object.assign({ id: 'area:' + n, kind: 'area', area: a, label: n }, base));
+          const cap = (FLOW.chapters[s.ch] || {}).cap || capNow();
+          if (trainersNow(a, cap).length) pages.push(Object.assign({ id: 'trainers:' + n, kind: 'trainers', area: a, cap, label: 'Trainers: ' + n }, base));
+        }
+      } else if (s.kind === 'fight') pages.push(Object.assign({ id: s.id, kind: 'fight', label: D.bosses[fightOf(s.g)].n }, base));
+      else pages.push(Object.assign({ id: s.id, kind: s.kind, label: s.kind === 'start' ? 'Start' : s.kind === 'starter' ? 'Starter' : 'Champion' }, base));
+    });
+    return { pages, cur };
+  }
+  const trainerState = b => ((S.run.tr || {})[b.id] || '');
+  function pageDone(pg) {
+    if (pg.kind === 'area') return !FLOW.isWild(pg.area.n) || !!(S.run.enc || {})[pg.area.n];
+    if (pg.kind === 'trainers') return trainersNow(pg.area, pg.cap).every(b => trainerState(b));
+    return pg.st.done || pg.st.passed;
+  }
+  /** Where you are: your saved place in the step you're on, else its first page still to do. */
+  function herePage(pages, P) {
+    const inStep = pages.filter(pg => pg.k === P.current);
+    const at = inStep.find(pg => pg.id === S.run.at);
+    if (at) return pages.indexOf(at);
+    const todo = inStep.find(pg => !pageDone(pg)) || inStep[0];
+    return todo ? pages.indexOf(todo) : pages.length - 1;
+  }
   function renderRun() {
     if (!store.ready && !S.example) { main.innerHTML = '<div class="empty">Loading your run…</div>'; return; }
     const P = runProgress();
-    entering = lastNow !== P.current;
+    const R = runPages(P), pages = R.pages;
+    const here = herePage(pages, P);
+    let vi = S.view ? pages.findIndex(pg => pg.id === S.view) : -1;
+    if (vi < 0 || vi >= here) { vi = here; S.view = null; }
+    const pg = pages[vi];
+    entering = lastNow !== (pg && pg.id);
     const wiped = !S.example && S.roster.length > 0 && !alive().length;
     let html = '';
     if (S.example) html += `<div class="banner" style="display:grid;gap:8px"><span>This is the example team: nothing is saved and it isn't part of a run.</span><div><button class="btn small" id="ex-clear">Clear the example</button></div></div>`;
     html += runHeadHTML();
     if (wiped) html += wipeHTML();
-    html += pathHTML(P, wiped);
+    if (pg) {
+      html += pagerHTML(pages, vi, here, P);
+      html += `<section class="runpage${entering ? ' enter' : ''}" id="now" data-page="${esc(pg.id)}">${pageBodyHTML(pg, P)}</section>`;
+      html += pageNavHTML(pages, vi, here, P);
+    }
+    html += `<details class="more overview" id="overview" ${S.overviewOpen ? 'open' : ''}><summary>The whole run, step by step</summary>${pathHTML(P, wiped, true)}</details>`;
     main.innerHTML = html;
     wireRun();
-    if (lastNow != null && lastNow !== P.current) setTimeout(scrollToNow, 60);
-    lastNow = P.current;
+    wirePages(pages, vi, here, P);
+    if (lastNow != null && pg && lastNow !== pg.id) setTimeout(() => keepInView($('#pager')), 60);
+    lastNow = pg ? pg.id : null;
+  }
+  /** Chapter, where this page sits in it (a dot per page), and its name. */
+  function pagerHTML(pages, vi, here, P) {
+    const pg = pages[vi];
+    const c = FLOW.chapters[pg.ch];
+    const inCh = pages.filter(x => x.ch === pg.ch);
+    const dots = inCh.map(x => {
+      const i = pages.indexOf(x);
+      const cls = i === vi ? 'on' : i === here ? 'here' : pageDone(x) || i < here ? 'done' : '';
+      return `<button class="pdot ${cls}" data-goto="${esc(x.id)}" aria-label="${esc(x.label)}" ${i > here ? 'disabled' : ''}></button>`;
+    }).join('');
+    const n = inCh.indexOf(pg) + 1;
+    return `<div class="pager" id="pager"><div class="row"><span class="ch-cap">Cap ${c ? c.cap : capNow()}</span><span class="grow small muted">${c ? esc(FLOW.chapterTitle(c)) : ''}</span><span class="small muted">${n} of ${inCh.length}</span></div>
+      <div class="pdots">${dots}</div>${vi < here ? `<div class="row small"><span class="grow muted">Looking back: you're at <b>${esc(pages[here].label)}</b>.</span><button class="btn small" data-goto="${esc(pages[here].id)}">Back to where you are</button></div>` : ''}</div>`;
+  }
+  function pageBodyHTML(pg, P) {
+    if (pg.kind === 'start') return startHTML();
+    if (pg.kind === 'starter') return starterHTML();
+    if (pg.kind === 'champion') return championHTML();
+    if (pg.kind === 'area') return areaPageHTML(pg, P);
+    if (pg.kind === 'trainers') return S.trainerBi != null && D.bosses[S.trainerBi] && (D.bosses[S.trainerBi].areas || []).includes(pg.area.n) ? trainerFightHTML(S.trainerBi, pg.area) : trainersPageHTML(pg);
+    if (pg.st.done || pg.st.passed) return `<div class="card"><h2>${esc(pg.label)}</h2>${reviewHTML(pg.st)}</div>`;
+    return fightHTML(pg.st, P);
+  }
+  /** Back and Next: Next on the page you're at moves you on (an area left without an encounter stays open for later). */
+  function pageNavHTML(pages, vi, here, P) {
+    const pg = pages[vi];
+    const back = vi > 0 ? `<button class="btn" data-pnav="back" aria-label="Back to ${esc(pages[vi - 1].label)}">← Back</button>` : '<span></span>';
+    // a fight moves on when you log it; the start and the starter when you've done them
+    if (vi === here && (pg.kind === 'fight' || pg.kind === 'start' || pg.kind === 'starter' || pg.kind === 'champion')) return vi > 0 ? `<div class="pnav">${back}</div>` : '';
+    if (S.trainerBi != null && pg.kind === 'trainers') return '';
+    const next = pages[vi + 1];
+    const nextLabel = vi < here ? (next ? next.label : '') : next ? next.label : (() => { const nf = P.steps.slice(P.current + 1).find(x => x.step.kind === 'fight'); return nf ? D.bosses[fightOf(nf.step.g)].n : 'the next step'; })();
+    const why = vi === here && pg.kind === 'area' && FLOW.isWild(pg.area.n) && !(S.run.enc || {})[pg.area.n] ? '<span class="note">No encounter logged here: it stays open for later.</span>' : '';
+    return `<div class="pnav">${back}<button class="btn primary" data-pnav="next">Next: ${esc(nextLabel)} →</button></div>${why}`;
+  }
+  function wirePages(pages, vi, here, P) {
+    const pg = pages[vi];
+    const go2 = id => { const i = pages.findIndex(x => x.id === id); if (i < 0) return; S.trainerBi = null; if (i >= here) { S.view = null; if (pages[i].k === P.current) S.run.at = id; } else S.view = id; render(); keepInView($('#pager')); };
+    main.querySelectorAll('[data-goto]').forEach(b => b.onclick = () => go2(b.dataset.goto));
+    main.querySelectorAll('[data-pnav]').forEach(b => b.onclick = () => {
+      if (b.dataset.pnav === 'back') { if (vi > 0) go2(pages[vi - 1].id); return; }
+      if (vi < here) { go2(pages[vi + 1].id); return; }
+      // moving on from where you are
+      const next = pages[vi + 1];
+      if (next && next.k === pg.k) { S.run.at = next.id; S.view = null; S.trainerBi = null; render(); keepInView($('#pager')); store.saveRun(); return; }
+      if (pg.st.step.kind === 'areas') S.run.passed = [...new Set((S.run.passed || []).concat(pg.st.step.id))];
+      S.run.at = null; S.view = null; S.trainerBi = null; S.extraArea = null; S.openArea = null;
+      render(); keepInView($('#pager')); store.saveRun();
+    });
+    const ov = $('#overview'); if (ov) ov.addEventListener('toggle', () => { S.overviewOpen = ov.open; });
+  }
+  function areaPageHTML(pg, P) {
+    const a = pg.area, s = pg.st.step;
+    const wild = FLOW.isWild(a.n);
+    const older = FLOW.stillOpen(S.run, s.k).filter(n => !s.areas.includes(n));
+    const card = (n, pin) => areaCard(D.areas.find(x => x.n === n), FLOW.needOf(n), pin);
+    const first = s.areas.find(n => FLOW.isWild(n)) === a.n;
+    let h = `<p class="small muted" style="margin:0">${wild ? 'Only your first encounter here counts: tap <b>Caught</b> on what you got, or <b>✕</b> if it fainted or fled. Not here yet, or waiting for a rod or Surf? Tap Next: it stays open for later.' : 'No wild Pokémon here: just items, gifts and one-time encounters.'}</p>`;
+    h += card(a.n, true);
+    if (wild && !s.post) h += `<details class="more small"><summary>What your team still needs</summary>${gapsHTML()}</details>`;
+    if (older.length && first) h += `<details class="more" id="older" ${S.olderOpen ? 'open' : ''}><summary>Still open from earlier (${older.length})</summary><div class="section" style="margin-top:8px">${older.map(n => card(n)).join('')}</div></details>`;
+    if (first) h += otherAreaHTML(s, older);
+    return h;
+  }
+  function trainersPageHTML(pg) {
+    const a = pg.area, list = trainersNow(a, pg.cap);
+    const later = routeTrainers(a).filter(b => !list.includes(b));
+    const done = list.filter(b => trainerState(b)).length;
+    return `<div class="card rec"><div class="lbl">Trainers</div><h2>Trainers on ${esc(a.n)}</h2>
+        <p class="small" style="margin:0">Plan each one you have to fight and play it turn by turn, like a boss. Walked around one? Mark it skipped. ${done ? `${done} of ${list.length} done.` : ''}</p></div>
+      <div class="section">${list.map(b => {
+        const stt = trainerState(b), team = E.bossTeam(b.i, topLevel());
+        return `<div class="card trainer ${stt}"><div class="row"><b class="grow">${esc(b.cls)} ${esc(b.n)}${b.dbl ? ' <span class="tag">double</span>' : ''}</b>${stt === 'won' ? '<span class="verdict v-safe">won</span>' : stt === 'skipped' ? '<span class="verdict v-ok">skipped</span>' : ''}</div>
+          <div class="team-icons">${team.map(m => `<span class="t">${icon(m.s)}<span>Lv ${m.lv}</span></span>`).join('')}</div>
+          <div class="row">${stt ? `<button class="btn small ghost" data-trundo="${b.id}">Undo</button>` : `<button class="btn small primary" data-trfight="${b.i}">Plan and fight</button><button class="btn small" data-trwon="${b.id}">Already beat it</button><button class="btn small ghost" data-trskip="${b.id}">Skipped it</button>`}</div></div>`;
+      }).join('')}</div>
+      ${later.length ? `<p class="note" style="margin:0">Later here: ${later.length} more trainer${later.length === 1 ? '' : 's'} (Lv ${Math.min(...later.map(trainerTopLv))}–${Math.max(...later.map(trainerTopLv))}), for when you come back stronger.</p>` : ''}`;
+  }
+  // a fight in four parts, one at a time: get ready, plan, battle, result
+  const FIGHT_TABS = [['ready', 'Get ready'], ['plan', 'Plan'], ['battle', 'Battle'], ['result', 'Result']];
+  function setFightTab(key, tab) { S.fightTab = Object.assign({}, S.fightTab, { [key]: tab }); }
+  function fightTab(key, bi) {
+    if (S.resultForm && S.resultForm.g === key) return 'result';
+    const t = (S.fightTab || {})[key];
+    if (t) return t;
+    return S.live && S.live.bi === bi ? 'battle' : 'ready';
+  }
+  function fightTabsHTML(key, tab) {
+    return `<div class="ftabs" role="tablist" aria-label="This fight, step by step">${FIGHT_TABS.map(([k, l], i) => `<button role="tab" class="ftab${k === tab ? ' on' : ''}" aria-selected="${k === tab}" data-ftab="${k}" data-fkey="${esc(String(key))}"><span class="n">${i + 1}</span>${l}</button>`).join('')}</div>`;
+  }
+  function fightPanelHTML(key, tab, bi, cap, result) {
+    const nextBtn = (t, l) => `<div class="pnav"><span></span><button class="btn primary" data-ftab="${t}" data-fkey="${esc(String(key))}">${l} →</button></div>`;
+    if (tab === 'ready') return prepHTML(cap) + nextBtn('plan', 'Next: plan it');
+    if (tab === 'plan') return (alive().length ? battlePlanHTML(planKey(), true) + theaterHTML() + '<div id="fight-more" class="section"><div class="note">Working out every matchup…</div></div>' : '<div class="empty">Add your Pokémon first.</div>') + nextBtn('battle', 'Next: the battle');
+    if (tab === 'battle') return `<section class="section" id="live">${liveBlockHTML(bi)}</section>` + (S.live && S.live.bi === bi && !S.live.st.over ? '' : nextBtn('result', 'Next: log the result'));
+    return `<div id="result">${result}</div>`;
+  }
+  function trainerFightHTML(bi, a) {
+    const b = D.bosses[bi];
+    b.cap = capNow();
+    S.planBoss = bi;
+    const key = 'tr:' + b.id, tab = fightTab(key, bi);
+    const team = E.bossTeam(bi, topLevel());
+    return `<div class="card rec fight-head" id="fight-page" data-fkey="${esc(key)}">
+        <div class="row"><button class="linkbtn" id="tr-back">← All trainers on ${esc(a.n)}</button></div>
+        <div class="lbl">Trainer</div><div class="row"><h2 class="grow">${esc(b.cls)} ${esc(b.n)}</h2>${b.dbl ? '<span class="pill warn">Double battle</span>' : ''}</div>
+        <div class="vs-team">${team.map((m, k) => `<span class="vs-mon" style="--k:${k}" title="${esc(E.sp(m.s).n)}">${front(m.s, 's48') || icon(m.s)}<span>Lv ${m.lv}</span></span>`).join('')}</div></div>
+      ${fightTabsHTML(key, tab)}${fightPanelHTML(key, tab, bi, capNow(), trainerResultHTML(b))}`;
+  }
+  function trainerResultHTML(b) {
+    const key = 'tr:' + b.id, F = S.resultForm && S.resultForm.g === key ? S.resultForm : null;
+    if (!F) return `<div class="card"><p class="small" style="margin:0">When it's over, log it. Pokémon that fainted are gone for good.</p>
+      <div class="row"><button class="btn primary" id="res-won">I won</button><button class="btn" id="res-skip">I skipped it</button><button class="btn ghost" id="res-lost">I lost (run over)</button></div></div>`;
+    const p = party().length ? party() : alive();
+    return `<div class="card rec"><div class="lbl">You won! Did any of your Pokémon faint? Tap them.</div>
+      <div class="chips">${p.map(m => `<button class="chipbtn" data-fainted="${esc(m.key)}" aria-pressed="${F.fainted.includes(m.key)}">${icon(m.s)}${esc(monShort(m))}</button>`).join('')}</div>
+      <div class="row"><button class="btn primary" id="res-save">${F.fainted.length ? `Save: won, ${F.fainted.length} fainted` : 'Save: won, nobody fainted'}</button><button class="btn ghost" id="res-cancel">Cancel</button></div></div>`;
+  }
+  function setTrainer(id, v) { S.run.tr = Object.assign({}, S.run.tr || {}); if (v) S.run.tr[id] = v; else delete S.run.tr[id]; }
+  async function logTrainer(b, fainted) {
+    setTrainer(b.id, 'won');
+    const dead = [];
+    for (const key of fainted) { const m = S.roster.find(x => x.key === key); if (m && m.box !== 'dead') { m.box = 'dead'; m.died = Object.assign({ at: Date.now(), before: `${b.cls} ${b.n}` }, liveCause(key) || {}); dead.push(m); } }
+    if (S.live && S.live.bi === b.i) S.live = null;
+    S.resultForm = null; S.trainerBi = null;
+    render();
+    flash(`Beat ${b.cls} ${b.n}.`);
+    funeral(dead);
+    for (const m of dead) await store.saveMon(m);
+    await store.saveRun();
   }
   /** Start over: save this run to your history (how and where it ended) and begin the next one at step 1. */
   function startNewRun() {
@@ -2921,7 +3116,7 @@
     return `<div class="card rec lost"><h2>Run over</h2><p class="small" style="margin:0">Every Pokémon you had has fainted. Save run #${no} to your history and start run #${no + 1}.</p>
       <div class="row"><button class="btn primary" id="wipe-end">Save and start run #${no + 1}</button></div></div>`;
   }
-  function pathHTML(P, wiped) {
+  function pathHTML(P, wiped, lines) {
     const cur = P.current < P.steps.length ? P.steps[P.current] : null;
     const curCh = cur ? cur.step.ch : FLOW.chapters.length - 1;
     const open = S.openChapters || (S.openChapters = new Set());
@@ -2937,7 +3132,7 @@
         const lost = S.roster.filter(m => m.died && sts.some(s => s.step.kind === 'fight' && s.step.g.first === m.died.fight)).length;
         h += `<details class="chap done" data-ch="${c.k}" ${open.has(c.k) ? 'open' : ''}><summary>${title}<span class="ch-sum">✓ ${won} won${lost ? ` · ✝ ${lost}` : ''}</span></summary><ol class="path">${sts.map(s => stepHTML(s, false)).join('')}</ol></details>`;
       } else if (c.k === curCh) {
-        h += `<section class="chap now"><div class="ch-head">${title}</div><ol class="path">${sts.map(s => stepHTML(s, s === cur && !wiped, P)).join('')}</ol></section>`;
+        h += `<section class="chap now"><div class="ch-head">${title}</div><ol class="path">${sts.map(s => lines ? stepHTML(s, false, P, s === cur) : stepHTML(s, s === cur && !wiped, P)).join('')}</ol></section>`;
       } else {
         const nf = sts.filter(s => s.step.kind === 'fight').length;
         const na = sts.filter(s => s.step.kind === 'areas').reduce((n, s) => n + s.step.areas.filter(a => FLOW.isWild(a)).length, 0);
@@ -2946,9 +3141,10 @@
     }
     return h;
   }
-  function stepHTML(st, isNow, P) {
+  function stepHTML(st, isNow, P, here) {
     const s = st.step;
     if (isNow) return `<li class="step now${entering ? ' enter' : ''}" id="now"><span class="dot" aria-hidden="true"></span><div class="now-body">${stepBodyHTML(st, P)}</div></li>`;
+    if (here) return `<li class="step here"><span class="dot" aria-hidden="true"></span><div class="line">${stepLineHTML(st)} <span class="tag">you are here</span></div></li>`;
     const state = st.done ? 'done' : st.passed ? 'passed' : 'todo';
     const canOpen = (st.done || st.passed) && (s.kind === 'areas' || s.kind === 'fight');
     const opened = canOpen && S.openStep === s.id;
@@ -3140,7 +3336,7 @@
     const b = D.bosses[bi];
     const cap = capNow();
     const team = E.bossTeam(bi, topLevel());
-    let h = `<div class="card rec fight-head">
+    let h = `<div class="card rec fight-head" id="fight-page" data-fkey="${g.first}">
       <div class="lbl">${g === st.step.g ? (b.ms ? 'Next fight · raises the level cap' : 'Next fight') : 'Fighting out of order'}</div>
       <div class="row"><h2 class="grow">${esc(b.n)}</h2>${b.dbl ? '<span class="pill warn">Double battle</span>' : ''}</div>
       <div class="small muted">${esc(b.cls)}${b.loc ? ' · ' + esc(b.loc.join(', ')) : ''} · cap ${cap}${b.ms ? ` · a win raises it to ${b.capAfter}` : ''}</div>
@@ -3148,10 +3344,9 @@
       ${g.members.length > 1 ? variantHTML(g, bi) : ''}
       ${focusHTML(st, g)}
     </div>`;
-    h += `<div class="sub"><span class="n">1</span>Get your team ready</div>${prepHTML(cap)}`;
-    h += `<div class="sub"><span class="n">2</span>Plan the fight</div>${alive().length ? battlePlanHTML(planKey(), true) + theaterHTML() + '<div id="fight-more" class="section"><div class="note">Working out every matchup…</div></div>' : '<div class="empty">Add your Pokémon first.</div>'}`;
-    h += `<div class="sub"><span class="n">3</span>Play it turn by turn</div><section class="section" id="live">${liveBlockHTML(bi)}</section>`;
-    h += `<div class="sub"><span class="n">4</span>Log the result</div><div id="result">${resultHTML(g, bi)}</div>`;
+    const tab = fightTab(g.first, bi);
+    h += fightTabsHTML(g.first, tab);
+    h += fightPanelHTML(g.first, tab, bi, cap, resultHTML(g, bi));
     return h;
   }
   function evolveMon(m, to) {
@@ -3166,7 +3361,7 @@
     const dead = [];
     for (const key of fainted) { const m = S.roster.find(x => x.key === key); if (m && m.box !== 'dead') { m.box = 'dead'; m.died = Object.assign({ at: Date.now(), before: b.n, fight: g.first }, liveCause(key) || {}); dead.push(m); } }
     if (S.live && g.members.includes(S.live.bi)) S.live = null;
-    S.resultForm = null; S.focus = null; S.openStep = null; S.extraArea = null;
+    S.resultForm = null; S.focus = null; S.openStep = null; S.extraArea = null; S.run.at = null; S.view = null;
     const cap = capNow();
     render();
     if (FLOW.champ && g.first === FLOW.champ.first) celebrateHoF();
@@ -3209,9 +3404,26 @@
     wireFight();
   }
   function wireFight() {
-    if (!$('#result')) return;   // no fight step on the page
     const on = (sel, fn) => { const el = $(sel); if (el) el.onclick = fn; };
+    // trainers on a route: fight one, or mark it beaten or skipped
+    main.querySelectorAll('[data-trfight]').forEach(b => b.onclick = () => { S.trainerBi = +b.dataset.trfight; render(); keepInView($('#pager')); });
+    main.querySelectorAll('[data-trwon]').forEach(b => b.onclick = () => { setTrainer(+b.dataset.trwon, 'won'); render(); store.saveRun(); });
+    main.querySelectorAll('[data-trskip]').forEach(b => b.onclick = () => { setTrainer(+b.dataset.trskip, 'skipped'); render(); store.saveRun(); });
+    main.querySelectorAll('[data-trundo]').forEach(b => b.onclick = () => { setTrainer(+b.dataset.trundo, null); render(); store.saveRun(); });
+    on('#tr-back', () => { S.trainerBi = null; S.resultForm = null; render(); keepInView($('#pager')); });
+    if (!$('#fight-page')) return;   // no fight on the page
+    main.querySelectorAll('[data-ftab]').forEach(b => b.onclick = () => { setFightTab(b.dataset.fkey, b.dataset.ftab); render(); keepInView($('#fight-page')); });
     const bi = S.planBoss;
+    const tb = D.bosses[bi];
+    if (tb && tb.route) {
+      // a route trainer: its result is kept with the run, it never moves the level cap
+      on('#res-won', () => { S.resultForm = { g: 'tr:' + tb.id, fainted: [] }; render(); });
+      on('#res-skip', () => { setTrainer(tb.id, 'skipped'); S.trainerBi = null; S.resultForm = null; render(); store.saveRun(); });
+      on('#res-lost', () => openEndRun('wipe', tb));
+      main.querySelectorAll('[data-fainted]').forEach(c => c.onclick = () => { const F = S.resultForm, k = c.dataset.fainted; F.fainted = F.fainted.includes(k) ? F.fainted.filter(x => x !== k) : F.fainted.concat(k); render(); });
+      on('#res-cancel', () => { S.resultForm = null; render(); });
+      on('#res-save', () => logTrainer(tb, S.resultForm.fainted.slice()));
+    }
     const g = FLOW.groupOf(bi) || { first: bi, members: [bi] };
     main.querySelectorAll('[data-variant]').forEach(b => b.onclick = () => { S.run.variants = Object.assign({}, S.run.variants, { [b.dataset.g]: +b.dataset.variant }); render(); store.saveRun(); });
     const ff = $('#focus-fight'); if (ff) ff.onchange = () => { if (!ff.value) return; S.focus = +ff.value; S.resultForm = null; render(); scrollToNow(); };
@@ -3224,12 +3436,14 @@
     wireBattlePlan();
     wireTheater();
     wireLiveBlock(bi);
-    on('#res-won', () => { S.resultForm = { g: g.first, fainted: [] }; render(); const r = $('#result'); if (r) r.scrollIntoView({ block: 'center' }); });
-    on('#res-skip', () => { S.run.skipped = [...new Set((S.run.skipped || []).concat(g.first))]; S.focus = null; S.resultForm = null; render(); store.saveRun(); });
-    on('#res-lost', () => openEndRun('wipe', D.bosses[bi]));
-    main.querySelectorAll('[data-fainted]').forEach(c => c.onclick = () => { const F = S.resultForm, k = c.dataset.fainted; F.fainted = F.fainted.includes(k) ? F.fainted.filter(x => x !== k) : F.fainted.concat(k); render(); });
-    on('#res-cancel', () => { S.resultForm = null; render(); });
-    on('#res-save', () => logWin(g, bi, S.resultForm.fainted.slice()));
+    if (!(tb && tb.route)) {
+      on('#res-won', () => { S.resultForm = { g: g.first, fainted: [] }; render(); });
+      on('#res-skip', () => { S.run.skipped = [...new Set((S.run.skipped || []).concat(g.first))]; S.focus = null; S.resultForm = null; S.run.at = null; render(); store.saveRun(); });
+      on('#res-lost', () => openEndRun('wipe', D.bosses[bi]));
+      main.querySelectorAll('[data-fainted]').forEach(c => c.onclick = () => { const F = S.resultForm, k = c.dataset.fainted; F.fainted = F.fainted.includes(k) ? F.fainted.filter(x => x !== k) : F.fainted.concat(k); render(); });
+      on('#res-cancel', () => { S.resultForm = null; render(); });
+      on('#res-save', () => logWin(g, bi, S.resultForm.fainted.slice()));
+    }
     // one-on-one matchups, held items and movesets once the page is up
     const key = planKey();
     setTimeout(() => {
@@ -3527,7 +3741,7 @@
     } catch (e) { main.innerHTML = `<div class="empty">The game data didn’t load (${esc(e.message)}). Reload to try again.</div>`; return; }
     E = window.createEngine(window.calc, D);
     SIM = window.createSim(E);
-    ADV = window.createAdvice(E);
+    ADV = window.createAdvice(E, SIM);
     SR = window.createSaveReader ? window.createSaveReader(D) : null;
     FLOW = window.createFlow(D);
     addRouteTrainers();

@@ -3,7 +3,7 @@ const C = require('@smogon/calc');
 const D = require('../app/rrdata.json');
 const E = require('../app/engine.js')(C, D);
 const SIM = require('../app/sim.js')(E);
-const ADV = require('../app/advice.js')(E);
+const ADV = require('../app/advice.js')(E, SIM);
 const SR = require('../app/save.js')(D);
 
 const sid = n => { const s = D.species.find(x => x.n === n) || D.species.find(x => x.g === n); if (!s) throw new Error('no species ' + n); return s.i; };

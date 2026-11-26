@@ -857,6 +857,41 @@
     return mv.length ? mv : m.moves.slice(0, 1);
   }
   const resolveTarget = (st, t) => (t && t.side ? act(st, t.side, t.slot || 0) : null);
+  /** The risk of a one-on-one race (E.matchup) once the foe is paralyzed, asleep, confused or poisoned: it gets the
+   *  same number of chances to hit (hitsTaken) and needs as many hits to knock you out (toKOme), but some chances are
+   *  lost: a paralyzed foe acts 3 turns in 4, a sleeping one loses 1 to 3 turns, a confused one hurts itself 1 time in 3
+   *  for about three turns. A race you lose either way stays lost. */
+  function comb(n, k) { let c = 1; for (let i = 1; i <= k; i++) c = c * (n - k + i) / i; return c; }
+  function atLeast(n, p, u) { if (u <= 0) return 1; if (u > n) return 0; let s = 0; for (let k = u; k <= n; k++) s += comb(n, k) * Math.pow(p, k) * Math.pow(1 - p, n - k); return s; }
+  function statusRisk(mu, kind) {
+    const n = Math.min(20, mu.hitsTaken), u = mu.toKOme;
+    if (!kind || !isFinite(n) || !isFinite(u) || n <= 0) return kind === 'tox' ? mu.risk * 0.9 : mu.risk;
+    const near = left => (left >= u ? 1 : mu.risk * left / n);   // fewer chances: less risk from rolls and crits too
+    if (kind === 'par') return n >= u ? atLeast(n, 0.75, u) : mu.risk * 0.75;
+    if (kind === 'slp') return [1, 2, 3].reduce((r, t) => r + near(Math.max(0, n - t)), 0) / 3;
+    if (kind === 'conf') { const c = Math.min(n, 3); let r = 0; for (let k = 0; k <= c; k++) r += comb(c, k) * Math.pow(2 / 3, k) * Math.pow(1 / 3, c - k) * near(k + n - c); return r; }
+    if (kind === 'tox') return mu.risk * 0.9;
+    if (kind === 'psn' || kind === 'brn') return mu.risk * 0.97;
+    return mu.risk;
+  }
+  /** What a status move does when it works: boosts for you (self), drops for the target (foe), a status, confusion,
+   *  healing. null for a damaging move or one the Coach doesn't value (Splash, Teleport and the like). */
+  function statusEffect(id) {
+    const mm = meta(id);
+    if (!mm || mm.cat !== 'X') return null;
+    const n = mm.name, e = mm.eff, out = {};
+    if (SETUP[n] || EFFECT_BOOST[e]) out.self = SETUP[n] || EFFECT_BOOST[e];
+    else if (EFFECT_DROP[e]) out.foe = EFFECT_DROP[e];
+    const stt = { 1: 'slp', 67: 'par', 167: 'brn', 33: 'tox', 66: 'psn' }[e];
+    if (stt) out.status = stt;
+    if (e === 49) out.conf = true;
+    if (e === 118) { out.conf = true; out.foe = { atk: 2 }; }
+    if (e === 166) { out.conf = true; out.foe = { spa: 1 }; }
+    if (e === HEAL_HALF || e === HEAL_WEATHER) out.heal = 0.5;
+    if (!Object.keys(out).length) return null;
+    out.acc = out.self || out.heal ? 1 : mm.acc ? mm.acc / 100 : 1;
+    return out;
+  }
   /** What a move can do to its target this turn that stops it moving: par, slp, frz, conf, flinch (and brn, psn, tox). */
   function mayCause(user, moveId) {
     const mm = meta(moveId), e = mm.eff, out = new Set();
@@ -1117,9 +1152,35 @@
           const saved = foe.status; foe.status = stt;
           const mu = duelRisk(st, me, foe, null, afterPct);
           foe.status = saved;
-          let r = pFaint + (1 - pFaint) * mu.risk * (stt === 'slp' ? 0.4 : stt === 'par' ? 0.8 : 1);
+          if (!mu.best || !isFinite(mu.toKOthem)) continue;   // still can't knock it out: no point
+          let r = pFaint + (1 - pFaint) * statusRisk(mu, stt);
           r = r * (mm.acc ? mm.acc / 100 : 1) + (1 - (mm.acc ? mm.acc / 100 : 1)) * Math.min(1, pFaint * 2);
-          options.push({ type: 'move', id, cost: r * (value(me) + 0.5) + o.hpWeight * (1 - afterPct / 100), risk: r, label: `Use ${mm.name}` });
+          options.push({ type: 'move', id, cost: r * (value(me) + cleanup(st, side, foe, 100 * foe.hp / foe.maxHp, me)) + o.hpWeight * (1 - Math.min(afterPct, mu.hpLeftPct) / 100), risk: r, label: `Use ${mm.name}` });
+        }
+        const fx = statusEffect(id);
+        if (fx && !stt && (fx.self || fx.foe || fx.conf)) {
+          // one free hit for them this turn, then the duel with the stats changed (or them confused)
+          const up = fx.self && Object.entries(fx.self).some(([k, v]) => v > 0 && me.boosts[k] < 6);
+          const foeHit = fx.foe && !foe.sub && !['Clear Body', 'White Smoke', 'Full Metal Body'].includes(foe.ability) && itemName(foe) !== 'Clear Amulet';
+          const conf = fx.conf && !foe.confused && foe.ability !== 'Own Tempo' && !foe.sub;
+          if (up || foeHit || conf) {
+            const foeDmg = bestDamage(st, foe, me);
+            const hit = foeDmg.reduce((a, b) => (b.mean > a.mean ? b : a), { mean: 0, ko: 0 });
+            const pFaint = hit.ko;
+            const afterPct = Math.max(1, 100 * (me.hp - hit.mean) / me.maxHp);
+            const sb = me.boosts, fb = foe.boosts;
+            me.boosts = Object.assign({}, sb); foe.boosts = Object.assign({}, fb);
+            const bump = (m, d) => { for (const [k, v] of Object.entries(d)) m.boosts[k] = Math.max(-6, Math.min(6, (m.boosts[k] || 0) + v)); };
+            if (up) bump(me, fx.self);
+            if (foeHit) bump(foe, fx.foe);
+            const mu = duelRisk(st, me, foe, null, afterPct);
+            me.boosts = sb; foe.boosts = fb;
+            if (!mu.best || !isFinite(mu.toKOthem)) continue;   // still can't knock it out: no point
+            let r = pFaint + (1 - pFaint) * statusRisk(mu, conf ? 'conf' : '');
+            r = r * fx.acc + (1 - fx.acc) * Math.min(1, pFaint * 2);
+            // a turn spent: it has to be worth it (attacking wins a tie)
+            options.push({ type: 'move', id, cost: r * (value(me) + cleanup(st, side, foe, 100 * foe.hp / foe.maxHp, me)) + o.hpWeight * (1 - Math.min(afterPct, mu.hpLeftPct) / 100) + 0.01, risk: r, label: `Use ${mm.name}` });
+          }
         }
         if ((mm.eff === HEAL_HALF || mm.eff === HEAL_WEATHER) && me.hp < me.maxHp * 0.6) {
           const foeDmg = bestDamage(st, foe, me);
@@ -1526,5 +1587,5 @@
     return { winner: st.winner, turns, faints, totalTurns: st.turn };
   }
 
-  return { meta, snapshot, sampleBattle, makeMon, newBattle, runBattle, simulate, simulateAsync, planFight, scriptOf, plannerPolicy, doublesPlanner, aiPolicy, bossPolicy, AI, megaTarget, zKind, usable, actives, cloneState, playTurn, begin, switchIn, speed, priorityOf, mayCause, hitChance, mulberry32, expectedDice, specNow, act };
+  return { meta, snapshot, sampleBattle, makeMon, newBattle, runBattle, simulate, simulateAsync, planFight, scriptOf, plannerPolicy, doublesPlanner, aiPolicy, bossPolicy, AI, megaTarget, zKind, usable, actives, cloneState, playTurn, begin, switchIn, speed, priorityOf, mayCause, statusEffect, statusRisk, hitChance, mulberry32, expectedDice, specNow, act };
 });

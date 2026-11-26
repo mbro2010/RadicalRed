@@ -34,14 +34,36 @@ test('engine: a one-on-one matchup is played with the attack that wins it, not j
   assert(m.risk <= onlyJet.risk + 1e-9, `adding moves never makes a matchup worse (${m.risk} vs ${onlyJet.risk})`);
   assert(m.best && m.best.moveName === 'Aqua Jet' && m.meFirst, 'picks Aqua Jet and moves first: ' + (m.best && m.best.moveName));
 });
-test('advice: level-up move prompt (learn Bite over Leer; skip a move that adds nothing)', () => {
+test('advice: level-up move prompt (learn Bite over Scratch, keep Leer; skip a move that adds nothing)', () => {
   const { ADV } = require('./lib');
   const rival = D.bosses.findIndex(b => b.n === 'Terry');
   const toto = mon('Totodile', 13, { ability: 'Sheer Force', moves: ['Scratch', 'Leer', 'Aqua Jet', 'Rage'] });
   const a = ADV.learnAdvice(toto, mid('Bite'), rival, 2);
-  assert(a.learn && a.forget === mid('Leer'), 'learn Bite, forget Leer: ' + JSON.stringify(a));
-  const b = ADV.learnAdvice(Object.assign({}, toto, { mv: [mid('Bite'), mid('Ice Fang'), mid('Aqua Jet'), mid('Crunch')] }), mid('Scary Face'), rival, 2);
-  assert(!b.learn, 'Scary Face adds nothing to a full attacking set: ' + JSON.stringify(b));
+  // Scratch only repeats what Bite does; Leer first (their Defense down) makes Brock's Lunatone and Varoom safer
+  assert(a.learn && a.forget === mid('Scratch'), 'learn Bite, forget Scratch: ' + JSON.stringify(a));
+  const full = Object.assign({}, toto, { mv: [mid('Bite'), mid('Ice Fang'), mid('Aqua Jet'), mid('Crunch')] });
+  // Scary Face (their Speed -2) lets it move first against Yanma and Lunatone; Bite only repeats Crunch
+  const b = ADV.learnAdvice(full, mid('Scary Face'), rival, 2);
+  assert(b.learn && b.forget === mid('Bite'), 'Scary Face replaces the redundant Bite: ' + JSON.stringify(b));
+  const c = ADV.learnAdvice(full, mid('Splash'), rival, 2);
+  assert(!c.learn, 'Splash adds nothing: ' + JSON.stringify(c));
   const free = ADV.learnAdvice(Object.assign({}, toto, { mv: [mid('Scratch')] }), mid('Bite'), rival, 2);
   assert(free.learn && free.forget == null, 'a free slot just learns it');
+});
+
+test('advice: status and stat moves count when they turn a fight (Sleep Powder over Growl; not where it still loses)', () => {
+  const { ADV, SIM } = require('./lib');
+  const brock = D.bosses.findIndex(b => b.n === 'Brock');
+  const bulba = mon('Bulbasaur', 13, { moves: ['Tackle', 'Vine Whip', 'Growl', 'Leech Seed'] });
+  const a = ADV.learnAdvice(bulba, mid('Sleep Powder'), brock, 2);
+  assert(a.learn && a.forget === mid('Growl'), 'learn Sleep Powder, forget Growl: ' + JSON.stringify(a));
+  assert(/Sleep Powder first/.test(a.reason), 'says Sleep Powder first is what helps: ' + a.reason);
+  // a status move gets no credit in a race it can't win: no way to knock the foe out
+  const lunatone = E.bossTeam(brock, 16).find(t => E.sp(t.s).n === 'Lunatone');
+  const pika = mon('Pikachu', 16, { moves: ['Thunder Shock', 'Thunder Wave'] });
+  const p = ADV.duelPlan(pika, Object.assign({}, lunatone, { ab: 'Levitate' }), pika.mv);
+  assert(p.via == null || p.verdict !== 'lose', 'no credit for paralysis in a lost race: ' + JSON.stringify(p));
+  // the odds behind it: a paralyzed foe that needs 2 hits in 2 chances lands both 56% of the time
+  const r = SIM.statusRisk({ hitsTaken: 2, toKOme: 2, risk: 1 }, 'par');
+  assert(Math.abs(r - 0.5625) < 1e-9, 'paralysis odds: ' + r);
 });
