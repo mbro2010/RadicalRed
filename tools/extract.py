@@ -23,6 +23,7 @@ NATURE_NAME_PTRS = 0x463E60                     # 25 pointers
 SPREADS = 0x112533C                             # 11-byte EV/IV/nature spreads (regular trainers)
 CLASS_IVS = 0x1124F08                           # fixed IV per trainer class (regular trainers)
 HARDCORE_TEAMS, N_HARDCORE = 0x112C9B4, 0x99    # 60-byte boss records, used when flag 0x1034 (Hardcore) set
+NORMAL_TEAMS, N_NORMAL = 0x1126340, 0x6C        # 60-byte boss records used outside Hardcore (and by the battle simulator on Normal)
 ALWAYS_TEAMS, N_ALWAYS = 0x11259DC, 0x28        # 60-byte records used in every mode
 LEVEL_CAPS_NORMAL, LEVEL_CAPS_HARDCORE = 0x135013C, 0x135014E  # 18 bytes each
 
@@ -182,6 +183,7 @@ def decode_vanilla_party(t):
     return mons
 
 hardcore = decode_override_table(HARDCORE_TEAMS, N_HARDCORE)
+normal = decode_override_table(NORMAL_TEAMS, N_NORMAL)
 always = decode_override_table(ALWAYS_TEAMS, N_ALWAYS)
 
 trainers = []
@@ -193,6 +195,7 @@ for tid in range(N_TRAINERS):
     entry['party'] = decode_vanilla_party(t)
     if tid in always: entry['alwaysOverride'] = always[tid]
     if tid in hardcore: entry['hardcoreOverride'] = hardcore[tid]
+    if tid in normal: entry['normalOverride'] = normal[tid]
     trainers.append(entry)
 
 hardcore_order = []
@@ -212,4 +215,4 @@ dump('trainers.json', trainers)
 dump('hardcore_order.json', hardcore_order)
 dump('level_caps.json', level_caps)
 print('species', len(species), 'moves', len(moves), 'abilities', len(ability_name), 'trainers', len(trainers),
-      'hardcore overrides', len(hardcore), 'always overrides', len(always))
+      'hardcore overrides', len(hardcore), 'normal overrides', len(normal), 'always overrides', len(always))

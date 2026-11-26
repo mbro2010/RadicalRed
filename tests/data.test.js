@@ -51,17 +51,18 @@ test('data: the care package cheat (SO2Toxic) by checkpoint, Hardcore lists', ()
   for (const n of ['WeaknessPol.', 'Heat Rock', 'Throat Spray', 'Air Balloon', 'Protein']) assert(!all.includes(n), 'Hardcore leaves out ' + n);
 });
 
-test('data: Normal Mode with Minimal Grinding (the regular trainer table, its own caps and care package)', () => {
+test('data: Normal Mode with Minimal Grinding (its boss records, its own caps and care package)', () => {
   // every boss fight has its Normal Mode team and its place in the milestones
   assert(D.bosses.every(b => Array.isArray(b.np) && b.np.length && b.mi >= 0 && b.mi <= 16), 'normal teams and milestone index');
   assert(D.caps.normal.slice(0, 4).join() === '15,22,27,34', 'normal caps ' + D.caps.normal.slice(0, 4));
+  // outside Hardcore the game takes the Normal boss records first (0x1126340): Falkner has a Flittle there
+  const falkner = D.bosses.find(b => b.n === 'Falkner');
+  assert(falkner.np.map(m => E.sp(m.s).g).join() === 'Rufflet,Wattrel,Flittle', 'Normal Falkner: ' + falkner.np.map(m => E.sp(m.s).n));
   const brock = D.bosses.find(b => b.n === 'Brock');
   assert(brock.party.length === 6 && brock.np.length === 4, 'Hardcore Brock has 6, Normal Brock 4');
-  assert(brock.np.map(m => E.sp(m.s).g).join() === 'Geodude,Vulpix,Onix,Archen', 'Normal Brock: ' + brock.np.map(m => E.sp(m.s).n));
-  assert(brock.np.every(m => !m.ev), 'Minimal Grinding: no EVs');
-  // Hidden Power from a spread: IVs that give the set type (Normal Brock's Vulpix has Hidden Power Grass)
-  const vulpix = brock.np.find(m => E.sp(m.s).g === 'Vulpix');
-  assert(E.hiddenPowerType(vulpix.iv) === 'Grass', 'HP Grass from the spread: ' + E.hiddenPowerType(vulpix.iv));
+  assert(brock.np.map(m => E.sp(m.s).g).join() === 'Geodude,Varoom,Onix,Archen', 'Normal Brock: ' + brock.np.map(m => E.sp(m.s).n));
+  assert(brock.np.every(m => !m.ev && m.nat != null), 'Minimal Grinding: no EVs; records carry natures');
+  assert(D.bosses.every(b => b.np.every(m => !m.iv || (m.iv.length === 6 && m.iv.every(v => v >= 0 && v <= 31)))), 'IVs in range');
   // the rival's team follows your starter in Normal Mode too (Squirtle, Bulbasaur, Charmander lines)
   const rivals = D.bosses.filter(b => b.cat === 'rival' && b.mi === 0).slice(0, 3);
   assert(rivals.map(b => b.nv).join() === 'Squirtle,Bulbasaur,Charmander', 'rival lines ' + rivals.map(b => b.nv));

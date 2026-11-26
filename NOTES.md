@@ -39,7 +39,7 @@ The added engine code sits at roughly ROM `0x1000000`–`0x10D0000`. Its structu
 | Fixed IV per trainer class | `0x1124F08` | 1 | per class ID |
 | Hardcore boss records | `0x112C9B4` | 60 | 153 |
 | Boss records used in every mode | `0x11259DC` | 60 | 40 |
-| Battle-simulator Normal boss records | `0x1126340` | 60 | 108 |
+| Normal boss records (also the battle simulator's Normal teams) | `0x1126340` | 60 | 108 |
 | Level caps, Normal | `0x135013C` | 1 | 18 |
 | Level caps, Hardcore | `0x135014E` | 1 | 18 |
 
@@ -82,15 +82,18 @@ Type IDs are the standard ones: 0 Normal … 17 Dark, 9 is `???`, 23 is Fairy.
 
 ## Party builder (`0x0907B624`)
 
-For the opponent's side, checked in this order:
+For the opponent's side (the builder's 4th argument is 1), checked in this order:
 
 1. Flag `0x1042` → special handling for trainers 6 and 7
 2. Flag `0x104B` → special handling for trainers 5 and 14
-3. Flag `0x1065` (battle simulator, Normal) → simulator table `0x1126340`
-4. Flag `0x1034` (**Hardcore**) and not `0x1065` → Hardcore table `0x112C9B4` when the trainer is listed
-5. Flag `0x1066` (battle simulator, Hardcore) → Hardcore table
-6. The table used in every mode, `0x11259DC`
-7. Otherwise the vanilla trainer table
+3. **Not Hardcore** (`0x1034` clear) → the Normal boss records `0x1126340` when the trainer is listed (`0x0907B812` → `0x0907B81E`; 108 bosses)
+4. Flag `0x1065` (battle simulator on Normal) → the same Normal records
+5. Flag `0x1034` (**Hardcore**) and not `0x1065` → Hardcore table `0x112C9B4` when the trainer is listed
+6. Flag `0x1066` (battle simulator on Hardcore) → Hardcore table
+7. The table used in every mode, `0x11259DC`
+8. Otherwise the vanilla trainer table
+
+An earlier reading had step 3 missing (the Normal records used only by the battle simulator); a player's Normal Falkner with a Flittle showed it was wrong. When flag `0x104B` is clear the code jumps to `0x0907B84A`, which for the opponent's side goes straight to the Hardcore check at `0x0907B812`; when it is set and the trainer isn't 5 or 14, the code falls into the same check.
 
 Record-based teams are built by `0x09078F9C`, one Pokémon at a time by `0x09078C48`. Personality, nature, ability and shininess are generated in `0x09077088`. EVs from records and spreads are skipped when Minimal Grinding (`0x1032`) or Easy (`0x1033`) is set.
 
@@ -187,7 +190,7 @@ In recorded battles (the plan's most likely line and live battles) every event c
 
 ## Normal Mode with Minimal Grinding
 
-The Coach's other difficulty. Without flag `0x1034` the party builder (above) skips the Hardcore table: a boss's team comes from the records used in every mode (`0x11259DC`) when it has one (2 of the 153 boss fights), else from the regular trainer table with its spread (`regularTeam` in `tools/build_app_data.js`, kept as each boss's `np`, `ndbl` and, for rivals, `nv`). Minimal Grinding (`0x1032`) skips the EVs of records and spreads, so no trainer EVs are kept, in either mode (regular trainers' spreads were the only ones that had any). A spread with a Hidden Power type gets IVs of 31 or 30 that give that type (the type code is the type ID; the exact IVs the game picks aren't traced, so a stat can be off by one). A random ability slot is taken as slot 1. Level values 101-104 follow your highest level 2 lower outside Hardcore until the game is cleared (`E.setMode(mode, cleared)`). Each boss carries `mi`, the milestones done before it, so its cap in either mode is `caps[mode][mi]`. Move bans and ability changes are Hardcore's only (`isBanned`, `hardcoreAbility` return early). The care package is walked with `0x1032` alone (`normal` in `care_package.json`, `n` in the app data): Hardcore's lists plus weather rocks, terrain seeds, Weakness Policy, Throat Spray, Air Balloon and Terrain Extender, without the EV items Minimal Grinding leaves out. The run saves its difficulty (`run.mode`); switching it swaps the boss teams, caps and double-battle flags in place (`syncMode` in `app.js`), rebuilds the run path and clears everything worked out for the other one. The plan worker gets the difficulty with each request.
+The Coach's other difficulty. Without flag `0x1034` the party builder (above) takes a boss's team from the Normal boss records (`0x1126340`, 108 of the 153 boss fights, with natures, items, moves and IVs like the Hardcore records), else from the records used in every mode (`0x11259DC`), else from the regular trainer table with its spread (`normalTeam` in `tools/build_app_data.js`, kept as each boss's `np`, `ndbl` and, for rivals, `nv`). The 45 fights without a Normal record include the first rival fights, Brendan, and generic trainers listed in the Hardcore table. Minimal Grinding (`0x1032`) skips the EVs of records and spreads, so no trainer EVs are kept, in either mode (regular trainers' spreads were the only ones that had any). A spread with a Hidden Power type gets IVs of 31 or 30 that give that type (the type code is the type ID; the exact IVs the game picks aren't traced, so a stat can be off by one). A random ability slot is taken as slot 1. Level values 101-104 follow your highest level 2 lower outside Hardcore until the game is cleared (`E.setMode(mode, cleared)`). Each boss carries `mi`, the milestones done before it, so its cap in either mode is `caps[mode][mi]`. Move bans and ability changes are Hardcore's only (`isBanned`, `hardcoreAbility` return early). The care package is walked with `0x1032` alone (`normal` in `care_package.json`, `n` in the app data): Hardcore's lists plus weather rocks, terrain seeds, Weakness Policy, Throat Spray, Air Balloon and Terrain Extender, without the EV items Minimal Grinding leaves out. The run saves its difficulty (`run.mode`); switching it swaps the boss teams, caps and double-battle flags in place (`syncMode` in `app.js`), rebuilds the run path and clears everything worked out for the other one. The plan worker gets the difficulty with each request.
 
 ## Live turns as the game plays them
 

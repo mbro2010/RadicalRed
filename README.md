@@ -80,7 +80,7 @@ Read from the game code (details and addresses in `NOTES.md`):
 - **Your Pokémon can't learn 82 moves**, including setup moves, hazards, weather, Protect and Substitute. Toxic and Leech Seed are allowed only on 156 listed species.
 - **Some of your abilities change.** Decoded from the game's code: Drizzle becomes Adaptability, Drought Sheer Force, Speed Boost Infiltrator, Moxie and Beast Boost Unnerve, Magic Bounce Magic Guard, terrain surges become Telepathy, Dazzling or Self Sufficient, and more (full list in `NOTES.md`). The Coach applies these to your Pokémon in every calculation and shows them on your cards.
 
-**Normal Mode with Minimal Grinding**, the Coach's other difficulty, also read from the game code: the same 153 fights, but each boss's team comes from the regular trainer table (Normal Brock: Alolan Geodude, Vulpix, Onix and Archen at Lv 12-14; the Route 22 rival, a Starly and his starter at Lv 9), with the regular trainers' natures, items and moves. Minimal Grinding skips boss EVs here too. Level caps are 15, 22, 27, 34, then the same as Hardcore from 44. Bosses whose level follows yours come in 2 levels lower than in Hardcore (until the game is cleared). Every move and ability is yours to use. The care package adds weather rocks, terrain seeds, Weakness Policy, Throat Spray, Air Balloon and Terrain Extender to Hardcore's lists (and no EV items, with Minimal Grinding).
+**Normal Mode with Minimal Grinding**, the Coach's other difficulty, also read from the game code: the same 153 fights, but 108 bosses have their own Normal teams (Normal Falkner: Rufflet, Wattrel and Flittle; Normal Brock: Alolan Geodude, Varoom, Onix and Archen at Lv 12-14), and the rest come from the regular trainer table (the Route 22 rival: a Starly and his starter at Lv 9). Minimal Grinding skips boss EVs here too. Level caps are 15, 22, 27, 34, then the same as Hardcore from 44. Bosses whose level follows yours come in 2 levels lower than in Hardcore (until the game is cleared). Every move and ability is yours to use. The care package adds weather rocks, terrain seeds, Weakness Policy, Throat Spray, Air Balloon and Terrain Extender to Hardcore's lists (and no EV items, with Minimal Grinding).
 
 ## Nuzlocke Coach (`app/`)
 
@@ -127,7 +127,7 @@ The **first fights** (caps 16 and 23: the rival, Falkner, Brock and Archer) are 
 
 For the first fights alone, the order is Scorbunny and Totodile, then Torchic, Popplio, Charmander, Litten, Sobble and Quaxly. Fennekin, second overall for its late game, is weak in the first fights.
 
-**Normal Mode with Minimal Grinding** has its own list (`node tools/starter_tiers.js data app/rrdata.json app/starters-normal.json normal`), against its teams and caps. The Route 22 rival is easy there (every starter beats his two Lv 9 Pokémon alone), but Falkner and Brock still can't be beaten by a starter alone. Quaxly, Mudkip and Scorbunny lead; Fennekin and Charmander drop to A.
+**Normal Mode with Minimal Grinding** has its own list (`node tools/starter_tiers.js data app/rrdata.json app/starters-normal.json normal`), against its teams and caps. The Route 22 rival is easy there (every starter beats his two Lv 9 Pokémon alone), but Falkner and Brock still can't be beaten by a starter alone. Totodile, Tepig, Mudkip and Quaxly lead; Fennekin, Torchic and Charmander are A, Scorbunny B.
 
 ## Roadmap
 

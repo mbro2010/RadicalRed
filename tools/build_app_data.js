@@ -97,10 +97,11 @@ for (const s of outSpecies) {
 const tutors = read('tutors.json');
 for (const [sid, idx] of Object.entries(tutors.species)) if (outLearn[sid]) outLearn[sid].u = idx.map(k => tutors.moves[k].id).filter(Boolean);
 
-// ---------- teams from the regular trainer table ----------
-// Outside Hardcore, a boss (and every regular trainer, in any mode) gets its team from the record used in every mode
-// when there is one, else from the regular trainer table, with its EV/IV/nature spread (party builder, NOTES.md).
-// Minimal Grinding (always on in Hardcore, and the Normal Mode the Coach supports) skips the EVs, so none are kept.
+// ---------- teams outside Hardcore ----------
+// Outside Hardcore, the party builder looks a trainer up in the Normal boss records first (108 bosses), then in the
+// records used in every mode, else takes the regular trainer table with its EV/IV/nature spread (NOTES.md). Regular
+// trainers get the last two in any mode. Minimal Grinding (always on in Hardcore, and the Normal Mode the Coach
+// supports) skips the EVs, so none are kept.
 const TYPE_NAMES = { 0: 'Normal', 1: 'Fighting', 2: 'Flying', 3: 'Poison', 4: 'Ground', 5: 'Rock', 6: 'Bug', 7: 'Ghost', 8: 'Steel',
   10: 'Fire', 11: 'Water', 12: 'Grass', 13: 'Electric', 14: 'Psychic', 15: 'Ice', 16: 'Dragon', 17: 'Dark' };
 const HP_ORDER = ['Fighting', 'Flying', 'Poison', 'Ground', 'Rock', 'Bug', 'Ghost', 'Steel', 'Fire', 'Water', 'Grass', 'Electric', 'Psychic', 'Ice', 'Dragon', 'Dark'];
@@ -117,6 +118,13 @@ function hpIVs(type) {
   return [iv[0], iv[1], iv[2], iv[4], iv[5], iv[3]];
 }
 const ivList = v => [v.hp, v.atk, v.def, v.spa, v.spd, v.spe];
+/** A Pokemon from a 28-byte boss record (Hardcore, Normal or every mode). */
+const recordMon = m => ({ s: m.speciesId, lv: m.level ?? null, rel: m.relativeToPlayerMax ?? null, iv: ivList(m.ivs),
+  nat: m.natureId, ab: m.ability, it: m.itemId || null, mv: m.moveIds, ...(m.raw && m.raw.b27 ? { st: m.raw.b27 } : {}) });
+function normalTeam(t) {
+  const rec = (t.normalOverride || [])[0];
+  return rec ? { dbl: rec.double ? 1 : 0, party: rec.party.map(recordMon) } : regularTeam(t);
+}
 function regularTeam(t) {
   const ov = (t.alwaysOverride || [])[0];
   if (ov) return { dbl: ov.double ? 1 : 0, party: ov.party.map(m => ({ s: m.speciesId, lv: m.level ?? null, rel: m.relativeToPlayerMax ?? null,
@@ -160,16 +168,11 @@ const bosses = order.map((tid, i) => {
   const ov = t.hardcoreOverride.find(p => p.order === i);
   const b = {
     i, id: tid, n: t.name, cls: t.class, cat: category(t), dbl: ov.double ? 1 : 0, cap: HC[done], ...(bossLoc[tid] ? { loc: bossLoc[tid] } : {}),
-    party: ov.party.map(m => ({
-      s: m.speciesId, lv: m.level ?? null, rel: m.relativeToPlayerMax ?? null,
-      iv: [m.ivs.hp, m.ivs.atk, m.ivs.def, m.ivs.spa, m.ivs.spd, m.ivs.spe],
-      nat: m.natureId, ab: m.ability, it: m.itemId || null, mv: m.moveIds,
-      ...(m.raw.b27 ? { st: m.raw.b27 } : {}),
-    })),
+    party: ov.party.map(recordMon),
   };
   b.mi = done;   // milestones done before this fight: the level cap in any mode is caps[mode][mi]
-  // Normal Mode (with Minimal Grinding): the same fight, from the regular trainer table
-  const nt = regularTeam(t);
+  // Normal Mode (with Minimal Grinding): the same fight, from the Normal boss records (else every-mode, else regular)
+  const nt = normalTeam(t);
   b.np = nt.party; b.ndbl = nt.dbl;
   if (MILESTONE_AFTER[tid]) { b.ms = MILESTONE_AFTER[tid]; b.capAfter = HC[done + 1]; done++; }
   return b;
