@@ -314,7 +314,7 @@
   }
 
   // ---------------- screens: your run, and the tools in the menu ----------------
-  const SCREENS = { run: 'Your run', team: 'Team & PC', areas: 'All areas', fight: 'Plan any fight', check: 'Quick check', runs: 'Past runs & starters' };
+  const SCREENS = { run: 'Your run', team: 'Pokémon', areas: 'All areas', fight: 'Plan any fight', check: 'Quick check', runs: 'Past runs & starters' };
   function go(screen) {
     if (screen === 'newrun') { toggleMenu(false); startNewRun(); return; }
     S.screen = SCREENS[screen] ? screen : 'run';
@@ -353,6 +353,56 @@
   }
 
   // ---------------- TEAM ----------------
+  // ---------------- stats as the game shows them: base, level, IVs, EVs, nature ----------------
+  const STATS6 = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
+  const STAT_FULL = { hp: 'HP', atk: 'Attack', def: 'Defense', spa: 'Sp. Atk', spd: 'Sp. Def', spe: 'Speed' };
+  function statOf(k, base, lv, iv, ev, nat) {
+    const core = Math.floor((2 * base + iv + Math.floor(ev / 4)) * lv / 100);
+    if (k === 'hp') return base === 1 ? 1 : core + lv + 10;
+    const n = D.natures[nat] || {};
+    return Math.floor((core + 5) * (n.u === k ? 110 : n.d === k ? 90 : 100) / 100);
+  }
+  const ivOf = m => (Array.isArray(m.iv) && m.iv.length === 6 ? m.iv : [31, 31, 31, 31, 31, 31]);
+  const evOf = m => (Array.isArray(m.ev) && m.ev.length === 6 ? m.ev : [0, 0, 0, 0, 0, 0]);
+  function monStats(m, lv) {
+    const b = E.sp(m.s).s, iv = ivOf(m), ev = evOf(m);
+    return Object.fromEntries(STATS6.map((k, i) => [k, statOf(k, b[i], lv || m.lv, iv[i], ev[i], m.nat)]));
+  }
+  /** The IVs (a range at low levels) and EVs that give the stats your game shows; null for a stat nothing explains. */
+  function readStats(m, shown) {
+    const b = E.sp(m.s).s;
+    return STATS6.map((k, i) => {
+      const v = shown[i];
+      if (!(v > 0)) return null;
+      const ok = [];
+      for (let iv = 0; iv <= 31; iv++) if (statOf(k, b[i], m.lv, iv, 0, m.nat) === v) ok.push(iv);
+      if (ok.length) return { lo: ok[0], hi: ok[ok.length - 1], ev: 0 };
+      for (let ev = 4; ev <= 252; ev += 4) if (statOf(k, b[i], m.lv, 31, ev, m.nat) === v) return { lo: 31, hi: 31, ev };   // EVs from battles
+      return null;
+    });
+  }
+  /** Keep what the stats say: IVs in the middle of what fits (narrowed by earlier entries), EVs, and the numbers themselves. */
+  function setStats(m, shown) {
+    const fit = readStats(m, shown);
+    if (fit.some(x => !x)) return fit;
+    const prev = m.statsAt && m.statsAt.ivr;
+    const ivr = fit.map((x, i) => {
+      if (prev && prev[i] && !x.ev) { const lo = Math.max(x.lo, prev[i][0]), hi = Math.min(x.hi, prev[i][1]); if (lo <= hi) return [lo, hi]; }
+      return [x.lo, x.hi];
+    });
+    m.iv = ivr.map(([lo, hi]) => Math.round((lo + hi) / 2));
+    m.ev = fit.map(x => x.ev);
+    m.statsAt = { lv: m.lv, s: m.s, st: shown.slice(), ivr };
+    m.ivGuess = false;
+    return fit;
+  }
+  /** Where its IVs come from, in words. */
+  function ivSource(m) {
+    if (m.statsAt) return `From your game's numbers at Lv ${m.statsAt.lv}.`;
+    if (m.ivGuess) return 'Perfect IVs assumed, except Speed: estimated from who moved first in a battle.';
+    return 'Perfect IVs (31) assumed. Enter the numbers from your game to make every plan exact.';
+  }
+
   function monCard(m) {
     const s = E.sp(m.s); const ab = E.abilityInfo(m.ab);
     const moves = (m.mv || []).map(id => moveChip(id, E.isBanned(id, s.g) ? 'banned in Hardcore' : '')).join('');
@@ -386,9 +436,14 @@
       main.innerHTML = html; wireTeam(); return;
     }
     if (!S.example && S.roster.length && !alive().length) html += `<div class="banner" style="display:grid;gap:8px"><b>Every Pokémon you had has fainted: that's a wipe.</b><span>Save this run to your history and start fresh in one step.</span><div><button class="btn primary" data-act="endrun">End this run…</button></div></div>`;
-    html += `<div class="row"><button class="btn primary" data-act="add">Add a Pokémon</button><button class="btn" data-act="import">Import save file</button><span class="muted small">${p.length}/6 in party · ${box.length} in box · ${dead.length} fainted</span></div>`;
-    html += `<section class="section"><div class="head"><h2>Party</h2></div>${p.length ? p.map(monCard).join('') : '<div class="empty small">No Pokémon in your party. Move some from your box.</div>'}</section>`;
-    if (box.length) html += `<section class="section"><div class="head"><h2>Box</h2></div>${box.map(monCard).join('')}</section>`;
+    // the party menu, as the game lays it out: the lead on the left, the other five on the right
+    html += `<section class="section"><div class="pm" role="group" aria-label="Your party">
+        <div class="pm-grid">${partySlotHTML(p[0], 0)}<div class="pm-rest">${[1, 2, 3, 4, 5].map(k => partySlotHTML(p[k], k)).join('')}</div></div>
+        <div class="pm-msg"><span class="pm-say">${p.length ? 'Choose a Pokémon.' : 'No Pokémon in your party. Move some from your box.'}</span>
+          <span class="pm-btns"><button class="pm-btn" data-act="add">Add</button><button class="pm-btn" data-act="import">Import save</button></span></div>
+      </div></section>`;
+    if (box.length) html += `<section class="section"><div class="head"><h2>PC box</h2><span class="note">${box.length} Pokémon · tap one to see it</span></div>
+      <div class="pc">${box.map(m => `<button class="pc-mon" data-mon="${esc(m.key)}" aria-label="${esc(monName(m))}, level ${m.lv}">${icon(m.s)}<span>Lv${m.lv}</span>${m.it ? '<i class="pm-held"></i>' : ''}</button>`).join('')}</div></section>`;
     if (dead.length) html += `<section class="section"><div class="head"><h2>Graveyard</h2></div><div class="graveyard">${dead.map(m => `<div class="grave-slot">${graveHTML(m)}<span class="small muted">${esc(deathLine(m))}</span></div>`).join('')}</div>
       <details class="more"><summary>Edit the fallen (${dead.length})</summary><div class="section" style="margin-top:8px">${dead.map(monCard).join('')}</div></details></section>`;
     html += tmCaseHTML();
@@ -397,6 +452,19 @@
     wireTeam();
     wireTMCase();
     wireBag();
+    main.querySelectorAll('[data-mon]').forEach(b => b.onclick = () => { const m = S.roster.find(x => x.key === b.dataset.mon); if (m) openMon(m); });
+  }
+  /** One slot of the party menu: icon (with a held-item mark), name, level, HP bar and HP. */
+  function partySlotHTML(m, k) {
+    if (!m) return `<div class="pm-slot pm-empty" aria-hidden="true"></div>`;
+    const sp = E.sp(m.s), hp = monStats(m).hp;
+    return `<button class="pm-slot${k === 0 ? ' pm-lead' : ''}" data-mon="${esc(m.key)}" aria-label="${esc(monName(m))}, level ${m.lv}${m.it ? ', holds ' + esc(E.itemName(m.it)) : ''}">
+      <span class="pm-ico">${icon(m.s)}${m.it ? '<i class="pm-held"></i>' : ''}</span>
+      <span class="pm-name">${esc(m.nick || sp.n)}</span>
+      <span class="pm-lv">Lv${m.lv}${m.lv > capNow() ? ' <span class="pm-over">over cap</span>' : ''}</span>
+      <span class="pm-hp"><b>HP</b><span class="pm-bar"><i></i></span></span>
+      <span class="pm-hpn">${hp}/${hp}</span>
+    </button>`;
   }
   // ---------------- TM case: which TMs you own (move advice only uses these) ----------------
   function tmCaseHTML() {
@@ -535,7 +603,7 @@
       for (const stp of allTM.steps) for (const x of stp.set) if (x.tm != null && !tms.includes(x.tm) && !wanted.has(x.tm)) wanted.set(x.tm, { id: x.id, boss: D.bosses[stp.boss].n });
       if (wanted.size) html += `<section class="section"><h2>TMs worth getting</h2><div class="card">${[...wanted.entries()].map(([t, x]) => `<div class="small"><b>${tmName(t)} ${esc(E.mv(x.id).f)}</b> would make its best set for ${esc(x.boss)}${tmWhere(t) ? ` · <span class="muted">${esc(tmWhere(t))}</span>` : ' · <span class="muted">location not found in the map scripts</span>'}</div>`).join('')}
         <p class="note" style="margin:0">Where each TM is, read from the maps' scripts: items on the ground, hidden items, gifts and shops.</p></div></section>`;
-      html += `<p class="note">Move advice uses ${tms.length} TM${tms.length === 1 ? '' : 's'} from your TM case. Tick TMs in Team &amp; PC as you get them.</p></div>`;
+      html += `<p class="note">Move advice uses ${tms.length} TM${tms.length === 1 ? '' : 's'} from your TM case. Tick TMs under Pokémon as you get them.</p></div>`;
       sheet.innerHTML = html;
       $('#adv-close').onclick = close;
     }, 30);
@@ -768,6 +836,7 @@
   }
 
   /** One Pokemon at a glance: level ticker, moves, evolution, and the Coach's nature and held item for the next fight. */
+  /** The summary, as the game's: Info (ability, nature, held item), Stats (yours, or your game's numbers), Moves; levels at the top. */
   function openMon(m) {
     document.body.style.overflow = 'hidden';
     sheet.hidden = false;
@@ -775,35 +844,88 @@
     const mine = () => sheet._owner === owner && !sheet.hidden;
     const close = () => { sheet._owner = null; sheet.hidden = true; sheet.innerHTML = ''; document.body.style.overflow = ''; render(); };
     const nb = D.bosses[nextBoss()];
-    let natureHTML = null, itemHTML = null, busy = false;
+    let natureHTML = null, itemHTML = null, busy = false, editing = false, itemsOpen = false, statNote = '', typed = null;
+    let page = S.sumPage || 'info';
+    function infoPage(sp) {
+      const ab = E.abilityInfo(m.ab), hcAb = m.ab && E.hardcoreAbility(m.ab, m.s) !== m.ab ? ` <span class="tag ban">Hardcore: ${esc(E.hardcoreAbility(m.ab, m.s))}</span>` : '';
+      const evo = evoSummary(m.s);
+      const pool = [...itemPool().keys()].filter(id => E.itemName(id)).sort((a, b) => E.itemName(a).localeCompare(E.itemName(b)));
+      const holder = id => S.roster.find(x => x !== m && x.it === id && x.box !== 'dead');
+      return `<dl class="sum-kv">
+          <dt>Ability</dt><dd>${esc(m.ab || '—')}${ab.x ? ' <span class="tag">Radical Red</span>' : ''}${hcAb}</dd>
+          <dt>Nature</dt><dd>${esc(natureText(m.nat))}</dd>
+          <dt>Item</dt><dd><span class="grow">${m.it ? `<b>${esc(E.itemName(m.it))}</b>` : 'None'}</span><button class="btn small${itemsOpen ? ' primary' : ''}" id="mo-items" aria-expanded="${itemsOpen}">${m.it ? 'Change' : 'Give an item'}</button></dd>
+          ${m.met ? `<dt>Caught</dt><dd>${esc(m.met)}</dd>` : ''}
+          ${evo.length ? `<dt>Evolves</dt><dd>${evo.map(esc).join('<br>')}${m.noEvo ? '<br><span class="muted">stopped: it won’t evolve</span>' : ''}</dd>` : ''}
+        </dl>
+        ${itemsOpen ? `<div class="card sum-items"><div class="lbl">Held item for ${esc(nb.cls)} ${esc(nb.n)}</div>
+          <div id="mo-item">${itemHTML || '<span class="note">Trying held items against their team…</span>'}</div>
+          <div class="lbl">Everything you can give it (${pool.length})</div>
+          <div class="chips">${m.it ? `<button class="chipbtn" data-giveit="0">Take it off</button>` : ''}${pool.map(id => `<button class="chipbtn" data-giveit="${id}" aria-pressed="${m.it === id}">${esc(E.itemName(id))}${holder(id) ? ` <span class="small muted">(${esc(holder(id).nick || E.sp(holder(id).s).n)} has it)</span>` : ''}</button>`).join('') || '<span class="note">No items yet: the care package, your bag and what your team holds show up here.</span>'}</div></div>` : ''}
+        <div class="card"><div class="lbl">Nature</div><div id="mo-nature">${natureHTML || '<span class="note">Working out the best nature for the next big fights…</span>'}</div></div>`;
+    }
+    function statsPage(sp) {
+      const st = monStats(m), nat = D.natures[m.nat] || {}, iv = ivOf(m), ev = evOf(m), base = sp.s;
+      const mark = k => (nat.u === k ? ' up' : nat.d === k ? ' down' : '');
+      const arrow = k => (nat.u === k ? '<span class="sr up" aria-label="raised by its nature">▲</span>' : nat.d === k ? '<span class="sr down" aria-label="lowered by its nature">▼</span>' : '');
+      const ivr = m.statsAt && m.statsAt.ivr;
+      const ivText = i => (ivr ? (ivr[i][0] === ivr[i][1] ? String(ivr[i][0]) : `${ivr[i][0]}–${ivr[i][1]}`) : m.ivGuess && i === 5 ? `~${iv[i]}` : String(iv[i]));
+      if (editing) {
+        return `<p class="small" style="margin:0">Type the stats your game's summary shows for <b>${esc(m.nick || sp.n)}</b> at <b>Lv ${m.lv}</b> (${esc(D.natures[m.nat].n)}). The Coach works out its IVs from them.</p>
+          <div class="sum-edit">${STATS6.map((k, i) => `<label class="${mark(k).trim()}"><span>${STAT_FULL[k]} ${arrow(k)}</span><input type="number" inputmode="numeric" min="1" max="999" data-st="${i}" value="${typed && typed[i] != null ? typed[i] : m.statsAt && m.statsAt.st && m.statsAt.lv === m.lv && m.statsAt.s === m.s ? m.statsAt.st[i] : st[k]}"></label>`).join('')}</div>
+          ${statNote ? `<p class="note bad" style="margin:0">${statNote}</p>` : ''}
+          <div class="row"><button class="btn primary" id="mo-stsave">Save</button><button class="btn ghost" id="mo-stcancel">Cancel</button></div>`;
+      }
+      const maxB = Math.max(...base);
+      return `<table class="sum-stats"><thead><tr><th></th><th>Stat</th><th>Base</th><th>IV</th>${ev.some(Boolean) ? '<th>EV</th>' : ''}</tr></thead><tbody>
+          ${STATS6.map((k, i) => `<tr class="${mark(k).trim()}"><th>${STAT_FULL[k]} ${arrow(k)}</th><td class="v">${st[k]}</td>
+            <td><span class="bstat"><i style="width:${Math.round(100 * base[i] / Math.max(150, maxB))}%"></i></span><span class="small muted">${base[i]}</span></td>
+            <td class="small">${ivText(i)}</td>${ev.some(Boolean) ? `<td class="small">${ev[i]}</td>` : ''}</tr>`).join('')}
+        </tbody></table>
+        <p class="note" style="margin:0">${esc(ivSource(m))}</p>
+        <div class="row"><button class="btn${m.statsAt ? '' : ' primary'}" id="mo-stedit">${m.statsAt ? 'Update from my game' : 'Match my game’s numbers'}</button>${m.statsAt || m.ivGuess ? '<button class="btn ghost small" id="mo-streset">Back to perfect IVs</button>' : ''}</div>`;
+    }
+    function movesPage(sp) {
+      const next = E.upcoming(m.s, m.lv).filter(u => !E.isBanned(u.id, sp.g)).slice(0, 4);
+      const row = id => {
+        const mv = E.mv(id); if (!mv) return '';
+        const ban = E.isBanned(id, sp.g);
+        return `<div class="sm-row" style="--t:${TYPE_COLORS[mv.t] || '#888888'}"><span class="sm-type">${esc(mv.t)}</span><b class="sm-n">${esc(mv.f)}</b>
+          <span class="sm-meta">${mv.k === 'X' ? 'Status' : mv.k === 'P' ? 'Physical' : 'Special'} · ${mv.p > 1 ? 'Power ' + mv.p : '—'} · ${mv.a ? 'Acc ' + mv.a : 'never misses'}${ban ? ' · <span class="tag ban">banned in Hardcore</span>' : ''}</span></div>`;
+      };
+      return `<div class="sum-moves">${(m.mv || []).map(row).join('') || '<span class="muted small">No moves entered</span>'}</div>
+        ${next.length ? `<p class="small" style="margin:0">Learns next: ${next.map(u => `<b>${esc(E.mv(u.id).f)}</b> at Lv ${u.lv}`).join(', ')}</p>` : ''}
+        <div class="row"><button class="btn primary" id="mo-plan">Move plan: what to learn and teach</button><button class="btn" id="mo-editmv">Change moves</button></div>`;
+    }
     function draw(tick) {
       if (sheet._owner !== owner) return;
       const sp = E.sp(m.s), cap = capNow();
-      const evo = evoSummary(m.s);
-      const next = E.upcoming(m.s, m.lv).filter(u => !E.isBanned(u.id, sp.g)).slice(0, 3);
-      const hcAb = m.ab && E.hardcoreAbility(m.ab, m.s) !== m.ab ? ` (Hardcore: ${E.hardcoreAbility(m.ab, m.s)})` : '';
-      sheet.innerHTML = `<div class="inner">
-        <div class="row"><h2 class="grow">${esc(monName(m))}</h2><button class="btn ghost" id="mo-close">Done</button></div>
-        <div class="card monsheet">
-          <div class="mon-top">${front(m.s, 'x2')}<div class="who"><div class="row" style="gap:6px">${typesHTML(sp.t)}</div>
-            <span class="small">${esc(m.ab || '—')}${esc(hcAb)} · ${esc(E.itemName(m.it) || 'no item')} · ${esc(natureText(m.nat))}</span>
-            ${evo.length ? `<span class="small muted">Evolves: ${evo.map(esc).join('; ')}${m.noEvo ? ' · stopped, won’t evolve' : ''}</span>` : ''}</div></div>
-          <div class="ticker" role="group" aria-label="Level">
+      const tabs = [['info', 'Info'], ['stats', 'Stats'], ['moves', 'Moves']];
+      const body = page === 'stats' ? statsPage(sp) : page === 'moves' ? movesPage(sp) : infoPage(sp);
+      sheet.innerHTML = `<div class="inner sum">
+        <div class="sum-band"><div class="sum-tabs" role="tablist" aria-label="Summary pages">${tabs.map(([k, l]) => `<button role="tab" data-page="${k}" aria-selected="${page === k}">${l}</button>`).join('')}</div>
+          <button class="sum-x" id="mo-close" aria-label="Close the summary">✕</button></div>
+        <div class="sum-hero">
+          <div class="sum-pic">${front(m.s, 'x2')}</div>
+          <div class="sum-id"><div class="sum-name">${esc(m.nick || sp.n)}</div>${m.nick ? `<div class="small muted">${esc(sp.n)}</div>` : ''}
+            ${typesHTML(sp.t)}
+            <div class="small">${m.it ? `Holds <b>${esc(E.itemName(m.it))}</b>` : 'No held item'} · ${m.box === 'party' ? 'in your party' : m.box === 'box' ? 'in your PC box' : 'fainted'}</div></div>
+          <div class="ticker sum-lv" role="group" aria-label="Level">
             <button class="btn" id="mo-down" aria-label="One level down" ${busy ? 'disabled' : ''}>−</button><span class="lvbig">Lv ${m.lv}</span><button class="btn" id="mo-up" aria-label="One level up" ${busy ? 'disabled' : ''}>+</button>
-            <button class="btn small" id="mo-cap" ${m.lv >= cap || busy ? 'disabled' : ''}>Level up to the cap (${cap})</button></div>
-          <div class="moves">${(m.mv || []).map(id => moveChip(id, E.isBanned(id, sp.g) ? 'banned in Hardcore' : '')).join('') || '<span class="muted small">No moves entered</span>'}</div>
-          ${next.length ? `<div class="small muted">Learns next: ${next.map(u => `${esc(E.mv(u.id).f)} (Lv ${u.lv})`).join(', ')}</div>` : ''}
-          ${m.noEvo && levelEvolution(m.s, m.lv) ? `<div><button class="btn small" id="mo-evolve">Evolve it now</button></div>` : ''}
+            <button class="btn small" id="mo-cap" ${m.lv >= cap || busy ? 'disabled' : ''}>Level up to the cap (${cap})</button>
+            ${m.noEvo && levelEvolution(m.s, m.lv) ? `<button class="btn small" id="mo-evolve">Evolve it now</button>` : ''}</div>
         </div>
-        <div class="card"><div class="lbl">Nature</div><div id="mo-nature">${natureHTML || '<span class="note">Working out the best nature for the next big fights…</span>'}</div></div>
-        <div class="card"><div class="lbl">Held item for ${esc(nb.cls)} ${esc(nb.n)}</div><div id="mo-item">${itemHTML || '<span class="note">Trying held items against their team…</span>'}</div></div>
-        <div class="row"><button class="btn" id="mo-edit">Edit everything</button><button class="btn ghost" id="mo-box">${m.box === 'party' ? 'Move to box' : 'Move to party'}</button></div>
+        <div class="sum-page" role="tabpanel">${body}</div>
+        <div class="row sum-acts"><button class="btn" id="mo-edit">Edit everything</button>
+          <button class="btn" id="mo-box">${m.box === 'party' ? 'Move to box' : 'Move to party'}</button>
+          ${m.box === 'party' && party()[0] !== m ? '<button class="btn" id="mo-lead">Make it the lead</button>' : ''}</div>
       </div>`;
       wire();
       if (tick) { const el = sheet.querySelector('.lvbig'); if (el) el.classList.add('tick'); }
     }
     function wire() {
       $('#mo-close').onclick = close;
+      sheet.querySelectorAll('[data-page]').forEach(b => b.onclick = () => { page = S.sumPage = b.dataset.page; editing = false; statNote = ''; draw(); });
       const goTo = async target => { busy = true; natureHTML = itemHTML = null; draw(); await levelUp(m, target, () => draw(true)); busy = false; draw(); compute(); };
       $('#mo-up').onclick = () => goTo(m.lv + 1);
       $('#mo-down').onclick = () => goTo(m.lv - 1);
@@ -811,8 +933,26 @@
       const ev = $('#mo-evolve'); if (ev) ev.onclick = async () => { const to = await whichEvolution(m, m.lv); if (to && await evolveScene(m, to)) { m.noEvo = false; evolveMon(m, to); for (const id of movesAt(m.s, 0)) await offerMove(m, id, 'on evolving'); await store.saveMon(m); } draw(); };
       $('#mo-edit').onclick = () => { sheet._owner = null; sheet.hidden = true; sheet.innerHTML = ''; openEditor(m); };
       $('#mo-box').onclick = async () => { if (m.box !== 'party' && party().length >= 6) { flash('Your party is full.'); return; } m.box = m.box === 'party' ? 'box' : 'party'; draw(); await store.saveMon(m); };
-      sheet.querySelectorAll('[data-setnat]').forEach(b => b.onclick = async () => { m.nat = +b.dataset.setnat; natureHTML = null; draw(); compute(); await store.saveMon(m); flash(`Nature set to ${D.natures[m.nat].n}.`); });
-      sheet.querySelectorAll('[data-giveit]').forEach(b => b.onclick = async () => { m.it = +b.dataset.giveit || null; itemHTML = null; draw(); compute(); await store.saveMon(m); flash(`${m.nick || E.sp(m.s).n} now holds ${E.itemName(m.it) || 'nothing'}.`); });
+      const lead = $('#mo-lead'); if (lead) lead.onclick = async () => { m.ord = Math.min(...S.roster.map(x => x.ord || 0)) - 1; S.roster.sort((a, b) => (a.ord || 0) - (b.ord || 0)); draw(); flash(`${m.nick || E.sp(m.s).n} leads your party.`); await store.saveMon(m); };
+      const items = $('#mo-items'); if (items) items.onclick = () => { itemsOpen = !itemsOpen; draw(); };
+      sheet.querySelectorAll('[data-setnat]').forEach(b => b.onclick = async () => { m.nat = +b.dataset.setnat; natureHTML = null; if (m.statsAt) m.statsAt = Object.assign({}, m.statsAt, { st: null }); draw(); compute(); await store.saveMon(m); flash(`Nature set to ${D.natures[m.nat].n}.`); });   // IVs stay: a nature only changes the multiplier
+      sheet.querySelectorAll('[data-giveit]').forEach(b => b.onclick = async () => { m.it = +b.dataset.giveit || null; itemHTML = null; itemsOpen = false; draw(); compute(); await store.saveMon(m); flash(`${m.nick || E.sp(m.s).n} now holds ${E.itemName(m.it) || 'nothing'}.`); });
+      // stats: match the game's numbers
+      const se = $('#mo-stedit'); if (se) se.onclick = () => { editing = true; statNote = ''; typed = null; draw(); const f = sheet.querySelector('[data-st="0"]'); if (f) f.focus(); };
+      const sc = $('#mo-stcancel'); if (sc) sc.onclick = () => { editing = false; statNote = ''; typed = null; draw(); };
+      sheet.querySelectorAll('[data-st]').forEach(inp => inp.addEventListener('input', () => { (typed = typed || [])[+inp.dataset.st] = inp.value; }));
+      const sr = $('#mo-streset'); if (sr) sr.onclick = async () => { m.statsAt = null; m.iv = null; m.ev = null; m.ivGuess = false; draw(); await store.saveMon(m); };
+      const ss = $('#mo-stsave'); if (ss) ss.onclick = async () => {
+        const shown = STATS6.map((k, i) => Math.round(+((sheet.querySelector(`[data-st="${i}"]`) || {}).value || 0)));
+        const fit = setStats(m, shown);
+        const bad = STATS6.filter((k, i) => !fit[i]);
+        if (bad.length) { statNote = `${bad.map(k => STAT_FULL[k]).join(', ')} ${bad.length === 1 ? 'doesn’t' : 'don’t'} fit a Lv ${m.lv} ${esc(E.sp(m.s).n)} with a ${esc(D.natures[m.nat].n)} nature. Check its level and nature (Info), then try again.`; draw(); return; }
+        editing = false; statNote = ''; typed = null; natureHTML = itemHTML = null; draw(); compute();
+        await store.saveMon(m);
+        flash('Stats saved: every plan now uses its real IVs.');
+      };
+      const plan = $('#mo-plan'); if (plan) plan.onclick = () => { sheet._owner = null; sheet.hidden = true; sheet.innerHTML = ''; openAdvice(m); };
+      const emv = $('#mo-editmv'); if (emv) emv.onclick = () => { sheet._owner = null; sheet.hidden = true; sheet.innerHTML = ''; openEditor(m); };
     }
     function compute() {
       setTimeout(() => {
@@ -834,7 +974,7 @@
               <span class="small muted">+${x.g.toFixed(1)} matchup points against their ${team.length}${m.it ? ` (instead of ${esc(E.itemName(m.it))})` : ''} · ${esc(itemFrom(x.id))}</span></div>`).join('')}</div>`
           : `<p class="small" style="margin:0">${m.it ? `${esc(E.itemName(m.it))} is as good as anything you have.` : 'None of your items changes these matchups.'}</p>`;
         itemHTML += `${later ? `<p class="small" style="margin:0">Later: <b>${esc(E.itemName(later.id))}</b> (+${later.g.toFixed(1)}) comes ${esc(later.w)}.</p>` : ''}
-          <p class="note" style="margin:0">${fn ? 'Judged ' + esc(fn) + ', the way it will fight. ' : ''}From what you have: ${S.run.care ? 'the care package so far, ' : ''}items you've ticked in Team &amp; PC and what your team holds.</p>`;
+          <p class="note" style="margin:0">${fn ? 'Judged ' + esc(fn) + ', the way it will fight. ' : ''}From what you have: ${S.run.care ? 'the care package so far, ' : ''}items you've ticked under Pokémon and what your team holds.</p>`;
         draw();
       }, 40);
     }
@@ -1039,6 +1179,8 @@
         if (m.box === 'party' && (!existing || existing.box !== 'party') && party().length >= 6) m.box = 'box';
         if (S.example) { S.example = false; S.roster = []; }
         const idx = S.roster.findIndex(x => x.key === m.key);
+        // stats typed for another species or nature no longer say anything about its IVs
+        if (existing && existing.s !== m.s && (m.statsAt || m.ivGuess) && familyOf(existing.s) !== familyOf(m.s)) { m.statsAt = null; m.iv = null; m.ev = null; m.ivGuess = false; }
         const fell = m.box === 'dead' && (!existing || existing.box !== 'dead');
         if (fell && !m.died) m.died = { at: Date.now(), before: D.bosses[nextBoss()].n };
         if (idx >= 0) S.roster[idx] = m; else { m.ord = Date.now(); S.roster.push(m); }
@@ -1107,8 +1249,8 @@
           return `<td class="${cls}">${label}</td>`;
         }).join('')}</tr>`).join('')}</tbody></table></div></details>`;
     out += `<section class="section" id="items-sec"><details class="more" ${S.itemsOpen ? 'open' : ''} id="items-det"><summary>Held items for this fight</summary><div class="card" style="margin-top:8px" id="items-out">
-        <p class="small" style="margin:0">Tries every held item you have (${S.run.care ? 'the care package so far, ' : ''}what you've ticked in Team &amp; PC and what your Pokémon hold) on each Pokémon you'd bring, keeps the swaps that win or save matchups against this team, then simulates the fight before and after.</p>
-        <div class="row"><button class="btn" id="items-go" ${itemPool().size ? '' : 'disabled'}>Suggest held items</button>${itemPool().size ? '' : '<span class="note">Tick the items you have in Team &amp; PC first.</span>'}</div></div></details></section>`;
+        <p class="small" style="margin:0">Tries every held item you have (${S.run.care ? 'the care package so far, ' : ''}what you've ticked under Pokémon and what your Pokémon hold) on each Pokémon you'd bring, keeps the swaps that win or save matchups against this team, then simulates the fight before and after.</p>
+        <div class="row"><button class="btn" id="items-go" ${itemPool().size ? '' : 'disabled'}>Suggest held items</button>${itemPool().size ? '' : '<span class="note">Tick the items you have first (Menu → Pokémon, Bag).</span>'}</div></div></details></section>`;
     out += movesetSection(P);
     out += claudeSection();
     return out;
@@ -1126,7 +1268,7 @@
       <p class="note" style="margin:0">Plan ahead for any fight here. For the next fight on your run, the run page has all of this in one place.</p>
     </section>`;
     if (!roster.length) {
-      html += `<div class="empty">Add your Pokémon in Team &amp; PC and the Coach will plan this fight.<button class="btn" id="plan-ex">Try an example team</button></div>`;
+      html += `<div class="empty">Add your Pokémon (Menu → Pokémon) and the Coach will plan this fight.<button class="btn" id="plan-ex">Try an example team</button></div>`;
       html += `<section class="section"><h2>Their team</h2>${D.bosses[bi].party.map((_, j) => `<div class="card">${theirSetHTML(E.bossTeam(bi, b.cap)[j])}</div>`).join('')}</section>`;
       main.innerHTML = html; wirePlan(); return;
     }
@@ -1534,7 +1676,7 @@
   }
   function liveBodyHTML(bi) {
     const pp = party().length ? party() : alive();
-    if (!pp.length) return '<div class="empty">Add your Pokémon in Team &amp; PC first.</div>';
+    if (!pp.length) return '<div class="empty">Add your Pokémon first (Menu → Pokémon).</div>';
     if (!S.live || S.live.bi !== bi) {
       const b = D.bosses[bi];
       const n = b.dbl ? 2 : 1;
@@ -1731,7 +1873,7 @@
   function speedLine(F, me, foe) {
     if (F.why === 'priority') return `${esc(shortName((F.side === 'p' ? me : foe).name))}’s move has priority.`;
     const tail = me.spec.exact ? '' : me.speRaw ? ', from who moved first earlier' : me.spec.iv ? ', estimated from an earlier battle'
-      : ' if its Speed IV is perfect (enter its stats in Team to be sure)';
+      : ' if its Speed IV is perfect (enter its stats under Pokémon to be sure)';
     return `Speed: their ${esc(shortName(foe.name))} ${F.sf}, yours ${F.sp}${tail}${F.why === 'trick room' ? '. Trick Room: the slower one moves first' : ''}.`;
   }
   /** Step 1: who moves first if you attack (switches always go first). */
@@ -2027,7 +2169,7 @@
     if (r == null) { L.lesson = `${meFirst ? nm : shortName(foe.name)} moved first, which Speed can’t explain (a Quick Claw, or a speed tie?). The Coach keeps its numbers.`; return; }
     const m2 = nx.p.team[me.idx]; if (m2) m2.speRaw = r;
     L.lesson = meFirst ? `You moved first, so ${nm} is faster than the Coach assumed: it now counts its Speed as ${r}.`
-      : `${shortName(foe.name)} moved first, so ${nm}’s Speed can’t be ${base}: the Coach now counts it as ${r} or less. Enter its real stats in Team for exact numbers.`;
+      : `${shortName(foe.name)} moved first, so ${nm}’s Speed can’t be ${base}: the Coach now counts it as ${r} or less. Enter its real stats under Pokémon for exact numbers.`;
     // keep it for later fights, as a Speed IV (or EV) estimate, unless you entered its real stats
     const mon = S.roster.find(x => x.key === me.key);
     if (mon && !mon.statsAt && !S.example) {
@@ -2247,7 +2389,7 @@
     if (B.boss == null) B.boss = S.planBoss != null ? S.planBoss : nextBoss();
     const p = party().length ? party() : alive();
     if (!p.length) {
-      main.innerHTML = head + `<div class="empty">Add your Pokémon in Team &amp; PC first.<button class="btn" id="bt-ex">Try an example team</button></div>`;
+      main.innerHTML = head + `<div class="empty">Add your Pokémon first (Menu → Pokémon).<button class="btn" id="bt-ex">Try an example team</button></div>`;
       $('#bt-ex').onclick = loadExample; return;
     }
     if (!B.me || !p.some(m => m.key === B.me)) B.me = p[0].key;
@@ -2771,7 +2913,7 @@
       <div class="row"><h2 class="grow">Run #${no}</h2><span class="pill">${r.milestones} of 16 milestones</span></div>
       ${badgesHTML()}
       ${party().length ? partyStrip(r.cap) : ''}
-      <div class="row small"><span class="muted grow">${S.roster.length ? `${party().length}/6 in party · ${box} in box · ${r.fainted} fainted · ${r.caught} caught` : 'No Pokémon yet'}</span><button class="btn small ghost" data-go="team">Team &amp; PC</button>${S.run.started || S.roster.length ? '<button class="btn small ghost" data-go="newrun">Start a new run</button>' : ''}</div>
+      <div class="row small"><span class="muted grow">${S.roster.length ? `${party().length}/6 in party · ${box} in box · ${r.fainted} fainted · ${r.caught} caught` : 'No Pokémon yet'}</span><button class="btn small ghost" data-go="team">Pokémon</button>${S.run.started || S.roster.length ? '<button class="btn small ghost" data-go="newrun">Start a new run</button>' : ''}</div>
     </section>`;
   }
   function wipeHTML() {
@@ -2839,7 +2981,7 @@
     if (s.kind === 'areas') return s.areas.map(n => areaCard(D.areas.find(a => a.n === n), FLOW.needOf(n))).join('');
     const b = D.bosses[fightOf(s.g)];
     if (st.passed && !st.done) return `<div class="row small"><span class="grow muted">You went past ${esc(b.n)} without logging it.</span><button class="btn small" data-markwon="${s.g.first}">I beat it</button><button class="btn small ghost" data-markskip="${s.g.first}">I skipped it</button></div>`;
-    return `<div class="row small"><span class="grow muted">${st.won ? `Beaten.` : 'Skipped.'} Undo it if that was a mistake (Pokémon marked as fainted stay fainted; fix them in Team &amp; PC).</span><button class="btn small ghost" data-undofight="${s.g.first}">${st.won ? 'Undo the win' : 'Undo the skip'}</button></div>`;
+    return `<div class="row small"><span class="grow muted">${st.won ? `Beaten.` : 'Skipped.'} Undo it if that was a mistake (Pokémon marked as fainted stay fainted; fix them under Pokémon).</span><button class="btn small ghost" data-undofight="${s.g.first}">${st.won ? 'Undo the win' : 'Undo the skip'}</button></div>`;
   }
   function stepBodyHTML(st, P) {
     const s = st.step;
@@ -2921,7 +3063,7 @@
   }
   function prepHTML(cap) {
     const p = party();
-    if (!p.length) return `<div class="card"><p class="small" style="margin:0">Your party is empty. Add the Pokémon you have, or move some out of your box.</p><div><button class="btn" data-go="team">Team &amp; PC</button></div></div>`;
+    if (!p.length) return `<div class="card"><p class="small" style="margin:0">Your party is empty. Add the Pokémon you have, or move some out of your box.</p><div><button class="btn" data-go="team">Pokémon</button></div></div>`;
     const under = p.filter(m => m.lv < cap);
     const evo = p.map(m => ({ m, to: evolvedBy(m.s, m.lv) })).filter(x => x.to !== x.m.s && E.sp(x.to));
     return `<div class="card">${partyStrip(cap)}
@@ -3272,7 +3414,7 @@
       <dl class="kv"><dt>Progress</dt><dd>${r.milestones} of 16 milestones · cap ${r.cap}${r.lastBeaten ? ` · last beat ${esc(r.lastBeaten)}` : ''}</dd>
         <dt>Encounters</dt><dd>${r.caught} caught, ${r.missed} missed, ${r.areas} areas done</dd>
         <dt>Team</dt><dd>${r.alive} alive, ${r.fainted} fainted</dd></dl>
-      ${S.roster.length ? teamIcons(S.roster) : '<p class="small muted" style="margin:0">No Pokémon yet. Pick a starter below, or add one in Team &amp; PC.</p>'}
+      ${S.roster.length ? teamIcons(S.roster) : '<p class="small muted" style="margin:0">No Pokémon yet. Pick a starter below, or add one under Pokémon.</p>'}
       <div class="row"><button class="btn primary" id="run-end" ${S.example || (!S.roster.length && !S.run.beaten.length) ? 'disabled' : ''}>End this run…</button><button class="btn" data-go="run">Back to the run</button>
         <span class="note">Saves it to your history, then clears your party, boxes, encounters, beaten bosses and TMs for a fresh start. Your settings stay.</span></div></div></section>`;
     html += insightsHTML();

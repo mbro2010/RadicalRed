@@ -23,6 +23,8 @@
   --b0: #a9a49a; --b1: #4aa3e8; --b2: #f2a516; --b3a: #e85a5a; --b3b: #f2c230; --b3c: #5bbf6a; --b3d: #5a8de8; --b4: #e86aa8; --b5: #d9b130; --b5c: #f6e7a6; --b6: #e0523e; --b7: #3fae6a;
   --scrim: rgba(14, 18, 26, .58);
   --stone: #b3afbb; --stone-hi: #cfcbd6; --stone-edge: #4d4957; --stone-ink: #2c2933; --grass: #4f8a3c; --grass-edge: #33602a; --dusk-a: rgba(72, 52, 120, .78); --dusk-b: rgba(12, 10, 24, .9); --night-top: #1d1938; --night-bot: #4b3f7a;
+  --pm-bg: #2f7f86; --pm-bg-2: #2a737a; --pm-slot: #4f8fd0; --pm-slot-2: #3f78b6; --pm-slot-edge: #23466f; --pm-lead: #e2793a; --pm-lead-2: #c9622a; --pm-lead-edge: #7c3410;
+  --pm-ink: #ffffff; --pm-shade: rgba(20, 28, 44, .55); --pm-hp: #f2c94c; --nat-up: #d0453a; --nat-down: #2f62c8;
   --ball-red: #e0483c; --ball-white: #f8f8f4; --pop-dmg: #ffffff; --pop-heal: #9cf29c; --glow: #fff6b0; --fx-up: #7ec8ff; --fx-down: #ff8f7e;
   --font-display: "Pixelify Sans", "Courier New", monospace;
   --font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -40,6 +42,8 @@
     --water-sky: #1d3a52; --water-ground: #1f5580; --water-plat: #2b6a99; --water-rim: #1c4b72;
     --indoor-sky: #3c3529; --indoor-ground: #514631; --indoor-plat: #6b5d40; --indoor-rim: #4b412b;
     --st-box: #e9ebe4; --st-shadow: rgba(0, 0, 0, .45);
+    --pm-bg: #173f45; --pm-bg-2: #143840; --pm-slot: #2d5f92; --pm-slot-2: #264f7c; --pm-slot-edge: #9cc0e8; --pm-lead: #a5542a; --pm-lead-2: #8c4522; --pm-lead-edge: #f0b48c;
+    --pm-ink: #ffffff; --pm-shade: rgba(0, 0, 0, .6); --pm-hp: #f2c94c; --nat-up: #ff8a7e; --nat-down: #8fb4ff;
   }
 }
 :root[data-theme="dark"] {
@@ -53,6 +57,8 @@
   --water-sky: #1d3a52; --water-ground: #1f5580; --water-plat: #2b6a99; --water-rim: #1c4b72;
   --indoor-sky: #3c3529; --indoor-ground: #514631; --indoor-plat: #6b5d40; --indoor-rim: #4b412b;
   --st-box: #e9ebe4; --st-shadow: rgba(0, 0, 0, .45);
+  --pm-bg: #173f45; --pm-bg-2: #143840; --pm-slot: #2d5f92; --pm-slot-2: #264f7c; --pm-slot-edge: #9cc0e8; --pm-lead: #a5542a; --pm-lead-2: #8c4522; --pm-lead-edge: #f0b48c;
+  --pm-ink: #ffffff; --pm-shade: rgba(0, 0, 0, .6); --pm-hp: #f2c94c; --nat-up: #ff8a7e; --nat-down: #8fb4ff;
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -422,6 +428,74 @@ ol.path::before { content: ""; position: absolute; left: 9px; top: 8px; bottom: 
 .evo-text { font-size: 19px; color: var(--ink); min-height: 2.6em; }
 .evo-card.done .evo-text { color: var(--accent); }
 /* one Pokemon's sheet */
+/* the party menu, after the game's: the lead on the left, five more on the right, a text box below */
+.pm { display: grid; gap: 8px; padding: 8px; border-radius: 14px; border: 3px solid var(--pm-slot-edge);
+  background: repeating-linear-gradient(135deg, var(--pm-bg) 0 10px, var(--pm-bg-2) 10px 20px); }
+.pm-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 6px; }
+.pm-rest { display: grid; gap: 6px; }
+.pm-slot { position: relative; display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; grid-template-areas: "ico name lv" "ico hp hp" ". . hpn";
+  align-items: center; gap: 0 6px; padding: 4px 8px 4px 4px; min-height: 52px; text-align: left; color: var(--pm-ink); text-shadow: 1px 1px 0 var(--pm-shade);
+  background: linear-gradient(var(--pm-slot), var(--pm-slot-2)); border: 2px solid var(--pm-slot-edge); border-radius: 10px; font-weight: 700; }
+.pm-slot:active { transform: translateY(1px); }
+.pm-lead { align-self: start; min-height: 150px; grid-template-columns: 1fr auto; grid-template-areas: "ico ico" "name name" "lv lv" "hp hp" ". hpn"; align-content: center; padding: 8px 10px; border-radius: 14px;
+  background: linear-gradient(var(--pm-lead), var(--pm-lead-2)); border-color: var(--pm-lead-edge); }
+.pm-empty { background: transparent; border: 2px dashed color-mix(in srgb, var(--pm-ink) 45%, transparent); min-height: 40px; }
+.pm-ico { grid-area: ico; position: relative; width: 34px; height: 34px; display: grid; place-items: center; }
+.pm-lead .pm-ico { width: 64px; height: 56px; justify-self: center; }
+.pm-lead .pm-ico .ico { transform: scale(1.6); }
+.pm-held { position: absolute; right: -2px; bottom: 0; width: 11px; height: 11px; border-radius: 3px; background: var(--pm-hp); border: 2px solid var(--pm-slot-edge); transform: rotate(45deg); }
+.pm-name { grid-area: name; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.pm-lv { grid-area: lv; font-family: var(--font-display); font-size: 14px; white-space: nowrap; }
+.pm-over { font-family: var(--font-body); font-size: 10px; padding: 0 4px; border-radius: 4px; background: var(--lose); text-shadow: none; }
+.pm-hp { grid-area: hp; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px; }
+.pm-hp b { font-size: 10px; color: var(--pm-hp); letter-spacing: .04em; }
+.pm-bar { height: 7px; border-radius: 4px; background: var(--hp-track); border: 1px solid var(--pm-slot-edge); overflow: hidden; }
+.pm-bar i { display: block; width: 100%; height: 100%; background: var(--hp-hi); }
+.pm-hpn { grid-area: hpn; font-family: var(--font-data); font-size: 12px; justify-self: end; }
+.pm-msg { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; background: var(--st-box); color: var(--st-box-ink); border: 3px solid var(--st-box-edge); }
+.pm-say { flex: 1 1 160px; font-family: var(--font-display); font-size: 16px; }
+.pm-btns { display: flex; gap: 6px; }
+.pm-btn { padding: 6px 12px; border-radius: 8px; border: 2px solid var(--st-box-edge); background: var(--pm-slot); color: var(--pm-ink); font-weight: 700; text-shadow: 1px 1px 0 var(--pm-shade); }
+.pc { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; padding: 8px; border-radius: 12px; background: var(--box-inner); border: 3px solid var(--box-edge); }
+.pc-mon { position: relative; display: grid; justify-items: center; gap: 0; padding: 4px 2px; border-radius: 8px; border: 2px solid transparent; background: var(--surface); font-size: 11px; font-weight: 600; }
+.pc-mon .pm-held { right: 6px; bottom: 16px; }
+/* the summary: a band with the pages, the Pokemon and its level, then the page */
+.sum { gap: 12px; }
+.sum-band { display: flex; align-items: center; gap: 8px; padding: 6px; border-radius: 12px; background: var(--bar); border: 2px solid var(--bar-edge); }
+.sum-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; flex: 1; }
+.sum-tabs button { padding: 8px 4px; border-radius: 8px; border: 0; background: transparent; color: var(--bar-ink); font-family: var(--font-display); font-size: 16px; }
+.sum-tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); }
+.sum-x { width: 40px; height: 40px; border-radius: 8px; border: 0; background: transparent; color: var(--bar-ink); font-size: 18px; }
+.sum-hero { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; align-items: center; padding: 10px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); }
+.sum-pic { display: grid; place-items: center; width: 112px; height: 112px; border-radius: 12px; background: radial-gradient(circle at 50% 60%, var(--box-inner), var(--surface-2) 70%); }
+.sum-id { display: grid; gap: 4px; min-width: 0; }
+.sum-name { font-family: var(--font-display); font-size: 22px; line-height: 1.1; overflow-wrap: anywhere; }
+.sum-lv { grid-column: 1 / -1; }
+.sum-page { display: grid; gap: 10px; }
+.sum-kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 10px; margin: 0; padding: 10px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); }
+.sum-kv dt { align-self: start; padding: 2px 8px; border-radius: 6px; background: var(--box-edge); color: var(--surface); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.sum-kv dd { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+.sum-stats { width: 100%; border-collapse: separate; border-spacing: 0 4px; font-size: 14px; }
+.sum-stats th, .sum-stats td { padding: 4px 6px; text-align: left; }
+.sum-stats thead th { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.sum-stats tbody tr { background: var(--surface); }
+.sum-stats tbody th { white-space: nowrap; border-radius: 8px 0 0 8px; }
+.sum-stats tbody td:last-child { border-radius: 0 8px 8px 0; }
+.sum-stats .v { font-family: var(--font-data); font-weight: 700; font-size: 15px; }
+.sum-stats tr.up th, .sum-stats tr.up .v, .sum-edit .up span { color: var(--nat-up); }
+.sum-stats tr.down th, .sum-stats tr.down .v, .sum-edit .down span { color: var(--nat-down); }
+.sr { font-size: 10px; }
+.bstat { display: inline-block; width: 60px; height: 6px; margin-right: 6px; border-radius: 3px; background: var(--line); overflow: hidden; vertical-align: middle; }
+.bstat i { display: block; height: 100%; background: var(--ok); }
+.sum-edit { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.sum-edit label { display: grid; gap: 2px; font-size: 13px; font-weight: 600; }
+.sum-edit input { width: 100%; padding: 8px; border-radius: 8px; border: 2px solid var(--line); background: var(--surface); font-family: var(--font-data); font-size: 17px; }
+.note.bad { color: var(--lose); }
+.sum-moves { display: grid; gap: 6px; }
+.sm-row { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "type name" "meta meta"; gap: 2px 8px; align-items: center; padding: 8px 10px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); border-left: 6px solid var(--t); }
+.sm-type { grid-area: type; padding: 1px 8px; border-radius: 6px; background: var(--t); color: #fff; font-size: 11px; font-weight: 700; text-shadow: 0 1px 0 rgba(0, 0, 0, .35); text-transform: uppercase; }
+.sm-n { grid-area: name; font-size: 15px; }
+.sm-meta { grid-area: meta; font-size: 12.5px; color: var(--muted); }
 .monsheet .mon-top { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; }
 .monsheet .who { display: grid; gap: 4px; min-width: 0; }
 .ticker { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
@@ -627,7 +701,7 @@ input.search { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--l
     </div>
     <nav class="menu" id="menu" hidden aria-label="Coach tools">
       <button data-go="run">Your run</button>
-      <button data-go="team">Team &amp; PC</button>
+      <button data-go="team">Pokémon</button>
       <button data-go="areas">All areas</button>
       <button data-go="fight">Plan any fight</button>
       <button data-go="check">Quick check</button>
