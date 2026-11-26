@@ -526,12 +526,18 @@ ol.path::before { content: ""; position: absolute; left: 9px; top: 8px; bottom: 
 .ticker { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .ticker > .btn:not(.small) { width: 44px; height: 44px; padding: 0; font-size: 22px; line-height: 1; }
 .lvbig { font-family: var(--font-display); font-weight: 700; font-size: 26px; min-width: 76px; text-align: center; font-variant-numeric: tabular-nums; }
-/* natures and held items in fight prep */
-.tune-rows { display: grid; gap: 6px; }
-.tune-row { display: grid; grid-template-columns: 32px auto 1fr; gap: 4px 8px; align-items: center; padding: 6px 8px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); font-size: 13.5px; }
-.tune-row > b { white-space: nowrap; }
-.tune-pick { grid-column: 2 / -1; display: grid; gap: 4px; }
-.tune-line { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+/* the plan's lineup: who to bring, in order, with held items and natures */
+.lu { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.lu-row { display: grid; grid-template-columns: 24px 32px minmax(0, 1fr); gap: 4px 8px; align-items: start; padding: 8px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); font-size: 13.5px; }
+.lu-row.lead { border-color: var(--accent); }
+.lu-n { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--chip); font-weight: 700; font-size: 13px; font-variant-numeric: tabular-nums; margin-top: 4px; }
+.lu-row.lead .lu-n { background: var(--accent); color: var(--accent-ink); }
+.lu-body { display: grid; gap: 3px; min-width: 0; }
+.lu-top { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
+.lu-line { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.done { color: var(--safe); font-weight: 700; }
+.tag.lead { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+.tag.warn { background: var(--risky-soft); color: var(--risky); font-weight: 600; }
 .switch { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); font-size: 14px; }
 .switch input { width: 20px; height: 20px; margin-top: 1px; accent-color: var(--accent); }
 .area summary .adv { display: block; grid-column: 1 / -1; font-size: 13px; line-height: 1.35; margin-top: 2px; }

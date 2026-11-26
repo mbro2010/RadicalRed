@@ -1482,14 +1482,18 @@
 
   /** Pick six and a lead for one boss, then simulate the plan.
    *  roster: player specs (alive Pokemon, each with key and label). bossSpecs: boss specs in party order.
-   *  onProgress(fraction, text) is called as work proceeds. */
+   *  onProgress(fraction, text) is called as work proceeds.
+   *  setup(specsOfSix): optional; once the six are picked it may hand back their held items and natures for this fight
+   *  ({ specs, info, changed }): the lead, the odds and the script then use them, and baseOdds keeps the six as they were. */
   async function planFight(roster, bossSpecs, opts) {
     const o = Object.assign({ screenRuns: 16, leadRuns: 30, finalRuns: 200, seed: 11 }, opts || {});
     const progress = o.onProgress || (() => {});
     const plannerOpts = o.plannerOpts;
+    const VSP = { safe: 3, ok: 2, risky: 1, lose: 0 };
+    const rowOf = r => bossSpecs.map(b => E.matchup(Object.assign({}, r, { entry: true }), Object.assign({}, b, { entry: true })));
     // analytic pre-ranking: how each Pokemon fares against each boss Pokemon
-    const grid = roster.map(r => bossSpecs.map(b => E.matchup(Object.assign({}, r, { entry: true }), Object.assign({}, b, { entry: true }))));
-    const score = i => grid[i].reduce((s, m) => s + ({ safe: 3, ok: 2, risky: 1, lose: 0 }[m.verdict]) - m.risk, 0);
+    const grid = roster.map(rowOf);
+    const score = i => grid[i].reduce((s, m) => s + VSP[m.verdict] - m.risk, 0);
     let candidates;
     if (roster.length <= 6) candidates = [roster.map((_, i) => i)];
     else {
@@ -1500,57 +1504,87 @@
         let bi = -1, bg = -1;
         roster.forEach((r, i) => {
           if (chosen.includes(i)) return;
-          const g = grid[i].reduce((s, m, j) => s + Math.max(0, ({ safe: 3, ok: 2, risky: 1, lose: 0 }[m.verdict]) - covered[j]) * 10 + (1 - m.risk), 0);
+          const g = grid[i].reduce((s, m, j) => s + Math.max(0, VSP[m.verdict] - covered[j]) * 10 + (1 - m.risk), 0);
           if (g > bg) { bg = g; bi = i; }
         });
         chosen.push(bi);
-        bossSpecs.forEach((b, j) => { covered[j] = Math.max(covered[j], ({ safe: 3, ok: 2, risky: 1, lose: 0 }[grid[bi][j].verdict])); });
+        bossSpecs.forEach((b, j) => { covered[j] = Math.max(covered[j], VSP[grid[bi][j].verdict]); });
       }
       const rest = roster.map((_, i) => i).filter(i => !chosen.includes(i)).sort((a, b) => score(b) - score(a)).slice(0, 2);
       candidates = [chosen.slice()];
       for (const r of rest) for (let k = 0; k < 6; k++) { const c = chosen.slice(); c[k] = r; candidates.push(c); }
     }
     const doubles = !!o.doubles;
+    // the six's specs and matchups: as they are, or with the setup once it's chosen
+    let specOfIdx = i => roster[i], rowIdx = i => grid[i];
     // how well each Pokemon does against the boss's lead (two leads in doubles)
-    const vsLeads = i => (doubles ? [0, 1] : [0]).filter(j => grid[i][j]).reduce((sum, j) => sum + ({ safe: 3, ok: 2, risky: 1, lose: 0 }[grid[i][j].verdict]) - grid[i][j].risk, 0);
+    const vsLeads = i => (doubles ? [0, 1] : [0]).filter(j => rowIdx(i)[j]).reduce((sum, j) => sum + VSP[rowIdx(i)[j].verdict] - rowIdx(i)[j].risk, 0);
+    const byLead = (a, b) => (rowIdx(a)[0].risk - rowIdx(b)[0].risk) || (rowIdx(b)[0].hpLeftPct - rowIdx(a)[0].hpLeftPct);
     const leadGuess = idxs => {
-      const ranked = idxs.slice().sort((a, b) => doubles ? vsLeads(b) - vsLeads(a) : (grid[a][0].risk - grid[b][0].risk) || (grid[b][0].hpLeftPct - grid[a][0].hpLeftPct));
+      const ranked = idxs.slice().sort((a, b) => doubles ? vsLeads(b) - vsLeads(a) : byLead(a, b));
       return doubles ? ranked.slice(0, 2) : ranked[0];
     };
-    const total = candidates.length * o.screenRuns + 3 * o.leadRuns + o.finalRuns;
-    let done = 0;
-    const evalLineup = async (idxs, lead, runs) => {
-      const specs = idxs.map(i => roster[i]);
+    const screening = candidates.length > 1 ? candidates.length * o.screenRuns : 0;
+    let total = screening + 3 * o.leadRuns + o.finalRuns * (o.setup ? 2 : 1);
+    let done = 0, phase = 'Picking your six';
+    const evalLineup = async (idxs, lead, runs, specFn) => {
+      const specs = idxs.map(specFn || specOfIdx);
       return simulateAsync(specs, bossSpecs, { runs, seed: o.seed, lead: doubles ? lead.map(l => idxs.indexOf(l)) : idxs.indexOf(lead), plannerOpts, doubles },
-        n => { done += n; progress(done / total, `Simulated ${done} of ${total} battles`); });
+        n => { done += n; progress(Math.min(1, done / total), `${phase}: ${done} of ${total} battles simulated`); });
     };
-    // 1) screen lineups
-    let best = null;
-    for (const c of candidates) {
-      const r = await evalLineup(c, leadGuess(c), o.screenRuns);
-      if (!best || better(r, best.res) > 0) best = { idxs: c, res: r };
+    // 1) screen lineups (nothing to screen when there's only one)
+    let best = { idxs: candidates[0], res: null };
+    if (candidates.length > 1) {
+      best = null;
+      for (const c of candidates) {
+        const r = await evalLineup(c, leadGuess(c), o.screenRuns);
+        if (!best || better(r, best.res) > 0) best = { idxs: c, res: r };
+      }
     }
-    // 2) choose the lead among the three best analytic leads
-    let leads = best.idxs.slice().sort((a, b) => (grid[a][0].risk - grid[b][0].risk) || (grid[b][0].hpLeftPct - grid[a][0].hpLeftPct)).slice(0, 3);
+    // 2) held items and natures for these six, if the caller works them out
+    let setup = null;
+    if (o.setup) {
+      phase = 'Choosing held items and natures';
+      progress(Math.min(1, done / total), phase + '…');
+      const r = await o.setup(best.idxs.map(i => roster[i]));
+      if (r && r.changed && r.specs && r.specs.length === best.idxs.length) {
+        const bySix = new Map(best.idxs.map((i, k) => [i, r.specs[k]]));
+        const rows = new Map(best.idxs.map((i, k) => [i, rowOf(r.specs[k])]));
+        specOfIdx = i => bySix.get(i) || roster[i];
+        rowIdx = i => rows.get(i) || grid[i];
+        setup = r.info || null;
+      } else {
+        if (r) setup = r.info || null;
+        total -= o.finalRuns;   // no second check needed
+      }
+    }
+    const changed = best.idxs.some(i => specOfIdx(i) !== roster[i]);
+    // 3) choose the lead among the three best analytic leads
+    phase = 'Choosing your lead';
+    let leads = best.idxs.slice().sort(byLead).slice(0, 3);
     if (doubles) {
       // lead pairs from the four best against their leads
       const top = best.idxs.slice().sort((a, b) => vsLeads(b) - vsLeads(a)).slice(0, 4);
       const pairs = [];
       for (let x = 0; x < top.length; x++) for (let y = x + 1; y < top.length; y++) pairs.push([top[x], top[y]]);
       leads = pairs.sort((p1, p2) => (vsLeads(p2[0]) + vsLeads(p2[1])) - (vsLeads(p1[0]) + vsLeads(p1[1]))).slice(0, 3);
+      if (!leads.length) leads = [top.slice(0, 2)];
     }
     let bestLead = null;
     for (const l of leads) {
       const r = await evalLineup(best.idxs, l, o.leadRuns);
       if (!bestLead || better(r, bestLead.res) > 0) bestLead = { lead: l, res: r };
     }
-    // 3) final odds with more battles
+    // 4) final odds with more battles; with a setup, the same battles with the six as they were too
+    phase = 'Final odds';
     const final = await evalLineup(best.idxs, bestLead.lead, o.finalRuns);
-    // 4) the most likely run, turn by turn
-    const specs = best.idxs.map(i => roster[i]);
+    let baseOdds = null;
+    if (changed) { phase = 'Comparing with your Pokémon as they are'; baseOdds = await evalLineup(best.idxs, bestLead.lead, o.finalRuns, i => roster[i]); }
+    // 5) the most likely run, turn by turn
+    const specs = best.idxs.map(specOfIdx);
     const scriptState = runBattle(specs, bossSpecs, { expected: true, record: true, lead: doubles ? bestLead.lead.map(l => best.idxs.indexOf(l)) : best.idxs.indexOf(bestLead.lead), plannerOpts, maxTurns: 60, doubles });
     progress(1, 'Done');
-    return { lineup: best.idxs, lead: bestLead.lead, doubles, odds: final, script: scriptOf(scriptState), grid };
+    return { lineup: best.idxs, lead: bestLead.lead, doubles, odds: final, baseOdds, setup, script: scriptOf(scriptState), grid };
   }
 
   /** Turn the recorded "most likely" battle into steps a player can follow. */
@@ -1584,7 +1618,22 @@
       if (planned) t.sacrifice = e.name;
       return { turn: e.turn, name: e.name, cause: e.cause, planned };
     });
-    return { winner: st.winner, turns, faints, totalTurns: st.turn };
+    // who you send out, in order (your lead first), and which of theirs each one takes on in this line
+    const order = [], faces = {};
+    const seen = k => { if (k != null && !order.includes(k)) order.push(k); };
+    for (const e of st.events) {
+      if (e.type === 'lead') (e.pAll || [e.p]).forEach(seen);
+      else if (e.type === 'switch' && e.side === 'p') seen(e.to);
+      else if (e.type === 'decide') {
+        const theirs = e.acts.filter(x => x.side === 'a');
+        for (const x of e.acts) {
+          if (x.side !== 'p' || !x.a || x.a.type === 'switch') continue;
+          const f = faces[x.key] || (faces[x.key] = []);
+          for (const y of theirs) { const nm = name('a', y.key); if (!f.includes(nm)) f.push(nm); }
+        }
+      }
+    }
+    return { winner: st.winner, turns, faints, totalTurns: st.turn, order, faces };
   }
 
   return { meta, snapshot, sampleBattle, makeMon, newBattle, runBattle, simulate, simulateAsync, planFight, scriptOf, plannerPolicy, doublesPlanner, aiPolicy, bossPolicy, AI, megaTarget, zKind, usable, actives, cloneState, playTurn, begin, switchIn, speed, priorityOf, mayCause, statusEffect, statusRisk, hitChance, mulberry32, expectedDice, specNow, act };

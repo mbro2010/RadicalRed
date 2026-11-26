@@ -115,7 +115,7 @@
     }
     FLOW = window.createFlow(D, mode);
     // everything worked out for the other difficulty
-    CATCH.clear(); TUNE.clear(); CANDS.clear(); CARE = null; planCache = { key: '', plan: null }; S.plans = {};
+    CATCH.clear(); CANDS.clear(); CARE = null; planCache = { key: '', plan: null }; S.plans = {};
     TIERS = null; tiersLoading = null;
   }
   /** The next fight on the path: the first boss you haven't beaten or skipped. */
@@ -550,7 +550,7 @@
       <div class="tmgrid">${heldItems().map(x => `<label class="tm" data-q="${esc(x.n.toLowerCase())}"><input type="checkbox" data-bag="${x.id}" ${have.has(x.id) ? 'checked' : ''}><span>${esc(x.n)}${where(x.id) ? `<span class="note" style="display:block">${esc(where(x.id))}</span>` : ''}</span></label>`).join('')}</div></details>`;
   }
   function wireBag() {
-    const ai = $('#care-on'); if (ai) ai.onchange = async () => { S.run.care = ai.checked; TUNE.clear(); CARE = null; flash(ai.checked ? 'Held-item tips now include the care package items you’ve got so far.' : 'Held-item tips now use only the items you’ve ticked.'); render(); await store.saveRun(); };
+    const ai = $('#care-on'); if (ai) ai.onchange = async () => { S.run.care = ai.checked; CARE = null; flash(ai.checked ? 'Held-item tips now include the care package items you’ve got so far.' : 'Held-item tips now use only the items you’ve ticked.'); render(); await store.saveRun(); };
     const box = $('#bag'); if (!box) return;
     box.addEventListener('toggle', () => { S.bagOpen = box.open; });
     const f = $('#bag-filter');
@@ -567,34 +567,6 @@
   /** Which of your Pokemon should hold which of your items for this fight: each item is tried on each Pokemon against the boss
    *  team (one-on-one matchups; Mega Stones as the Mega form), the best gains are assigned greedily, then the whole fight is
    *  simulated before and after. */
-  async function itemAdvice(lineup, team, doubles, onStep) {
-    const pool = itemPool();
-    const candidates = [...pool.keys()].filter(id => (D.items[id] || {}).c);
-    const score = (m, it) => itemScore(m, it, team);
-    const base = lineup.map(m => score(m, m.it || null));
-    const gains = [];
-    for (let k = 0; k < lineup.length; k++) {
-      for (const it of candidates) if (it !== lineup[k].it) gains.push({ k, it, g: score(lineup[k], it) - base[k] });
-      if (onStep) { onStep((k + 1) / lineup.length / 2); await new Promise(r => setTimeout(r, 0)); }
-    }
-    gains.sort((a, b) => b.g - a.g);
-    const left = new Map(pool), assigned = new Map();
-    for (const x of gains) {
-      if (x.g < 0.15 || assigned.has(x.k) || !(left.get(x.it) > 0)) continue;
-      assigned.set(x.k, x); left.set(x.it, left.get(x.it) - 1);
-    }
-    // check the whole fight with and without the swaps
-    const specsNow = lineup.map(m => specOf(m, { label: monName(m) }));
-    const specsNew = lineup.map((m, k) => specOf(m, { label: monName(m), it: assigned.has(k) ? assigned.get(k).it : m.it || null }));
-    let before = null, after = null;
-    if (assigned.size) {
-      before = await SIM.simulateAsync(specsNow, team, { runs: 40, seed: 5, doubles }, () => {});
-      if (onStep) onStep(0.75);
-      after = await SIM.simulateAsync(specsNew, team, { runs: 40, seed: 5, doubles }, () => {});
-    }
-    return { assigned: [...assigned.values()].map(x => ({ m: lineup[x.k], it: x.it, g: x.g, from: lineup[x.k].it || null })), before, after, candidates: candidates.length };
-  }
-
   // ---------------- per-Pokemon advice: nature and when to learn what ----------------
   function openAdvice(m) {
     document.body.style.overflow = 'hidden';
@@ -1260,15 +1232,22 @@
       ${m.best.notes.length ? `<div class="notes">${m.best.notes.map(esc).join('<br>')}</div>` : ''}</div>`;
   }
   let planCache = { key: '', plan: null };
-  /** What a plan depends on: the fight and every Pokemon you could bring. */
-  function planKey() { return JSON.stringify([modeNow(), S.planBoss, alive().map(r => [r.key, r.s, r.lv, r.nat, r.ab, r.it, r.mv, r.box, r.iv, r.ev])]); }
+  /** What a plan depends on: the fight, their team's levels and every Pokemon you could bring, but not natures and held
+   *  items or who's in your party: the plan sets those for its six (planFits checks the six still match). */
+  function planKey() {
+    if (S.planBoss == null) return '';
+    const mons = alive().slice().sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+    return JSON.stringify([modeNow(), S.planBoss, E.bossTeam(S.planBoss, planTop()).map(t => t.lv), mons.map(r => [r.key, r.s, r.lv, r.ab, r.mv, r.iv, r.ev])]);
+  }
+  /** Your team exactly as it is, natures, items and who's in the party included: the one-on-one numbers and watched battles. */
+  function teamKey() { return JSON.stringify([modeNow(), S.planBoss, alive().map(r => [r.key, r.s, r.lv, r.nat, r.ab, r.it, r.mv, r.box, r.iv, r.ev])]); }
   /** One-on-one numbers for the fight you're planning (cached until your team changes). */
   function matchups() {
-    const key = planKey();
+    const key = teamKey();
     if (planCache.key !== key) planCache = { key, plan: E.planBoss(S.planBoss, alive().map(r => specOf(r)), party().map(r => r.key)) };
     return planCache.plan;
   }
-  /** Everything after the battle plan: their team with your answers, the grid, held items, movesets, Claude.
+  /** Everything after the battle plan: their team with your answers, the grid, movesets, Claude.
    *  compact: inside a run step, so the answers fold away too. */
   function planExtrasHTML(P, compact) {
     const roster = alive();
@@ -1286,9 +1265,6 @@
           const label = m.verdict === 'safe' ? 'safe' : m.verdict === 'lose' ? 'loses' : fmtRisk(m.risk);
           return `<td class="${cls}">${label}</td>`;
         }).join('')}</tr>`).join('')}</tbody></table></div></details>`;
-    out += `<section class="section" id="items-sec"><details class="more" ${S.itemsOpen ? 'open' : ''} id="items-det"><summary>Held items for this fight</summary><div class="card" style="margin-top:8px" id="items-out">
-        <p class="small" style="margin:0">Tries every held item you have (${S.run.care ? 'the care package so far, ' : ''}what you've ticked under Pokémon and what your Pokémon hold) on each Pokémon you'd bring, keeps the swaps that win or save matchups against this team, then simulates the fight before and after.</p>
-        <div class="row"><button class="btn" id="items-go" ${itemPool().size ? '' : 'disabled'}>Suggest held items</button>${itemPool().size ? '' : '<span class="note">Tick the items you have first (Menu → Pokémon, Bag).</span>'}</div></div></details></section>`;
     out += movesetSection(P);
     out += claudeSection();
     return out;
@@ -1323,23 +1299,116 @@
     }, 30);
   }
   // ---------------- the simulated battle plan ----------------
+  /** Most boss levels follow your highest-level party Pokemon. The plan picks your party, so it plans for the
+   *  highest level you have (it stays put when you set your party up the plan's way). */
+  function planTop() { return Math.max(1, ...alive().map(m => m.lv)); }
   function planInputs() {
     const roster = alive();
-    const top = Math.max(1, ...(party().length ? party() : roster).map(m => m.lv));
+    const top = planTop();
     const team = E.bossTeam(S.planBoss, top).map((t, i) => Object.assign({ key: 'b' + i, label: E.sp(t.s).n }, t));
-    return { roster, specs: roster.map(r => specOf(r, { label: monName(r) })), team, top };
+    return { roster, specs: roster.map(r => specOf(r, { label: monName(r), keepItem: keepsItem(r) || undefined })), team, top };
+  }
+  /** Held items the plan must leave alone: an Everstone on a Pokemon you've stopped evolving. */
+  function keepsItem(m) { return !!(m.noEvo && m.it && /^Everstone$/.test(E.itemName(m.it) || '')); }
+  /** The held items the plan may hand out, as [id, count]: the care package so far, your bag, what your Pokemon hold. */
+  function setupPool() { const held = heldSet(); return [...itemPool()].filter(([id]) => held.has(id) && (D.items[id] || {}).c); }
+  /** Does a plan still fit your team? Its six must have the natures and items they had or the plan gave them
+   *  (or nothing, while an item is on its way to another of the six). Everyone else may hold anything. */
+  function planFits(res) {
+    if (!res || !res.before) return false;
+    const live = new Map(alive().map(m => [m.key, m]));
+    return res.lineup.every(i => {
+      const k = res.roster[i].key, m = live.get(k);
+      if (!m) return false;
+      const was = res.before[k] || {}, set = (res.setupBy || {})[k] || was, it = m.it || null;
+      return (m.nat === was.nat || m.nat === set.nat) && (it === (was.it || null) || it === (set.it || null) || it === null);
+    });
+  }
+  /** The plan for the fight you're on, if it still fits your team. */
+  function planNow(key) { const res = S.plans[key || planKey()]; return planFits(res) ? res : null; }
+  /** The plan's six in the order you send them in: the lead first, then as they come in in the most likely battle,
+   *  then the ones it keeps in reserve (best against their team first). Keys. */
+  function planOrder(res) {
+    const keys = res.lineup.map(i => res.roster[i].key), out = [];
+    for (const k of [].concat(res.lead).map(i => res.roster[i].key).concat((res.script && res.script.order) || [])) if (keys.includes(k) && !out.includes(k)) out.push(k);
+    const pts = k => (res.grid[res.roster.findIndex(r => r.key === k)] || []).reduce((s, m) => s + ({ safe: 3, ok: 2, risky: 1, lose: 0 }[m.verdict] || 0) - (m.risk || 0), 0);
+    return out.concat(keys.filter(k => !out.includes(k)).sort((a, b) => pts(b) - pts(a)));
+  }
+  /** Where each item the plan hands out comes from (the care package, your bag, or another Pokemon that gives it up),
+   *  and who gives theirs to whom. */
+  function setupSources(res) {
+    const set = res.setupBy || {}, sixKeys = new Set(res.lineup.map(i => res.roster[i].key));
+    const free = new Map(), held = heldSet(), care = careState().now;
+    for (const [id, w] of care) if (held.has(id)) free.set(id, { n: 99, where: `care package, ${w}` });
+    for (const id of S.run.bag || []) if (!free.has(id)) free.set(id, { n: 1, where: 'in your bag' });
+    // Pokemon that give up an item: ones you don't bring first, then any of the six the plan gives something else
+    const giving = res.roster.filter(m => { const was = (res.before[m.key] || {}).it; return was && (!sixKeys.has(m.key) || (set[m.key] || {}).it !== was); })
+      .sort((a, b) => (sixKeys.has(a.key) ? 1 : 0) - (sixKeys.has(b.key) ? 1 : 0));
+    const sources = {}, gives = {};
+    for (const i of res.lineup) {
+      const k = res.roster[i].key, x = set[k];
+      if (!x || !x.it || x.it === x.itFrom) continue;
+      const f = free.get(x.it);
+      if (f && f.n > 0) { f.n--; sources[k] = f.where; continue; }
+      const g = giving.findIndex(m => (res.before[m.key] || {}).it === x.it);
+      if (g >= 0) { const m = giving[g]; sources[k] = `take it from ${monShort(m)}${sixKeys.has(m.key) ? '' : m.box === 'party' ? ' (you don’t bring it)' : ' (in your box)'}`; gives[m.key] = k; giving.splice(g, 1); }
+      else sources[k] = 'one of your Pokémon holds it';
+    }
+    return { sources, gives };
+  }
+  /** Is your party this plan's six, in its order, with its items and natures? */
+  function partyMatches(res) {
+    const order = planOrder(res), p = party(), set = res.setupBy || {};
+    if (p.length !== order.length || p.some((m, j) => m.key !== order[j])) return false;
+    return p.every(m => { const x = set[m.key]; return !x || (m.nat === x.nat && (m.it || null) === (x.it || null)); });
   }
   function riskBadge(r) { return verdictBadge({ verdict: r <= 1e-9 ? 'safe' : r <= 0.05 ? 'ok' : r <= 0.35 ? 'risky' : 'lose', risk: r }); }
+  const listAnd = a => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
+  /** Who to bring, in order, each with the held item and nature the plan gives it and a button to say you've done it. */
+  function lineupHTML(res) {
+    const order = planOrder(res), set = res.setupBy || {}, faces = (res.script && res.script.faces) || {};
+    const leads = [].concat(res.lead).map(i => res.roster[i].key);
+    const live = new Map(S.roster.map(m => [m.key, m]));
+    const cap = capNow(), src = res.sources || {}, gives = res.gives || {};
+    const rows = order.map((k, j) => {
+      const m = live.get(k); if (!m) return '';
+      const x = set[k] || { nat: m.nat, natFrom: m.nat, it: m.it || null, itFrom: m.it || null };
+      const isLead = leads.includes(k), f = faces[k] || [];
+      const job = f.length ? `Takes on ${esc(listAnd(f))}` : 'In reserve: doesn’t come in, in the most likely battle. It’s there for when things go wrong.';
+      const now = m.it || null;
+      let item;
+      if ((x.it || null) === (x.itFrom || null)) item = x.it ? `<span>Hold: keep <b>${esc(E.itemName(x.it))}</b></span>` : '<span>Hold: <span class="muted">nothing you have helps here</span></span>';
+      else if (now === (x.it || null)) item = `<span>Hold: ${x.it ? `<b>${esc(E.itemName(x.it))}</b>` : 'nothing'} <span class="done">✓</span></span>`;
+      else if (x.it) item = `<span>Hold: <b>${esc(E.itemName(x.it))}</b> <span class="muted">(${esc(src[k] || 'from your bag')}${now ? `; instead of ${esc(E.itemName(now))}` : ''})</span></span><button class="btn small" data-bpgive="${esc(k)}" data-v="${x.it}">Give it</button>`;
+      else item = `<span>Hold: nothing <span class="muted">(its ${esc(E.itemName(now))} ${gives[k] && live.get(gives[k]) ? 'goes to ' + esc(monShort(live.get(gives[k]))) : 'comes off'})</span></span><button class="btn small" data-bpgive="${esc(k)}" data-v="0">Took it</button>`;
+      let nat;
+      if (x.nat === x.natFrom) nat = `<span>Nature: keep <b>${esc(D.natures[m.nat].n)}</b></span>`;
+      else if (m.nat === x.nat) nat = `<span>Nature: <b>${esc(D.natures[x.nat].n)}</b> <span class="done">✓</span></span>`;
+      else nat = `<span>Nature: <b>${esc(D.natures[x.nat].n)}</b> <span class="muted">(${esc(natureText(x.nat).replace(/^\S+ \((.*)\)$/, '$1'))}; now ${esc(D.natures[m.nat].n)})</span></span><button class="btn small" data-bpnat="${esc(k)}" data-v="${x.nat}">Changed it</button>`;
+      const tags = (isLead ? `<span class="tag lead">${res.doubles ? 'Leads' : 'Lead'}</span>` : f.length ? '' : '<span class="tag">Reserve</span>')
+        + (m.box === 'party' ? '' : '<span class="tag">in your box</span>') + (m.lv < cap ? `<span class="tag warn">under the cap (${cap})</span>` : '');
+      return `<li class="lu-row${isLead ? ' lead' : ''}" data-lu="${esc(k)}"><span class="lu-n" aria-hidden="true">${j + 1}</span>${icon(m.s)}<div class="lu-body">
+        <div class="lu-top"><b>${esc(monName(m))}</b><span class="small muted">Lv ${m.lv}</span>${tags}</div>
+        <div class="small">${job}</div><div class="lu-line small">${item}</div><div class="lu-line small">${nat}</div></div></li>`;
+    }).join('');
+    const done = partyMatches(res);
+    return `<div class="card lineup-card"><div class="lbl">Bring ${order.length === 6 ? 'these six' : 'these'}, in this order</div><ol class="lu">${rows}</ol>
+      ${done ? '<p class="small" style="margin:0"><span class="done">✓</span> Your party is set up like this.</p>' : '<div class="row"><button class="btn primary" id="bp-setup">Set up my party like this</button></div>'}
+      <p class="note" style="margin:0">${res.doubles ? 'Your first two lead.' : 'The lead goes first in your party.'} After a faint you pick who comes in: this is the order of the most likely battle, and the Battle step re-plans every turn if it goes another way.${done ? '' : ' The button sets this up here in the Coach (the rest go to your box); do the same in the game.'}</p>
+      <p class="note" style="margin:0">Natures change only where it matters for this fight (Radical Red's Nature Change service is free). Items come from what you have${S.run.care ? ', care package so far included' : ''}: tick yours under Menu → Pokémon → Bag.</p></div>`;
+  }
   function battlePlanHTML(key, bare) {
-    const res = S.plans[key];
+    const stored = S.plans[key];
+    const res = planFits(stored) ? stored : null;
     const running = S.planning && S.planning.key === key;
     let h = `<section class="section" id="bp">${bare ? '' : '<div class="head"><h2>Battle plan</h2><span class="muted small">Simulated with your Pokémon</span></div>'}`;
     if (!res) {
-      h += `<div class="card"><p class="small" style="margin:0">The Coach plays this fight hundreds of times with your Pokémon and the boss's exact team. It picks your six and your lead, then writes the turn-by-turn plan: what to click, when to switch, and any sacrifice the plan needs. Takes about 10–40 seconds on a phone.</p>
+      h += `<div class="card">${stored ? '<p class="small" style="margin:0"><b>A nature or held item changed since this plan.</b> Plan again to check the fight with them.</p>' : ''}
+        <p class="small" style="margin:0">The Coach picks your six from your party and box and the order to send them in, then the held item and nature for each from what you have. It plays the fight hundreds of times against the boss's exact team and AI, and writes the turn-by-turn plan: what to click, when to switch, and any sacrifice the plan needs. Takes about 10–40 seconds on a phone.</p>
         ${running ? `<div class="progress"><span style="width:${Math.round(100 * S.planning.frac)}%"></span></div><div class="note" id="bp-status">${esc(S.planning.text || 'Starting…')}</div>` : '<div class="row"><button class="btn primary" id="bp-go">Plan this fight</button></div>'}</div></section>`;
       return h;
     }
-    const o = res.odds, roster = res.roster;
+    const o = res.odds, b0 = res.baseOdds;
     const verdict = o.pNoLoss >= 0.9 ? 'Solid plan: you win without losing anyone in almost every simulated battle.'
       : o.pNoLoss >= 0.6 ? 'Workable, but things go wrong often enough to matter. Look at the dangers below.'
       : o.pWin >= 0.5 ? 'You usually win, but you usually lose a Pokémon doing it.'
@@ -1349,10 +1418,10 @@
         <div><span class="big">${Math.round(100 * o.pWin)}%</span><span class="lbl">win</span></div>
         <div><span class="big">${o.expLosses.toFixed(1)}</span><span class="lbl">Pokémon lost on average</span></div></div>
       <p class="small" style="margin:0">${esc(verdict)}</p>
-      <div class="lbl">Bring${res.doubles ? ' (double battle: your first two lead)' : ''}</div><div class="lineup">${res.lineup.map(i => { const isLead = [].concat(res.lead).includes(i); return `<span class="pick ${isLead ? 'lead' : ''}">${icon(roster[i].s)}${isLead ? 'Lead: ' : ''}${esc(monName(roster[i]))}</span>`; }).join('')}</div>
-      ${res.doubles ? '<p class="small" style="margin:0">Put the two leads first in your party. Each turn below lists both of your moves and who to aim them at.</p>' : ''}
+      ${b0 ? `<p class="small" style="margin:0">That's with the held items and natures below. As they are now: ${Math.round(100 * b0.pNoLoss)}% win with no losses, ${Math.round(100 * b0.pWin)}% win.</p>` : ''}
       <p class="note" style="margin:0">From ${o.runs} simulated battles against the boss AI ported from Radical Red's engine: the same move scores, fighting styles, targeting and switching rules.</p>
       <div class="row"><button class="btn small" id="bp-redo">Plan again</button></div></div>`;
+    h += lineupHTML(res);
     const causes = Object.entries(o.causes).sort((a, b) => b[1] - a[1]).slice(0, 4);
     if (causes.length) h += `<div class="card"><h3>What can go wrong</h3>${causes.map(([k, n]) => `<div class="small">${esc(k)} <span class="muted">· ${Math.round(100 * n / o.runs)}% of battles</span></div>`).join('')}</div>`;
     const sc = res.script;
@@ -1372,7 +1441,7 @@
   let planWorker = null, workerBroken = false, workerSeq = 0;
   function planInBackground(specs, team, opts) {
     const { onProgress, ...rest } = opts || {};
-    const onPage = () => SIM.planFight(specs, team, opts);
+    const onPage = () => SIM.planFight(specs, team, Object.assign({}, opts, { setup: opts && opts.pool ? six => ADV.planSetup(six, team, opts.pool) : null }));
     if (workerBroken || typeof Worker === 'undefined') return onPage();
     return new Promise(resolve => {
       try { if (!planWorker) planWorker = new Worker('worker.js'); } catch (e) { workerBroken = true; resolve(onPage()); return; }
@@ -1399,21 +1468,61 @@
     const key = planKey();
     const go = $('#bp-go'); if (go) go.onclick = () => runPlan(key);
     const redo = $('#bp-redo'); if (redo) redo.onclick = () => { delete S.plans[key]; runPlan(key); };
+    const res = planNow(key); if (!res) return;
+    main.querySelectorAll('[data-bpgive]').forEach(b => b.onclick = () => giveFromPlan(res, b.dataset.bpgive, +b.dataset.v || null));
+    main.querySelectorAll('[data-bpnat]').forEach(b => b.onclick = async () => {
+      const m = S.roster.find(x => x.key === b.dataset.bpnat); if (!m) return;
+      m.nat = +b.dataset.v; flash(`${monShort(m)} is now ${D.natures[m.nat].n}.`); render(); await store.saveMon(m);
+    });
+    const su = $('#bp-setup'); if (su) su.onclick = () => applyPlanSetup(res);
+  }
+  /** One of the plan's six gets its item (or takes its item off); whoever the item came from gives it up. */
+  async function giveFromPlan(res, key, id) {
+    const m = S.roster.find(x => x.key === key); if (!m) return;
+    const touched = [m];
+    if (id) for (const [giver, taker] of Object.entries(res.gives || {})) {
+      const g = taker === key && S.roster.find(x => x.key === giver);
+      if (g && g.it === id) { g.it = null; touched.push(g); }
+    }
+    m.it = id || null;
+    flash(id ? `${monShort(m)} now holds ${E.itemName(id)}.` : `${monShort(m)} holds nothing now.`);
+    render();
+    for (const x of touched) await store.saveMon(x);
+  }
+  /** Everything at once: these six in your party in the plan's order (the rest to your box), with its items and natures. */
+  async function applyPlanSetup(res) {
+    const order = planOrder(res), set = res.setupBy || {}, touched = new Set();
+    const find = k => S.roster.find(x => x.key === k);
+    for (const giver of Object.keys(res.gives || {})) { const g = find(giver); if (g && g.it === (res.before[giver] || {}).it) { g.it = null; touched.add(g); } }
+    const first = Math.min(0, ...S.roster.map(x => x.ord || 0)) - order.length - 1;
+    order.forEach((k, j) => {
+      const m = find(k); if (!m) return;
+      const x = set[k]; if (x) { m.nat = x.nat; m.it = x.it || null; }
+      m.box = 'party'; m.ord = first + j; touched.add(m);
+    });
+    for (const m of alive()) if (m.box === 'party' && !order.includes(m.key)) { m.box = 'box'; touched.add(m); }
+    S.roster.sort((a, b) => (a.ord || 0) - (b.ord || 0));
+    S.liveLead = null;
+    flash('Party set up for this fight. Do the same in the game: lead first.');
+    render();
+    for (const m of touched) await store.saveMon(m);
   }
   // ---------------- watching fights play out: the most likely battle, a new one with real luck, one that goes wrong ----------------
   const theater = {};   // per fight and team: how the battles you watched went
   /** Who fights: the plan's six and lead when there is a plan, else your party as it is, your first Pokémon leading. */
   function theaterInputs() {
     const key = planKey();
-    const res = S.plans[key];
+    const res = planNow(key);
     const { specs, team } = planInputs();
     const doubles = !!D.bosses[S.planBoss].dbl;
     if (res && res.lineup) {
-      return { key, res, team, doubles, planned: true, specs: res.lineup.map(i => specs[i]).filter(Boolean),
+      const set = res.setupBy || {};
+      const six = res.lineup.map(i => { const k = res.roster[i].key, sp = specs.find(x => x.key === k), x = set[k]; return sp && x ? Object.assign({}, sp, { nat: x.nat, it: x.it || null }) : sp; });
+      return { key: 'plan:' + key, res, team, doubles, planned: true, specs: six.filter(Boolean),
         lead: doubles ? [].concat(res.lead).map(l => res.lineup.indexOf(l)) : res.lineup.indexOf(res.lead) };
     }
     const p = party().length ? party() : alive().slice(0, 6);
-    return { key, res: null, team, doubles, planned: false, specs: p.map(m => specOf(m, { label: monName(m) })), lead: doubles ? [0, 1] : 0 };
+    return { key: teamKey(), res: null, team, doubles, planned: false, specs: p.map(m => specOf(m, { label: monName(m) })), lead: doubles ? [0, 1] : 0 };
   }
   function tallyText(x) { return `${x.n} simulated battle${x.n === 1 ? '' : 's'} watched for this fight: ${x.won} won, ${x.clean} without a loss.`; }
   function theaterHTML() {
@@ -1426,7 +1535,7 @@
       <div class="row">${T.res ? '<button class="btn primary" data-watch="likely">▶ Most likely battle</button>' : ''}
         <button class="btn${T.res ? ' small' : ' primary'}" data-watch="random">▶ ${T.res ? 'A new battle' : 'Simulate the battle'}</button>
         ${!o || o.pNoLoss < 0.999 ? '<button class="btn small" data-watch="bad">▶ One that goes wrong</button>' : ''}</div>
-      <p class="note" style="margin:0">${T.planned ? 'The plan’s six and lead' : 'Your party as it is now, your first Pokémon leading (plan the fight for the Coach’s six and lead)'}, with your moves, against their exact team. Every new battle has its own luck: damage rolls, critical hits, misses and the boss AI’s choices.</p>
+      <p class="note" style="margin:0">${T.planned ? 'The plan’s six and lead, with its items and natures' : 'Your party as it is now, your first Pokémon leading (plan the fight for the Coach’s six and lead)'}, with your moves, against their exact team. Every new battle has its own luck: damage rolls, critical hits, misses and the boss AI’s choices.</p>
       <div class="stage-host" id="th-stage" hidden></div>
       <div class="row small" id="th-ctl" hidden><button class="btn small" id="th-pause">Pause</button><button class="btn small" id="th-next">Next turn</button><button class="btn small" id="th-speed">Speed ${S.thSpeed || 1}×</button><button class="btn small ghost" id="th-close">Close</button></div>
       <div class="th-out" id="th-out" aria-live="polite">${tl ? `<div class="note">${tallyText(tl)}</div>` : ''}</div></div>`;
@@ -1524,12 +1633,17 @@
     S.planning = { key, frac: 0, text: 'Starting…' };
     render();
     try {
-      const res = await planInBackground(specs, team, { doubles: !!D.bosses[S.planBoss].dbl, onProgress: (frac, text) => {
+      const res = await planInBackground(specs, team, { doubles: !!D.bosses[S.planBoss].dbl, pool: setupPool(), onProgress: (frac, text) => {
         S.planning.frac = frac; S.planning.text = text;
         const bar = document.querySelector('#bp .progress span'); if (bar) bar.style.width = Math.round(100 * frac) + '%';
         const st = $('#bp-status'); if (st) st.textContent = text;
       } });
-      S.plans[key] = Object.assign(res, { roster });
+      const before = {}, setupBy = {};
+      for (const r of roster) before[r.key] = { nat: r.nat, it: r.it || null };
+      for (const x of res.setup || []) setupBy[x.key] = x;
+      Object.assign(res, { roster, before, setupBy });
+      Object.assign(res, setupSources(res));
+      S.plans[key] = res;
       S.autoWatch = key;
     } catch (e) {
       flash('Planning failed: ' + (e && e.message ? e.message : e));
@@ -1556,31 +1670,7 @@
       <div class="row"><button class="btn primary" id="claude-go">Write a game plan</button><button class="btn" id="claude-stop" hidden>Stop</button></div>
       <div class="claude-out" id="claude-out" hidden></div></div></section>`;
   }
-  async function runItemAdvice() {
-    const box = $('#items-out'); if (!box) return;
-    const plan = Object.entries(S.plans).find(([k, v]) => v && JSON.parse(k)[0] === S.planBoss);
-    const roster = alive();
-    const lineup = plan ? plan[1].lineup.map(i => plan[1].roster[i]) : (party().length ? party() : roster.slice(0, 6));
-    const b = D.bosses[S.planBoss];
-    const top = Math.max(1, ...lineup.map(m => m.lv));
-    const team = E.bossTeam(S.planBoss, top).map((t, i) => Object.assign({ key: 'b' + i, label: E.sp(t.s).n }, t));
-    box.innerHTML = '<div class="progress"><span style="width:2%"></span></div><div class="note">Trying each item on each Pokémon…</div>';
-    const bar = () => box.querySelector('.progress span');
-    const r = await itemAdvice(lineup, team, !!b.dbl, f => { const el = bar(); if (el) el.style.width = Math.round(100 * f) + '%'; });
-    if (!r.assigned.length) { box.innerHTML = `<p class="small" style="margin:0">None of your ${r.candidates} held items changes a matchup here. Keep what they hold.</p>`; return; }
-    const odds = (o) => `${Math.round(100 * o.pNoLoss)}% no losses, ${Math.round(100 * o.pWin)}% win`;
-    box.innerHTML = `<div class="answers">${r.assigned.map(x => `<div class="answer"><div class="top">${icon(x.m.s)}<b>${esc(monName(x.m))}</b> holds <b>${esc(E.itemName(x.it))}</b></div>
-        <span class="small muted">${x.from ? 'instead of ' + esc(E.itemName(x.from)) + ' · ' : ''}+${x.g.toFixed(1)} matchup points</span></div>`).join('')}</div>
-      ${r.before && r.after ? `<p class="small" style="margin:0">Simulated fight (40 battles each): now ${odds(r.before)} → with these items ${odds(r.after)}.</p>` : ''}
-      <div class="row"><button class="btn primary" id="items-apply">Give them these items</button><span class="note">Updates your Pokémon's items; plan the fight again afterwards.</span></div>`;
-    $('#items-apply').onclick = async () => {
-      for (const x of r.assigned) { const m = S.roster.find(y => y.key === x.m.key); if (m) { m.it = x.it; await store.saveMon(m); } }
-      flash('Items updated. Plan the fight again to see the new odds.'); render();
-    };
-  }
   async function wirePlan(P) {
-    const ig = $('#items-go'); if (ig) ig.onclick = () => runItemAdvice();
-    const idt = $('#items-det'); if (idt) idt.addEventListener('toggle', () => { S.itemsOpen = idt.open; });
     const sel = $('#plan-boss'); if (sel) sel.onchange = () => { S.planBoss = +sel.value; S.battle.boss = S.planBoss; render(); };
     const ex = $('#plan-ex'); if (ex) ex.onclick = () => { loadExample(); };
     const bt = $('#plan-beaten');
@@ -1640,10 +1730,10 @@
       });
     });
     lines.push(`\nCalculator's suggested six: ${P.chosen.map(i => monName(roster[i])).join(', ')}; lead ${monName(roster[P.lead])}.`);
-    const sim = S.plans[planKey()];
+    const sim = planNow();
     if (sim) {
       const o = sim.odds;
-      lines.push(`\nSimulated plan (${o.runs} battles against the boss AI ported from the game's engine${sim.doubles ? ', double battle' : ''}): win with no losses ${Math.round(100 * o.pNoLoss)}%, win ${Math.round(100 * o.pWin)}%, average losses ${o.expLosses.toFixed(1)}. Lineup: ${sim.lineup.map(i => monName(sim.roster[i])).join(', ')}; lead ${[].concat(sim.lead).map(i => monName(sim.roster[i])).join(' and ')}.`);
+      lines.push(`\nSimulated plan (${o.runs} battles against the boss AI ported from the game's engine${sim.doubles ? ', double battle' : ''}): win with no losses ${Math.round(100 * o.pNoLoss)}%, win ${Math.round(100 * o.pWin)}%, average losses ${o.expLosses.toFixed(1)}. Bring, in this order: ${planOrder(sim).map(k => { const r = sim.roster.find(x => x.key === k), x = (sim.setupBy || {})[k]; return `${monName(r)} (${x && x.it ? 'holding ' + E.itemName(x.it) : r.it ? 'holding ' + E.itemName(r.it) : 'no item'}, ${D.natures[x ? x.nat : r.nat].n})`; }).join(', ')}; lead ${[].concat(sim.lead).map(i => monName(sim.roster[i])).join(' and ')}.`);
       lines.push('Most likely line, turn by turn:');
       for (const t of sim.script.turns) if (t.decision) lines.push(`  Turn ${t.turn}: ${t.decision.you} vs ${t.decision.foe}: ${t.decision.action} (risk ${fmtRisk(t.decision.risk || 0)})${t.sacrifice ? ' [planned sacrifice]' : ''}`);
       lines.push('Most common ways it goes wrong: ' + Object.entries(o.causes).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k, n]) => `${k} (${Math.round(100 * n / o.runs)}%)`).join('; '));
@@ -1719,9 +1809,10 @@
       const b = D.bosses[bi];
       const n = b.dbl ? 2 : 1;
       const other = S.live ? D.bosses[S.live.bi] : null;
+      const lead = S.liveLead || defaultLead(pp, n);
       return `<div class="card">
         <div class="lbl">${b.dbl ? 'Your two leads (double battle)' : 'Your lead'}</div>
-        <div class="chips">${pp.map((m, i) => `<button class="chipbtn" data-lead="${i}" aria-pressed="${(S.liveLead || [0, 1].slice(0, n)).includes(i)}">${icon(m.s)}${esc(monName(m))}</button>`).join('')}</div>
+        <div class="chips">${pp.map((m, i) => `<button class="chipbtn" data-lead="${i}" aria-pressed="${lead.includes(i)}">${icon(m.s)}${esc(monName(m))}</button>`).join('')}</div>
         <p class="small" style="margin:0">Each turn the Coach recommends your move${n > 1 ? 's' : ''} and shows what the boss AI will most likely do. Then tell it what actually happened: it fills in its prediction, so usually you only nudge the HP bars. It re-plans from there, and it keeps score of how often the boss AI did what it predicted.</p>
         ${other ? `<p class="note" style="margin:0">Starting ends your live battle against ${esc(other.n)}.</p>` : ''}
         <div class="row"><button class="btn primary" id="lv-start">Start the battle</button></div></div>`;
@@ -2304,15 +2395,25 @@
     L.wordsNote = got.length ? `Got it: ${got.join(', ')}. Check it below, then tap Next turn.` : 'I couldn’t match that to this battle. Use the choices above.';
     renderReport();
   }
+  /** The lead the plan picked, when it's in your party; else your first Pokemon (two in a double battle). */
+  function defaultLead(pp, n) {
+    const res = S.planBoss != null ? planNow() : null;
+    if (res) {
+      const idx = [].concat(res.lead).map(i => pp.findIndex(m => m.key === res.roster[i].key)).filter(i => i >= 0);
+      if (idx.length === n) return idx;
+    }
+    return [0, 1].slice(0, n);
+  }
   function wireLiveBlock(bi) {
     const b = D.bosses[bi], n = b.dbl ? 2 : 1;
+    const pp = party().length ? party() : alive();
     main.querySelectorAll('[data-lead]').forEach(btn => btn.onclick = () => {
-      const i = +btn.dataset.lead; let cur = (S.liveLead || [0, 1].slice(0, n)).slice();
+      const i = +btn.dataset.lead; let cur = (S.liveLead || defaultLead(pp, n)).slice();
       cur = cur.includes(i) ? cur.filter(x => x !== i) : cur.concat(i).slice(-n);
       S.liveLead = cur.length ? cur : [i]; redrawLive(bi);
     });
     const start = $('#lv-start');
-    if (start) start.onclick = () => { const lead = (S.liveLead || [0, 1]).slice(0, n); liveStart(bi, n > 1 ? lead : lead[0]); redrawLive(bi); };
+    if (start) start.onclick = () => { const lead = (S.liveLead || defaultLead(pp, n)).slice(0, n); liveStart(bi, n > 1 ? lead : lead[0]); redrawLive(bi); };
     wireLive();
     mountLiveStage();
   }
@@ -3078,22 +3179,21 @@
       }).join('')}</div>
       ${later.length ? `<p class="note" style="margin:0">Later here: ${later.length} more trainer${later.length === 1 ? '' : 's'} (Lv ${Math.min(...later.map(trainerTopLv))}–${Math.max(...later.map(trainerTopLv))}), for when you come back stronger.</p>` : ''}`;
   }
-  // a fight in four parts, one at a time: get ready, plan, battle, result
-  const FIGHT_TABS = [['ready', 'Get ready'], ['plan', 'Plan'], ['battle', 'Battle'], ['result', 'Result']];
+  // a fight in three parts, one at a time: the plan (who to bring, in what order, with which items and natures), the battle, the result
+  const FIGHT_TABS = [['plan', 'Plan'], ['battle', 'Battle'], ['result', 'Result']];
   function setFightTab(key, tab) { S.fightTab = Object.assign({}, S.fightTab, { [key]: tab }); }
   function fightTab(key, bi) {
     if (S.resultForm && S.resultForm.g === key) return 'result';
     const t = (S.fightTab || {})[key];
-    if (t) return t;
-    return S.live && S.live.bi === bi ? 'battle' : 'ready';
+    if (t && FIGHT_TABS.some(([k]) => k === t)) return t;
+    return S.live && S.live.bi === bi ? 'battle' : 'plan';
   }
   function fightTabsHTML(key, tab) {
     return `<div class="ftabs" role="tablist" aria-label="This fight, step by step">${FIGHT_TABS.map(([k, l], i) => `<button role="tab" class="ftab${k === tab ? ' on' : ''}" aria-selected="${k === tab}" data-ftab="${k}" data-fkey="${esc(String(key))}"><span class="n">${i + 1}</span>${l}</button>`).join('')}</div>`;
   }
   function fightPanelHTML(key, tab, bi, cap, result) {
     const nextBtn = (t, l) => `<div class="pnav"><span></span><button class="btn primary" data-ftab="${t}" data-fkey="${esc(String(key))}">${l} →</button></div>`;
-    if (tab === 'ready') return prepHTML(cap) + nextBtn('plan', 'Next: plan it');
-    if (tab === 'plan') return (alive().length ? battlePlanHTML(planKey(), true) + theaterHTML() + '<div id="fight-more" class="section"><div class="note">Working out every matchup…</div></div>' : '<div class="empty">Add your Pokémon first.</div>') + nextBtn('battle', 'Next: the battle');
+    if (tab === 'plan') return readyHTML(cap) + (alive().length ? battlePlanHTML(planKey(), true) + theaterHTML() + '<div id="fight-more" class="section"><div class="note">Working out every matchup…</div></div>' : '<div class="empty">Add your Pokémon first.</div>') + nextBtn('battle', 'Next: the battle');
     if (tab === 'battle') return `<section class="section" id="live">${liveBlockHTML(bi)}</section>` + (S.live && S.live.bi === bi && !S.live.st.over ? '' : nextBtn('result', 'Next: log the result'));
     return `<div id="result">${result}</div>`;
   }
@@ -3296,67 +3396,17 @@
     if (!later.length) return '';
     return `<details class="more small"><summary>Fighting someone else first?</summary><select id="focus-fight" class="inline" style="margin-top:6px"><option value="">Pick the fight…</option>${later.map(x => { const b = D.bosses[fightOf(x)]; return `<option value="${x.first}">${esc(b.n)} (${esc(b.cls)}${b.loc ? ', ' + esc(b.loc[0]) : ''}, cap ${b.cap})</option>`; }).join('')}</select></details>`;
   }
-  function prepHTML(cap) {
+  /** Before you plan: party Pokemon under the level cap and evolutions that are due (nothing when all is set).
+   *  Natures and held items come with the plan, for the six it picks. */
+  function readyHTML(cap) {
     const p = party();
-    if (!p.length) return `<div class="card"><p class="small" style="margin:0">Your party is empty. Add the Pokémon you have, or move some out of your box.</p><div><button class="btn" data-go="team">Pokémon</button></div></div>`;
+    if (!p.length) return '';
     const under = p.filter(m => m.lv < cap);
     const evo = p.map(m => ({ m, to: evolvedBy(m.s, m.lv) })).filter(x => x.to !== x.m.s && E.sp(x.to));
-    return `<div class="card">${partyStrip(cap)}
-      ${under.length ? `<div class="row"><button class="btn small" id="to-cap">Level ${under.length === p.length ? 'everyone' : esc(under.map(monShort).join(', '))} up to ${cap}</button><span class="note">the cap; new moves and evolutions come up as you go</span></div>` : `<p class="small" style="margin:0">Everyone is at the level cap (${cap}).</p>`}
-      ${evo.map(x => `<div class="evo-row">${icon(x.to)}<span>${esc(monName(x.m))} evolves into <b>${esc(E.sp(x.to).n)}</b> by Lv ${x.m.lv}.</span><button class="btn small" data-evolve="${esc(x.m.key)}" data-to="${x.to}">Evolve</button></div>`).join('')}
-      <p class="note" style="margin:0">Tap a Pokémon for its level, moves, and the Coach's nature and held item. The plan picks your best six from your party and box.</p></div>
-      <div class="card tune" id="prep-tune"><div class="lbl">Natures and held items</div><div class="tune-rows">${p.map(m => tuneRowHTML(m)).join('')}</div>
-      <p class="note" style="margin:0">Natures are picked for your next three big fights (Radical Red's Nature Changer swaps them); held items for this fight, from what you have${S.run.care ? ' (care package so far included)' : ''}. Both are judged at the level cap, evolved where they would be by then.</p></div>`;
-  }
-  /** Coach's nature and held item for each party Pokemon, worked out one at a time after the page shows. */
-  const TUNE = new Map();
-  function tuneKey(m) { return JSON.stringify([modeNow(), m.key, m.s, m.lv, m.nat, m.ab, m.it || 0, m.mv, !!m.noEvo, S.planBoss, capNow(), topLevel(), careState().key, (S.run.bag || []).length, (S.run.tms || []).length]); }
-  function tuneRowHTML(m) {
-    const r = TUNE.get(tuneKey(m));
-    const head = `${icon(m.s)}<b>${esc(monShort(m))}</b>`;
-    if (!r) return `<div class="tune-row" data-tune="${esc(m.key)}">${head}<span class="note grow">Working it out…</span></div>`;
-    const nat = r.nat === m.nat
-      ? `<span class="small">Nature: <b>${esc(D.natures[m.nat].n)}</b> <span class="muted">is best</span></span>`
-      : `<span class="small">Nature: <b>${esc(natureText(r.nat))}</b> <span class="muted">(now ${esc(D.natures[m.nat].n)})</span></span><button class="btn small" data-tunenat="${esc(m.key)}" data-v="${r.nat}">Changed it</button>`;
-    const it = r.it
-      ? `<span class="small">Hold: <b>${esc(E.itemName(r.it))}</b> <span class="muted">(+${r.g.toFixed(1)}${m.it ? ', instead of ' + esc(E.itemName(m.it)) : ''}; ${esc(itemFrom(r.it))})</span></span><button class="btn small" data-tuneit="${esc(m.key)}" data-v="${r.it}">Give it</button>`
-      : `<span class="small">Hold: ${m.it ? `<b>${esc(E.itemName(m.it))}</b> <span class="muted">is as good as anything you have</span>` : '<span class="muted">none of your items changes these matchups</span>'}</span>`;
-    const later = r.later ? `<div class="tune-line"><span class="small muted">Later: <b>${esc(E.itemName(r.later.id))}</b> (+${r.later.g.toFixed(1)}) comes ${esc(r.later.w)}</span></div>` : '';
-    return `<div class="tune-row" data-tune="${esc(m.key)}">${head}<div class="tune-pick"><div class="tune-line">${nat}</div><div class="tune-line">${it}</div>${later}</div></div>`;
-  }
-  function tuneFor(m) {
-    const k = tuneKey(m);
-    if (TUNE.has(k)) return TUNE.get(k);
-    const f = fightForm(m, capNow());
-    const na = ADV.natureAdvice(specOf(f), S.planBoss, S.run.tms || [], 3);
-    const team = E.bossTeam(S.planBoss, Math.max(f.lv, topLevel()));
-    const base = itemScore(f, m.it || null, team);
-    let best = null;
-    for (const id of itemPool().keys()) { if (id === m.it) continue; const g = itemScore(f, id, team) - base; if (g > 0.15 && (!best || g > best.g)) best = { id, g }; }
-    let later = null;   // a care package item still to come that would beat everything you have
-    for (const [id, w] of laterPool()) { const g = itemScore(f, id, team) - base; if (g > (best ? best.g : 0) + 0.5 && (!later || g > later.g)) later = { id, g, w }; }
-    const r = { nat: na.best.nat, it: best ? best.id : null, g: best ? best.g : 0, later };
-    if (TUNE.size > 300) TUNE.clear();
-    TUNE.set(k, r);
-    return r;
-  }
-  function fillTune() {
-    const box = $('#prep-tune'); if (!box) return;
-    const todo = party().filter(m => !TUNE.has(tuneKey(m)));
-    const wire = () => {
-      box.querySelectorAll('[data-tunenat]').forEach(b => b.onclick = async () => { const m = S.roster.find(x => x.key === b.dataset.tunenat); if (!m) return; m.nat = +b.dataset.v; flash(`${monShort(m)} is now ${D.natures[m.nat].n}.`); render(); await store.saveMon(m); });
-      box.querySelectorAll('[data-tuneit]').forEach(b => b.onclick = async () => { const m = S.roster.find(x => x.key === b.dataset.tuneit); if (!m) return; m.it = +b.dataset.v; flash(`${monShort(m)} now holds ${E.itemName(m.it)}.`); render(); await store.saveMon(m); });
-    };
-    wire();
-    if (!todo.length) return;
-    const m = todo[0];
-    setTimeout(() => {
-      if (!document.body.contains(box)) return;
-      tuneFor(m);
-      const row = box.querySelector(`[data-tune="${CSS.escape(m.key)}"]`);
-      if (row) row.outerHTML = tuneRowHTML(m);
-      fillTune();
-    }, 30);
+    if (!under.length && !evo.length) return '';
+    return `<div class="card" id="ready"><div class="lbl">Before you plan</div>
+      ${under.length ? `<div class="row"><button class="btn small" id="to-cap">Level ${under.length === p.length ? 'everyone' : esc(under.map(monShort).join(', '))} up to ${cap}</button><span class="note">the cap. The plan works with the levels the Coach has; new moves and evolutions come up as you go.</span></div>` : ''}
+      ${evo.map(x => `<div class="evo-row">${icon(x.to)}<span>${esc(monName(x.m))} evolves into <b>${esc(E.sp(x.to).n)}</b> by Lv ${x.m.lv}.</span><button class="btn small" data-evolve="${esc(x.m.key)}" data-to="${x.to}">Evolve</button></div>`).join('')}</div>`;
   }
   function resultHTML(g, bi) {
     const b = D.bosses[bi];
@@ -3489,7 +3539,7 @@
       on('#res-cancel', () => { S.resultForm = null; render(); });
       on('#res-save', () => logWin(g, bi, S.resultForm.fainted.slice()));
     }
-    // one-on-one matchups, held items and movesets once the page is up
+    // one-on-one matchups and movesets once the page is up
     const key = planKey();
     setTimeout(() => {
       const box = $('#fight-more');
@@ -3498,7 +3548,6 @@
         box.innerHTML = planExtrasHTML(P, true);
         wirePlan(P);
       }
-      fillTune();
     }, 30);
   }
 

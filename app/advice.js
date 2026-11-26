@@ -281,5 +281,76 @@
     return { learn: false, forget: null, gain: best ? best.v - now.v : 0, reason: `What it knows already does as well against ${names}.` };
   }
 
-  return { natureAdvice, movePlan, learnAdvice, available, bestSet, upcomingMajor, fightScore, setOptions, duelPlan, setValue };
+  /** Held items and natures for the Pokemon you bring to one fight, as the plan brings them (same levels and moves),
+   *  judged one on one against their team: safe 3, ok 2, risky 1, lose 0, minus the chance of fainting.
+   *  specs: the six as they are. team: their team. pool: [[itemId, count], ...], the held items you have (what your
+   *  Pokemon hold included). Items first: everyone starts empty-handed and the biggest gains get their item first, as many
+   *  as you have of each; a Pokemon keeps what it holds when nothing does better and nobody needs it more. Then natures,
+   *  with those items, only where one makes a real difference to this fight (the Nature Change service is free, but it's
+   *  still a trip).
+   *  Returns { specs, changed, info: [{ key, nat, it, natFrom, itFrom, gNat, gIt }] }, in the order given. */
+  function planSetup(specs, team, pool, opts) {
+    const o = Object.assign({ natGain: 0.3, itemGain: 0.15 }, opts || {});
+    const foes = team.map(t => Object.assign({}, t, { entry: true }));
+    const memo = new Map();
+    /** v: the matchup points; c: a finer tie-break, the damage it deals per hit minus the damage it takes (in HP). */
+    const rate = (spec, nat, it) => {
+      const k = spec.key + '|' + nat + '|' + (it || 0);
+      if (memo.has(k)) return memo.get(k);
+      let s = Object.assign({}, spec, { nat, it: it || null, entry: true });
+      const mega = it && SIM && SIM.megaTarget ? SIM.megaTarget({ spec: s, item: it }) : null;
+      if (mega) s = Object.assign(s, { s: mega, ab: (E.sp(mega).a || [])[0] || s.ab });
+      let v = 0, c = 0;
+      for (const t of foes) {
+        const mu = E.matchup(s, t);
+        v += VS[mu.verdict] - mu.risk;
+        c += ((mu.best ? (mu.best.minPct + mu.best.maxPct) / 2 : 0) - (mu.threat ? mu.threat.maxPct : 0)) / 100;
+      }
+      const r = { v, c };
+      memo.set(k, r);
+      return r;
+    };
+    const score = (spec, nat, it) => rate(spec, nat, it).v;
+    const info = specs.map(sp => ({ key: sp.key, nat: sp.nat, it: sp.it || null, natFrom: sp.nat, itFrom: sp.it || null, gNat: 0, gIt: 0 }));
+    // held items across the six first (handing one over is easier than a trip to change a nature), with the natures they have
+    const left = new Map((pool || []).filter(([, c]) => c > 0));
+    const ids = [...left.keys()];
+    const none = specs.map(sp => score(sp, sp.nat, null));
+    const pairs = [];
+    specs.forEach((sp, k) => { if (!sp.keepItem) for (const id of ids) pairs.push({ k, id, g: score(sp, sp.nat, id) - none[k] + (id === sp.it ? 0.05 : 0) }); });
+    pairs.sort((a, b) => b.g - a.g);
+    // an item you want kept where it is (an Everstone on a Pokemon you've stopped evolving) stays put
+    specs.forEach(sp => { if (sp.keepItem && sp.it && left.get(sp.it) > 0) left.set(sp.it, left.get(sp.it) - 1); });
+    const got = new Map();
+    for (const x of pairs) {
+      if (x.g < o.itemGain || got.has(x.k) || !(left.get(x.id) > 0)) continue;
+      got.set(x.k, x.id); left.set(x.id, left.get(x.id) - 1);
+    }
+    specs.forEach((sp, k) => {
+      if (sp.keepItem) info[k].it = sp.it || null;
+      else if (got.has(k)) info[k].it = got.get(k);
+      else if (sp.it && !left.has(sp.it)) info[k].it = sp.it;   // something the advice doesn't weigh: leave it be
+      else if (sp.it && left.get(sp.it) > 0) { info[k].it = sp.it; left.set(sp.it, left.get(sp.it) - 1); }
+      else info[k].it = null;
+      info[k].gIt = score(sp, sp.nat, info[k].it) - score(sp, sp.nat, sp.it || null);
+    });
+    // natures, with the items they'll hold, where one still makes a real difference: the natures people use (and the one
+    // it has); on a tie, one that doesn't lower Speed, then the finer measure, then the usual order
+    const usual = CANDIDATE_NATURES;
+    specs.forEach((sp, k) => {
+      const tries = usual.includes(sp.nat) || sp.nat == null ? usual : [sp.nat].concat(usual);
+      const it = info[k].it, base = score(sp, sp.nat, it);
+      let best = null;
+      tries.forEach((n, order) => {
+        const r = rate(sp, n, it), slow = (D.natures[n] || {}).d === 'spe' ? 1 : 0;
+        const better = !best || (Math.abs(r.v - best.v) > 0.005 ? r.v > best.v : slow !== best.slow ? slow < best.slow : Math.abs(r.c - best.c) > 0.002 ? r.c > best.c : order < best.order);
+        if (better) best = { n, v: r.v, c: r.c, slow, order };
+      });
+      if (best && best.n !== sp.nat && best.v - base >= o.natGain) { info[k].nat = best.n; info[k].gNat = best.v - base; }
+    });
+    const changed = info.some(x => x.nat !== x.natFrom || x.it !== x.itFrom);
+    return { changed, info, specs: specs.map((sp, k) => Object.assign({}, sp, { nat: info[k].nat, it: info[k].it })) };
+  }
+
+  return { natureAdvice, movePlan, learnAdvice, available, bestSet, upcomingMajor, fightScore, setOptions, duelPlan, setValue, planSetup };
 });

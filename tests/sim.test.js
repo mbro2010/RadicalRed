@@ -74,3 +74,21 @@ test('sim: the planner sets up when it makes the fight safer, and attacks when s
   const b = top(mk('Bulbasaur', 16, ['Vine Whip', 'Growth', 'Tackle', 'Razor Leaf']), 'Wattrel');
   assert(b[0].label !== 'Use Growth', 'no Growth in a lost fight: ' + b.slice(0, 2).map(x => x.label + ' ' + x.risk.toFixed(2)).join(', '));
 });
+test('sim: the planner takes a setup step for its six, plays the fight with it, and keeps the odds without it', async () => {
+  const team = bossSpecs(414, 16);   // Brock
+  const item = n => +Object.keys(D.items).find(k => D.items[k].n === n);
+  const mine = [mon('Wartortle', 16, { moves: ['Water Gun', 'Bite', 'Rapid Spin', 'Withdraw'] }), mon('Mankey', 16, { moves: ['Karate Chop', 'Low Kick', 'Fury Swipes'] }), mon('Pidgeotto', 16, { moves: ['Gust', 'Quick Attack', 'Sand Attack'] })];
+  let seen = null;
+  const setup = six => { seen = six.map(s => s.key); const specs = six.map(s => s.key === 'Mankey' ? Object.assign({}, s, { it: item('Black Belt') }) : s); return { changed: true, specs, info: [{ key: 'Mankey', it: item('Black Belt') }] }; };
+  const res = await SIM.planFight(mine, team, { setup, screenRuns: 4, leadRuns: 6, finalRuns: 30 });
+  assert(seen && seen.length === 3, 'the setup step saw the six');
+  assert(res.setup && res.setup[0].key === 'Mankey', 'the setup comes back');
+  assert(res.baseOdds && res.baseOdds.runs === 30, 'odds without the setup too');
+  const leadKey = mine[res.lead].key;
+  assert(res.script.order[0] === leadKey, 'the order starts with the lead: ' + res.script.order.join(', '));
+  assert(res.script.order.every(k => mine.some(m => m.key === k)), 'the order lists your Pokemon');
+  assert(Object.keys(res.script.faces).every(k => res.script.order.includes(k)), 'who each one takes on');
+  // nothing to change: no second check
+  const same = await SIM.planFight(mine, team, { setup: six => ({ changed: false, specs: six, info: [] }), screenRuns: 4, leadRuns: 6, finalRuns: 30 });
+  assert(same.baseOdds === null, 'no comparison when nothing changes');
+});

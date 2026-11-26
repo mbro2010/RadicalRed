@@ -41,4 +41,13 @@ test('doubles: plan a fight with a lead pair', async () => {
   const r = await SIM.planFight(team, bossOf('Miguel'), { doubles: true, screenRuns: 4, leadRuns: 6, finalRuns: 12 });
   assert(Array.isArray(r.lead) && r.lead.length === 2, 'lead pair');
   assert(r.script.turns.some(t => t.decision && t.decision.lines && t.decision.lines.length === 2), 'two actions per turn');
+  // with held items and natures for the six: both leads come first in the order, and the odds as they were come back too
+  const { ADV, D } = require('./lib');
+  const pool = ['Leftovers', 'Charcoal', 'Mystic Water', 'Miracle Seed', 'Black Belt', 'Sharp Beak'].map(n => [+Object.keys(D.items).find(k => D.items[k].n === n), 1]);
+  const s = await SIM.planFight(team, bossOf('Miguel'), { doubles: true, screenRuns: 4, leadRuns: 6, finalRuns: 12, setup: six => ADV.planSetup(six, bossOf('Miguel'), pool) });
+  assert(Array.isArray(s.lead) && s.lead.length === 2, 'lead pair with a setup');
+  const leadKeys = s.lead.map(i => team[i].key);
+  assert(leadKeys.every(k => s.script.order.slice(0, 2).includes(k)), 'both leads first: ' + s.script.order.join(', '));
+  assert(Array.isArray(s.setup) && s.setup.length === s.lineup.length, 'a setup for each of the six');
+  if (s.setup.some(x => x.it !== x.itFrom || x.nat !== x.natFrom)) assert(s.baseOdds && s.baseOdds.runs === 12, 'odds without the setup');
 });

@@ -82,3 +82,30 @@ test('engine: Normal Mode drops Hardcore\'s move bans and ability changes; level
     assert(E.bossTeam(rel, 30)[relMon].lv === hard, 'not once the game is cleared');
   } finally { E.setMode('hardcore'); }
 });
+test('advice: the plan\'s setup hands out held items by biggest gain, as many as you have, then natures only where they matter', () => {
+  const { ADV } = require('./lib');
+  const item = n => +Object.keys(D.items).find(k => D.items[k].n === n);
+  const team = bossSpecs(414);   // Brock
+  const wart = mon('Wartortle', 16, { moves: ['Water Gun', 'Bite', 'Rapid Spin', 'Withdraw'] });
+  const mankey = (key, o) => mon('Mankey', 16, Object.assign({ key, moves: ['Karate Chop', 'Low Kick', 'Fury Swipes'] }, o));
+  // one Mystic Water and one Black Belt: each goes where it wins matchups
+  let r = ADV.planSetup([wart, mankey('M1')], team, [[item('Mystic Water'), 1], [item('Black Belt'), 1]]);
+  const by = k => r.info.find(x => x.key === k);
+  assert(r.changed, 'something changes');
+  assert(by('Wartortle').it === item('Mystic Water'), 'Wartortle holds Mystic Water: ' + by('Wartortle').it);
+  assert(by('M1').it === item('Black Belt'), 'Mankey holds Black Belt: ' + by('M1').it);
+  // only one Black Belt for two Mankey
+  r = ADV.planSetup([mankey('M1'), mankey('M2')], team, [[item('Black Belt'), 1]]);
+  assert(r.info.filter(x => x.it === item('Black Belt')).length === 1, 'one Black Belt handed out');
+  // nothing better: it keeps what it holds; an item it must keep stays even when something is better
+  r = ADV.planSetup([mankey('M1', { item: 'Oran Berry' })], team, [[item('Oran Berry'), 1]]);
+  assert(r.info[0].it === item('Oran Berry'), 'keeps its Oran Berry');
+  r = ADV.planSetup([Object.assign(mankey('M1', { item: 'Everstone' }), { keepItem: true })], team, [[item('Everstone'), 1], [item('Black Belt'), 1]]);
+  assert(r.info[0].it === item('Everstone'), 'Everstone stays on a Pokemon you stopped evolving');
+  // a nature changes only with a real gain, the specs carry the setup, and nothing changes with nothing to give
+  r = ADV.planSetup([wart, mankey('M1')], team, [[item('Mystic Water'), 1], [item('Black Belt'), 1]]);
+  for (const x of r.info) assert(x.nat === x.natFrom || x.gNat >= 0.3, `${x.key}: a nature change needs a real gain (${x.gNat})`);
+  r.specs.forEach((s, k) => assert(s.it === r.info[k].it && s.nat === r.info[k].nat, 'specs carry the setup'));
+  const strong = mon('Wartortle', 16, { nature: 'Modest', moves: ['Water Gun', 'Bite', 'Rapid Spin', 'Withdraw'] });
+  assert(!ADV.planSetup([strong], team, []).changed || ADV.planSetup([strong], team, []).info[0].gNat >= 0.3, 'no change without a gain');
+});
