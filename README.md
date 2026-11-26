@@ -111,15 +111,19 @@ How it works: `sim.js` is a turn-by-turn simulator for singles and doubles (targ
 
 ## Starter tier list
 
-All 27 starters (Gen 1-9) are available in Oak's Lab: the balls' script swaps in the chosen generation's trio, and the ball you take decides the rival's starter (grass ball: he takes Charmander; water: Bulbasaur; fire: Squirtle). `tools/starter_tiers.js` tests each starter at every major fight's Hardcore level cap up to the Champion (36 fights: gym leaders, rival, Rocket admins and Giovanni, Elite Four and the other milestone fights), evolved by level as it would be by then, with its best level-up moves (Hardcore bans excluded, no TMs or tutors assumed) and the best of Adamant, Jolly, Modest and Timid. Each of the boss's Pokémon is a one-on-one matchup counting every damage roll, crit and miss, scored 3 (safe) to −1 (loses), and rival fights use the team that starter gives you. Overall = 60% early game (caps up to 36, the first four badges) + 40% the rest. Tiers are by distance from the average (S is more than one standard deviation above it).
+All 27 starters (Gen 1-9) are available in Oak's Lab: the balls' script swaps in the chosen generation's trio, and the ball you take decides the rival's starter (grass ball: he takes Charmander; water: Bulbasaur; fire: Squirtle). `tools/starter_tiers.js` tests each starter at every major fight's Hardcore level cap up to the Champion (36 fights: gym leaders, rival, Rocket admins and Giovanni, Elite Four and the other milestone fights), evolved by level as it would be by then, with its best level-up moves (Hardcore bans excluded, no TMs or tutors assumed) and the best of Adamant, Jolly, Modest and Timid. Each of the boss's Pokémon is a one-on-one matchup counting every damage roll, crit and miss, scored 3 (safe) to −1 (loses), and rival fights use the team that starter gives you.
+
+The **first fights** (caps 16 and 23: the rival, Falkner, Brock and Archer) are also **played out whole**: the starter alone against the boss's whole team in the battle simulator, against the ported boss AI, with real luck (40 battles each) and no items, as in Hardcore. One-on-one matchups from full HP miss what happens by the third or fourth Pokémon. Played out, **no starter beats Hardcore Brock alone**: the best (Tepig, Grookey, Totodile) knock out about one of his six, and most fire starters almost none (his Hippopotas sets a sandstorm and the AI brings in Lunatone and Lileep, which wall them). Plan on catches that cover him. Overall = 40% the first fights (one-on-one and played out, half each) + 25% the rest of the early game (caps up to 36) + 35% the rest of the run. Tiers are by distance from the average (S is more than one standard deviation above it). The Coach's tier list can also be ranked by the first fights alone.
 
 | Tier | Starters |
 | --- | --- |
-| S | Scorbunny, Fennekin, Charmander, Totodile, Torchic |
-| A | Chimchar, Fuecoco, Mudkip, Cyndaquil, Litten, Popplio |
-| B | Rowlet, Piplup, Quaxly, Sobble, Grookey, Turtwig |
-| C | Tepig, Oshawott, Bulbasaur, Chespin |
-| D | Froakie, Chikorita, Treecko, Sprigatito, Snivy, Squirtle |
+| S | Scorbunny, Fennekin, Torchic, Charmander, Totodile |
+| A | Chimchar, Cyndaquil, Popplio, Fuecoco, Litten, Mudkip |
+| B | Piplup, Rowlet, Quaxly, Turtwig, Grookey, Tepig, Sobble, Oshawott |
+| C | Bulbasaur, Chespin |
+| D | Chikorita, Froakie, Sprigatito, Squirtle, Treecko, Snivy |
+
+For the first fights alone, the order is Scorbunny and Totodile, then Torchic, Popplio, Charmander, Litten, Sobble and Quaxly. Fennekin, second overall for its late game, is weak in the first fights.
 
 ## Roadmap
 

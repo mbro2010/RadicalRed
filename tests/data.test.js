@@ -27,6 +27,10 @@ test('data: 27 starters with tiers', () => {
   const T = require('../app/starters.json');
   assert(T.starters.length === 27, 'starters');
   assert(T.starters.every(s => 'SABCD'.includes(s.tier)), 'tiers');
+  // the first fights are also played out whole, the starter alone against their team
+  assert(T.starters.every(s => s.first != null && s.fights.filter(f => f[5] != null).length >= 4), 'first fights played out');
+  const brock = s => s.fights.find(f => f[0] === 'Brock' && f[1] === 16);
+  assert(T.starters.every(s => brock(s)[5] < 0.5), 'no starter beats Hardcore Brock alone');
 });
 test('data: gifts, items and TM locations from the map scripts', () => {
   const r4 = D.finds['Route 4'];

@@ -8,8 +8,13 @@
 // (grass ball: he takes Charmander; water: Bulbasaur; fire: Squirtle).
 // Each of the boss's Pokemon is a one-on-one matchup (counting every damage roll, crit and miss); a fight's score
 // is the average over their team of (safe 3, ok 2, risky 1, lose 0) minus the chance of fainting.
-// Overall = 60% early game (caps up to 36: the first four badges) + 40% the rest, because your starter
-// carries the early game, when you have little else.
+// The first fights (caps 16 and 23: the rival, Falkner, Brock, Archer) are also played out whole: the starter alone
+// against the boss's whole team in the battle simulator (the ported boss AI, real luck, 40 battles each), counting
+// how much of their team it knocks out before it falls, with no items, as in Hardcore. That catches what one-on-one
+// matchups from full HP miss: by their third or fourth Pokemon your starter is worn down.
+// Overall = 40% the first fights (one-on-one and played out, half each) + 25% the rest of the early game (caps up
+// to 36) + 35% the rest of the run: a nuzlocke ends at its first wipe, and the first fights are where your starter is
+// most of your team.
 //
 // usage: node tools/starter_tiers.js data app/rrdata.json app/starters.json
 const fs = require('fs');
@@ -20,13 +25,26 @@ const DATA = process.argv[2] || 'data';
 const D = JSON.parse(fs.readFileSync(process.argv[3] || 'app/rrdata.json', 'utf8'));
 const OUT = process.argv[4] || 'app/starters.json';
 const E = require(path.resolve(__dirname, '../app/engine.js'))(C, D);
-const ADV = require(path.resolve(__dirname, '../app/advice.js'))(E);
+const SIM = require(path.resolve(__dirname, '../app/sim.js'))(E);
+const ADV = require(path.resolve(__dirname, '../app/advice.js'))(E, SIM);
+/** The starter alone against a boss's whole team: the share of their team it knocks out before it falls (mean of runs). */
+function sweep(spec, bi, runs) {
+  const team = E.bossTeam(bi, D.bosses[bi].cap).map((t, i) => Object.assign({ key: 'b' + i, label: E.sp(t.s).n }, t));
+  let sum = 0;
+  for (let k = 0; k < runs; k++) {
+    const st = SIM.runBattle([spec], team, { seed: 7919 * (k + 1) + bi, maxTurns: 60, doubles: false });
+    sum += st.a.team.filter(m => m.fainted).length / team.length;
+  }
+  return sum / runs;
+}
+const SWEEP_RUNS = 40;
 const starters = JSON.parse(fs.readFileSync(path.join(DATA, 'starters.json'), 'utf8'));
 
 const VS = { safe: 3, ok: 2, risky: 1, lose: 0 };
 const NATURES = ['Adamant', 'Jolly', 'Modest', 'Timid'].map(n => D.natures.findIndex(x => x.n === n));
 const LEVEL_EVO = new Set([4, 8, 9, 10, 11, 12, 13, 20, 21, 22, 23, 31, 32]);
 const EARLY_CAP = 36;
+const FIRST_CAP = 23;
 
 function evolvedBy(sid, lv) {
   let s = sid;
@@ -75,7 +93,7 @@ for (const st of starters) {
   const fights = fightsFor(st);
   // moves per fight (neutral nature), then the best of four natures
   const perNature = NATURES.map(nat => {
-    let early = 0, nEarly = 0, late = 0, nLate = 0;
+    let early = 0, nEarly = 0, late = 0, nLate = 0, first = 0, nFirst = 0;
     const detail = [];
     for (const f of fights) {
       const as = evolvedBy(st.species, f.cap);
@@ -94,12 +112,27 @@ for (const st of starters) {
       const handles = per.filter(p => p.verdict === 'safe' || p.verdict === 'ok').length / f.members.length;
       const size = per.length / f.members.length;
       detail.push({ name: f.name, cap: f.cap, as, score: +score.toFixed(3), handles: +handles.toFixed(1), size, moves: sets[0] });
-      if (f.cap <= EARLY_CAP) { early += score; nEarly++; } else { late += score; nLate++; }
+      if (f.cap <= FIRST_CAP) { first += score; nFirst++; } else if (f.cap <= EARLY_CAP) { early += score; nEarly++; } else { late += score; nLate++; }
     }
-    early /= nEarly; late /= nLate;
-    return { nat, early, late, overall: 0.6 * early + 0.4 * late, detail };
+    early /= nEarly; late /= nLate; first /= nFirst;
+    return { nat, early, late, first, overall: 0.4 * first + 0.25 * early + 0.35 * late, detail };
   });
   const best = perNature.sort((a, b) => b.overall - a.overall)[0];
+  // the first fights, played out whole (the starter alone, no items), with the nature and moves found above
+  const swept = [];
+  for (const d of best.detail) {
+    if (d.cap > FIRST_CAP) continue;
+    const f = fights.find(x => x.name === d.name && x.cap === d.cap);
+    const spec = { key: 'starter', s: d.as, lv: d.cap, nat: best.nat, ab: E.sp(d.as).a[0], it: null, mv: d.moves };
+    const frac = f.members.reduce((a, bi) => a + sweep(spec, bi, SWEEP_RUNS), 0) / f.members.length;
+    d.sweep = +frac.toFixed(3);
+    swept.push(frac);
+  }
+  // one-on-one and played out count half each in the first fights (a full sweep = 3, the top of the one-on-one scale)
+  const sweepScore = swept.length ? 3 * swept.reduce((a, b) => a + b, 0) / swept.length : 0;
+  best.firstMatch = best.first;
+  best.first = 0.5 * best.first + 0.5 * sweepScore;
+  best.overall = 0.4 * best.first + 0.25 * best.early + 0.35 * best.late;
   const final = stages(st.species);
   const fsp = E.sp(final[final.length - 1].s);
   // the moves it relies on most
@@ -113,10 +146,10 @@ for (const st of starters) {
   results.push({
     s: st.species, name: st.name, gen: st.gen, ball: st.ball, type: st.type, rival: st.rival,
     stages: final, types: fsp.t, ability: E.sp(st.species).a[0], hidden: E.sp(st.species).a[2] || null, bst: fsp.s.reduce((a, b) => a + b, 0),
-    nature: D.natures[best.nat].n, early: +best.early.toFixed(3), late: +best.late.toFixed(3), overall: +best.overall.toFixed(3),
+    nature: D.natures[best.nat].n, first: +best.first.toFixed(3), early: +best.early.toFixed(3), late: +best.late.toFixed(3), overall: +best.overall.toFixed(3),
     best: sorted.slice(0, 3).map(d => ({ name: d.name, cap: d.cap, handles: d.handles, size: d.size })),
     worst: sorted.slice(-3).reverse().map(d => ({ name: d.name, cap: d.cap, handles: d.handles, size: d.size })),
-    fights: best.detail.map(d => [d.name, d.cap, d.score, d.handles, d.size]),
+    fights: best.detail.map(d => [d.name, d.cap, d.score, d.handles, d.size, d.sweep != null ? d.sweep : null]),
     keyMoves,
   });
   process.stderr.write(`${st.name}: ${best.overall.toFixed(2)} (${((Date.now() - t0) / 1000).toFixed(0)}s)\n`);
@@ -132,7 +165,7 @@ for (const r of results) {
   r.rank = results.indexOf(r) + 1;
 }
 const out = {
-  method: 'Each starter at every major fight\'s Hardcore level cap up to the Champion, evolved by level, with its best level-up moves and best nature, one-on-one against each boss Pokemon (rival fights use the team you would face). Overall = 60% early game (caps up to 36) + 40% the rest.',
+  method: 'Each starter at every major fight\'s Hardcore level cap up to the Champion, evolved by level, with its best level-up moves and best nature, one-on-one against each boss Pokemon (rival fights use the team you would face); the first fights (caps 16 and 23) are also played out whole, the starter alone against their whole team (' + SWEEP_RUNS + ' simulated battles each, no items). Overall = 40% the first fights + 25% the rest of the early game (caps to 36) + 35% the rest of the run.',
   fights: groups.length, early: groups.filter(g => g.cap <= EARLY_CAP).length, starters: results,
 };
 fs.writeFileSync(OUT, JSON.stringify(out));

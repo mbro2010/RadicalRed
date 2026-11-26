@@ -3548,7 +3548,12 @@
     if (!TIERS) { loadTiers(); return '<div class="empty">Loading the starter tier list…</div>'; }
     if (TIERS.error || !TIERS.starters) return '<div class="empty">The starter tier list didn’t load.</div>';
     const pick = S.tierPick != null ? TIERS.starters.find(x => x.s === S.tierPick) : null;
-    const rows = ['S', 'A', 'B', 'C', 'D'].map(t => {
+    const byFirst = S.tierSort === 'first' && TIERS.starters[0].first != null;
+    const firstRows = byFirst ? `<ol class="first-rank">${TIERS.starters.slice().sort((a, b) => b.first - a.first).map(x => {
+        const ff = (x.fights || []).filter(f => f[5] != null);
+        return `<li><button class="chipbtn" data-tier="${x.s}" aria-pressed="${S.tierPick === x.s}">${icon(x.s)}${esc(x.name)}</button><span class="small muted">${ff.map(f => `${esc(f[0])} ${(f[5] * f[4]).toFixed(1)}/${f[4]}`).join(' · ')}</span></li>`;
+      }).join('')}</ol>` : '';
+    const rows = byFirst ? firstRows : ['S', 'A', 'B', 'C', 'D'].map(t => {
       const list = TIERS.starters.filter(x => x.tier === t);
       if (!list.length) return '';
       return `<div class="tier"><span class="tl" style="background:${TIER_COLORS[t]}">${t}</span><div class="chips">${list.map(x =>
@@ -3562,7 +3567,10 @@
         <div class="slot">${front(pick.stages[pick.stages.length - 1].s)}<div class="who"><b>#${pick.rank} ${esc(pick.name)} <span class="tag">tier ${pick.tier}</span></b>
           <span class="small">${pick.stages.map((st, k) => `${esc(E.sp(st.s).n)}${k ? ' (Lv ' + st.lv + ')' : ''}`).join(' → ')}</span>
           <div class="row" style="gap:4px">${typesHTML(pick.types)}<span class="small muted">Gen ${pick.gen} · ${esc(pick.type)} ball · final base total ${pick.bst}</span></div></div></div>
-        ${bar(pick.early, 'Early game')}${bar(pick.late, 'Rest of the run')}
+        ${pick.first != null ? bar(pick.first, 'First fights') : ''}${bar(pick.early, 'Early game')}${bar(pick.late, 'Rest of the run')}
+        ${(pick.fights || []).some(f => f[5] != null) ? `<div class="small"><b>The first fights, alone</b> (one on one from full HP · against their whole team, no items):
+          <ul class="first-fights">${(pick.fights || []).filter(f => f[5] != null).map(f => `<li><b>${esc(f[0])}</b> (cap ${f[1]}): beats ${(+f[3]).toFixed(f[3] % 1 ? 1 : 0)} of ${f[4]} one on one · knocks out ${(f[5] * f[4]).toFixed(1)} of ${f[4]} in a row</li>`).join('')}</ul>
+          <span class="muted">Your catches have to cover the rest: no starter beats Hardcore Brock alone.</span></div>` : ''}
         <dl class="kv"><dt>Nature</dt><dd>${esc(pick.nature)} tested best (set it free with the Nature Change service)</dd>
           <dt>Ability</dt><dd>${esc(pick.ability || '—')}${pick.hidden ? ` · hidden: ${esc(pick.hidden)}` : ''}</dd>
           <dt>Rival</dt><dd>He takes the ${esc(pick.rival)} line, so his ${esc(pick.rival)} fights are the ones scored here</dd>
@@ -3572,7 +3580,8 @@
         ${choose ? `<div class="row"><button class="btn primary" data-choose="${pick.s}">Choose ${esc(pick.name)}</button><span class="note">Then set the nature and ability you got.</span></div>` : ''}
       </div>`;
     }
-    return `<div class="card"><p class="small" style="margin:0">All 27 starters Oak's Lab offers (the generation setting changes the three balls), ranked for Hardcore from the game's data. Each one is tested at every major fight's level cap up to the Champion (${TIERS.fights} fights), evolved by level as it would be by then, with its best level-up moves and nature, one-on-one against each of the boss's Pokémon. Early game (the first four badges) counts 60%, because that's when your starter carries you. Tap one for details.</p>
+    return `<div class="card"><p class="small" style="margin:0">All 27 starters Oak's Lab offers (the generation setting changes the three balls), ranked for Hardcore from the game's data. Each one is tested at every major fight's level cap up to the Champion (${TIERS.fights} fights), evolved by level as it would be by then, with its best level-up moves and nature, one-on-one against each of the boss's Pokémon. The first fights (the rival, Falkner, Brock and Archer) are also played out whole, the starter alone against their whole team, and count 40%: a nuzlocke ends at its first wipe, and that's when your starter is most of your team. Tap one for details.</p>
+      <div class="row small"><span class="seg" role="group" aria-label="Rank by"><button data-tiersort="run" aria-pressed="${!byFirst}">Whole run</button><button data-tiersort="first" aria-pressed="${byFirst}">First fights</button></span>${byFirst ? '<span class="muted">Their Pokémon knocked out in a row, alone, no items</span>' : ''}</div>
       ${rows}${detail}
       <p class="note" style="margin:0">Scores run from 3 (beats every boss Pokémon safely) to −1 (loses to all of them); one Pokémon alone rarely beats a whole Hardcore team, so even the best sit near 1. TMs and tutors aren't assumed, so Pokémon that rely on them can do better than this.</p></div>`;
   }
@@ -3659,6 +3668,7 @@
   }
   function wireTiers() {
     main.querySelectorAll('[data-tier]').forEach(b => b.onclick = () => { S.tierPick = S.tierPick === +b.dataset.tier ? null : +b.dataset.tier; render(); });
+    main.querySelectorAll('[data-tiersort]').forEach(b => b.onclick = () => { S.tierSort = b.dataset.tiersort; render(); });
     main.querySelectorAll('[data-choose]').forEach(b => b.onclick = () => {
       const sid = +b.dataset.choose;
       openEditor(null, { s: sid, lv: 5, met: 'Starter', onSave: m => { S.run.starter = sid; if (!S.run.started) S.run.started = Date.now(); S.tierPick = null; store.saveRun(); celebrateCatch(m.s, 'starter'); } });
