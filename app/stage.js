@@ -18,6 +18,17 @@
   const reduce = !!(win && win.matchMedia && win.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const STATUS = { par: 'PAR', brn: 'BRN', psn: 'PSN', tox: 'PSN', slp: 'SLP', frz: 'FRZ' };
   const STAT_NAME = { ATK: 'Attack', DEF: 'Defense', SPA: 'Sp. Atk', SPD: 'Sp. Def', SPE: 'Speed', ACC: 'accuracy', EVA: 'evasiveness' };
+  // the game's own lines for status and damage that isn't a hit
+  const STATUS_TEXT = { paralyzed: 'is paralyzed! It may be unable to move!', burned: 'was burned!', poisoned: 'was poisoned!',
+    'badly poisoned': 'was badly poisoned!', asleep: 'fell asleep!', frozen: 'was frozen solid!' };
+  const HURT_TEXT = {
+    'hurt itself in confusion': () => 'It hurt itself in its confusion!', recoil: n => `${n} is damaged by the recoil!`,
+    crash: n => `${n} kept going and crashed!`, 'Life Orb': n => `${n} lost some of its HP!`, poison: n => `${n} is hurt by poison!`,
+    toxic: n => `${n} is hurt by poison!`, burn: n => `${n} is hurt by its burn!`, sandstorm: n => `${n} is buffeted by the sandstorm!`,
+    'Stealth Rock': n => `Pointed stones dug into ${n}!`, spikes: n => `${n} is hurt by the spikes!`, 'Leech Seed': n => `${n}’s health is sapped by Leech Seed!`,
+    'Rocky Helmet': n => `${n} was hurt by the Rocky Helmet!`, Curse: n => `${n} is afflicted by the curse!`, Substitute: n => `${n} put in a substitute!`,
+    'Black Sludge': n => `${n} is hurt by its Black Sludge!`, hail: n => `${n} is buffeted by the hail!`,
+  };
   let speed = o.speed || 1, skipping = false, alive = true, pauseGate = null, resumeFn = null;
   const slots = { p: [], a: [] };   // per side and position: { i, s, mon, box } as shown now
 
@@ -214,12 +225,22 @@
       case 'hurt': {
         const cause = (/\(([^)]+)\)\s*$/.exec(l.text) || [])[1];
         const before = x.pct;
-        anim(x.mon, 'hit-soft'); place(side, ent, true);
+        anim(x.mon, cause === 'hurt itself in confusion' ? 'hit' : 'hit-soft'); place(side, ent, true);
         const lost = Math.round(before - x.pct);
         if (lost > 0) pop(x, `−${lost}%`, 'soft');
-        await say(`${foePre(side)}${nm} is hurt${cause ? ' by ' + cause : ''}!`, 300);
+        const said = HURT_TEXT[cause];
+        await say(said ? said(foePre(side) + nm) : `${foePre(side)}${nm} is hurt${cause ? ' by ' + cause : ''}!`, 300);
         break;
       }
+      case 'cant': {
+        // couldn't move: fully paralyzed, asleep, frozen, flinched, recharging
+        const k = /paralyzed/.test(l.text) ? 'par' : /asleep/.test(l.text) ? 'slp' : /frozen/.test(l.text) ? 'frz' : '';
+        if (k) anim(x.mon, 'st-' + k);
+        await say(foePre(side) + l.text, 420);
+        break;
+      }
+      case 'conf': anim(x.mon, 'tint'); await say(foePre(side) + l.text, 320); break;
+      case 'cure': await say(foePre(side) + l.text, 320); break;
       case 'heal': {
         const before = x.pct;
         anim(x.mon, 'glow'); place(side, ent, true);
@@ -232,7 +253,7 @@
       case 'status': {
         const what = (/ is ([a-z ]+?)(?: \(|$)/.exec(l.text) || [])[1] || 'affected';
         anim(x.mon, 'st-' + (ent.st || 'par'));
-        await say(`${foePre(side)}${nm} is ${what}!`, 320);
+        await say(`${foePre(side)}${nm} ${STATUS_TEXT[what] || 'is ' + what + '!'}`, 320);
         break;
       }
       case 'boost': {

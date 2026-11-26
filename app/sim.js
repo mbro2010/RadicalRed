@@ -165,7 +165,7 @@
     return { weather: st.weather, terrain: st.terrain, defSide: (sc.reflect || sc.light || sc.veil) ? { isReflect: !!sc.reflect, isLightScreen: !!sc.light, isAuroraVeil: !!sc.veil } : null };
   }
   function speed(st, m) {
-    let s = E.rawStats(m.spec).spe;
+    let s = m.speRaw || E.rawStats(m.spec).spe;   // speRaw: what a live battle showed (who moved first)
     s = Math.floor(s * STAGE(m.boosts.spe));
     const it = itemName(m);
     if (it === 'Choice Scarf') s = Math.floor(s * 1.5);
@@ -406,38 +406,55 @@
     if (!user || user.fainted || !isActive(st, user)) return;
     user.movedThisTurn = true;
     const mm0 = meta(moveId);
-    // turn-skipping conditions
-    if (user.recharge) { user.recharge = false; log(st, `${user.name} must recharge`); return; }
-    if (user.status === 'slp') {
-      if (user.sleep > 0) {
-        user.sleep--;
-        if (mm0.name === 'Sleep Talk') {
+    // What the player saw happen in a live battle: '' lets the dice decide; 'hit', 'miss' or 'crit' means it moved;
+    // 'par', 'slp', 'frz', 'conf' or 'flinch' means it couldn't. ko / noKO: its hit did (or didn't) knock the target out.
+    const F = ctx.outcome || '';
+    user.forced = { o: F, ko: !!ctx.ko, noKO: !!ctx.noKO };
+    const cant = (o, text) => { log(st, text, 'cant', user); st.events.push({ turn: st.turn, type: 'outcome', side, key: user.key, o }); };
+    // turn-skipping conditions, in the game's order
+    if (user.recharge) { user.recharge = false; cant('recharge', `${user.name} must recharge!`); return; }
+    if (user.status === 'slp' || F === 'slp') {
+      const talk = (mm0.name === 'Sleep Talk' || mm0.name === 'Snore') && F !== 'slp';
+      if (F === 'slp' && user.status !== 'slp') { user.status = 'slp'; user.sleep = 1; }
+      if (F && F !== 'slp' && !talk) { user.status = ''; user.sleep = 0; log(st, `${user.name} woke up!`, 'cure', user); }
+      else if (user.sleep > 0 || F === 'slp') {
+        if (user.sleep > 0) user.sleep--;
+        if (talk && mm0.name === 'Sleep Talk') {
           const others = user.moves.filter(id => meta(id).name !== 'Sleep Talk' && ![CHARGE, SEMI_INV, SOLAR].includes(meta(id).eff));
           if (others.length) { log(st, `${user.name} uses Sleep Talk`); moveId = others[rng.expected ? 0 : Math.floor(rng() * others.length)]; }
-          else { log(st, `${user.name} is fast asleep`); return; }
-        } else { log(st, `${user.name} is fast asleep`); return; }
-      } else { user.status = ''; log(st, `${user.name} wakes up`); }
+          else { cant('slp', `${user.name} is fast asleep.`); return; }
+        } else if (!talk) { cant('slp', `${user.name} is fast asleep.`); return; }
+      } else { user.status = ''; log(st, `${user.name} woke up!`, 'cure', user); }
     }
-    if (user.status === 'frz') {
-      if (roll(rng, 0.2) || /Scald|Flare Blitz|Sacred Fire|Flame Wheel|Scorching Sands|Steam Eruption|Pyro Ball|Burn Up/.test(mm0.name)) { user.status = ''; log(st, `${user.name} thaws out`); }
-      else { log(st, `${user.name} is frozen solid`); return; }
+    if (user.status === 'frz' || F === 'frz') {
+      if (F === 'frz') { user.status = 'frz'; cant('frz', `${user.name} is frozen solid!`); return; }
+      if (F || roll(rng, 0.2) || /Scald|Flare Blitz|Sacred Fire|Flame Wheel|Scorching Sands|Steam Eruption|Pyro Ball|Burn Up/.test(mm0.name)) { user.status = ''; log(st, `${user.name} thawed out!`, 'cure', user); }
+      else { cant('frz', `${user.name} is frozen solid!`); return; }
     }
-    if (user.flinch) { log(st, `${user.name} flinches`); return; }
-    if (user.confused) {
-      user.confused--;
-      if (user.confused <= 0) { user.confused = 0; log(st, `${user.name} snaps out of confusion`); }
-      else if (!rng.expected && rng() < 1 / 3) {   // Gen 7+ odds: one in three
-        const rs = E.rawStats(user.spec);
-        const a = rs.atk * STAGE(user.boosts.atk), d = rs.def * STAGE(user.boosts.def);
-        const lv = user.spec.lv || 50;
-        const base = Math.floor(Math.floor(Math.floor(2 * lv / 5 + 2) * 40 * a / d) / 50) + 2;
-        hurt(st, user, Math.max(1, Math.floor(base * (85 + Math.floor(rng() * 16)) / 100)), 'hurt itself in confusion');
-        return;
+    if (F === 'flinch' || (user.flinch && !F)) { cant('flinch', `${user.name} flinched and couldn't move!`); return; }
+    if (user.confused || F === 'conf') {
+      user.confused = F === 'conf' ? Math.max(1, (user.confused || 2) - 1) : user.confused - 1;
+      if (user.confused <= 0) { user.confused = 0; log(st, `${user.name} snapped out of its confusion!`, 'cure', user); }
+      else {
+        log(st, `${user.name} is confused!`, 'conf', user);
+        if (F === 'conf' || (!F && !rng.expected && rng() < 1 / 3)) {   // Gen 7+ odds: one in three
+          const rs = E.rawStats(user.spec);
+          const a = rs.atk * STAGE(user.boosts.atk), d = rs.def * STAGE(user.boosts.def);
+          const lv = user.spec.lv || 50;
+          const base = Math.floor(Math.floor(Math.floor(2 * lv / 5 + 2) * 40 * a / d) / 50) + 2;
+          st.events.push({ turn: st.turn, type: 'outcome', side, key: user.key, o: 'conf' });
+          hurt(st, user, Math.max(1, Math.floor(base * (85 + Math.floor(rng() * 16)) / 100)), 'hurt itself in confusion');
+          return;
+        }
       }
     }
-    if (user.status === 'par' && !rng.expected && rng() < 0.25) { log(st, `${user.name} is fully paralyzed`); return; }
+    if (F === 'par' || (user.status === 'par' && !F && !rng.expected && rng() < 0.25)) {
+      if (user.status !== 'par') user.status = 'par';
+      cant('par', `${user.name} is paralyzed! It can't move!`); return;
+    }
     const mm = meta(moveId);
     st.events.push({ turn: st.turn, type: 'move', side, user: user.key, move: moveId });
+    st.events.push({ turn: st.turn, type: 'outcome', side, key: user.key, o: 'hit' });
     // Choice lock and rampage bookkeeping
     if ((/^Choice /.test(itemName(user) || '') || user.ability === 'Sage Power' || user.ability === 'Gorilla Tactics') && !user.lock) user.lock = moveId;
     if (mm.eff === 27 && !user.rampage) user.rampage = rng.expected ? 2 : (rng() < 0.5 ? 2 : 3);
@@ -524,13 +541,16 @@
       return none;
     }
     if (target.invuln && !(mm.name === 'Earthquake' || mm.name === 'Surf' || mm.name === 'Thunder' || mm.name === 'Hurricane')) { log(st, `${target.name} avoids the attack`); return none; }
-    if (!zk && !roll(rng, hitChance(st, user, target, mm))) {
+    const FO = user.forced || {};
+    if (!zk && FO.o !== 'hit' && FO.o !== 'crit' && (FO.o === 'miss' || !roll(rng, hitChance(st, user, target, mm)))) {
       log(st, `${user.name}'s attack misses ${target.name}`, 'miss', user);
+      st.events.push({ turn: st.turn, type: 'outcome', side: user.side, key: user.key, o: 'miss' });
       if (mm.name === 'High Jump Kick' || mm.name === 'Jump Kick' || mm.name === 'Supercell Slam') hurt(st, user, Math.floor(user.maxHp / 2), 'crash');
       return none;
     }
     const hits = zk ? 1 : pickHits(rng, user, mm);
-    const crit = roll(rng, critChance(user, target, mm));
+    const crit = FO.o === 'crit' ? true : FO.o === 'hit' || FO.o === 'miss' ? false : roll(rng, critChance(user, target, mm));
+    if (crit) st.events.push({ turn: st.turn, type: 'outcome', side: user.side, key: user.key, o: 'crit' });
     const fo = fieldOpts(st, tside);
     const rr = E.rawRolls(specNow(user), specNow(target), moveId, Object.assign({ crit, hits, z: !!zk }, fo));
     const rolls = rr.rolls;
@@ -558,17 +578,25 @@
     }
     if (target.disguise) { target.disguise = false; dmg = Math.floor(target.maxHp / 8); log(st, `${target.name}'s disguise is busted`); }
     const fullHp = target.hp === target.maxHp;
-    if (fullHp && dmg >= target.hp && hits <= 1 && (target.ability === 'Sturdy' || itemName(target) === 'Focus Sash')) {
+    if (fullHp && dmg >= target.hp && hits <= 1 && !FO.ko && (target.ability === 'Sturdy' || itemName(target) === 'Focus Sash')) {
       dmg = target.hp - 1;
       if (itemName(target) === 'Focus Sash') { consume(target); log(st, `${target.name} hangs on with its Focus Sash`); }
       else log(st, `${target.name} endures with Sturdy`);
     }
-    if (crit) log(st, 'A critical hit!', 'crit');
-    if (hits > 1) log(st, `Hit ${hits} times`);
+    // what the player saw: the hit knocked it out, or it held on
+    if (FO.ko) dmg = Math.max(dmg, target.hp);
+    else if (FO.noKO && dmg >= target.hp) dmg = Math.max(0, target.hp - 1);
     target.hitThisTurn = true;
     const dealt = Math.min(target.hp, dmg);
     target.hp -= dealt;
     if (st.opts.record) log(st, `${target.name} loses ${Math.round(100 * dealt / target.maxHp)}% (${Math.round(100 * target.hp / target.maxHp)}% left)`, 'dmg', target);
+    // the game's order: the hit, then "A critical hit!", then how effective it was
+    if (crit) log(st, 'A critical hit!', 'crit');
+    if (st.opts.record && dealt > 0) {
+      if (rr.eff > 1) log(st, "It's super effective!", 'eff');
+      else if (rr.eff > 0 && rr.eff < 1) log(st, "It's not very effective…", 'eff');
+    }
+    if (hits > 1) log(st, `Hit ${hits} times!`);
     // item and ability reactions on the target
     const tItem = itemName(target);
     if (tItem === 'Air Balloon') { consume(target); log(st, `${target.name}'s Air Balloon pops`); }
@@ -628,7 +656,12 @@
     const n = mm.name, e = mm.eff;
     const foeTargeted = !(e in EFFECT_BOOST) && !SETUP[n] && ![HEAL_HALF, HEAL_WEATHER, 37, PROTECT_EFF, HAZARD, 35, 65, 136, 137, 115, 164, 228, 239, 98, 97, 153, 124, 79, 142, 109, 176, 180, 235, 177].includes(e) || n === 'Strength Sap' || n === 'Parting Shot' || n === 'Leech Seed';
     if (foeTargeted && target && target.protect) { log(st, `${target.name} protects itself`); return; }
-    if (foeTargeted && target && !target.fainted && !roll(rng, hitChance(st, user, target, mm))) { log(st, `${user.name}'s ${n} misses`, 'miss', user); return; }
+    const FO = user.forced || {};
+    if (foeTargeted && target && !target.fainted && FO.o !== 'hit' && (FO.o === 'miss' || !roll(rng, hitChance(st, user, target, mm)))) {
+      log(st, `${user.name}'s ${n} misses`, 'miss', user);
+      st.events.push({ turn: st.turn, type: 'outcome', side: user.side, key: user.key, o: 'miss' });
+      return;
+    }
     if (foeTargeted && target && user.ability === 'Prankster' && hasType(target, 'Dark')) { log(st, 'It does not affect Dark types'); return; }
     if (n === 'Stockpile') { if ((user.stockpile || 0) >= 3) { log(st, 'But it failed'); return; } user.stockpile = (user.stockpile || 0) + 1; }
     if (SETUP[n] || EFFECT_BOOST[e]) {
@@ -824,6 +857,25 @@
     return mv.length ? mv : m.moves.slice(0, 1);
   }
   const resolveTarget = (st, t) => (t && t.side ? act(st, t.side, t.slot || 0) : null);
+  /** What a move can do to its target this turn that stops it moving: par, slp, frz, conf, flinch (and brn, psn, tox). */
+  function mayCause(user, moveId) {
+    const mm = meta(moveId), e = mm.eff, out = new Set();
+    if (mm.cat === 'X') {
+      const sm = { 1: 'slp', 33: 'tox', 66: 'psn', 67: 'par', 167: 'brn' }[e];
+      if (sm) out.add(sm);
+      if (e === 49 || e === 118 || e === 166) out.add('conf');
+      return out;
+    }
+    if (user.ability === 'Sheer Force') return out;
+    const sb = { 2: 'psn', 4: 'brn', 5: 'frz', 6: 'par', 209: 'tox' }[e];
+    if (sb) out.add(sb);
+    if (e === 152 && mm.name === 'Thunder') out.add('par');
+    if (e === 36) { out.add('brn'); out.add('par'); out.add('frz'); }
+    if (FANG[mm.name]) out.add(FANG[mm.name]);
+    if (e === 31 || e === FAKE_OUT || ['King\'s Rock', 'Razor Fang'].includes(itemName(user))) out.add('flinch');
+    if (e === 76) out.add('conf');
+    return out;
+  }
   function playTurn(st, rng) {
     st.turn++;
     const P = st.policies;
@@ -855,16 +907,18 @@
     for (const x of acts) if (x.a.type === 'move' && isActive(st, x.user) && megaTarget(x.user)) megaEvolve(st, x.side, x.user);
     const order = acts.filter(x => x.a.type === 'move').map(x => Object.assign({}, x, { id: x.a.id, z: !!x.a.z }));
     for (const o of order) { o.pri = priorityOf(st, o.user, o.id); o.spe = speed(st, o.user); o.r = rng.expected ? (o.side === 'a' ? 0 : 1) + o.slot / 10 : rng(); }
-    order.sort((x, y) => (y.pri - x.pri) || (st.trickRoom ? x.spe - y.spe : y.spe - x.spe) || (x.r - y.r));
+    // a live battle can say who moved first (singles): that beats the Speed the Coach assumed
+    const first = st.size === 1 ? (order.find(o => o.a.first) || {}).side || null : null;
+    order.sort((x, y) => (first && x.side !== y.side ? (x.side === first ? -1 : 1) : 0) || (y.pri - x.pri) || (st.trickRoom ? x.spe - y.spe : y.spe - x.spe) || (x.r - y.r));
     // Custap Berry: move first within the bracket at low HP
-    order.forEach((o, i) => {
+    if (!first) order.forEach((o, i) => {
       const m = o.user;
       if (itemName(m) === 'Custap Berry' && m.hp <= m.maxHp / 4 && i > 0 && order[0].pri === o.pri) { consume(m); order.splice(i, 1); order.unshift(o); log(st, `${m.name}'s Custap Berry lets it move first`); }
     });
     for (const o of order) {
       const m = o.user;
       if (!m || m.fainted || !isActive(st, m)) continue;
-      useMove(st, o.side, o.id, rng, { user: m, slot: m.slot, target: resolveTarget(st, o.a.target), z: o.z && !!zKind(st, m, o.id) });
+      useMove(st, o.side, o.id, rng, { user: m, slot: m.slot, target: resolveTarget(st, o.a.target), z: o.z && !!zKind(st, m, o.id), outcome: o.a.outcome, ko: o.a.ko, noKO: o.a.noKO });
       if (!alive(st, 'p').length || !alive(st, 'a').length) break;
     }
     endOfTurn(st, rng);
@@ -1472,5 +1526,5 @@
     return { winner: st.winner, turns, faints, totalTurns: st.turn };
   }
 
-  return { meta, snapshot, sampleBattle, makeMon, newBattle, runBattle, simulate, simulateAsync, planFight, scriptOf, plannerPolicy, doublesPlanner, aiPolicy, bossPolicy, AI, megaTarget, zKind, usable, actives, cloneState, playTurn, begin, switchIn, speed, mulberry32, expectedDice, specNow, act };
+  return { meta, snapshot, sampleBattle, makeMon, newBattle, runBattle, simulate, simulateAsync, planFight, scriptOf, plannerPolicy, doublesPlanner, aiPolicy, bossPolicy, AI, megaTarget, zKind, usable, actives, cloneState, playTurn, begin, switchIn, speed, priorityOf, mayCause, hitChance, mulberry32, expectedDice, specNow, act };
 });

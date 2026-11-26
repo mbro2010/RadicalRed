@@ -73,7 +73,13 @@
     return `<div class="mv"><span class="bar" style="background:${c}"></span><span class="txt"><span class="nm">${esc(m.f)}</span><span class="meta">${esc(m.t)} · ${cat}${m.p ? ' · ' + (m.p === 1 ? 'var' : m.p) : ''}${extra ? ' · ' + extra : ''}</span></span></div>`;
   }
   // your Pokemon battle with Hardcore's ability changes applied
-  function specOf(m, extra) { return Object.assign({ key: m.key, s: m.s, lv: m.lv, nat: m.nat, ab: E.hardcoreAbility(m.ab, m.s), it: m.it || null, mv: (m.mv || []).filter(Boolean) }, extra || {}); }
+  function specOf(m, extra) {
+    const o = { key: m.key, s: m.s, lv: m.lv, nat: m.nat, ab: E.hardcoreAbility(m.ab, m.s), it: m.it || null, mv: (m.mv || []).filter(Boolean) };
+    if (Array.isArray(m.iv) && m.iv.length === 6) o.iv = m.iv.slice();
+    if (Array.isArray(m.ev) && m.ev.length === 6 && m.ev.some(Boolean)) o.ev = m.ev.slice();
+    if (m.statsAt) o.exact = true;
+    return Object.assign(o, extra || {});
+  }
   function alive() { return S.roster.filter(m => m.box !== 'dead'); }
   function party() { return S.roster.filter(m => m.box === 'party'); }
   function milestonesDone() { return D.bosses.filter(b => b.ms && S.run.beaten.includes(b.i)).length; }
@@ -197,7 +203,8 @@
     },
     async saveMon(m) {
       if (S.example) return;
-      const body = { s: m.s, nick: m.nick || '', lv: m.lv, nat: m.nat, ab: m.ab, it: m.it || null, mv: m.mv, box: m.box, met: m.met || '', ord: m.ord || Date.now(), pid: m.pid || null, died: m.died || null, noEvo: !!m.noEvo };
+      const body = { s: m.s, nick: m.nick || '', lv: m.lv, nat: m.nat, ab: m.ab, it: m.it || null, mv: m.mv, box: m.box, met: m.met || '', ord: m.ord || Date.now(), pid: m.pid || null, died: m.died || null, noEvo: !!m.noEvo,
+        iv: m.iv || null, ev: m.ev || null, ivGuess: !!m.ivGuess, statsAt: m.statsAt || null };
       if (this.mode === 'db') { try { await this.put(m.key, plain(body)); } catch (e) { flash('Couldn’t save to your account (' + e.code + ').'); } }
       else this.saveLocal();
     },
@@ -1516,7 +1523,16 @@
     return { type: 'move', id: +x, z: k === 'z', target: { side: foeSide, slot: tslot } };
   }
   /** The live battle for one fight: pick your lead, then turn by turn (recommendation, what happened, check). */
-  function liveBlockHTML(bi) {
+  function liveBlockHTML(bi) { return `<div id="lv-body">${liveBodyHTML(bi)}</div>`; }
+  /** Redraw the whole live block in place (starting or ending a battle, picking leads): the page stays where it is. */
+  function redrawLive(bi) {
+    const body = $('#lv-body');
+    if (!body) { render(); return; }
+    if (liveStage) { liveStage.destroy(); liveStage = null; }
+    body.outerHTML = liveBlockHTML(bi);
+    wireLiveBlock(bi);
+  }
+  function liveBodyHTML(bi) {
     const pp = party().length ? party() : alive();
     if (!pp.length) return '<div class="empty">Add your Pokémon in Team &amp; PC first.</div>';
     if (!S.live || S.live.bi !== bi) {
@@ -1530,9 +1546,16 @@
         ${other ? `<p class="note" style="margin:0">Starting ends your live battle against ${esc(other.n)}.</p>` : ''}
         <div class="row"><button class="btn primary" id="lv-start">Start the battle</button></div></div>`;
     }
+    return `<div id="lv-head">${liveHeadHTML()}</div><div class="stage-host" id="lv-stage"></div><div id="lv-below">${liveBelowHTML()}</div>`;
+  }
+  function liveHeadHTML() {
+    const L = S.live, b = D.bosses[L.bi];
+    return `<div class="row"><h3 class="grow" style="font-family:var(--font-display);font-size:18px">vs ${esc(b.n)} · turn ${L.st.turn + 1}</h3><button class="btn small ghost" id="lv-end">End battle</button></div>`;
+  }
+  /** Under the battle screen: the turn report, the turn playing, or how the battle ended. */
+  function liveBelowHTML() {
     const L = S.live, st = L.st, b = D.bosses[L.bi];
-    let html = `<div class="row"><h3 class="grow" style="font-family:var(--font-display);font-size:18px">vs ${esc(b.n)} · turn ${st.turn + 1}</h3><button class="btn small ghost" id="lv-end">End battle</button></div>
-      <div class="stage-host" id="lv-stage"></div>`;
+    let html = L.lesson ? `<p class="note lv-lesson">${esc(L.lesson)}</p>` : '';
     if (st.over) {
       const won = st.winner === 'p';
       const fallen = st.p.team.filter(m => m.fainted);
@@ -1588,7 +1611,7 @@
   function lvActsInit(L) {
     if (L.acts && L.actsTurn === L.st.turn) return;
     L.acts = { p: (L.recs || []).slice(), a: (L.pred || []).map(a => (a ? { type: a.type, id: a.id, to: a.to, z: !!a.z, target: a.target } : null)) };
-    L.actsTurn = L.st.turn; L.hpEdits = {}; L.statEdits = {}; L.sendout = {}; L.prev = null; L.wiz = 'you';
+    L.actsTurn = L.st.turn; L.hpEdits = {}; L.statEdits = {}; L.cnfEdits = {}; L.sendout = {}; L.prev = null; L.wiz = 'you';
   }
   /** The turn as entered, played out with average rolls: the report starts from this (HP, status, who is out). */
   function lvPreview() {
@@ -1651,7 +1674,7 @@
     const me = SIM.actives(st, 'p')[0], foe = SIM.actives(st, 'a')[0];
     if (!me || !foe) return renderReportAll();
     const step = L.wiz || 'you';
-    const STEPS = [['you', 'Your move'], ['them', 'Their move'], ['hp', 'HP after']];
+    const STEPS = [['you', 'Your move'], ['them', 'Their move'], ['hp', 'What happened']];
     const bar = `<div class="wiz-steps" role="tablist">${STEPS.map(([k, l], i) => `<button class="wiz-step${k === step ? ' on' : ''}" role="tab" aria-selected="${k === step}" data-wiz="${k}"><span class="n">${i + 1}</span>${l}</button>`).join('')}</div>`;
     let body = '';
     if (step === 'you') {
@@ -1662,7 +1685,8 @@
       body = `<div class="wiz-q">What did you do with <b>${esc(shortName(me.name))}</b>?</div>
         ${rec ? `<p class="small wiz-tip">Coach: <b>${esc(actionLabel(st, 'p', rec))}</b>${recOpt ? ' ' + riskBadge(recOpt.risk) : ''}</p>` : ''}
         ${actButtonsHTML(st, 'p', me, 0, L.acts.p[0], recKey ? { [recKey]: 'Coach pick' } : {}, { pick: recKey, meta: riskOf })}
-        <p class="small muted" style="margin:0">${esc(shortName(foe.name))} will most likely use ${predictionHTML(st, foe, (L.pred || [])[0]).replace(/^<b>[^:]*: /, '<b>')}.</p>`;
+        <p class="small muted" style="margin:0">${esc(shortName(foe.name))} will most likely use ${predictionHTML(st, foe, (L.pred || [])[0]).replace(/^<b>[^:]*: /, '<b>')}.</p>
+        ${orderHint(st, me, foe, L.acts.p[0], L.acts.a[0])}`;
     } else if (step === 'them') {
       body = `<div class="wiz-q">What did <b>${esc(shortName(foe.name))}</b> do?</div>
         ${actButtonsHTML(st, 'a', foe, 0, L.acts.a[0], predMarks(0))}
@@ -1670,26 +1694,123 @@
           <textarea id="lv-words" rows="2" placeholder="e.g. Water Gun, Snubbull switched to Squirtle, it's at about half, I'm at 70%">${esc(L.words || '')}</textarea>
           <div class="row"><button class="btn small" id="lv-parse">Fill it in</button><span class="note" id="lv-parse-out" aria-live="polite">${esc(L.wordsNote || '')}</span></div></details>`;
     } else {
-      body = `<div class="wiz-q">HP after the turn</div>
-        <p class="small muted" style="margin:0">You: <b>${esc(actionLabel(st, 'p', L.acts.p[0]))}</b> · ${esc(shortName(foe.name))}: <b>${esc(actionLabel(st, 'a', L.acts.a[0]))}</b>. The bars show what that does; move one only if your game shows something else.</p>
+      body = `<div class="wiz-q">What happened?</div>
+        ${timelineHTML(st, nx)}
+        <div class="lbl" style="margin-top:6px">HP after the turn</div>
+        <p class="small muted" style="margin:0">The bars show what the Coach worked out from the above. Move one only if your game shows something else.</p>
         ${reportRows(nx)}
         <button class="btn primary wiz-go" id="lv-next">Next turn</button>`;
     }
     box.innerHTML = bar + body;
     wireReport();
   }
+  // ---------------- what happened, in the game's order: who moved first, and how each move went ----------------
+  const OUTCOME_LABEL = { hit: 'Hit', crit: 'Critical hit', miss: 'Missed', par: 'Fully paralyzed', slp: 'Fast asleep', frz: 'Frozen solid',
+    conf: 'Hurt itself in confusion', flinch: 'Flinched', recharge: 'Had to recharge' };
+  const CANT = ['par', 'slp', 'frz', 'conf', 'flinch', 'recharge'];
+  /** The turn as the simulator played it: who acted in which order, and how each one's move went. */
+  function turnOutcomes(nx) {
+    const order = [], o = {};
+    const rank = x => (x === 'hit' ? 0 : x === 'crit' ? 1 : x === 'miss' ? 2 : 3);   // can't-move beats a miss beats a crit
+    for (const e of nx.events) {
+      if (e.type !== 'outcome' || e.turn !== nx.turn) continue;
+      if (!order.includes(e.side)) order.push(e.side);
+      if (!o[e.side] || rank(e.o) > rank(o[e.side])) o[e.side] = e.o;
+    }
+    return { order, o };
+  }
+  /** Who should move first with these two moves, and why (priority, or Speed). */
+  function firstMover(st, me, foe, pa, aa) {
+    if (!pa || !aa || pa.type !== 'move' || aa.type !== 'move') return null;
+    const pp = SIM.priorityOf(st, me, pa.id), pf = SIM.priorityOf(st, foe, aa.id);
+    const sp = SIM.speed(st, me), sf = SIM.speed(st, foe);
+    if (pp !== pf) return { side: pp > pf ? 'p' : 'a', why: 'priority', sp, sf };
+    if (sp === sf) return { side: null, why: 'tie', sp, sf };
+    return { side: (st.trickRoom ? sp < sf : sp > sf) ? 'p' : 'a', why: st.trickRoom ? 'trick room' : 'speed', sp, sf };
+  }
+  function speedLine(F, me, foe) {
+    if (F.why === 'priority') return `${esc(shortName((F.side === 'p' ? me : foe).name))}’s move has priority.`;
+    const tail = me.spec.exact ? '' : me.speRaw ? ', from who moved first earlier' : me.spec.iv ? ', estimated from an earlier battle'
+      : ' if its Speed IV is perfect (enter its stats in Team to be sure)';
+    return `Speed: their ${esc(shortName(foe.name))} ${F.sf}, yours ${F.sp}${tail}${F.why === 'trick room' ? '. Trick Room: the slower one moves first' : ''}.`;
+  }
+  /** Step 1: who moves first if you attack (switches always go first). */
+  function orderHint(st, me, foe, pa, aa) {
+    const myMove = pa && pa.type === 'move' ? pa : { type: 'move', id: (SIM.usable(me, st) || [])[0] };
+    if (!myMove.id || !aa || aa.type !== 'move') return '';
+    const F = firstMover(st, me, foe, myMove, aa);
+    if (!F) return '';
+    const you = pa && pa.type === 'move' ? 'You' : 'If you attack, you';
+    const head = F.side === null ? 'Speed tie: either of you can move first.' : F.side === 'p' ? `${you} should move first.` : `${esc(shortName(foe.name))} should move first.`;
+    return `<p class="small muted" style="margin:0">⚡ ${head} ${F.side === null ? '' : speedLine(F, me, foe)}</p>`;
+  }
+  /** What could have happened to this move: it moved (hit, crit, missed), or it couldn't (status, confusion, flinch). */
+  function outcomeChoices(st, sd, m, a, foe, foeAct, foeFirst) {
+    if (m.recharge) return ['recharge'];
+    const mv = E.mv(a.id) || {};
+    const atFoe = mv.k !== 'X' || [0, 8, 32].includes(mv.tg || 0);
+    const out = ['hit'];
+    if (mv.k !== 'X') out.push('crit');
+    if (atFoe && mv.a > 0 && m.ability !== 'No Guard' && (!foe || foe.ability !== 'No Guard')) out.push('miss');
+    const can = new Set();
+    if (m.status === 'slp') can.add('slp');
+    if (m.status === 'frz') can.add('frz');
+    if (m.status === 'par') can.add('par');
+    if (m.confused) can.add('conf');
+    if (foeFirst && foeAct && foeAct.type === 'move' && foe) {
+      for (const k of SIM.mayCause(foe, foeAct.id)) if (['par', 'slp', 'frz', 'conf', 'flinch'].includes(k)) can.add(k);
+      if (m.ability === 'Inner Focus') can.delete('flinch');
+    }
+    return out.concat(['slp', 'frz', 'par', 'conf', 'flinch'].filter(k => can.has(k)));
+  }
+  function timelineHTML(st, nx) {
+    const L = S.live;
+    const acts = { p: L.acts.p[0], a: L.acts.a[0] };
+    const who = { p: SIM.actives(st, 'p')[0], a: SIM.actives(st, 'a')[0] };
+    const T = turnOutcomes(nx);
+    const movers = ['p', 'a'].filter(sd => acts[sd] && acts[sd].type === 'move' && who[sd]);
+    const order = T.order.filter(sd => movers.includes(sd)).concat(movers.filter(sd => !T.order.includes(sd)));
+    let h = '';
+    for (const sd of ['p', 'a']) if (acts[sd] && acts[sd].type === 'switch' && who[sd]) {
+      const to = st[sd].team[acts[sd].to];
+      h += `<div class="tl-row"><span class="tl-n">⇄</span>${icon(to.spec.s)}<span>${sd === 'p' ? 'You' : 'They'} switched to <b>${esc(shortName(to.name))}</b> (switches go first)</span></div>`;
+    }
+    if (movers.length === 2) {
+      const F = firstMover(st, who.p, who.a, acts.p, acts.a);
+      h += `<div class="tl-q"><span class="small">Who moved first?</span><div class="chips">${['a', 'p'].map(sd => `<button class="chipbtn" data-first="${sd}" aria-pressed="${order[0] === sd}">${icon(who[sd].spec.s)}${esc(shortName(who[sd].name))} <span class="small muted">${sd === 'a' ? 'theirs' : 'yours'}</span></button>`).join('')}</div>
+        ${F ? `<span class="note">${F.side === null ? 'A speed tie: either can go first.' : speedLine(F, who.p, who.a)}</span>` : ''}</div>`;
+    }
+    order.forEach((sd, n) => {
+      const m = who[sd], a = acts[sd], mv = E.mv(a.id) || { f: '?' };
+      const o = T.o[sd];
+      const fsd = sd === 'p' ? 'a' : 'p';
+      const foeFirst = order.indexOf(fsd) >= 0 && order.indexOf(fsd) < n;
+      const choices = outcomeChoices(st, sd, m, a, who[fsd], acts[fsd], foeFirst);
+      const label = k => (k === 'hit' && mv.k === 'X' ? 'It worked' : OUTCOME_LABEL[k]);
+      const sleepy = m.status === 'slp' ? 'Hit, Missed or Critical hit means it woke up.' : m.status === 'frz' ? 'Hit, Missed or Critical hit means it thawed out.' : '';
+      h += `<div class="tl-row"><span class="tl-n">${n + 1}</span>${icon(m.spec.s)}<span>${sd === 'a' ? 'Their' : 'Your'} <b>${esc(shortName(m.name))}</b> used <b>${esc(mv.f)}</b></span></div>`;
+      h += o
+        ? `<div class="chips tl-out">${choices.map(k => `<button class="chipbtn${CANT.includes(k) ? ' cant' : ''}" data-out="${sd}:${k}" aria-pressed="${k === o}">${esc(label(k))}</button>`).join('')}</div>${sleepy ? `<p class="note" style="margin:0 0 0 30px">${sleepy}</p>` : ''}`
+        : `<div class="tl-out small muted">Fainted before it could move. <button class="btn small ghost" data-moved="${sd}">No, it moved</button></div>`;
+    });
+    return h ? `<div class="tl">${h}</div>` : '';
+  }
   /** HP and status rows for whoever is on the field after the turn, and who came in for a fallen one. */
   function reportRows(nx) {
     const L = S.live, st = L.st;
     const pctNow = (side, i) => { const k = side + ':' + i; return k in L.hpEdits ? L.hpEdits[k] : pctExact(nx[side].team[i]); };
     const stNow = (side, i) => { const k = side + ':' + i; return k in L.statEdits ? L.statEdits[k] : (nx[side].team[i].status || ''); };
+    const cnfNow = (side, i) => { const k = side + ':' + i; return k in (L.cnfEdits || {}) ? L.cnfEdits[k] : !!nx[side].team[i].confused; };
+    // could it have been confused this turn? (their move can confuse)
+    const confusable = side => { const os = side === 'p' ? 'a' : 'p', o = (L.acts[os] || [])[0], u = SIM.actives(st, os)[0]; return !!(o && o.type === 'move' && u && SIM.mayCause(u, o.id).has('conf')); };
     const hpRow = (side, i) => {
       const m = nx[side].team[i], nm = esc(shortName(m.name)), pct = pctNow(side, i);
       const val = side === 'p' ? Math.round(m.maxHp * pct / 100) : Math.round(pct);
       const max = side === 'p' ? m.maxHp : 100;
       const out = side === 'p' ? (val ? `${val}/${m.maxHp}` : 'fainted') : (val ? val + '%' : 'fainted');
+      const cnf = cnfNow(side, i) || confusable(side);
       return `<div class="rp-mon">${icon(m.spec.s)}<div class="rp-name"><b>${nm}</b> <span class="muted small">${side === 'a' ? 'theirs' : 'yours'}</span></div>
-        <select class="inline" data-stat="${side}:${i}" aria-label="${nm}: status">${STATUS_OPTS.map(([k, l]) => `<option value="${k}" ${stNow(side, i) === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
+        <div class="rp-st">${cnf ? `<button class="rp-cnf" data-cnf="${side}:${i}" aria-pressed="${cnfNow(side, i)}" aria-label="${nm}: confused">Confused</button>` : ''}<select class="inline" data-stat="${side}:${i}" aria-label="${nm}: status">${STATUS_OPTS.map(([k, l]) => `<option value="${k}" ${stNow(side, i) === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
         <div class="rp-hp"><button class="rp-nudge" data-nudge="${side}:${i}:-1" aria-label="${nm}: less HP">−</button><input type="range" min="0" max="${max}" step="1" value="${val}" data-hp="${side}:${i}" data-max="${max}" aria-label="${nm}: HP left${side === 'a' ? ', percent' : ''}"><button class="rp-nudge" data-nudge="${side}:${i}:1" aria-label="${nm}: more HP">+</button><output data-hpo="${side}:${i}">${out}</output></div></div>`;
     };
     const sendRows = side => fieldedAt(side).map((cur, k) => {
@@ -1719,34 +1840,6 @@
     const nx = L.prev.nx;
     const singles = !L.doubles;
     const mine = SIM.actives(st, 'p'), theirs = SIM.actives(st, 'a');
-    const pctNow = (side, i) => { const k = side + ':' + i; return k in L.hpEdits ? L.hpEdits[k] : pctExact(nx[side].team[i]); };
-    const stNow = (side, i) => { const k = side + ':' + i; return k in L.statEdits ? L.statEdits[k] : (nx[side].team[i].status || ''); };
-    const hpRow = (side, i) => {
-      const m = nx[side].team[i], nm = esc(shortName(m.name)), pct = pctNow(side, i);
-      // yours in real HP (you see the numbers in the game), theirs in percent (you see a bar)
-      const val = side === 'p' ? Math.round(m.maxHp * pct / 100) : Math.round(pct);
-      const max = side === 'p' ? m.maxHp : 100;
-      const out = side === 'p' ? (val ? `${val}/${m.maxHp}` : 'fainted') : (val ? val + '%' : 'fainted');
-      return `<div class="rp-mon">${icon(m.spec.s)}<div class="rp-name"><b>${nm}</b> <span class="muted small">${side === 'a' ? 'theirs' : 'yours'}</span></div>
-        <select class="inline" data-stat="${side}:${i}" aria-label="${nm}: status">${STATUS_OPTS.map(([k, l]) => `<option value="${k}" ${stNow(side, i) === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
-        <div class="rp-hp"><button class="rp-nudge" data-nudge="${side}:${i}:-1" aria-label="${nm}: less HP">−</button><input type="range" min="0" max="${max}" step="1" value="${val}" data-hp="${side}:${i}" data-max="${max}" aria-label="${nm}: HP left${side === 'a' ? ', percent' : ''}"><button class="rp-nudge" data-nudge="${side}:${i}:1" aria-label="${nm}: more HP">+</button><output data-hpo="${side}:${i}">${out}</output></div></div>`;
-    };
-    const sendRows = side => fieldedAt(side).map((cur, k) => {
-      if (cur == null || !st[side].team[cur] || pctNow(side, cur) > 0) return '';
-      const taken = new Set(fieldedAt(side));
-      const cands = nx[side].team.map((m, i) => i).filter(i => !taken.has(i) && !st[side].slots.includes(i) && !nx[side].team[i].fainted && pctNow(side, i) > 0);
-      if (!cands.length) return '';
-      const key = side + ':' + k;
-      const picks = side === 'a' ? aiChoicesAfter(nx, cur, k) : [coachReplace(nx, cur, k)];
-      const chosen = key in L.sendout ? L.sendout[key] : (nx[side].slots[k] !== cur && cands.includes(nx[side].slots[k]) ? nx[side].slots[k] : picks[0]);
-      return `<div class="rp-out"><div class="lbl">${esc(shortName(st[side].team[cur].name))} fainted. Who did ${side === 'a' ? 'they' : 'you'} send out?</div>
-        <div class="chips">${cands.map(i => {
-          const m = nx[side].team[i];
-          const tag = side === 'a' ? (picks.length > 1 && picks.includes(i) ? 'coin flip' : picks[0] === i ? 'AI pick' : '') : (picks[0] === i ? 'Coach pick' : '');
-          return `<button class="chipbtn" data-sendout="${key}:${i}" aria-pressed="${i === chosen}">${icon(m.spec.s)}${esc(shortName(m.name))}${tag ? ` <span class="tag">${tag}</span>` : ''}</button>`;
-        }).join('')}</div>${side === 'a' && picks.length > 1 ? '<p class="note" style="margin:0">The engine flips a coin between equally good switch-ins, so either can come.</p>' : ''}</div>`;
-    }).join('');
-    const rows = side => fieldedAt(side).filter(i => i != null && st[side].team[i]).map(i => hpRow(side, i)).join('');
     const they = singles
       ? theirs.map((m, k) => `<div class="rp-side"><div class="rp-q">${icon(m.spec.s)}<span>What did <b>${esc(shortName(m.name))}</b> do?</span></div>${actButtonsHTML(st, 'a', m, k, L.acts.a[k], predMarks(k))}</div>`).join('')
       : `<div class="rp-acts"><div><div class="small muted">You used</div>${mine.map((m, k) => actionSelect(st, 'p', m.slot, L.acts.p[k], 'lvp' + m.slot)).join('')}</div>
@@ -1754,8 +1847,7 @@
     const youDid = singles && L.acts.p[0] ? `<p class="small" style="margin:0">You: <b>${esc(actionLabel(st, 'p', L.acts.p[0]))}</b> <span class="muted">(tap a move or a switch above to change it)</span></p>` : '';
     box.innerHTML = `<div class="lbl">What happened this turn?</div>${they}${youDid}
       <div class="lbl">After the turn: set the HP to match your game</div>
-      ${rows('a')}${rows('p')}
-      ${sendRows('a')}${sendRows('p')}
+      ${reportRows(nx)}
       ${singles ? `<details class="rp-words" ${L.wordsOpen ? 'open' : ''} hidden><summary>Or tell the Coach in your own words</summary>
         <textarea id="lv-words" rows="2" placeholder="e.g. Water Gun, Snubbull switched to Squirtle, it's at about half, I'm at 70%">${esc(L.words || '')}</textarea>
         <div class="row"><button class="btn small" id="lv-parse">Fill it in</button><span class="note" id="lv-parse-out" aria-live="polite">${esc(L.wordsNote || '')}</span></div></details>` : ''}
@@ -1767,7 +1859,7 @@
   function wireReport() {
     const L = S.live, box = $('#lv-report'); if (!L || !box) return;
     const st = L.st;
-    const reset = () => { L.prev = null; L.hpEdits = {}; L.statEdits = {}; L.sendout = {}; renderReport(); };
+    const reset = () => { L.prev = null; L.hpEdits = {}; L.statEdits = {}; L.cnfEdits = {}; L.sendout = {}; renderReport(); };
     // singles: tap what each side did
     box.querySelectorAll('[data-act]').forEach(b => b.onclick = () => {
       const [side, k, kind, x] = b.dataset.act.split(':');
@@ -1777,6 +1869,25 @@
       reset();
     });
     box.querySelectorAll('[data-wiz]').forEach(b => b.onclick = () => { L.wiz = b.dataset.wiz; renderReport(); });
+    // what happened: who moved first, and how each move went; the turn is played again that way
+    box.querySelectorAll('[data-first]').forEach(b => b.onclick = () => {
+      const sd = b.dataset.first, a = L.acts[sd][0], o = L.acts[sd === 'p' ? 'a' : 'p'][0];
+      if (!a || b.getAttribute('aria-pressed') === 'true') return;
+      a.first = true; if (o) o.first = false;
+      reset();
+    });
+    box.querySelectorAll('[data-out]').forEach(b => b.onclick = () => {
+      const [sd, k] = b.dataset.out.split(':'), a = L.acts[sd][0];
+      if (!a || b.getAttribute('aria-pressed') === 'true') return;
+      a.outcome = k;
+      reset();
+    });
+    box.querySelectorAll('[data-moved]').forEach(b => b.onclick = () => {
+      // it didn't faint before its move: the hit before it left it standing
+      const sd = b.dataset.moved, o = L.acts[sd === 'p' ? 'a' : 'p'][0];
+      if (o && o.type === 'move') { o.noKO = true; o.ko = false; }
+      reset();
+    });
     // doubles: the selects
     const readActs = () => {
       L.acts.p = SIM.actives(st, 'p').map(m => readAction(st, 'p', m.slot, 'lvp' + m.slot));
@@ -1797,7 +1908,14 @@
       if (out) out.textContent = v ? (side === 'p' ? `${v}/${m.maxHp}` : v + '%') : 'fainted';
       const before = key in L.hpEdits ? L.hpEdits[key] : pctExact(m);
       L.hpEdits[key] = side === 'p' ? 100 * v / m.maxHp : v;
-      if ((L.hpEdits[key] === 0) !== (before === 0)) renderReport();   // fainting (or not) changes who comes in
+      if ((L.hpEdits[key] === 0) !== (before === 0)) {
+        // fainting (or not) changes who comes in, and who got to move: play the turn again with the knock-out as it was
+        const o = !L.doubles && L.acts[side === 'p' ? 'a' : 'p'][0];
+        if (o && o.type === 'move' && E.mv(o.id) && E.mv(o.id).k !== 'X' && +key.split(':')[1] === fieldedAt(side)[0]) {
+          o.ko = L.hpEdits[key] === 0; o.noKO = !o.ko; L.prev = null;
+        }
+        renderReport();
+      }
     };
     box.querySelectorAll('input[type=range][data-hp]').forEach(inp => {
       inp.addEventListener('input', () => { const out = box.querySelector(`[data-hpo="${inp.dataset.hp}"]`); const side = inp.dataset.hp[0]; if (out) out.textContent = +inp.value ? (side === 'p' ? `${inp.value}/${inp.dataset.max}` : inp.value + '%') : 'fainted'; });
@@ -1808,6 +1926,10 @@
       const inp = box.querySelector(`input[data-hp="${side}:${i}"]`); if (inp) setHp(inp, +inp.value + +d);
     });
     box.querySelectorAll('[data-stat]').forEach(sel => sel.onchange = () => { L.statEdits[sel.dataset.stat] = sel.value; });
+    box.querySelectorAll('[data-cnf]').forEach(b => b.onclick = () => {
+      const on = b.getAttribute('aria-pressed') !== 'true';
+      (L.cnfEdits = L.cnfEdits || {})[b.dataset.cnf] = on; b.setAttribute('aria-pressed', String(on));
+    });
     box.querySelectorAll('[data-sendout]').forEach(b => b.onclick = () => { const [side, k, i] = b.dataset.sendout.split(':'); L.sendout[side + ':' + k] = +i; renderReport(); });
     const words = box.querySelector('.rp-words');
     if (words) {
@@ -1837,7 +1959,14 @@
       m.hp = Math.round(m.maxHp * pct / 100); if (pct > 0 && m.hp === 0) m.hp = 1;
       m.fainted = m.hp <= 0; if (m.fainted) m.status = '';
     }
-    for (const [key, s] of Object.entries(L.statEdits)) { const [side, i] = key.split(':'); const m = nx[side].team[+i]; if (m && !m.fainted) m.status = s; }
+    for (const [key, s] of Object.entries(L.statEdits)) {
+      const [side, i] = key.split(':'); const m = nx[side].team[+i]; if (!m || m.fainted) continue;
+      if (s === 'slp' && m.status !== 'slp') m.sleep = 2;   // put to sleep: a couple of turns, as the Coach counts it
+      if (s !== 'slp') m.sleep = 0;
+      if (s === 'tox' && m.status !== 'tox') m.toxic = 0;
+      m.status = s;
+    }
+    for (const [key, on] of Object.entries(L.cnfEdits || {})) { const [side, i] = key.split(':'); const m = nx[side].team[+i]; if (m && !m.fainted) m.confused = on ? Math.max(m.confused || 0, 3) : 0; }
     // who is out now: whoever took the turn's hits in each slot (the starter, or the one that switched in) stays in if it
     // is still standing; if it fell, the one you said came out replaces it (else the AI's pick, or the Coach's for you)
     for (const side of ['p', 'a']) fieldedAt(side).forEach((cur, k) => {
@@ -1860,14 +1989,56 @@
     const newly = nx.p.team.filter((m, i) => m.fainted && !(st.p.team[i] || {}).fainted)
       .map(m => recorded.find(e => e.key === m.key) || { type: 'faint', side: 'p', key: m.key, name: m.name, turn: st.turn + 1, cause: handCause });
     L.faints = (L.faints || []).concat(newly);
+    speedLesson(st, nx);
     nx.policies = st.policies;
     if (!SIM.actives(nx, 'a').length && !nx.a.team.some(m => !m.fainted)) { nx.over = true; nx.winner = 'p'; }
     else if (!nx.p.team.some(m => !m.fainted)) { nx.over = true; nx.winner = 'a'; }
     else { nx.over = false; nx.winner = null; }
     L.st = nx; L.step = 'anim';
     L.anim = { from: SIM.snapshot(st), lines: L.prev.lines };
-    L.prev = null; L.acts = null; L.hpEdits = {}; L.statEdits = {}; L.sendout = {}; L.words = ''; L.wordsNote = '';
-    render(); scrollToLive();
+    L.prev = null; L.acts = null; L.hpEdits = {}; L.statEdits = {}; L.cnfEdits = {}; L.sendout = {}; L.words = ''; L.wordsNote = '';
+    refreshLive();
+    if (liveStage && liveStage.alive && $('#lv-stage') && $('#lv-stage').firstElementChild) playLive(); else mountLiveStage();
+  }
+  /** Who moved first says something about your Pokémon's Speed (its IVs and EVs aren't known until you enter its real
+   *  stats): when the order you saw contradicts the Speed the Coach assumed, it takes the closest Speed that explains it,
+   *  for the rest of this battle and (as a Speed IV estimate) for later fights. */
+  function speedLesson(st, nx) {
+    const L = S.live; L.lesson = '';
+    if (L.doubles) return;
+    const pa = L.acts.p[0], aa = L.acts.a[0];
+    if (!pa || !aa || pa.type !== 'move' || aa.type !== 'move' || !(pa.first || aa.first)) return;
+    const me = SIM.actives(st, 'p')[0], foe = SIM.actives(st, 'a')[0];
+    if (!me || !foe || st.trickRoom || SIM.priorityOf(st, me, pa.id) !== SIM.priorityOf(st, foe, aa.id)) return;
+    const it = x => (x.item ? E.itemName(x.item) || '' : '');
+    if (/Quick Claw|Custap|Lagging Tail|Full Incense/.test(it(me) + ' ' + it(foe)) || [me.ability, foe.ability].some(a => a === 'Quick Draw' || a === 'Stall')) return;
+    const meFirst = !!pa.first;
+    const sp = SIM.speed(st, me), sf = SIM.speed(st, foe);
+    if (meFirst ? sp > sf : sp < sf) return;   // what the Coach expected
+    if (sp === sf) { if (meFirst) L.lesson = `A speed tie with ${shortName(foe.name)}: either of you can move first.`; return; }
+    const ivs = (me.spec.iv || [31, 31, 31, 31, 31, 31]).slice(), evs = (me.spec.ev || [0, 0, 0, 0, 0, 0]).slice();
+    const rawWith = (iv, ev) => E.rawStats(Object.assign({}, me.spec, { iv: ivs.slice(0, 5).concat([iv]), ev: evs.slice(0, 5).concat([ev]) })).spe;
+    const lo = rawWith(0, 0), hi = rawWith(31, 252), base = me.speRaw || E.rawStats(me.spec).spe;
+    const eff = r => SIM.speed(st, Object.assign({}, me, { speRaw: r }));
+    let r = null;
+    if (meFirst) { for (let x = base + 1; x <= hi; x++) if (eff(x) >= sf) { r = x; break; } }   // a tie it won counts
+    else { for (let x = base - 1; x >= lo; x--) if (eff(x) < sf) { r = x; break; } }
+    const nm = shortName(me.name);
+    if (r == null) { L.lesson = `${meFirst ? nm : shortName(foe.name)} moved first, which Speed can’t explain (a Quick Claw, or a speed tie?). The Coach keeps its numbers.`; return; }
+    const m2 = nx.p.team[me.idx]; if (m2) m2.speRaw = r;
+    L.lesson = meFirst ? `You moved first, so ${nm} is faster than the Coach assumed: it now counts its Speed as ${r}.`
+      : `${shortName(foe.name)} moved first, so ${nm}’s Speed can’t be ${base}: the Coach now counts it as ${r} or less. Enter its real stats in Team for exact numbers.`;
+    // keep it for later fights, as a Speed IV (or EV) estimate, unless you entered its real stats
+    const mon = S.roster.find(x => x.key === me.key);
+    if (mon && !mon.statsAt && !S.example) {
+      let iv = 31, ev = 0;
+      if (meFirst) { ev = 0; while (ev < 252 && rawWith(31, ev) < r) ev += 4; }
+      else { iv = 0; while (iv < 31 && rawWith(iv + 1, 0) <= r) iv++; }
+      mon.iv = (mon.iv || [31, 31, 31, 31, 31, 31]).slice(); mon.iv[5] = iv;
+      mon.ev = (mon.ev || [0, 0, 0, 0, 0, 0]).slice(); mon.ev[5] = ev;
+      mon.ivGuess = true;
+      store.saveMon(mon);
+    }
   }
   /** "Water Gun, Snubbull at about half, it used Power-Up Punch": Claude turns the player's words into the report (singles). */
   async function parseTurnWords(text) {
@@ -1958,10 +2129,10 @@
     main.querySelectorAll('[data-lead]').forEach(btn => btn.onclick = () => {
       const i = +btn.dataset.lead; let cur = (S.liveLead || [0, 1].slice(0, n)).slice();
       cur = cur.includes(i) ? cur.filter(x => x !== i) : cur.concat(i).slice(-n);
-      S.liveLead = cur.length ? cur : [i]; render();
+      S.liveLead = cur.length ? cur : [i]; redrawLive(bi);
     });
     const start = $('#lv-start');
-    if (start) start.onclick = () => { const lead = (S.liveLead || [0, 1]).slice(0, n); liveStart(bi, n > 1 ? lead : lead[0]); render(); scrollToLive(); };
+    if (start) start.onclick = () => { const lead = (S.liveLead || [0, 1]).slice(0, n); liveStart(bi, n > 1 ? lead : lead[0]); redrawLive(bi); };
     wireLive();
     mountLiveStage();
   }
@@ -1990,29 +2161,55 @@
   function mountLiveStage() {
     const host = $('#lv-stage'), L = S.live;
     if (!host || !L || !window.createStage) return;
-    const stage = liveStage = window.createStage(host, stageOpts(D.bosses[L.bi], L.doubles));
-    const prompt = () => {
-      const st = L.st;
-      if (st.over) stage.text(st.winner === 'p' ? `${D.bosses[L.bi].n} was defeated!` : 'You have no Pokémon left to fight…');
-      else { const me = SIM.actives(st, 'p'); stage.text(me.length === 1 ? `What will ${me[0].name.replace(/ \(.*\)$/, '')} do?` : 'What will your Pokémon do?'); }
-    };
-    if (!L.anim) { stage.show(SIM.snapshot(L.st)); prompt(); return; }
+    liveStage = window.createStage(host, stageOpts(D.bosses[L.bi], L.doubles));
+    playLive();
+  }
+  function livePrompt() {
+    const L = S.live, stage = liveStage; if (!L || !stage) return;
+    const st = L.st;
+    if (st.over) stage.text(st.winner === 'p' ? `${D.bosses[L.bi].n} was defeated!` : 'You have no Pokémon left to fight…');
+    else { const me = SIM.actives(st, 'p'); stage.text(me.length === 1 ? `What will ${me[0].name.replace(/ \(.*\)$/, '')} do?` : 'What will your Pokémon do?'); }
+  }
+  /** Play what is queued on the battle screen (the opening, or the turn just entered), then ask for the next turn.
+   *  Only the parts around the screen are redrawn, in place: the page doesn't jump. */
+  function playLive() {
+    const L = S.live, stage = liveStage;
+    if (!stage || !L) return;
+    if (!L.anim) { stage.show(SIM.snapshot(L.st)); livePrompt(); return; }
     const a = L.anim;
     stage.show(a.from);
+    keepInView($('#lv-stage'));
     (async () => {
       if (a.intro) await stage.intro();
       await stage.play(a.lines);
       if (liveStage !== stage || !stage.alive || S.live !== L) return;   // the page moved on meanwhile
       L.anim = null;
-      if (L.step === 'anim') { L.step = 'choose'; render(); scrollToLive(); } else prompt();
+      stage.show(SIM.snapshot(L.st), true);   // the HP you set, where it differs from the Coach's numbers
+      if (L.step === 'anim') { L.step = 'choose'; refreshLive(); }
+      livePrompt();
     })();
   }
-  function scrollToLive() { const el = $('#live'); if (el) el.scrollIntoView({ block: 'start' }); }
+  /** Redraw the live battle around the battle screen (its title and what's under it) without rebuilding the page. */
+  function refreshLive() {
+    const L = S.live, head = $('#lv-head'), below = $('#lv-below');
+    if (!L || !head || !below) { render(); return; }
+    head.innerHTML = liveHeadHTML();
+    below.innerHTML = liveBelowHTML();
+    wireLive();
+  }
+  /** Scroll only as far as needed to show the element (nothing when it's already on screen). */
+  function keepInView(el) {
+    if (!el) return;
+    const r = el.getBoundingClientRect(), h = window.innerHeight || document.documentElement.clientHeight;
+    if (r.top >= 0 && r.bottom <= h) return;
+    el.scrollIntoView({ block: r.height > h ? 'start' : 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  }
+  function scrollToLive() { keepInView($('#lv-stage') || $('#live')); }
   function wireLive() {
     const L = S.live; if (!L) return;
     const st = L.st;
-    const end = $('#lv-end'); if (end) end.onclick = () => { if (end.dataset.armed) { S.live = null; render(); } else { end.dataset.armed = '1'; end.textContent = 'Confirm: end it'; end.classList.add('primary'); } };
-    const close = $('#lv-close'); if (close) close.onclick = () => { S.live = null; render(); };
+    const end = $('#lv-end'); if (end) end.onclick = () => { if (end.dataset.armed) { const bi = L.bi; S.live = null; redrawLive(bi); } else { end.dataset.armed = '1'; end.textContent = 'Confirm: end it'; end.classList.add('primary'); } };
+    const close = $('#lv-close'); if (close) close.onclick = () => { const bi = L.bi; S.live = null; redrawLive(bi); };
     const beaten = $('#lv-beaten'); if (beaten) beaten.onclick = async () => { S.run.beaten.push(L.bi); await store.saveRun(); beaten.remove(); flash('Marked as beaten.'); };
     const dead = $('#lv-dead'); if (dead) dead.onclick = async () => {
       const b = D.bosses[L.bi];

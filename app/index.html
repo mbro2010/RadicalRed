@@ -330,11 +330,23 @@ ol.path::before { content: ""; position: absolute; left: 9px; top: 8px; bottom: 
 .wiz-q { font-family: var(--font-display); font-size: 19px; line-height: 1.25; }
 .wiz-tip { margin: 0; padding: 6px 10px; border-left: 4px solid var(--accent); background: var(--surface-2); border-radius: 6px; }
 .wiz-go { width: 100%; padding: 12px; font-size: 17px; }
+/* what happened: the turn in the game's order */
+.tl { display: grid; gap: 6px; padding: 8px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); }
+.tl-q { display: grid; gap: 4px; padding-bottom: 6px; border-bottom: 1px dashed var(--line); }
+.tl-row { display: flex; align-items: center; gap: 6px; font-size: 14px; min-width: 0; }
+.tl-row > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.tl-n { display: inline-grid; place-items: center; flex: 0 0 22px; height: 22px; border-radius: 50%; background: var(--ink); color: var(--surface); font-size: 12px; font-weight: 700; }
+.tl-out { margin-left: 30px; }
+.tl-out .chipbtn.cant[aria-pressed="true"] { background: var(--lose); border-color: var(--lose); color: var(--surface); }
+.lv-lesson { margin: 0; padding: 6px 10px; border-left: 4px solid var(--accent); background: var(--surface-2); border-radius: 6px; }
 .rp-acts { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
 @media (min-width: 560px) { .rp-acts { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
 .rp-acts select { flex: 1 1 150px; width: auto !important; min-width: 0; }
 .rp-mon { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 4px 8px; align-items: center; padding: 6px 8px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); }
 .rp-mon .rp-hp { grid-column: 1 / -1; }
+.rp-st { display: flex; gap: 4px; align-items: center; }
+.rp-cnf { border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 3px 6px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.rp-cnf[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .rp-main { display: grid; gap: 2px; min-width: 0; }
 .rp-name { font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rp-hp { display: grid; grid-template-columns: 30px minmax(0, 1fr) 30px 62px; gap: 6px; align-items: center; }
