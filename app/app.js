@@ -75,7 +75,7 @@
   }
   // your Pokemon battle with Hardcore's ability changes applied
   function specOf(m, extra) {
-    const o = { key: m.key, s: m.s, lv: m.lv, nat: m.nat, ab: E.hardcoreAbility(m.ab, m.s), it: m.it || null, mv: (m.mv || []).filter(Boolean) };
+    const o = { key: m.key, s: m.s, lv: m.lv, nat: m.nat, ab: E.canonAbility(E.hardcoreAbility(m.ab, m.s)), it: m.it || null, mv: (m.mv || []).filter(Boolean) };
     if (Array.isArray(m.iv) && m.iv.length === 6) o.iv = m.iv.slice();
     if (Array.isArray(m.ev) && m.ev.length === 6 && m.ev.some(Boolean)) o.ev = m.ev.slice();
     if (m.statsAt) o.exact = true;
@@ -437,8 +437,10 @@
   /** Where its IVs come from, in words. */
   function ivSource(m) {
     if (m.statsAt) return `From your game's numbers at Lv ${m.statsAt.lv}.`;
-    if (m.ivGuess) return 'Perfect IVs assumed, except Speed: estimated from who moved first in a battle.';
-    return 'Perfect IVs (31) assumed. Enter the numbers from your game to make every plan exact.';
+    // Minimal Grinding (on in Hardcore too: its script sets both flags) gives every Pokemon you get perfect IVs and no EVs
+    // (the game's code: 0x090786C0 and 0x090945F6)
+    if (m.ivGuess) return 'Perfect IVs and no EVs (Minimal Grinding), except Speed: estimated from who moved first in a battle.';
+    return 'Perfect IVs (31) and no EVs: Minimal Grinding, which Hardcore turns on too, gives every Pokémon you get these, so these numbers match your game.';
   }
 
   function monCard(m) {
@@ -1770,13 +1772,13 @@
   function actionSelect(st, side, slot, chosen, idp) {
     const m = SIM.actives(st, side).find(x => x.slot === slot);
     const opts = [];
-    const moves = side === 'p' ? SIM.usable(m, st) : m.moves;
+    const moves = side === 'p' || SIM.lockInfo(m) ? SIM.usable(m, st) : m.moves;
     for (const id of moves) {
       const mv = E.mv(id); if (!mv) continue;
       opts.push([`m:${id}`, mv.f]);
       if (side === 'p' && SIM.zKind(st, m, id) === 'type') opts.push([`z:${id}`, `Z-${mv.f} (Z-Move)`]);
     }
-    st[side].team.forEach((x, i) => { if (!x.fainted && !st[side].slots.includes(i)) opts.push([`s:${i}`, `Switch to ${x.name}`]); });
+    if (SIM.canSwitch(st, m)) st[side].team.forEach((x, i) => { if (!x.fainted && !st[side].slots.includes(i)) opts.push([`s:${i}`, `Switch to ${x.name}`]); });
     const cur = chosen ? (chosen.type === 'switch' ? `s:${chosen.to}` : `${chosen.z ? 'z' : 'm'}:${chosen.id}`) : '';
     const foes = SIM.actives(st, side === 'p' ? 'a' : 'p');
     const tSel = st.size > 1 && foes.length > 1 ? `<select class="inline" id="${idp}-t" style="width:auto">${foes.map(f => `<option value="${f.slot}" ${chosen && chosen.target && chosen.target.slot === f.slot ? 'selected' : ''}>on ${esc(f.name)}</option>`).join('')}</select>` : '';
@@ -1868,6 +1870,26 @@
   const STATUS_OPTS = [['', 'OK'], ['par', 'PAR'], ['brn', 'BRN'], ['psn', 'PSN'], ['tox', 'TOX'], ['slp', 'SLP'], ['frz', 'FRZ']];
   const shortName = n => String(n || '').replace(/ \(.*\)$/, '');
   /** The boss's likely move, why the AI likes it, and how close the next choice is (a tie is a coin flip in the engine). */
+  /** What their move does to your Pokemon from the HP it has now: every damage roll, critical hits and their accuracy.
+   *  "73–95% of Grookey's HP; a critical hit knocks it out (4%)". */
+  function threatText(st, foe, a) {
+    if (!a || a.type !== 'move' || st.size > 1) return '';
+    const mv = E.mv(a.id), me = SIM.actives(st, 'p')[0];
+    if (!mv || mv.k === 'X' || !me || me.fainted) return '';
+    const att = SIM.specNow(foe), def = SIM.specNow(me);
+    const d = E.damage(att, def, a.id, { weather: st.weather });
+    if (!d || d.max <= 0) return '';
+    const hp = me.hp, dist = E.damageDist(att, def, a.id, st.weather, Math.max(1, hp));
+    const pKO = dist[Math.max(1, hp)];
+    const rng = `${Math.round(d.minPct)}–${Math.round(d.maxPct)}% of ${esc(shortName(me.name))}'s HP${me.hp < me.maxHp ? ` (it has ${Math.round(100 * hp / me.maxHp)}%)` : ''}`;
+    let ko;
+    if (pKO <= 0.0005) ko = 'it can’t knock it out';
+    else if (d.max < hp) ko = `only a critical hit knocks it out (${fmtPct(pKO)})`;
+    else if (d.min >= hp) ko = `knocks it out unless it misses (${fmtPct(pKO)})`;
+    else ko = `knocks it out ${fmtPct(pKO)} of the time (high rolls and critical hits)`;
+    return `${esc(mv.f)}: ${rng}; ${ko}.`;
+  }
+  const fmtPct = p => (p >= 0.995 ? '100%' : p < 0.01 ? (p < 0.001 ? '<0.1%' : (100 * p).toFixed(1) + '%') : Math.round(100 * p) + '%');
   function predictionHTML(st, m, a) {
     const main = `<b>${esc(m.name)}: ${esc(actionLabel(st, 'a', a))}</b>`;
     const sc = a && a.scores ? Object.values(a.scores).filter(x => x && x.id).sort((x, y) => y.score - x.score) : [];
@@ -1921,12 +1943,14 @@
   function actButtonsHTML(st, side, m, k, chosen, marks, extra) {
     const cur = actKey(chosen);
     extra = extra || {};
-    const moves = side === 'p' ? SIM.usable(m, st) : m.moves;
+    const moves = side === 'p' || SIM.lockInfo(m) ? SIM.usable(m, st) : m.moves;
     const mvBtn = (v, mv, label) => `<button class="mvbtn${extra.pick === v ? ' pick' : ''}" data-act="${side}:${k}:${v}" aria-pressed="${cur === v}" style="--t:${TYPE_COLORS[mv.t] || '#888888'}"><span class="mvn">${esc(label)}</span><span class="mvm">${esc(mv.t)} · ${mv.k === 'X' ? 'status' : (mv.p > 1 ? mv.p : '—')}${extra.meta && extra.meta(v) ? ' · ' + esc(extra.meta(v)) : ''}</span>${marks[v] ? `<span class="cp">${esc(marks[v])}</span>` : ''}</button>`;
     let h = `<div class="cmd-moves">${moves.map(id => { const mv = E.mv(id); return mv ? mvBtn('m:' + id, mv, mv.f) : ''; }).join('')}`;
     if (side === 'p') h += moves.filter(id => SIM.zKind(st, m, id) === 'type').map(id => mvBtn('z:' + id, E.mv(id), 'Z-' + E.mv(id).f)).join('');
     h += '</div>';
-    const bench = st[side].team.map((x, i) => i).filter(i => !st[side].team[i].fainted && !st[side].slots.includes(i));
+    const bench = SIM.canSwitch(st, m) ? st[side].team.map((x, i) => i).filter(i => !st[side].team[i].fainted && !st[side].slots.includes(i)) : [];
+    const held = lockNote(st, m);
+    if (held) h += `<p class="small lock-note" style="margin:0">🔒 ${held}</p>`;
     if (bench.length) h += `<div class="rp-swrow"><span class="small muted">${side === 'a' ? 'Or they switched to' : 'Or you switched to'}</span><div class="chips">${bench.map(i => {
       const v = 's:' + i, x = st[side].team[i];
       return `<button class="chipbtn" data-act="${side}:${k}:${v}" aria-pressed="${cur === v}">${icon(x.spec.s)}${esc(shortName(x.name))}${marks[v] ? ` <span class="tag">${esc(marks[v])}</span>` : extra.meta && extra.meta(v) ? ` <span class="small muted">${esc(extra.meta(v))}</span>` : ''}</button>`;
@@ -1934,6 +1958,35 @@
     return h;
   }
   const riskText = r => (r == null ? '' : r <= 1e-9 ? 'safe' : r >= 0.995 ? 'loses' : fmtRisk(r) + ' risk');
+  const turnsWord = n => `${n} more turn${n === 1 ? '' : 's'}`;
+  /** Why a Pokemon can't choose freely this turn (locked into a move, charging, bound or trapped), or ''. */
+  function lockNote(st, m) {
+    if (!m || m.fainted) return '';
+    const L = SIM.lockInfo(m), name = esc(shortName(m.name)), mv = L && L.move ? esc((E.mv(L.move) || {}).f || '') : '';
+    if (L) {
+      if (L.kind === 'rollout') return `${name} is locked into ${mv}: this is hit ${L.hit + 1} of 5, twice as strong as the last. It can't switch or use another move until it misses or lands the fifth hit.`;
+      if (L.kind === 'rampage') return `${name} is locked into ${mv} (${turnsWord(L.left)}); then it becomes confused. No switching meanwhile.`;
+      if (L.kind === 'uproar') return `${name} is locked into Uproar (${turnsWord(L.left)}). Nobody can fall asleep meanwhile.`;
+      if (L.kind === 'bide') return `${name} is storing energy with Bide; it hits back with twice the damage it takes.`;
+      if (L.kind === 'charging') return `${name} is charging ${mv}: it lets it loose this turn and can't switch.`;
+      if (L.kind === 'recharge') return `${name} must recharge this turn.`;
+    }
+    if (SIM.canSwitch(st, m)) return '';
+    if (m.bound) return `${name} is caught in ${esc(m.bound.name)} (${turnsWord(m.bound.left)}): it can't switch out and loses 1/${m.bound.frac} of its HP each turn.`;
+    if (m.trappedBy) return `${name} is trapped and can't switch out while the one that trapped it stays in.`;
+    const t = SIM.actives(st, m.side === 'p' ? 'a' : 'p').find(f => ['Shadow Tag', 'Arena Trap', 'Magnet Pull'].includes(f.ability));
+    return t ? `${esc(shortName(t.name))}'s ${esc(t.ability)} keeps ${name} from switching out.` : `${name} can't switch out.`;
+  }
+  /** A warning for a move that would lock this Pokemon in (Rollout, Outrage, Uproar, Bide), or ''. */
+  function lockWarn(m, id) {
+    const mv = E.mv(id), name = esc(shortName(m.name));
+    if (!mv) return '';
+    if (mv.e === 117) return `${esc(mv.f)} locks ${name} in: up to five hits, each twice as strong as the one before. No switching and no other move until it misses or the fifth hit lands.`;
+    if (mv.e === 27) return `${esc(mv.f)} locks ${name} in for 2–3 turns, then it becomes confused. No switching meanwhile.`;
+    if (mv.e === 159) return `Uproar locks ${name} in for 2–5 turns.`;
+    if (mv.e === 26) return `Bide locks ${name} in for three turns.`;
+    return '';
+  }
   /** Singles: one question at a time. 1. what you did (the Coach's pick first), 2. what they did, 3. HP after the turn. */
   function renderReport() {
     const L = S.live, box = $('#lv-report');
@@ -1955,8 +2008,11 @@
       const recOpt = opts[0];
       body = `<div class="wiz-q">What did you do with <b>${esc(shortName(me.name))}</b>?</div>
         ${rec ? `<p class="small wiz-tip">Coach: <b>${esc(actionLabel(st, 'p', rec))}</b>${recOpt ? ' ' + riskBadge(recOpt.risk) : ''}</p>` : ''}
+        ${rec && rec.type === 'move' && !SIM.lockInfo(me) && lockWarn(me, rec.id) ? `<p class="small lock-note" style="margin:0">⚠ ${lockWarn(me, rec.id)}</p>` : ''}
         ${actButtonsHTML(st, 'p', me, 0, L.acts.p[0], recKey ? { [recKey]: 'Coach pick' } : {}, { pick: recKey, meta: riskOf })}
         <p class="small muted" style="margin:0">${esc(shortName(foe.name))} will most likely use ${predictionHTML(st, foe, (L.pred || [])[0]).replace(/^<b>[^:]*: /, '<b>')}.</p>
+        ${threatText(st, foe, (L.pred || [])[0]) ? `<p class="small" style="margin:0">💥 ${threatText(st, foe, (L.pred || [])[0])}</p>` : ''}
+        ${lockNote(st, foe) ? `<p class="small lock-note" style="margin:0">🔒 ${lockNote(st, foe)}</p>` : ''}
         ${orderHint(st, me, foe, L.acts.p[0], L.acts.a[0])}`;
     } else if (step === 'them') {
       body = `<div class="wiz-q">What did <b>${esc(shortName(foe.name))}</b> do?</div>
@@ -2002,7 +2058,7 @@
   function speedLine(F, me, foe) {
     if (F.why === 'priority') return `${esc(shortName((F.side === 'p' ? me : foe).name))}’s move has priority.`;
     const tail = me.spec.exact ? '' : me.speRaw ? ', from who moved first earlier' : me.spec.iv ? ', estimated from an earlier battle'
-      : ' if its Speed IV is perfect (enter its stats under Pokémon to be sure)';
+      : ' (Minimal Grinding: perfect IVs, so this is exact)';
     return `Speed: their ${esc(shortName(foe.name))} ${F.sf}, yours ${F.sp}${tail}${F.why === 'trick room' ? '. Trick Room: the slower one moves first' : ''}.`;
   }
   /** Step 1: who moves first if you attack (switches always go first). */

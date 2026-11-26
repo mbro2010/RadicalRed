@@ -25,14 +25,21 @@
     'Shift Gear': { atk: 1, spe: 2 }, 'Victory Dance': { atk: 1, def: 1, spe: 1 }, Geomancy: { spa: 2, spd: 2, spe: 2 }, Growth: { atk: 1, spa: 1 },
     'Dragon Dance': { atk: 1, spe: 1 }, 'Calm Mind': { spa: 1, spd: 1 }, 'Bulk Up': { atk: 1, def: 1 }, 'Fillet Away': { atk: 2, spa: 2, spe: 2 },
     'Tidy Up': { atk: 1, spe: 1 }, 'Work Up': { atk: 1, spa: 1 }, 'Hone Claws': { atk: 1 }, 'No Retreat': { atk: 1, def: 1, spa: 1, spd: 1, spe: 1 },
-    'Clangorous Soul': { atk: 1, def: 1, spa: 1, spd: 1, spe: 1 }, 'Tail Glow': { spa: 3 }, 'Cotton Guard': { def: 3 }, Stockpile: { def: 1, spd: 1 } };
+    'Clangorous Soul': { atk: 1, def: 1, spa: 1, spd: 1, spe: 1 }, 'Tail Glow': { spa: 3 }, 'Cotton Guard': { def: 3 }, Stockpile: { def: 1, spd: 1 }, Minimize: { eva: 2 } };
   const EFFECT_BOOST = { 10: { atk: 1 }, 11: { def: 1 }, 12: { spe: 1 }, 13: { spa: 1 }, 14: { spd: 1 }, 50: { atk: 2 }, 51: { def: 2 }, 52: { spe: 2 },
-    53: { spa: 2 }, 54: { spd: 2 }, 206: { def: 1, spd: 1 }, 208: { atk: 1, def: 1 }, 211: { spa: 1, spd: 1 }, 212: { atk: 1, spe: 1 } };
+    53: { spa: 2 }, 54: { spd: 2 }, 206: { def: 1, spd: 1 }, 208: { atk: 1, def: 1 }, 211: { spa: 1, spd: 1 }, 212: { atk: 1, spe: 1 },
+    156: { def: 1 }, 16: { eva: 1 } };
   const EFFECT_DROP = { 18: { atk: -1 }, 19: { def: -1 }, 20: { spe: -1 }, 21: { spa: -1 }, 22: { spd: -1 }, 58: { atk: -2 }, 59: { def: -2 },
     60: { spe: -2 }, 61: { spa: -2 }, 62: { spd: -2 } };
   const HIT_DROP = { 68: 'atk', 69: 'def', 70: 'spe', 71: 'spa', 72: 'spd' };
   const HIT_SELF_UP = { 96: { spe: 1 }, 110: { spa: 1 }, 138: { def: 1 }, 139: { atk: 1 }, 140: { atk: 1, def: 1, spa: 1, spd: 1, spe: 1 }, 129: { spe: 1 } };
   const RECHARGE = 80, CHARGE = 145, SOLAR = 151, SEMI_INV = 155, PIVOT = 127, TELEPORT = 153, FAKE_OUT = 158, SUCKER = 237;
+  // moves that lock the user in, trap the target or lock a move out (the ROM's effect numbers, as the engine runs them):
+  // Thrash/Petal Dance/Outrage, Rollout/Ice Ball, Uproar, Bide; Bind/Wrap/Fire Spin...; Mean Look/Block/Spider Web/Jaw Lock...;
+  // Disable, Torment; the charge-turn moves Sky Attack/Freeze Shock/Ice Burn and Razor Wind; Focus Energy
+  const RAMPAGE = 27, ROLLOUT = 117, UPROAR = 159, BIDE = 26, BIND = 42, MEAN_LOOK = 106, DISABLE = 86, TORMENT = 165, SKY_ATTACK = 75, RAZOR_WIND = 39, FOCUS_ENERGY = 47;
+  const LOCK_WORDS = { rampage: 'is rampaging', rollout: 'keeps rolling', uproar: 'is in an uproar', bide: 'is storing energy' };
+  const LOCKS_IN = mm => mm.eff === RAMPAGE || mm.eff === ROLLOUT || mm.eff === UPROAR || mm.eff === BIDE;
   const HEAL_HALF = 32, HEAL_WEATHER = 132;
   const PROTECT_EFF = 111, HAZARD = 112;
   const RESIST_BERRY = { 'Occa Berry': 'Fire', 'Passho Berry': 'Water', 'Wacan Berry': 'Electric', 'Rindo Berry': 'Grass', 'Yache Berry': 'Ice',
@@ -91,8 +98,12 @@
     return {
       side, idx, key: spec.key || (side + idx), spec: base, name: spec.label || (s ? s.n : '?'), types: s ? s.t.slice() : ['Normal'],
       hp: maxHp, maxHp, status: st, sleep: st === 'slp' ? 2 : 0, toxic: 0, boosts: { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, acc: 0, eva: 0 },
-      item: spec.it || null, ability: spec.ab || '', fainted: false, lock: null, charging: null, invuln: false, recharge: false, destinyBond: false,
+      item: spec.it || null, ability: E.canonAbility(spec.ab) || '', fainted: false, lock: null, charging: null, invuln: false, recharge: false, destinyBond: false,
       protect: false, protectStreak: 0, yawn: 0, seeded: false, flinch: false, unburden: false, firstTurn: true, rampage: 0, sub: 0,
+      // rampage: forced uses left of a move that locks it in (lockKind says which kind); bound: held by Bind and the like;
+      // trappedBy: can't switch out (Mean Look, Jaw Lock...); disabled/disableTurns: Disable; torment: Torment
+      lockKind: null, rollHits: 0, curled: false, choiceMove: null, bound: null, trappedBy: null, disabled: null, disableTurns: 0, torment: false,
+      furyHits: 0, truantLoaf: false, bide: null, focus: false,
       usedPhoenix: false, disguise: spec.ab === 'Disguise', moves: (spec.mv || []).filter(id => E.mv(id)), hitThisTurn: false,
     };
   }
@@ -120,7 +131,8 @@
   /** A deep copy of a battle for look-ahead (functions and the log are not copied). */
   function cloneState(st) {
     const copySide = sd => {
-      const team = sd.team.map(m => Object.assign({}, m, { boosts: Object.assign({}, m.boosts), spec: m.spec, moves: m.moves }));
+      const team = sd.team.map(m => Object.assign({}, m, { boosts: Object.assign({}, m.boosts), spec: m.spec, moves: m.moves,
+        bound: m.bound ? Object.assign({}, m.bound) : null, trappedBy: m.trappedBy ? Object.assign({}, m.trappedBy) : null, bide: m.bide ? Object.assign({}, m.bide) : null }));
       const extra = {};
       for (const k of Object.keys(sd)) if (!['team', 'slots', 'hazards', 'screens', 'active'].includes(k)) extra[k] = sd[k];
       const side = makeSide(team, sd.slots.length, null, extra);
@@ -174,6 +186,7 @@
     if ((a === 'Swift Swim' && /Rain/.test(w)) || (a === 'Chlorophyll' && /Sun/.test(w)) || (a === 'Sand Rush' && w === 'Sand') ||
         (a === 'Slush Rush' && /Snow|Hail/.test(w)) || (a === 'Surge Surfer' && st.terrain === 'Electric') || (a === 'Unburden' && m.unburden)) s *= 2;
     if (a === 'Bull Rush' && m.firstTurn) s = Math.floor(s * 1.5);
+    if ((a === 'Protosynthesis' || a === 'Quark Drive') && E.qpStat(specNow(m), st.weather, st.terrain) === 'spe') s = Math.floor(s * 1.5);
     if (a === 'Quick Feet' && m.status) s = Math.floor(s * 1.5);
     else if (m.status === 'par') s = Math.floor(s / 2);
     if (st[m.side].tailwind) s *= 2;
@@ -224,6 +237,7 @@
   function onEntry(st, side, rng, slot) {
     const m = act(st, side, slot || 0);
     m.firstTurn = true; m.enteredTurn = st.turn; m.lock = null; m.charging = null; m.invuln = false; m.rampage = 0; m.protectStreak = 0; m.toxic = m.status === 'tox' ? 0 : m.toxic;
+    clearVolatile(m);
     const hz = st[side].hazards;
     if (itemName(m) !== 'Heavy-Duty Boots' && m.ability !== 'Magic Guard') {
       if (hz.sr) { const dmg = Math.floor(m.maxHp * 0.125 * E.typeEff('Rock', m.types)); hurt(st, m, dmg, 'Stealth Rock'); }
@@ -262,6 +276,8 @@
       out.boosts = { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, acc: 0, eva: 0 };
       out.lock = null; out.charging = null; out.invuln = false; out.seeded = false; out.yawn = 0; out.rampage = 0; out.sub = 0; out.destinyBond = false; out.stockpile = 0;
       out.confused = 0; out.taunt = 0; out.encore = 0; out.encoreMove = null; out.lastMove = null;
+      clearVolatile(out);
+      releaseHolds(st, out);
       if (out.ability === 'Regenerator') out.hp = Math.min(out.maxHp, out.hp + Math.floor(out.maxHp / 3));
       if (out.ability === 'Natural Cure') out.status = '';
       if (out.status === 'tox') out.toxic = 0;
@@ -278,6 +294,48 @@
     st.events.push({ turn: st.turn, type: 'switch', side, to: m.key, why: why || '', slot });
     log(st, `${side === 'p' ? 'You send out' : 'Boss sends out'} ${m.name}`, 'switch', m);
     onEntry(st, side, rng, slot);
+  }
+
+  /** What leaves with a Pokemon when it switches out or comes in: locks, traps, Disable, Torment, Defense Curl... */
+  function clearVolatile(m) {
+    m.lockKind = null; m.rollHits = 0; m.curled = false; m.choiceMove = null; m.bound = null; m.trappedBy = null;
+    m.disabled = null; m.disableTurns = 0; m.torment = false; m.furyHits = 0; m.truantLoaf = false; m.bide = null; m.focus = false; m.octolock = false;
+  }
+  /** A Pokemon leaving the field (switched out or fainted) lets go of whatever it was binding or trapping. */
+  function releaseHolds(st, m) {
+    for (const f of st[other(m.side)].team) {
+      if (f.bound && f.bound.side === m.side && f.bound.idx === m.idx) f.bound = null;
+      if (f.trappedBy && f.trappedBy.side === m.side && f.trappedBy.idx === m.idx) { f.trappedBy = null; f.octolock = false; }
+    }
+  }
+  /** The engine's CancelMultiTurnMoves: when a locked-in Pokemon can't move (sleep, paralysis, a flinch, confusion, Truant)
+   *  or its Rollout misses, the lock ends (a charging move is lost too), and so does a Fury Cutter streak. */
+  function cancelLock(m) {
+    if (m.rampage || m.lockKind) { m.rampage = 0; m.lockKind = null; m.lock = m.choiceMove || null; }
+    m.rollHits = 0; m.furyHits = 0; m.bide = null;
+    if (m.charging) { m.charging = null; m.invuln = false; }
+  }
+  /** Can this Pokemon switch out right now? Not while locked into a move, charging or recharging; not while bound or
+   *  trapped, or kept in by Shadow Tag, Arena Trap or Magnet Pull, unless it's a Ghost type or holds a Shed Shell. */
+  function canSwitch(st, m) {
+    if (!m || m.fainted) return true;
+    if (m.charging || m.recharge || (m.rampage && m.lock)) return false;
+    if (hasType(m, 'Ghost') || itemName(m) === 'Shed Shell') return true;
+    if (m.bound || m.trappedBy) return false;
+    for (const f of actives(st, other(m.side))) {
+      if (f.ability === 'Shadow Tag' && m.ability !== 'Shadow Tag') return false;
+      if (f.ability === 'Arena Trap' && grounded(m)) return false;
+      if (f.ability === 'Magnet Pull' && hasType(m, 'Steel')) return false;
+    }
+    return true;
+  }
+  /** What keeps a Pokemon from choosing freely, for the screen: { kind, move, left, hit } or null. */
+  function lockInfo(m) {
+    if (!m || m.fainted) return null;
+    if (m.charging) return { kind: 'charging', move: m.charging };
+    if (m.recharge) return { kind: 'recharge' };
+    if (m.rampage && m.lock) return { kind: m.lockKind || 'rampage', move: m.lock, left: m.rampage, hit: m.rollHits || 0 };
+    return null;
   }
 
   // ---------------- damage and effects ----------------
@@ -302,6 +360,7 @@
       log(st, `${m.name} rises again with Phoenix Down!`, 'heal', m); return;
     }
     m.hp = 0; m.fainted = true; m.status = '';
+    releaseHolds(st, m);
     st.events.push({ turn: st.turn, type: 'faint', side: m.side, key: m.key, name: m.name, cause: cause || '' });
     log(st, `${m.name} faints${cause ? ' (' + cause + ')' : ''}`, 'faint', m);
   }
@@ -326,6 +385,7 @@
     if (status === 'par' && moveName === 'Thunder Wave' && hasType(target, 'Ground')) return false;
     if (status === 'frz' && (hasType(target, 'Ice') || target.ability === 'Magma Armor' || /Sun/.test(st.weather || ''))) return false;
     if (status === 'slp' && (SLEEP_IMMUNE.has(target.ability) || (st.terrain === 'Electric' && grounded(target)))) return false;
+    if (status === 'slp' && ['p', 'a'].some(sd => actives(st, sd).some(x => x.lockKind === 'uproar'))) return false;
     if (POWDER.has(moveName) && (hasType(target, 'Grass') || target.ability === 'Overcoat' || itemName(target) === 'Safety Goggles')) return false;
     return true;
   }
@@ -364,7 +424,11 @@
     const it = itemName(user);
     if (it === 'Scope Lens' || it === 'Razor Claw') stage++;
     if (user.ability === 'Super Luck') stage++;
-    if ((it === 'Leek' || it === 'Stick') && /Farfetch/.test(user.name)) stage += 2;
+    if (user.ability === 'Merciless' && /psn|tox/.test(target.status || '')) return 1;
+    const species = (E.sp(user.spec.s) || {}).n || '';
+    if (/^(Leek|Stick|Leek Stick)$/.test(it || '') && /Farfetch|Sirfetch/.test(species)) stage += 2;
+    if (it === 'Lucky Punch' && /^Chansey/.test(species)) stage += 2;
+    if (user.focus) stage += 2;
     return [1 / 24, 1 / 8, 1 / 2, 1][Math.min(3, stage)];
   }
   function pickHits(rng, user, mm) {
@@ -410,7 +474,7 @@
     // 'par', 'slp', 'frz', 'conf' or 'flinch' means it couldn't. ko / noKO: its hit did (or didn't) knock the target out.
     const F = ctx.outcome || '';
     user.forced = { o: F, ko: !!ctx.ko, noKO: !!ctx.noKO };
-    const cant = (o, text) => { log(st, text, 'cant', user); st.events.push({ turn: st.turn, type: 'outcome', side, key: user.key, o }); };
+    const cant = (o, text) => { log(st, text, 'cant', user); st.events.push({ turn: st.turn, type: 'outcome', side, key: user.key, o }); cancelLock(user); };
     // turn-skipping conditions, in the game's order
     if (user.recharge) { user.recharge = false; cant('recharge', `${user.name} must recharge!`); return; }
     if (user.status === 'slp' || F === 'slp') {
@@ -432,6 +496,10 @@
       else { cant('frz', `${user.name} is frozen solid!`); return; }
     }
     if (F === 'flinch' || (user.flinch && !F)) { cant('flinch', `${user.name} flinched and couldn't move!`); return; }
+    if (user.ability === 'Truant') {   // every other turn it loafs around
+      if (user.truantLoaf) { user.truantLoaf = false; cant('truant', `${user.name} is loafing around!`); return; }
+      user.truantLoaf = true;
+    }
     if (user.confused || F === 'conf') {
       user.confused = F === 'conf' ? Math.max(1, (user.confused || 2) - 1) : user.confused - 1;
       if (user.confused <= 0) { user.confused = 0; log(st, `${user.name} snapped out of its confusion!`, 'cure', user); }
@@ -443,6 +511,7 @@
           const lv = user.spec.lv || 50;
           const base = Math.floor(Math.floor(Math.floor(2 * lv / 5 + 2) * 40 * a / d) / 50) + 2;
           st.events.push({ turn: st.turn, type: 'outcome', side, key: user.key, o: 'conf' });
+          cancelLock(user);
           hurt(st, user, Math.max(1, Math.floor(base * (85 + Math.floor(rng() * 16)) / 100)), 'hurt itself in confusion');
           return;
         }
@@ -455,13 +524,35 @@
     const mm = meta(moveId);
     st.events.push({ turn: st.turn, type: 'move', side, user: user.key, move: moveId });
     st.events.push({ turn: st.turn, type: 'outcome', side, key: user.key, o: 'hit' });
-    // Choice lock and rampage bookkeeping
-    if ((/^Choice /.test(itemName(user) || '') || user.ability === 'Sage Power' || user.ability === 'Gorilla Tactics') && !user.lock) user.lock = moveId;
-    if (mm.eff === 27 && !user.rampage) user.rampage = rng.expected ? 2 : (rng() < 0.5 ? 2 : 3);
+    // Choice lock (and Gorilla Tactics, Sage Power): the first move it uses, until it switches out
+    if ((/^Choice /.test(itemName(user) || '') || user.ability === 'Sage Power' || user.ability === 'Gorilla Tactics') && !user.choiceMove) user.choiceMove = moveId;
+    if (user.choiceMove && !user.rampage) user.lock = user.choiceMove;
+    // moves that lock it in: Thrash/Outrage/Petal Dance for 2-3 turns (then it's confused), Uproar for 2-5, Bide for 3;
+    // Rollout and Ice Ball for 5 hits from the first one that lands. No switching and no other move until it ends.
+    const wasLocked = !!(user.rampage && user.lock);
+    if (!wasLocked && (mm.eff === RAMPAGE || mm.eff === UPROAR || mm.eff === BIDE)) {
+      user.lockKind = mm.eff === RAMPAGE ? 'rampage' : mm.eff === UPROAR ? 'uproar' : 'bide';
+      user.lock = moveId;
+      // forced uses left after this one: a rampage lasts 2-3 turns, Uproar 2-5 (the engine's timers), Bide stores for two
+      user.rampage = mm.eff === RAMPAGE ? (rng.expected ? 1 : (rng() < 0.5 ? 1 : 2)) : mm.eff === UPROAR ? (rng.expected ? 2 : 1 + Math.floor(rng() * 4)) : 3;
+      if (mm.eff === BIDE) user.bide = { dmg: 0 };
+    }
+    // the power of this use, for moves that grow: Rollout and Ice Ball double each hit (twice that after Defense Curl),
+    // Fury Cutter doubles up to 160 while it keeps hitting, Echoed Voice adds 40 for each turn in a row someone used it
+    let bp = 0;
+    if (mm.eff === ROLLOUT) bp = mm.power * Math.pow(2, wasLocked && user.lockKind === 'rollout' ? user.rollHits : 0) * (user.curled ? 2 : 1);
+    if (mm.name === 'Fury Cutter') { if (user.lastMove !== moveId) user.furyHits = 0; bp = mm.power * Math.pow(2, Math.min(2, user.furyHits)); }
+    if (mm.name === 'Echoed Voice') {
+      const ev = st.echo || { turn: -9, n: 0 };
+      const n = ev.turn === st.turn ? ev.n : ev.turn === st.turn - 1 ? Math.min(4, ev.n + 1) : 0;
+      st.echo = { turn: st.turn, n }; bp = mm.power * (1 + n);
+    }
+    if (bp && bp !== mm.power) ctx = Object.assign({}, ctx, { bp });
     // two-turn moves
     const instantCharge = itemName(user) === 'Power Herb' || (mm.eff === SOLAR && /Sun/.test(st.weather || '')) || (mm.name === 'Electro Shot' && /Rain/.test(st.weather || ''));
-    if ((mm.eff === CHARGE || mm.eff === SOLAR || mm.eff === SEMI_INV || mm.name === 'Geomancy' || mm.name === 'Sky Attack') && !user.charging) {
+    if ((mm.eff === CHARGE || mm.eff === SOLAR || mm.eff === SEMI_INV || mm.eff === SKY_ATTACK || mm.eff === RAZOR_WIND || mm.name === 'Geomancy' || mm.name === 'Sky Attack') && !user.charging) {
       if (mm.name === 'Meteor Beam' || mm.name === 'Electro Shot') applyBoosts(st, user, { spa: 1 });
+      if (mm.name === 'Skull Bash') applyBoosts(st, user, { def: 1 });
       if (instantCharge) { if (itemName(user) === 'Power Herb') consume(user); }
       else {
         user.charging = moveId; user.invuln = mm.eff === SEMI_INV; user.chargeTarget = ctx.target || null;
@@ -480,6 +571,17 @@
     if (mm.cat === 'X' && user.taunt) { log(st, `${user.name} can't use ${mm.name} after the taunt`); return; }
     if (mm.eff === FAKE_OUT && !user.firstTurn) { log(st, 'But it failed'); return; }
     if (mm.name === 'Focus Punch' && user.hitThisTurn) { log(st, `${user.name} loses its focus`); return; }
+    if (mm.eff === BIDE && user.lockKind === 'bide') {
+      user.rampage--;
+      if (user.rampage > 0) { log(st, `${user.name} is storing energy`); return; }
+      const dmg = 2 * ((user.bide && user.bide.dmg) || 0), foe = actives(st, other(side))[0];
+      cancelLock(user);
+      if (!dmg || !foe) { log(st, `${user.name} unleashes its energy, but it failed`); return; }
+      log(st, `${user.name} unleashes its energy`);
+      hurt(st, foe, dmg, 'Bide');
+      if (foe.fainted) faint(st, foe, `${user.name}'s Bide`);
+      return;
+    }
     const tg = (E.mv(moveId) || {}).tg || 0;
     const targets = targetsOf(st, user, moveId, ctx);
     if (mm.eff === SUCKER) {
@@ -494,7 +596,7 @@
     }
 
     // ---- damaging moves ----
-    if (!targets.length) { log(st, 'But there was no target'); return; }
+    if (!targets.length) { log(st, 'But there was no target'); cancelLock(user); return; }
     const spread = targets.length > 1 ? 0.75 : 1;
     let total = 0, anyHit = false;
     for (const t of targets) {
@@ -511,16 +613,32 @@
     }
     if ((mm.eff === 7 || mm.name === 'Misty Explosion' || mm.name === 'Explosion' || mm.name === 'Self-Destruct') && !user.fainted) faint(st, user, mm.name);
     if (mm.name === 'Final Gambit' && anyHit && !user.fainted) faint(st, user, mm.name);
-    if (user.fainted || !anyHit) { if (!anyHit) user.rampage = 0; return; }
+    // locks: Rollout starts on its first hit and ends on a miss or after five; a rampage runs its course (then confusion);
+    // Uproar runs out; Fury Cutter keeps its streak only while it hits
+    if (mm.name === 'Fury Cutter') user.furyHits = anyHit ? user.furyHits + 1 : 0;
+    if (!user.fainted && mm.eff === ROLLOUT && !zk) {
+      if (!anyHit) cancelLock(user);
+      else if (!wasLocked || user.lockKind !== 'rollout') { user.lockKind = 'rollout'; user.lock = moveId; user.rampage = 4; user.rollHits = 1; }
+      else { user.rollHits++; if (--user.rampage <= 0) cancelLock(user); }
+    } else if (!user.fainted && !wasLocked && (user.lockKind === 'rampage' || user.lockKind === 'uproar') && !anyHit) {
+      cancelLock(user);   // a rampage that misses on its first turn never starts
+    } else if (!user.fainted && wasLocked && (user.lockKind === 'rampage' || user.lockKind === 'uproar')) {
+      if (--user.rampage <= 0) {
+        const kind = user.lockKind;
+        cancelLock(user);
+        if (kind === 'rampage') confuse(st, user, rng, 'fatigue');
+        else log(st, `${user.name} calms down`);
+      }
+    }
+    if (user.fainted || !anyHit) return;
     if (zk) { if (mm.eff === RECHARGE) user.recharge = false; return; }
     const sheer = user.ability === 'Sheer Force';
     const chanceOf = p => Math.min(1, (user.ability === 'Serene Grace' ? 2 : 1) * p / 100);
     if (!sheer && HIT_SELF_UP[mm.eff] && roll(rng, chanceOf(mm.eff === 129 ? 100 : (mm.ec || 100)))) applyBoosts(st, user, HIT_SELF_UP[mm.eff]);
     if ((mm.eff === 182 || mm.eff === 204 || SELF_DROP[mm.name]) && SELF_DROP[mm.name]) applyBoosts(st, user, SELF_DROP[mm.name], user.ability === 'Bad Company' ? 'self-blocked' : 'self');
     else if (mm.eff === 204 && user.ability !== 'Bad Company') applyBoosts(st, user, { spa: -2 });
-    if (mm.eff === 129) { st[side].hazards = { sr: 0, spikes: 0, tspikes: 0, web: 0 }; }
+    if (mm.eff === 129) { st[side].hazards = { sr: 0, spikes: 0, tspikes: 0, web: 0 }; user.bound = null; user.seeded = false; }
     if (mm.eff === RECHARGE) user.recharge = true;
-    if (user.rampage) { user.rampage--; if (user.rampage === 0) user.lock = null; }
     // pivots
     if (mm.eff === PIVOT && !user.fainted && bench(st, side).length) pivot(st, side, rng, user.slot);
   }
@@ -552,7 +670,10 @@
     const crit = FO.o === 'crit' ? true : FO.o === 'hit' || FO.o === 'miss' ? false : roll(rng, critChance(user, target, mm));
     if (crit) st.events.push({ turn: st.turn, type: 'outcome', side: user.side, key: user.key, o: 'crit' });
     const fo = fieldOpts(st, tside);
-    const rr = E.rawRolls(specNow(user), specNow(target), moveId, Object.assign({ crit, hits, z: !!zk }, fo));
+    // the calculator gives Meteor Beam and Electro Shot their +1 Sp. Atk itself; the battle already raised it on the charge turn
+    const atkSpec = specNow(user);
+    if ((mm.name === 'Meteor Beam' || mm.name === 'Electro Shot') && !zk) atkSpec.boosts = Object.assign({}, atkSpec.boosts, { spa: Math.max(-6, (atkSpec.boosts.spa || 0) - 1) });
+    const rr = E.rawRolls(atkSpec, specNow(target), moveId, Object.assign({ crit, hits, z: !!zk, bp: ctx.bp || 0 }, fo));
     const rolls = rr.rolls;
     let dmg = rolls[rng.expected ? 7 : Math.floor(rng() * rolls.length)] || 0;
     if (spread < 1) dmg = Math.floor(dmg * spread);
@@ -589,6 +710,7 @@
     target.hitThisTurn = true;
     const dealt = Math.min(target.hp, dmg);
     target.hp -= dealt;
+    if (target.bide) target.bide.dmg += dealt;
     if (st.opts.record) log(st, `${target.name} loses ${Math.round(100 * dealt / target.maxHp)}% (${Math.round(100 * target.hp / target.maxHp)}% left)`, 'dmg', target);
     // the game's order: the hit, then "A critical hit!", then how effective it was
     if (crit) log(st, 'A critical hit!', 'crit');
@@ -597,6 +719,8 @@
       else if (rr.eff > 0 && rr.eff < 1) log(st, "It's not very effective…", 'eff');
     }
     if (hits > 1) log(st, `Hit ${hits} times!`);
+    // a Gem powers up one move of its type, then it's gone
+    if (itemName(user) === rr.type + ' Gem' && !zk) { consume(user); log(st, `The ${rr.type} Gem strengthened ${user.name}'s power`); }
     // item and ability reactions on the target
     const tItem = itemName(target);
     if (tItem === 'Air Balloon') { consume(target); log(st, `${target.name}'s Air Balloon pops`); }
@@ -643,6 +767,17 @@
       if (mm.eff === 76 && roll(rng, chanceOf(ec || 100))) confuse(st, target, rng, mm.name);
       if (HIT_DROP[mm.eff] && roll(rng, chanceOf(ec || 100))) applyBoosts(st, target, { [HIT_DROP[mm.eff]]: mm.name === 'Acid Spray' || mm.name === 'Lumina Crash' ? -2 : -1 }, 'foe');
     }
+    // binding moves hold the target for 4-5 turns (7 with Grip Claw), hurting it each turn; trapping moves keep it in
+    if (mm.eff === BIND && !target.bound && !target.fainted) {
+      target.bound = { side: user.side, idx: user.idx, name: mm.name, frac: itemName(user) === 'Binding Band' ? 6 : 8,
+        left: itemName(user) === 'Grip Claw' ? 7 : (rng.expected ? 4 : 4 + Math.floor(rng() * 2)) };
+      log(st, `${target.name} is caught in ${mm.name}`);
+    }
+    if (mm.eff === MEAN_LOOK && !target.fainted && !target.trappedBy && !hasType(target, 'Ghost')) {
+      target.trappedBy = { side: user.side, idx: user.idx };
+      if (mm.name === 'Jaw Lock' && !user.trappedBy && !hasType(user, 'Ghost')) user.trappedBy = { side: target.side, idx: target.idx };
+      log(st, `${target.name} can't escape now`);
+    }
     // forced switch on the target (Dragon Tail, Circle Throw)
     if (mm.eff === 28 && bench(st, tside).length && target.ability !== 'Suction Cups') {
       const opts = bench(st, tside);
@@ -654,7 +789,7 @@
 
   function statusMove(st, user, target, mm, rng) {
     const n = mm.name, e = mm.eff;
-    const foeTargeted = !(e in EFFECT_BOOST) && !SETUP[n] && ![HEAL_HALF, HEAL_WEATHER, 37, PROTECT_EFF, HAZARD, 35, 65, 136, 137, 115, 164, 228, 239, 98, 97, 153, 124, 79, 142, 109, 176, 180, 235, 177].includes(e) || n === 'Strength Sap' || n === 'Parting Shot' || n === 'Leech Seed';
+    const foeTargeted = !(e in EFFECT_BOOST) && !SETUP[n] && ![HEAL_HALF, HEAL_WEATHER, 37, PROTECT_EFF, HAZARD, 35, 65, 136, 137, 115, 164, 228, 239, 98, 97, 153, 124, 79, 142, 109, 176, 180, 235, 177, FOCUS_ENERGY, BIDE].includes(e) || n === 'Strength Sap' || n === 'Parting Shot' || n === 'Leech Seed';
     if (foeTargeted && target && target.protect) { log(st, `${target.name} protects itself`); return; }
     const FO = user.forced || {};
     if (foeTargeted && target && !target.fainted && FO.o !== 'hit' && (FO.o === 'miss' || !roll(rng, hitChance(st, user, target, mm)))) {
@@ -664,6 +799,7 @@
     }
     if (foeTargeted && target && user.ability === 'Prankster' && hasType(target, 'Dark')) { log(st, 'It does not affect Dark types'); return; }
     if (n === 'Stockpile') { if ((user.stockpile || 0) >= 3) { log(st, 'But it failed'); return; } user.stockpile = (user.stockpile || 0) + 1; }
+    if (n === 'Defense Curl') user.curled = true;   // Rollout and Ice Ball hit twice as hard after it
     if (SETUP[n] || EFFECT_BOOST[e]) {
       let b = SETUP[n] || EFFECT_BOOST[e];
       if (n === 'Growth' && /Sun/.test(st.weather || '')) b = { atk: 2, spa: 2 };
@@ -716,6 +852,19 @@
       case 175: if (target && !target.fainted) { if (target.taunt || target.ability === 'Oblivious' || itemName(target) === 'Mental Herb') log(st, 'But it failed'); else { target.taunt = 3; log(st, `${target.name} fell for the taunt`); } } return;
       case 90: if (target && !target.fainted) { if (!target.lastMove || target.encore || !target.moves.includes(target.lastMove)) log(st, 'But it failed'); else { target.encore = 3; target.encoreMove = target.lastMove; target.lock = null; log(st, `${target.name} must repeat ${meta(target.lastMove).name}`); } } return;
       case 49: if (target && !target.fainted) confuse(st, target, rng, n); return;
+      case FOCUS_ENERGY: if (user.focus) log(st, 'But it failed'); else { user.focus = true; log(st, `${user.name} is getting pumped`); } return;
+      case MEAN_LOOK:
+        if (!target || target.fainted || target.trappedBy || hasType(target, 'Ghost')) { log(st, 'But it failed'); return; }
+        target.trappedBy = { side: user.side, idx: user.idx }; if (n === 'Octolock') target.octolock = true;
+        log(st, `${target.name} can't escape now`); return;
+      case DISABLE:
+        if (!target || target.fainted || target.disabled || !target.lastMove || itemName(target) === 'Mental Herb') { log(st, 'But it failed'); return; }
+        target.disabled = target.lastMove; target.disableTurns = 4;
+        if (target.lock === target.lastMove && !target.rampage) target.lock = null;
+        log(st, `${target.name}'s ${meta(target.lastMove).name} was disabled`); return;
+      case TORMENT:
+        if (!target || target.fainted || target.torment || itemName(target) === 'Mental Herb') { log(st, 'But it failed'); return; }
+        target.torment = true; log(st, `${target.name} was subjected to torment`); return;
       case 118: if (target && !target.fainted) { applyBoosts(st, target, { atk: 2 }, 'foe'); confuse(st, target, rng, n); } return;
       case 166: if (target && !target.fainted) { applyBoosts(st, target, { spa: 1 }, 'foe'); confuse(st, target, rng, n); } return;
       case 28: if (target && !target.fainted && bench(st, target.side).length && target.ability !== 'Suction Cups') { const o = bench(st, target.side); switchIn(st, target.side, st[target.side].team.indexOf(o[rng.expected ? 0 : Math.floor(rng() * o.length)]), rng, 'forced out', target.slot); } return;
@@ -819,6 +968,17 @@
         else if (m.status === 'tox') { m.toxic++; if (m.ability === 'Poison Heal') heal(st, m, m.maxHp / 8, 'Poison Heal'); else hurt(st, m, Math.floor(m.maxHp * m.toxic / 16), 'toxic'); }
       }
       if (m.fainted) continue;
+      if (m.bound) {
+        const b = m.bound, by = st[b.side].team[b.idx];
+        if (!by || by.fainted || !isActive(st, by)) m.bound = null;
+        else {
+          if (m.ability !== 'Magic Guard') hurt(st, m, Math.max(1, Math.floor(m.maxHp / b.frac)), b.name);
+          if (m.bound && --m.bound.left <= 0) { m.bound = null; if (!m.fainted) log(st, `${m.name} is freed from ${b.name}`); }
+        }
+      }
+      if (m.fainted) continue;
+      if (m.octolock && m.trappedBy) applyBoosts(st, m, { def: -1, spd: -1 }, 'foe');
+      if (m.disabled && --m.disableTurns <= 0) { m.disabled = null; log(st, `${m.name}'s move is no longer disabled`); }
       if (m.yawn) { m.yawn--; if (m.yawn === 0 && !m.status) inflict(st, m, 'slp', rng, 'Yawn'); }
       if (m.ability === 'Speed Boost' && !m.firstTurn) applyBoosts(st, m, { spe: 1 });
       if (!m.status && it === 'Flame Orb' && !hasType(m, 'Fire')) inflict(st, m, 'brn', rng, 'Flame Orb');
@@ -850,6 +1010,8 @@
     if (m.encore && m.encoreMove && m.moves.includes(m.encoreMove)) return [m.encoreMove];
     let mv = m.moves.slice();
     if (m.taunt) mv = mv.filter(id => meta(id).cat !== 'X');
+    if (m.disabled) mv = mv.filter(id => id !== m.disabled);
+    if (m.torment && m.lastMove) mv = mv.filter(id => id !== m.lastMove);
     if (m.lock && mv.includes(m.lock)) return [m.lock];
     if (itemName(m) === 'Assault Vest') mv = mv.filter(id => meta(id).cat !== 'X');
     if (!m.firstTurn) mv = mv.filter(id => meta(id).eff !== FAKE_OUT);
@@ -927,10 +1089,11 @@
       });
     }
     const ev = { turn: st.turn, type: 'decide', acts: acts.map(x => ({ side: x.side, slot: x.slot, key: x.user.key, a: x.a, hp: x.user.hp / x.user.maxHp,
-      tkey: x.a.target ? (act(st, x.a.target.side, x.a.target.slot) || {}).key || null : null })) };
+      tkey: x.a.target ? (act(st, x.a.target.side, x.a.target.slot) || {}).key || null : null, lk: lockInfo(x.user) })) };
     if (st.size === 1) {
       const pa = acts.find(x => x.side === 'p'), aa = acts.find(x => x.side === 'a');
-      Object.assign(ev, { p: pa && pa.a, a: aa && aa.a, pm: pa && pa.user.key, am: aa && aa.user.key, php: pa ? pa.user.hp / pa.user.maxHp : 0, ahp: aa ? aa.user.hp / aa.user.maxHp : 0 });
+      Object.assign(ev, { p: pa && pa.a, a: aa && aa.a, pm: pa && pa.user.key, am: aa && aa.user.key, php: pa ? pa.user.hp / pa.user.maxHp : 0, ahp: aa ? aa.user.hp / aa.user.maxHp : 0,
+        plk: pa ? lockInfo(pa.user) : null });
     }
     st.events.push(ev);
     // switches go first
@@ -1000,7 +1163,7 @@
       choose(st, side, rng) {
         const me = act(st, side), foe = act(st, other(side));
         const options = usable(me, st);
-        if (options.length === 1 && (me.charging || me.rampage || me.lock)) return { type: 'move', id: options[0] };
+        if (options.length === 1 && (me.charging || me.rampage || me.lock || me.recharge)) return { type: 'move', id: options[0] };
         const dmg = bestDamage(st, me, foe);
         const foeDmg = bestDamage(st, foe, me);
         const foeBest = foeDmg.reduce((a, b) => (b.mean > a.mean ? b : a), { mean: 0, ko: 0, pri: 0 });
@@ -1105,6 +1268,40 @@
       }
       return best === Infinity ? 3 : best;   // nobody left: very bad
     }
+    /** A move that locks me in (Rollout, Outrage, Uproar): play the locked turns out against the boss AI with the likeliest
+     *  dice, adding up the chance that each of its attacks meanwhile knocks me out (all rolls, crits and misses), then the
+     *  duel from where that leaves me. Returns { risk, hpLeftPct, foePct, mu, turns } or null. */
+    function lockLine(st, side, id) {
+      const s2 = cloneState(st);
+      const foeSide = other(side), dice = expectedDice();
+      const me0 = act(s2, side);
+      let first = true;   // the move that starts it, then whatever the lock forces
+      s2.policies = { [side]: { choose: (s, sd) => { const pick = first ? id : usable(act(s, sd), s)[0]; first = false; return { type: 'move', id: pick }; }, replace: () => null },
+        [foeSide]: st.policies[foeSide] };
+      let alive = 1, turns = 0;
+      for (; turns < 6 && !s2.over; turns++) {
+        const hpBefore = me0.hp, ev0 = s2.events.length;
+        playTurn(s2, dice);
+        // their attacks on me this turn: the chance one of them knocks me out from the HP I had
+        for (const e of s2.events.slice(ev0)) {
+          if (e.type !== 'move' || e.side !== foeSide || meta(e.move).cat === 'X') continue;
+          const foe = s2[foeSide].team.find(x => x.key === e.user);
+          if (!foe) continue;
+          const dist = E.damageDist(specNow(foe), Object.assign(specNow(me0), { hpPct: 100 * hpBefore / me0.maxHp }), e.move, s2.weather, Math.max(1, hpBefore));
+          alive *= 1 - dist[Math.max(1, hpBefore)];
+        }
+        if (me0.fainted || !isActive(s2, me0) || !(me0.rampage && me0.lock)) { turns++; break; }
+      }
+      const foeNow = act(s2, foeSide);
+      let after = { risk: 0, hpLeftPct: 100 * me0.hp / me0.maxHp, mu: null };
+      if (me0.fainted) after = { risk: 1, hpLeftPct: 0, mu: null };
+      else if (foeNow && !foeNow.fainted && isActive(s2, me0)) {
+        const mu = duelRisk(s2, me0, foeNow, null);
+        after = { risk: mu.risk, hpLeftPct: mu.hpLeftPct, mu };
+      }
+      const risk = Math.min(1, 1 - alive * (1 - after.risk));
+      return { risk, hpLeftPct: after.hpLeftPct, foePct: foeNow && !foeNow.fainted ? Math.max(1, 100 * foeNow.hp / foeNow.maxHp) : 1, mu: after.mu, turns };
+    }
     function evaluate(st, side) {
       const me = act(st, side), foe = act(st, other(side));
       const options = [];
@@ -1114,6 +1311,14 @@
       for (const id of moves) {
         const mm = meta(id);
         if (mm.cat === 'X') continue;
+        if (!(me.rampage && me.lock) && LOCKS_IN(mm)) {   // it locks me in: see what the boss does meanwhile
+          const L = lockLine(st, side, id);
+          if (L) {
+            const cost = L.risk * (value(me) + cleanup(st, side, foe, L.foePct, me)) + o.hpWeight * (1 - L.hpLeftPct / 100);
+            options.push({ type: 'move', id, cost, risk: L.risk, mu: L.mu, label: `Use ${mm.name}`, lock: L });
+            continue;
+          }
+        }
         const mu = duelRisk(st, me, foe, id);
         const d = myDmg.find(x => x.id === id);
         const foeAfterPct = Math.max(1, 100 * (foe.hp - (d ? d.mean * Math.max(0, mu.hitsTaken) : 0)) / foe.maxHp);
@@ -1195,7 +1400,7 @@
       }
       // switch: the boss already chose its move against `me`; the newcomer takes it
       const aiMove = st.policies[other(side)].choose(st, other(side), expectedDice(), false, true);
-      for (const b of bench(st, side)) {
+      for (const b of canSwitch(st, me) ? bench(st, side) : []) {
         let entryDmg = 0, pEntry = 0;
         const hz = st[side].hazards;
         if (hz.sr && itemName(b) !== 'Heavy-Duty Boots') entryDmg += Math.floor(b.maxHp * 0.125 * E.typeEff('Rock', b.types));
@@ -1228,7 +1433,7 @@
       choose(st, side, rng) {
         const me = act(st, side);
         const forced = usable(me, st);
-        if (me.charging || (me.rampage && me.lock)) return { type: 'move', id: forced[0] };
+        if (me.charging || (me.rampage && me.lock) || me.recharge) return { type: 'move', id: forced[0] };
         const key = sig(st, side);
         let opts = memoDecisions.get(key);
         if (!opts) { opts = evaluate(st, side); memoDecisions.set(key, opts); }
@@ -1318,7 +1523,7 @@
       const prot = raw.find(x => meta(x.id).eff === PROTECT_EFF);
       if (prot && !keep.includes(prot)) keep.push(prot);
       // the best switch-ins
-      const sw = bench(st, side).map(b => ({ type: 'switch', to: st[side].team.indexOf(b) }));
+      const sw = canSwitch(st, me) ? bench(st, side).map(b => ({ type: 'switch', to: st[side].team.indexOf(b) })) : [];
       if (sw.length) {
         const pick = quickReplace(st, side);
         keep.push(sw.find(x => x.to === pick));
@@ -1388,7 +1593,7 @@
   // ---------------- the boss AI, ported from the engine (ai.js) ----------------
   const AI = (typeof createAI === 'function' ? createAI : require('./ai.js'))({
     E, meta, usable, act, other, bench, alive, speed, priorityOf, canStatus, hitChance, specNow, fieldOpts, itemName, hasType, grounded,
-    hazardDamage, expectedDice, SETUP, EFFECT_BOOST, EFFECT_DROP, zKind, SELF_DROP, actives });
+    hazardDamage, expectedDice, SETUP, EFFECT_BOOST, EFFECT_DROP, zKind, SELF_DROP, actives, canSwitch });
   function bossPolicy(opts) { return AI.policy(opts); }
 
   // ---------------- running battles ----------------
@@ -1609,7 +1814,10 @@
           lines: mine.map(x => `${who(x)}: ${what(x)}`), risk: 0, alts: null, youHp: mine.reduce((a, x) => a + x.hp, 0) / Math.max(1, mine.length), foeHp: theirs.reduce((a, x) => a + x.hp, 0) / Math.max(1, theirs.length) };
         continue;
       }
-      const action = e.p.type === 'switch' ? `Switch to ${st.p.team[e.p.to].name}` : `Use ${e.p.z ? 'Z-' : ''}${meta(e.p.id).name}${e.p.z ? ' (your Z-Move)' : ''}`;
+      let action = e.p.type === 'switch' ? `Switch to ${st.p.team[e.p.to].name}` : `Use ${e.p.z ? 'Z-' : ''}${meta(e.p.id).name}${e.p.z ? ' (your Z-Move)' : ''}`;
+      const lk = e.plk;
+      if (e.p.type === 'move' && lk && lk.kind !== 'recharge' && lk.kind !== 'charging') action = `${meta(e.p.id).name} again: locked in${lk.kind === 'rollout' ? ` (hit ${lk.hit + 1} of 5)` : ''}`;
+      else if (e.p.type === 'move' && !e.p.z && LOCKS_IN(meta(e.p.id))) action += ' (it locks you in)';
       t.decision = { you: name('p', e.pm), foe: name('a', e.am), action, risk: e.p.risk, alts: e.p.alts, youHp: e.php, foeHp: e.ahp };
     }
     const faints = st.events.filter(e => e.type === 'faint' && e.side === 'p').map(e => {
@@ -1636,5 +1844,5 @@
     return { winner: st.winner, turns, faints, totalTurns: st.turn, order, faces };
   }
 
-  return { meta, snapshot, sampleBattle, makeMon, newBattle, runBattle, simulate, simulateAsync, planFight, scriptOf, plannerPolicy, doublesPlanner, aiPolicy, bossPolicy, AI, megaTarget, zKind, usable, actives, cloneState, playTurn, begin, switchIn, speed, priorityOf, mayCause, statusEffect, statusRisk, hitChance, mulberry32, expectedDice, specNow, act };
+  return { meta, snapshot, sampleBattle, makeMon, newBattle, runBattle, simulate, simulateAsync, planFight, scriptOf, plannerPolicy, doublesPlanner, aiPolicy, bossPolicy, AI, megaTarget, zKind, usable, actives, cloneState, playTurn, begin, switchIn, speed, priorityOf, mayCause, statusEffect, statusRisk, hitChance, mulberry32, expectedDice, specNow, act, canSwitch, lockInfo, cancelLock, LOCK_WORDS };
 });

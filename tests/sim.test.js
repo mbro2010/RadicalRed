@@ -92,3 +92,115 @@ test('sim: the planner takes a setup step for its six, plays the fight with it, 
   const same = await SIM.planFight(mine, team, { setup: six => ({ changed: false, specs: six, info: [] }), screenRuns: 4, leadRuns: 6, finalRuns: 30 });
   assert(same.baseOdds === null, 'no comparison when nothing changes');
 });
+// ---- moves that lock you in, trap you or lock a move out (what cost run 5 its Geodude against Falkner)
+function duel(mine, theirs, o) {
+  const st = SIM.newBattle(mine, theirs, Object.assign({ record: true }, o || {}));
+  SIM.begin(st, SIM.expectedDice());
+  return st;
+}
+function play(st, pMove, aMove) {
+  const fixed = id => ({ choose: (s, sd) => (typeof id === 'function' ? id(s, sd) : { type: 'move', id }), replace: () => null });
+  st.policies = { p: fixed(pMove), a: fixed(aMove) };
+  SIM.playTurn(st, SIM.expectedDice());
+}
+test('sim: Rollout locks the user in for five hits, doubling each time; it can\'t switch; a miss ends it', () => {
+  const geo = mon('Geodude', 15, { moves: ['Rollout', 'Tackle', 'Defense Curl', 'Rock Throw'] });
+  const foe = mon('Blissey', 50, { moves: ['Splash'] });   // takes many hits
+  const st = duel([geo, mon('Pidgey', 15)], [foe]);
+  const g = SIM.act(st, 'p');
+  const dealt = [];
+  for (let k = 0; k < 5; k++) {
+    const before = SIM.act(st, 'a').hp;
+    play(st, (s, sd) => ({ type: 'move', id: SIM.usable(SIM.act(s, sd), s)[0] === mid('Rollout') ? mid('Rollout') : mid('Rollout') }), mid('Splash'));
+    dealt.push(before - SIM.act(st, 'a').hp);
+    if (k < 4) {
+      assert(SIM.usable(g, st).length === 1 && SIM.usable(g, st)[0] === mid('Rollout'), `hit ${k + 1}: only Rollout next`);
+      assert(!SIM.canSwitch(st, g), `hit ${k + 1}: no switching while rolling`);
+    }
+  }
+  for (let k = 1; k < 5; k++) assert(dealt[k] >= 1.7 * dealt[k - 1], `each hit about twice the last: ${dealt.join(', ')}`);
+  assert(SIM.usable(g, st).length > 1 && SIM.canSwitch(st, g), 'free again after the fifth hit');
+  // a miss ends it early
+  const st2 = duel([mon('Geodude', 15, { moves: ['Rollout', 'Tackle'] })], [mon('Blissey', 50, { moves: ['Splash'] })]);
+  st2.policies = { p: { choose: () => ({ type: 'move', id: mid('Rollout'), outcome: 'hit' }), replace: () => null }, a: { choose: () => ({ type: 'move', id: mid('Splash') }), replace: () => null } };
+  SIM.playTurn(st2, SIM.expectedDice());
+  st2.policies.p = { choose: () => ({ type: 'move', id: mid('Rollout'), outcome: 'miss' }), replace: () => null };
+  SIM.playTurn(st2, SIM.expectedDice());
+  assert(SIM.usable(SIM.act(st2, 'p'), st2).length === 2, 'the miss ended the lock');
+  // Defense Curl doubles it (and raises Defense)
+  const st3 = duel([mon('Geodude', 15, { moves: ['Rollout', 'Defense Curl'] })], [mon('Blissey', 50, { moves: ['Splash'] })]);
+  play(st3, mid('Defense Curl'), mid('Splash'));
+  assert(SIM.act(st3, 'p').boosts.def === 1, 'Defense Curl raises Defense');
+  const b3 = SIM.act(st3, 'a').hp; play(st3, mid('Rollout'), mid('Splash'));
+  assert(b3 - SIM.act(st3, 'a').hp >= 1.7 * dealt[0], 'Rollout after Defense Curl hits twice as hard');
+});
+test('sim: Outrage locks in for 2-3 turns, then confuses; paralysis or sleep cancels the lock', () => {
+  const st = duel([mon('Dragonite', 50, { moves: ['Outrage', 'Extreme Speed'] })], [mon('Blissey', 70, { moves: ['Splash'] })]);
+  const d = SIM.act(st, 'p');
+  play(st, mid('Outrage'), mid('Splash'));
+  assert(SIM.usable(d, st).length === 1 && !SIM.canSwitch(st, d), 'locked after the first turn');
+  for (let k = 0; k < 3 && d.rampage; k++) play(st, (s, sd) => ({ type: 'move', id: SIM.usable(SIM.act(s, sd), s)[0] }), mid('Splash'));
+  assert(!d.rampage && d.confused > 0, 'the rampage ended in confusion');
+  const st2 = duel([mon('Dragonite', 50, { moves: ['Outrage', 'Extreme Speed'] })], [mon('Blissey', 70, { moves: ['Splash'] })]);
+  const d2 = SIM.act(st2, 'p');
+  play(st2, mid('Outrage'), mid('Splash'));
+  st2.policies = { p: { choose: () => ({ type: 'move', id: mid('Outrage'), outcome: 'par' }), replace: () => null }, a: { choose: () => ({ type: 'move', id: mid('Splash') }), replace: () => null } };
+  SIM.playTurn(st2, SIM.expectedDice());
+  assert(!d2.rampage && SIM.usable(d2, st2).length === 2 && !d2.confused, 'full paralysis cancels it without confusion');
+});
+test('sim: binding moves hurt 1/8 a turn for 4-5 turns and keep the target in; Mean Look, Shadow Tag and Arena Trap keep it in too', () => {
+  const st = duel([mon('Pidgeotto', 20, { moves: ['Gust'] }), mon('Rattata', 20)], [mon('Arbok', 20, { moves: ['Wrap'] })]);
+  const p = SIM.act(st, 'p');
+  play(st, mid('Gust'), mid('Wrap'));
+  assert(p.bound && !SIM.canSwitch(st, p), 'caught in Wrap: no switching');
+  const hp1 = p.hp; play(st, mid('Gust'), mid('Wrap'));
+  assert(hp1 - p.hp >= Math.floor(p.maxHp / 8), 'loses at least 1/8 a turn');
+  // Ghosts slip out; the binder leaving frees it
+  const g = duel([mon('Gastly', 20, { moves: ['Lick'] }), mon('Rattata', 20)], [mon('Arbok', 20, { moves: ['Wrap'] })]);
+  play(g, mid('Lick'), mid('Wrap'));
+  assert(SIM.canSwitch(g, SIM.act(g, 'p')), 'a Ghost can always switch out');
+  const ml = duel([mon('Pidgeotto', 20, { moves: ['Gust'] }), mon('Rattata', 20)], [mon('Umbreon', 20, { moves: ['Mean Look'] })]);
+  play(ml, mid('Gust'), mid('Mean Look'));
+  assert(!SIM.canSwitch(ml, SIM.act(ml, 'p')), 'Mean Look keeps it in');
+  const tag = duel([mon('Pidgeotto', 20), mon('Rattata', 20)], [mon('Wobbuffet', 20, { ability: 'Shadow Tag', moves: ['Counter'] })]);
+  assert(!SIM.canSwitch(tag, SIM.act(tag, 'p')), 'Shadow Tag keeps it in');
+  const arena = duel([mon('Pidgeotto', 20), mon('Rattata', 20)], [mon('Diglett', 20, { ability: 'Arena Trap', moves: ['Scratch'] })]);
+  assert(SIM.canSwitch(arena, SIM.act(arena, 'p')), 'Arena Trap does not hold a Flying type');
+  const arena2 = duel([mon('Rattata', 20), mon('Pidgeotto', 20)], [mon('Diglett', 20, { ability: 'Arena Trap', moves: ['Scratch'] })]);
+  assert(!SIM.canSwitch(arena2, SIM.act(arena2, 'p')), 'Arena Trap holds a grounded one');
+});
+test('sim: Disable and Torment lock moves out; Truant loafs every other turn; Freeze Shock charges first', () => {
+  const st = duel([mon('Rattata', 20, { moves: ['Tackle', 'Quick Attack'] })], [mon('Hypno', 30, { moves: ['Disable', 'Torment'] })]);
+  play(st, mid('Tackle'), mid('Splash') || mid('Disable'));
+  play(st, mid('Quick Attack'), mid('Disable'));
+  const r = SIM.act(st, 'p');
+  assert(r.disabled === mid('Quick Attack') && !SIM.usable(r, st).includes(mid('Quick Attack')), 'Disable takes its last move away');
+  const t = duel([mon('Rattata', 20, { moves: ['Tackle', 'Quick Attack'] })], [mon('Hypno', 30, { moves: ['Torment'] })]);
+  play(t, mid('Tackle'), mid('Torment'));
+  assert(!SIM.usable(SIM.act(t, 'p'), t).includes(mid('Tackle')), 'Torment: not the same move twice in a row');
+  const s = duel([mon('Slakoth', 20, { ability: 'Truant', moves: ['Scratch'] })], [mon('Blissey', 50, { moves: ['Splash'] })]);
+  const hp = [];
+  for (let k = 0; k < 4; k++) { const b = SIM.act(s, 'a').hp; play(s, mid('Scratch'), mid('Splash')); hp.push(b - SIM.act(s, 'a').hp); }
+  assert(hp[0] > 0 && hp[1] === 0 && hp[2] > 0 && hp[3] === 0, 'Truant: a hit, a loaf, a hit, a loaf: ' + hp.join(','));
+  const fz = duel([mon('Kyurem', 60, { moves: ['Freeze Shock'] })], [mon('Blissey', 60, { moves: ['Splash'] })]);
+  const b0 = SIM.act(fz, 'a').hp; play(fz, mid('Freeze Shock'), mid('Splash'));
+  assert(SIM.act(fz, 'a').hp === b0 && SIM.act(fz, 'p').charging, 'Freeze Shock charges on the first turn');
+});
+test('sim: the planner sees a Rollout lock coming (run 5: Geodude against Flittle\'s Calm Mind)', () => {
+  E.setMode('normal', false);
+  try {
+    const fi = D.bosses.findIndex(b => b.n === 'Falkner');
+    const b = D.bosses[fi], saved = b.party;
+    b.party = b.np;
+    const team = E.bossTeam(fi, 15).map((t, i) => Object.assign({ key: 'b' + i, label: E.sp(t.s).n }, t));
+    b.party = saved;
+    const st = SIM.newBattle([mon('Geodude', 15, { moves: ['Tackle', 'Defense Curl', 'Rollout', 'Rock Throw'] }), mon('Staravia', 15, { moves: ['Wing Attack', 'Quick Attack'] })], team, {});
+    st.policies = { p: SIM.plannerPolicy(), a: SIM.bossPolicy() };
+    SIM.begin(st, SIM.expectedDice());
+    st.a.slots[0] = 2; st.a.team[2].slot = 0;   // Flittle out
+    const opts = SIM.plannerPolicy().evaluate(st, 'p');
+    const roll = opts.find(x => x.label === 'Use Rollout');
+    assert(roll && roll.lock && roll.lock.turns >= 2, 'Rollout is played out locked in');
+    assert(opts[0].label !== 'Use Rollout', 'and not picked against a Calm Mind user: ' + opts.slice(0, 3).map(x => x.label).join(', '));
+  } finally { E.setMode('hardcore'); }
+});

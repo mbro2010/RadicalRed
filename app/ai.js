@@ -18,6 +18,7 @@
 })(typeof self !== 'undefined' ? self : this, function createAI(H) {
   'use strict';
   const { E, meta, usable, act, other, bench, alive, speed, priorityOf, canStatus, hitChance, specNow, fieldOpts, itemName, hasType, grounded, hazardDamage, actives } = H;
+  const canSwitch = H.canSwitch || (() => true);   // locked in, bound, trapped or kept in by an ability: no switching
   // doubles: bonus for the best attack by its knockout points (gDoublesDamageViabilityMapping), per doubles fighting style
   const DMAP = {
     dAllOut: [0, 9, 9, 9, 9, 10, 11, 11, 13, 14, 16, 17, 19], dSetup: [0, 4, 4, 4, 4, 9, 11, 11, 12, 13, 15, 16, 19],
@@ -830,6 +831,7 @@
     const side = me.side;
     if (!bench(st, side).length) return null;
     if (me.charging || me.rampage || me.recharge) return null;
+    if (!canSwitch(st, me)) return null;
     if (['Shadow Tag', 'Arena Trap'].includes(foe.ability) && !hasType(me, 'Ghost') && (foe.ability !== 'Arena Trap' || grounded(me))) return null;
     if (foe.ability === 'Magnet Pull' && hasType(me, 'Steel')) return null;
     const cooldown = (me.swCooldown || 0) > 0;   // just switched in (the engine's switchingCooldown, kept by the simulator)
@@ -913,7 +915,7 @@
     options.sort((x, y) => (y.top - x.top) || (y.kos - x.kos) || (y.dmg - x.dmg));
     const best = options[0];
     // with nothing useful against anyone, switch out like the singles check does
-    if (best.top < 95 && bench(st, side).length && !((me.swCooldown || 0) > 0)) {
+    if (best.top < 95 && bench(st, side).length && !((me.swCooldown || 0) > 0) && canSwitch(st, me)) {
       const total = new Map();
       for (const f of foes) for (const r of switchScores(st, side, null, f)) total.set(r.i, (total.get(r.i) || 0) + r.score);
       const ranked = [...total.entries()].filter(([i]) => !st[side].slots.includes(i)).sort((x, y) => y[1] - x[1]);

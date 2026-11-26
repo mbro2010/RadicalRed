@@ -109,3 +109,25 @@ test('advice: the plan\'s setup hands out held items by biggest gain, as many as
   const strong = mon('Wartortle', 16, { nature: 'Modest', moves: ['Water Gun', 'Bite', 'Rapid Spin', 'Withdraw'] });
   assert(!ADV.planSetup([strong], team, []).changed || ADV.planSetup([strong], team, []).info[0].gNat >= 0.3, 'no change without a gain');
 });
+test('engine: crit odds count items and abilities (the Leek Stick), accuracy counts Hustle, priority counts Gale Wings; Rollout adds up', () => {
+  const m = n => D.moves.find(x => x.f === n);
+  const item = n => +Object.keys(D.items).find(k => D.items[k].n === n);
+  const farf = mon('Farfetch’d-Galar', 20, { item: 'Leek Stick', moves: ['Slam'] });
+  const target = mon('Rattata', 20);
+  assert(Math.abs(E.critChanceOf(farf, target, m('Slam')) - 0.5) < 1e-9, 'Leek Stick on Galarian Farfetch’d: crits half the time');
+  assert(Math.abs(E.critChanceOf(Object.assign({}, target, { it: item('Scope Lens') }), target, m('Tackle')) - 1 / 8) < 1e-9, 'Scope Lens: 1 in 8');
+  assert(E.critChanceOf(target, mon('Shellder', 20, { ability: 'Shell Armor' }), m('Slash')) === 0, 'Shell Armor: no crits');
+  assert(Math.abs(E.accuracyOf(mon('Rufflet', 12, { ability: 'Hustle' }), target, m('Aerial Ace')) - 1) < 1e-9, 'Aerial Ace never misses, Hustle or not');
+  assert(Math.abs(E.accuracyOf(mon('Rufflet', 12, { ability: 'Hustle' }), target, m('Rock Tomb')) - m('Rock Tomb').a / 100 * 0.8) < 1e-9, 'Hustle: physical moves 20% less accurate');
+  assert(E.priorityOfMove(mon('Talonflame', 50, { ability: 'Gale Wings' }), m('Brave Bird')) === 1, 'Gale Wings at full HP: +1');
+  assert(E.priorityOfMove(Object.assign(mon('Talonflame', 50, { ability: 'Gale Wings' }), { hpPct: 90 }), m('Brave Bird')) === 0, 'not below full HP');
+  // Rollout's hits double, so a matchup needs fewer of them than its first hit suggests
+  const geo = mon('Geodude', 15, { moves: ['Rollout'] }), bliss = mon('Chansey', 30, { moves: ['Pound'] });
+  const d = E.damage(geo, bliss, m('Rollout').i);
+  assert(d.seq && d.seq.length === 5 && d.seq[1] > d.seq[0] && d.seq[4] > 10 * d.seq[0], 'Rollout grows: ' + (d.seq || []).join(','));
+  const mu = E.matchup(geo, bliss);
+  assert(mu.toKOthem < Math.ceil(d.cur / d.min), 'fewer hits than the first one says');
+  // Normal Mode's regular-table trainers get the species' ability and a neutral nature
+  const any = D.bosses.findIndex(b => (b.np || []).some(x => x.ab == null));
+  if (any >= 0) { const b = D.bosses[any], saved = b.party; b.party = b.np; const t = E.bossTeam(any, 20); b.party = saved; assert(t.every(x => x.ab && x.nat != null), 'abilities and natures filled in'); }
+});

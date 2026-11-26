@@ -192,6 +192,27 @@ In recorded battles (the plan's most likely line and live battles) every event c
 
 The Coach's other difficulty. Without flag `0x1034` the party builder (above) takes a boss's team from the Normal boss records (`0x1126340`, 108 of the 153 boss fights, with natures, items, moves and IVs like the Hardcore records), else from the records used in every mode (`0x11259DC`), else from the regular trainer table with its spread (`normalTeam` in `tools/build_app_data.js`, kept as each boss's `np`, `ndbl` and, for rivals, `nv`). The 45 fights without a Normal record include the first rival fights, Brendan, and generic trainers listed in the Hardcore table. Minimal Grinding (`0x1032`) skips the EVs of records and spreads, so no trainer EVs are kept, in either mode (regular trainers' spreads were the only ones that had any). A spread with a Hidden Power type gets IVs of 31 or 30 that give that type (the type code is the type ID; the exact IVs the game picks aren't traced, so a stat can be off by one). A random ability slot is taken as slot 1. Level values 101-104 follow your highest level 2 lower outside Hardcore until the game is cleared (`E.setMode(mode, cleared)`). Each boss carries `mi`, the milestones done before it, so its cap in either mode is `caps[mode][mi]`. Move bans and ability changes are Hardcore's only (`isBanned`, `hardcoreAbility` return early). The care package is walked with `0x1032` alone (`normal` in `care_package.json`, `n` in the app data): Hardcore's lists plus weather rocks, terrain seeds, Weakness Policy, Throat Spray, Air Balloon and Terrain Extender, without the EV items Minimal Grinding leaves out. The run saves its difficulty (`run.mode`); switching it swaps the boss teams, caps and double-battle flags in place (`syncMode` in `app.js`), rebuilds the run path and clears everything worked out for the other one. The plan worker gets the difficulty with each request.
 
+## Your Pokémon's stats under Minimal Grinding
+
+Radical Red's `CreateBoxMon` (`0x09078512`) takes a fixed IV (0-31, trainer Pokémon) or `USE_RANDOM_IVS`; for random IVs it rolls `Random()` and, when flag `0x1032` (Minimal Grinding) is set, writes 31 into all six IV fields (`0x090786C0`: `SetMonData` 0x27-0x2C) instead of random ones. The gift and egg paths do the same (`0x090879B4`, `0x09087FB4`). EV gain after a knock-out is skipped while `0x1032` is set (`0x090945F6`). The Hardcore choice script sets `0x1034` and `0x1032` together (`setflag 0x1034; setflag 0x1032` at `0x0104F10C`), so in both of the Coach's difficulties every Pokémon you get has perfect IVs and no EVs: its default numbers for your side are the game's.
+
+## Moves that lock you in, trap you or lock a move out
+
+From the engine source (`atkB3_rolloutdamagecalculation`, `CancelMultiTurnMoves`, `SetMoveEffect`, the end-of-turn steps):
+
+| What | How long | Ends early | Coach |
+| --- | --- | --- | --- |
+| Rollout, Ice Ball (effect 117) | 5 hits from the first that lands, power 30, 60, 120, 240, 480 (×2 after Defense Curl) | a miss or no effect; can't move | `useMove`, `rampPowers` |
+| Thrash, Petal Dance, Outrage (27) | 2-3 turns (`(Random() & 1) + 2`), then confusion | can't move (no confusion) | `useMove` |
+| Uproar (159) | 2-5 turns (`(Random() & 3) + 2`); nobody falls asleep | can't move | `useMove`, `canStatus` |
+| Bide (26) | stores 2 turns, returns double | can't move | `useMove` |
+| Bind, Wrap, Fire Spin, Clamp, Whirlpool, Sand Tomb, Magma Storm, Infestation, Snap Trap (42) | 4-5 turns (`(Random() & 1) + 4`), 7 with Grip Claw; 1/8 max HP a turn, 1/6 with Binding Band | the binder leaves; Rapid Spin | `hitOne`, `endOfTurn` |
+| Mean Look, Block, Spider Web, Anchor Shot, Spirit Shackle, Thousand Waves, Jaw Lock (both sides), Octolock (106) | while the trapper stays in; Octolock drops Def and Sp. Def each turn | the trapper leaves | `statusMove`, `hitOne` |
+| Shadow Tag, Arena Trap (grounded), Magnet Pull (Steel) | while the holder is in | | `canSwitch` |
+| Disable (86), Torment (165) | 4 turns; until it switches out | | `usable` |
+
+"Can't move" is sleep, freeze, full paralysis, a flinch, hurting itself in confusion or Truant: the engine's attack canceler calls `CancelMultiTurnMoves`, which also drops a charging two-turn move. Ghost types and Shed Shell always get out of traps; nothing gets out of its own lock, charge or recharge turn. `canSwitch` is the one rule for both sides (the ported AI uses it too), and `lockInfo` tells the live battle what to say.
+
 ## Live turns as the game plays them
 
 The turn report's third step replays the turn with what you saw (`useMove` and `playTurn` in `sim.js`): an action can carry `first` (it moved first: beats priority and Speed in singles, and skips Custap), `outcome` (`hit`, `crit`, `miss`, or `par`, `slp`, `frz`, `conf`, `flinch`: couldn't move; asleep or frozen with a moved outcome means it woke or thawed; `conf` hurts itself with the game's 40-power typeless hit), `ko` (its hit knocked the target out, past Sturdy and a Sash) and `noKO` (the target held on at 1 HP or more). The report sets `ko` or `noKO` on the other side's move when you move a Pokémon's HP to 0 or back up from 0, so who got to move stays right. Each attempt leaves an `outcome` event, which is how the report reads the order and the result back. A status set by hand starts its counter (sleep: 2 turns).

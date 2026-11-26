@@ -121,7 +121,15 @@
   function mv(id) { return moves.get(id); }
   function itemName(id) { return id && D.items[id] ? D.items[id].n : null; }
   function natureName(i) { return D.natures[i] ? D.natures[i].n : 'Hardy'; }
-  function abilityInfo(name) { return (name && D.abilities[name]) || { c: null, d: '' }; }
+  // The ROM spells some abilities its own way ("SupremeOverlord", "ThermalExchange", "Sword Of Ruin", "Bone Zone "): one
+  // spelling everywhere, the calculator's where it has one, so every check by name works on both sides
+  const AB_CANON = {}, AB_ROM = {};
+  for (const [rom, v] of Object.entries(D.abilities || {})) {
+    const canon = v && v.c && !/\(/.test(v.c) ? v.c : rom.trim();
+    AB_CANON[rom] = canon; AB_CANON[rom.trim()] = canon; AB_ROM[canon] = rom;
+  }
+  function canonAbility(ab) { if (!ab) return ab || null; const t = String(ab).trim(); return AB_CANON[t] || AB_CANON[ab] || t; }
+  function abilityInfo(name) { if (!name) return { c: null, d: '' }; const t = String(name).trim(); return D.abilities[name] || D.abilities[t] || D.abilities[AB_ROM[t]] || { c: null, d: '' }; }
 
   function typeEff(moveType, defTypes) {
     const t = gen.types.get(toID(moveType));
@@ -145,6 +153,8 @@
       overrides: { baseStats: Object.fromEntries(STAT.map((k, i) => [k, s.s[i]])), types: s.t, weightkg: s.w },
     };
     if (item) opts.item = item;
+    // Protosynthesis and Quark Drive: the calculator works out the raised stat itself once told to (Booster Energy, sun, Electric Terrain)
+    if (spec.ab === 'Protosynthesis' || spec.ab === 'Quark Drive') opts.boostedStat = 'auto';
     const p = new C.Pokemon(gen, s.c || 'Mew', opts);
     if (STAT_MULT[spec.ab]) {
       p._mult = STAT_MULT[spec.ab];
@@ -154,7 +164,7 @@
     return p;
   }
 
-  function buildMove(id, attackerSpec, { maxHits = false, crit = false, z = false } = {}) {
+  function buildMove(id, attackerSpec, { maxHits = false, crit = false, z = false, bp = 0 } = {}) {
     const m = mv(id);
     const opts = { isCrit: crit };
     let name = m.c;
@@ -181,6 +191,7 @@
         }
       }
     }
+    if (bp > 0 && !z) overrides.basePower = bp;   // this use's power (Rollout's doubling, Fury Cutter, Echoed Voice)
     if (Object.keys(overrides).length) opts.overrides = overrides;
     return new C.Move(gen, name, opts);
   }
@@ -203,10 +214,10 @@
     const hpRel = HP_SENSITIVE_MV.test(m.f) ? true : (HP_SENSITIVE_AB.has(attSpec.ab) || HP_SENSITIVE_AB.has(defSpec.ab)) ? 'roll' : false;
     const ds = o.defSide || null;
     const key = ['R', specKey(attSpec, hpRel), specKey(defSpec, hpRel), moveId, o.weather || '', o.terrain || '',
-      ds ? [ds.isReflect ? 1 : 0, ds.isLightScreen ? 1 : 0, ds.isAuroraVeil ? 1 : 0].join('') : '', o.crit ? 1 : 0, o.hits || 0, o.z ? 'Z' : ''].join('|');
+      ds ? [ds.isReflect ? 1 : 0, ds.isLightScreen ? 1 : 0, ds.isAuroraVeil ? 1 : 0].join('') : '', o.crit ? 1 : 0, o.hits || 0, o.z ? 'Z' : '', o.bp || ''].join('|');
     return memo(key, () => {
       const att = buildMon(attSpec), def = buildMon(defSpec);
-      const move = buildMove(moveId, attSpec, { crit: !!o.crit, maxHits: o.maxHits, z: !!o.z });
+      const move = buildMove(moveId, attSpec, { crit: !!o.crit, maxHits: o.maxHits, z: !!o.z, bp: o.bp });
       if (o.hits && !o.z) move.hits = o.hits;
       let res;
       try { res = C.calculate(gen, att, def, move, fieldFor(o.weather, { terrain: o.terrain, defSide: ds })); }
@@ -239,6 +250,56 @@
     return d;
   }
 
+  /** Critical hit chance: the move's stage, the attacker's item (Scope Lens, Razor Claw; the Leek for Farfetch'd and
+   *  Sirfetch'd; Lucky Punch for Chansey) and ability (Super Luck, Merciless against poison), Focus Energy; Battle Armor
+   *  and Shell Armor block them. Gen 7+ rates: 1/24, 1/8, 1/2, then always. */
+  const CRIT_RATE = [1 / 24, 1 / 8, 1 / 2, 1];
+  function critChanceOf(attSpec, defSpec, m) {
+    if (['Battle Armor', 'Shell Armor'].includes(defSpec.ab)) return 0;
+    if (ALWAYS_CRIT.has(m.f)) return 1;
+    if (attSpec.ab === 'Merciless' && /psn|tox/.test(defSpec.status || defSpec.st || '')) return 1;
+    let stage = HIGH_CRIT.has(m.f) ? 1 : 0;
+    const it = itemName(attSpec.it) || '';
+    const species = (sp(attSpec.s) || {}).n || '';
+    if (it === 'Scope Lens' || it === 'Razor Claw') stage++;
+    if (/^(Leek|Stick|Leek Stick)$/.test(it) && /Farfetch|Sirfetch/.test(species)) stage += 2;
+    if (it === 'Lucky Punch' && /^Chansey/.test(species)) stage += 2;
+    if (attSpec.ab === 'Super Luck') stage++;
+    if (attSpec.focus) stage += 2;
+    return CRIT_RATE[Math.min(3, stage)];
+  }
+  /** Accuracy as a fraction: the move's, with No Guard, Compound Eyes, Hustle (physical moves), Victory Star, Wide Lens,
+   *  the target's BrightPowder or Lax Incense, and Fatal Precision on super-effective hits. Weather is the battle's job. */
+  function accuracyOf(attSpec, defSpec, m) {
+    if (!m.a || attSpec.ab === 'No Guard' || defSpec.ab === 'No Guard') return 1;
+    if (attSpec.ab === 'Fatal Precision' && typeEff(m.t, sp(defSpec.s).t) > 1) return 1;
+    let p = m.a / 100;
+    if (attSpec.ab === 'Compound Eyes') p *= 1.3;
+    if (attSpec.ab === 'Hustle' && m.k === 'P') p *= 0.8;
+    if (attSpec.ab === 'Victory Star') p *= 1.1;
+    if (itemName(attSpec.it) === 'Wide Lens') p *= 1.1;
+    if (['BrightPowder', 'Bright Powder', 'Lax Incense'].includes(itemName(defSpec.it))) p *= 0.9;
+    return Math.min(1, p);
+  }
+  /** A move's priority with the abilities that change it (Gale Wings and Blazing Soul at full HP, Triage, Prankster). */
+  function priorityOfMove(attSpec, m) {
+    let p = m.r || 0;
+    const full = attSpec.hpPct == null || attSpec.hpPct >= 100;
+    if (attSpec.ab === 'Gale Wings' && m.t === 'Flying' && full) p++;
+    if (attSpec.ab === 'Blazing Soul' && m.t === 'Fire' && full) p++;
+    if (attSpec.ab === 'Prankster' && m.k === 'X') p++;
+    if (attSpec.ab === 'Triage' && (m.e === 3 || m.e === 32 || m.e === 132)) p += 3;
+    return p;
+  }
+  /** Moves whose power grows with each use in a row: Rollout and Ice Ball double for five hits (twice that after Defense
+   *  Curl), Fury Cutter doubles up to 160, Echoed Voice adds 40 a turn up to 200. The power of the first five uses. */
+  function rampPowers(m, attSpec) {
+    if (m.e === 117) return [1, 2, 4, 8, 16].map(k => m.p * k * (attSpec.curled ? 2 : 1));
+    if (m.f === 'Fury Cutter') return [1, 2, 4, 4, 4].map(k => m.p * k);
+    if (m.f === 'Echoed Voice') return [1, 2, 3, 4, 5].map(k => m.p * k);
+    return null;
+  }
+
   /** Damage of one move. Returns HP numbers and percentages of the defender's max HP. */
   function damage(attSpec, defSpec, moveId, { weather = null, worst = false, terrain = null, defSide = null } = {}) {
     const m = mv(moveId);
@@ -267,13 +328,16 @@
     else if (koAll > 0) text = `${(100 * koAll).toFixed(1)}% chance to OHKO`;
     else if (n > 0) text = `guaranteed ${n}HKO`;
     const sashed = cur === hp && (itemName(defSpec.it) === 'Focus Sash' || defSpec.ab === 'Sturdy') && max >= cur;
+    // a move that grows in power: the least damage of each of its first five uses in a row
+    const powers = rampPowers(m, attSpec);
+    const seq = powers ? powers.map(bp => Math.min(...rawRolls(attSpec, defSpec, moveId, { weather, terrain, defSide, hits, bp }).rolls)) : null;
     return {
       move: m, moveName: m.f, type: r.type, eff: r.eff, hp, cur,
       min, max, minPct: 100 * min / hp, maxPct: 100 * max / hp,
       critMax: Math.max(...rc.rolls), critMaxPct: 100 * Math.max(...rc.rolls) / hp, critMinPct: 100 * Math.min(...rc.rolls) / hp,
-      hits: r.hits, acc: m.a, priority: r.priority,
+      hits: r.hits, acc: Math.round(100 * accuracyOf(attSpec, defSpec, m)), priority: priorityOfMove(attSpec, m), seq,
       ko: { text, n: min >= cur ? 1 : n, chance: koAll }, sashed, notes,
-      critChance: ALWAYS_CRIT.has(m.f) ? 1 : HIGH_CRIT.has(m.f) ? 0.125 : 1 / 24,
+      critChance: critChanceOf(attSpec, defSpec, m),
     };
   }
 
@@ -297,8 +361,8 @@
       else if (lo === 2 && hi === 5) hitsDist = HIT_DIST;
       else hitsDist = { [hi]: 1 };
     }
-    const acc = m.a === 0 || attSpec.ab === 'No Guard' || defSpec.ab === 'No Guard' ? 1 : Math.min(1, m.a / 100);
-    const pc = ALWAYS_CRIT.has(m.f) ? 1 : HIGH_CRIT.has(m.f) ? 0.125 : 1 / 24;
+    const acc = accuracyOf(attSpec, defSpec, m);
+    const pc = critChanceOf(attSpec, defSpec, m);
     for (const [h, ph] of Object.entries(hitsDist)) {
       for (const crit of [false, true]) {
         const p = ph * (crit ? pc : 1 - pc) * acc;
@@ -332,10 +396,21 @@
     return Math.min(1, dead);
   }
 
-  function speedOf(spec, weather) {
+  /** Protosynthesis or Quark Drive switched on (Booster Energy, sun, Electric Terrain): the stat it raises (Speed ×1.5,
+   *  the others ×1.3), counting stat stages, or null. */
+  function qpStat(spec, weather, terrain) {
+    const a = spec.ab, energy = /^Boost(er)? Energy$/.test(itemName(spec.it) || '');
+    const on = (a === 'Protosynthesis' && (energy || /Sun/.test(weather || ''))) || (a === 'Quark Drive' && (energy || terrain === 'Electric'));
+    if (!on) return null;
+    const r = rawStats(spec), b = spec.boosts || {};
+    const mod = k => Math.floor(r[k] * ((b[k] || 0) >= 0 ? (2 + (b[k] || 0)) / 2 : 2 / (2 - b[k])));
+    return ['def', 'spa', 'spd', 'spe'].reduce((best, k) => (mod(k) > mod(best) ? k : best), 'atk');
+  }
+  function speedOf(spec, weather, terrain) {
     let s = rawStats(spec).spe;
     const b = (spec.boosts && spec.boosts.spe) || 0;
     s = Math.floor(s * (b >= 0 ? (2 + b) / 2 : 2 / (2 - b)));
+    if (qpStat(spec, weather, terrain) === 'spe') s = Math.floor(s * 1.5);
     const item = itemName(spec.it);
     if (item === 'Choice Scarf') s = Math.floor(s * 1.5);
     if (item === 'Iron Ball') s = Math.floor(s / 2);
@@ -391,6 +466,11 @@
     // losing my Pokemon before it wins (their best move every turn, all rolls, hit counts, crits, my accuracy)
     const outcome = h => {
       let toKO = h.min > 0 ? Math.ceil(h.cur / h.min) : Infinity;
+      if (h.seq && h.min > 0) {   // Rollout and friends: add up the growing hits (after five, Rollout starts over)
+        let sum = 0, k = 0;
+        while (sum < h.cur && k < 20) { sum += h.seq[k % h.seq.length]; k++; }
+        toKO = Math.min(toKO, k);
+      }
       if (h.sashed && toKO === 1) toKO = 2;
       const first = threat ? (h.priority > threat.priority || (h.priority === threat.priority && mySpeed > theirSpeed)) : mySpeed > theirSpeed;
       const taken = !isFinite(toKO) ? Infinity : (first ? toKO - 1 : toKO);
@@ -437,6 +517,8 @@
     const b = D.bosses[bossIndex];
     return b.party.map(m => Object.assign({}, m, {
       lv: m.lv != null ? m.lv : Math.max(1, Math.min(100, (playerTop || b.cap) + m.rel + REL)),
+      nat: m.nat != null ? m.nat : 0,
+      ab: canonAbility(m.ab || ((sp(m.s) || {}).a || [])[0] || null),
     }));
   }
 
@@ -533,6 +615,6 @@
   }
 
   return { C, gen, D, sp, mv, itemName, hardcoreAbility, natureName, abilityInfo, buildMon, damage, damageDist, faintChance, speedOf, matchup,
-    bossTeam, planBoss, teamWeather, learnable, upcoming, isBanned, suggestMoves, maxHP, rawStats, rawRolls, typeEff, hiddenPowerType, setMode, getMode,
+    bossTeam, planBoss, teamWeather, learnable, upcoming, isBanned, suggestMoves, maxHP, rawStats, rawRolls, typeEff, hiddenPowerType, setMode, getMode, critChanceOf, accuracyOf, priorityOfMove, rampPowers, qpStat, canonAbility,
     STATUS_CODE, WEATHER_SETTERS, HIGH_CRIT, ALWAYS_CRIT, STAT_MULT, clearCache: () => cache.clear() };
 });

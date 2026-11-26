@@ -31,10 +31,10 @@
    "hidden": "Protean",
    "bst": 530,
    "nature": "Adamant",
-   "first": 1.009,
+   "first": 1.005,
    "early": 0.809,
    "late": 0.406,
-   "overall": 0.748,
+   "overall": 0.746,
    "best": [
     {
      "name": "Erika",
@@ -90,7 +90,7 @@
      2.272,
      4,
      5,
-     0.535
+     0.525
     ],
     [
      "Brock",
@@ -421,8 +421,8 @@
    "nature": "Timid",
    "first": 0.596,
    "early": 0.736,
-   "late": 0.536,
-   "overall": 0.61,
+   "late": 0.52,
+   "overall": 0.605,
    "best": [
     {
      "name": "Erika",
@@ -595,8 +595,8 @@
     [
      "Sabrina",
      59,
-     0.777,
-     3,
+     0.364,
+     2,
      6,
      null
     ],
@@ -747,7 +747,7 @@
     [
      "Terry",
      85,
-     -0.986,
+     -0.99,
      0,
      6,
      null
@@ -809,8 +809,8 @@
    "nature": "Adamant",
    "first": 0.953,
    "early": 0.457,
-   "late": 0.218,
-   "overall": 0.572,
+   "late": 0.207,
+   "overall": 0.568,
    "best": [
     {
      "name": "Erika",
@@ -1079,7 +1079,7 @@
     [
      "Clair",
      81,
-     0.774,
+     0.473,
      2,
      6,
      null
@@ -1167,6 +1167,393 @@
    "rank": 3
   },
   {
+   "s": 158,
+   "name": "Totodile",
+   "gen": 2,
+   "ball": 2,
+   "type": "Water",
+   "rival": "Bulbasaur",
+   "stages": [
+    {
+     "s": 158,
+     "lv": 5
+    },
+    {
+     "s": 159,
+     "lv": 16
+    },
+    {
+     "s": 160,
+     "lv": 36
+    }
+   ],
+   "types": [
+    "Water"
+   ],
+   "ability": "Sheer Force",
+   "hidden": "Strong Jaw",
+   "bst": 530,
+   "nature": "Adamant",
+   "first": 1.006,
+   "early": 0.193,
+   "late": 0.315,
+   "overall": 0.561,
+   "best": [
+    {
+     "name": "Whitney",
+     "cap": 36,
+     "handles": 5,
+     "size": 6
+    },
+    {
+     "name": "Terry",
+     "cap": 16,
+     "handles": 2,
+     "size": 3
+    },
+    {
+     "name": "Morty",
+     "cap": 47,
+     "handles": 5,
+     "size": 6
+    }
+   ],
+   "worst": [
+    {
+     "name": "Lt. Surge",
+     "cap": 36,
+     "handles": 0,
+     "size": 6
+    },
+    {
+     "name": "Misty",
+     "cap": 68,
+     "handles": 0,
+     "size": 6
+    },
+    {
+     "name": "Chuck",
+     "cap": 59,
+     "handles": 0,
+     "size": 6
+    }
+   ],
+   "fights": [
+    [
+     "Terry",
+     16,
+     2.29,
+     2,
+     3,
+     0.042
+    ],
+    [
+     "Falkner",
+     16,
+     1.584,
+     3,
+     5,
+     0.185
+    ],
+    [
+     "Brock",
+     16,
+     1.777,
+     4,
+     6,
+     0.158
+    ],
+    [
+     "Archer",
+     23,
+     0.611,
+     2,
+     5,
+     0.21
+    ],
+    [
+     "Terry",
+     28,
+     -0.5,
+     1,
+     6,
+     null
+    ],
+    [
+     "Bugsy",
+     28,
+     0.332,
+     2,
+     6,
+     null
+    ],
+    [
+     "Misty",
+     28,
+     -0.183,
+     1,
+     6,
+     null
+    ],
+    [
+     "Whitney",
+     36,
+     2.315,
+     5,
+     6,
+     null
+    ],
+    [
+     "Lt. Surge",
+     36,
+     -1,
+     0,
+     6,
+     null
+    ],
+    [
+     "Erika",
+     44,
+     -0.046,
+     0,
+     6,
+     null
+    ],
+    [
+     "Morty",
+     47,
+     2.089,
+     5,
+     6,
+     null
+    ],
+    [
+     "Giovanni",
+     47,
+     0.578,
+     1,
+     6,
+     null
+    ],
+    [
+     "Terry",
+     56,
+     -0.043,
+     0,
+     6,
+     null
+    ],
+    [
+     "Archer",
+     56,
+     1.541,
+     1,
+     3,
+     null
+    ],
+    [
+     "Giovanni",
+     57,
+     0.633,
+     1,
+     6,
+     null
+    ],
+    [
+     "Chuck",
+     59,
+     -0.717,
+     0,
+     6,
+     null
+    ],
+    [
+     "Sabrina",
+     59,
+     0.8,
+     2,
+     6,
+     null
+    ],
+    [
+     "Brock",
+     68,
+     1.762,
+     4,
+     6,
+     null
+    ],
+    [
+     "Misty",
+     68,
+     -0.985,
+     0,
+     6,
+     null
+    ],
+    [
+     "Lt. Surge",
+     68,
+     -0.506,
+     1,
+     6,
+     null
+    ],
+    [
+     "Koga",
+     68,
+     -0.373,
+     0,
+     6,
+     null
+    ],
+    [
+     "Pryce",
+     73,
+     1.144,
+     1.7,
+     6,
+     null
+    ],
+    [
+     "Erika",
+     73,
+     0.205,
+     1,
+     6,
+     null
+    ],
+    [
+     "May",
+     73,
+     1.817,
+     4,
+     6,
+     null
+    ],
+    [
+     "Jasmine",
+     76,
+     0.211,
+     2,
+     6,
+     null
+    ],
+    [
+     "Blaine",
+     76,
+     -0.333,
+     1,
+     6,
+     null
+    ],
+    [
+     "Ariana",
+     79,
+     -0.098,
+     1,
+     4,
+     null
+    ],
+    [
+     "Giovanni",
+     80,
+     0.202,
+     1,
+     6,
+     null
+    ],
+    [
+     "Clair",
+     81,
+     -0.256,
+     1,
+     6,
+     null
+    ],
+    [
+     "Terry",
+     82,
+     0.779,
+     2,
+     6,
+     null
+    ],
+    [
+     "Brendan",
+     82,
+     1.954,
+     4,
+     6,
+     null
+    ],
+    [
+     "Lorelei",
+     85,
+     -0.273,
+     1,
+     6,
+     null
+    ],
+    [
+     "Bruno",
+     85,
+     -0.4,
+     0,
+     6,
+     null
+    ],
+    [
+     "Agatha",
+     85,
+     -0.164,
+     1,
+     6,
+     null
+    ],
+    [
+     "Lance",
+     85,
+     -0.667,
+     0.5,
+     6,
+     null
+    ],
+    [
+     "Terry",
+     85,
+     -0.345,
+     0,
+     6,
+     null
+    ]
+   ],
+   "keyMoves": [
+    {
+     "id": 432,
+     "lv": 15
+    },
+    {
+     "id": 797,
+     "lv": 52
+    },
+    {
+     "id": 358,
+     "lv": 39
+    },
+    {
+     "id": 242,
+     "lv": 25
+    },
+    {
+     "id": 69,
+     "lv": 18
+    }
+   ],
+   "tier": "S",
+   "rank": 4
+  },
+  {
    "s": 4,
    "name": "Charmander",
    "gen": 1,
@@ -1195,15 +1582,15 @@
    "hidden": "Solar Power",
    "bst": 534,
    "nature": "Timid",
-   "first": 0.906,
+   "first": 0.876,
    "early": 0.554,
-   "late": 0.193,
-   "overall": 0.568,
+   "late": 0.192,
+   "overall": 0.556,
    "best": [
     {
      "name": "Falkner",
      "cap": 16,
-     "handles": 5,
+     "handles": 4,
      "size": 5
     },
     {
@@ -1251,10 +1638,10 @@
     [
      "Falkner",
      16,
-     2.8,
+     2.577,
+     4,
      5,
-     5,
-     0.475
+     0.47
     ],
     [
      "Brock",
@@ -1467,7 +1854,7 @@
     [
      "Clair",
      81,
-     0.164,
+     0.16,
      2,
      6,
      null
@@ -1552,393 +1939,6 @@
     }
    ],
    "tier": "S",
-   "rank": 4
-  },
-  {
-   "s": 158,
-   "name": "Totodile",
-   "gen": 2,
-   "ball": 2,
-   "type": "Water",
-   "rival": "Bulbasaur",
-   "stages": [
-    {
-     "s": 158,
-     "lv": 5
-    },
-    {
-     "s": 159,
-     "lv": 16
-    },
-    {
-     "s": 160,
-     "lv": 36
-    }
-   ],
-   "types": [
-    "Water"
-   ],
-   "ability": "Sheer Force",
-   "hidden": "Strong Jaw",
-   "bst": 530,
-   "nature": "Adamant",
-   "first": 1.006,
-   "early": 0.193,
-   "late": 0.325,
-   "overall": 0.564,
-   "best": [
-    {
-     "name": "Whitney",
-     "cap": 36,
-     "handles": 5,
-     "size": 6
-    },
-    {
-     "name": "Terry",
-     "cap": 16,
-     "handles": 2,
-     "size": 3
-    },
-    {
-     "name": "Morty",
-     "cap": 47,
-     "handles": 5,
-     "size": 6
-    }
-   ],
-   "worst": [
-    {
-     "name": "Lt. Surge",
-     "cap": 36,
-     "handles": 0,
-     "size": 6
-    },
-    {
-     "name": "Misty",
-     "cap": 68,
-     "handles": 0,
-     "size": 6
-    },
-    {
-     "name": "Chuck",
-     "cap": 59,
-     "handles": 0,
-     "size": 6
-    }
-   ],
-   "fights": [
-    [
-     "Terry",
-     16,
-     2.29,
-     2,
-     3,
-     0.042
-    ],
-    [
-     "Falkner",
-     16,
-     1.584,
-     3,
-     5,
-     0.185
-    ],
-    [
-     "Brock",
-     16,
-     1.777,
-     4,
-     6,
-     0.158
-    ],
-    [
-     "Archer",
-     23,
-     0.611,
-     2,
-     5,
-     0.21
-    ],
-    [
-     "Terry",
-     28,
-     -0.5,
-     1,
-     6,
-     null
-    ],
-    [
-     "Bugsy",
-     28,
-     0.332,
-     2,
-     6,
-     null
-    ],
-    [
-     "Misty",
-     28,
-     -0.183,
-     1,
-     6,
-     null
-    ],
-    [
-     "Whitney",
-     36,
-     2.315,
-     5,
-     6,
-     null
-    ],
-    [
-     "Lt. Surge",
-     36,
-     -1,
-     0,
-     6,
-     null
-    ],
-    [
-     "Erika",
-     44,
-     -0.046,
-     0,
-     6,
-     null
-    ],
-    [
-     "Morty",
-     47,
-     2.089,
-     5,
-     6,
-     null
-    ],
-    [
-     "Giovanni",
-     47,
-     0.578,
-     1,
-     6,
-     null
-    ],
-    [
-     "Terry",
-     56,
-     -0.043,
-     0,
-     6,
-     null
-    ],
-    [
-     "Archer",
-     56,
-     1.541,
-     1,
-     3,
-     null
-    ],
-    [
-     "Giovanni",
-     57,
-     0.633,
-     1,
-     6,
-     null
-    ],
-    [
-     "Chuck",
-     59,
-     -0.717,
-     0,
-     6,
-     null
-    ],
-    [
-     "Sabrina",
-     59,
-     0.8,
-     2,
-     6,
-     null
-    ],
-    [
-     "Brock",
-     68,
-     1.792,
-     4,
-     6,
-     null
-    ],
-    [
-     "Misty",
-     68,
-     -0.985,
-     0,
-     6,
-     null
-    ],
-    [
-     "Lt. Surge",
-     68,
-     -0.506,
-     1,
-     6,
-     null
-    ],
-    [
-     "Koga",
-     68,
-     -0.373,
-     0,
-     6,
-     null
-    ],
-    [
-     "Pryce",
-     73,
-     1.144,
-     1.7,
-     6,
-     null
-    ],
-    [
-     "Erika",
-     73,
-     0.205,
-     1,
-     6,
-     null
-    ],
-    [
-     "May",
-     73,
-     1.817,
-     4,
-     6,
-     null
-    ],
-    [
-     "Jasmine",
-     76,
-     0.211,
-     2,
-     6,
-     null
-    ],
-    [
-     "Blaine",
-     76,
-     -0.333,
-     1,
-     6,
-     null
-    ],
-    [
-     "Ariana",
-     79,
-     -0.098,
-     1,
-     4,
-     null
-    ],
-    [
-     "Giovanni",
-     80,
-     0.202,
-     1,
-     6,
-     null
-    ],
-    [
-     "Clair",
-     81,
-     -0.031,
-     1,
-     6,
-     null
-    ],
-    [
-     "Terry",
-     82,
-     0.779,
-     2,
-     6,
-     null
-    ],
-    [
-     "Brendan",
-     82,
-     1.954,
-     4,
-     6,
-     null
-    ],
-    [
-     "Lorelei",
-     85,
-     -0.273,
-     1,
-     6,
-     null
-    ],
-    [
-     "Bruno",
-     85,
-     -0.4,
-     0,
-     6,
-     null
-    ],
-    [
-     "Agatha",
-     85,
-     -0.164,
-     1,
-     6,
-     null
-    ],
-    [
-     "Lance",
-     85,
-     -0.667,
-     0.5,
-     6,
-     null
-    ],
-    [
-     "Terry",
-     85,
-     -0.345,
-     0,
-     6,
-     null
-    ]
-   ],
-   "keyMoves": [
-    {
-     "id": 432,
-     "lv": 15
-    },
-    {
-     "id": 797,
-     "lv": 52
-    },
-    {
-     "id": 358,
-     "lv": 39
-    },
-    {
-     "id": 242,
-     "lv": 25
-    },
-    {
-     "id": 69,
-     "lv": 18
-    }
-   ],
-   "tier": "S",
    "rank": 5
   },
   {
@@ -1970,10 +1970,10 @@
    "hidden": "Iron Fist",
    "bst": 551,
    "nature": "Jolly",
-   "first": 0.393,
+   "first": 0.364,
    "early": 0.743,
-   "late": 0.446,
-   "overall": 0.499,
+   "late": 0.435,
+   "overall": 0.484,
    "best": [
     {
      "name": "Erika",
@@ -2026,8 +2026,8 @@
     [
      "Falkner",
      16,
-     0.4,
-     2,
+     0.17,
+     1,
      5,
      0.215
     ],
@@ -2242,7 +2242,7 @@
     [
      "Clair",
      81,
-     0.971,
+     0.655,
      3,
      6,
      null
@@ -2358,10 +2358,10 @@
    "hidden": "Flash Fire",
    "bst": 534,
    "nature": "Modest",
-   "first": 0.616,
+   "first": 0.587,
    "early": 0.378,
    "late": 0.337,
-   "overall": 0.459,
+   "overall": 0.447,
    "best": [
     {
      "name": "Erika",
@@ -2376,10 +2376,10 @@
      "size": 6
     },
     {
-     "name": "Falkner",
-     "cap": 16,
+     "name": "Jasmine",
+     "cap": 76,
      "handles": 4,
-     "size": 5
+     "size": 6
     }
    ],
    "worst": [
@@ -2414,10 +2414,10 @@
     [
      "Falkner",
      16,
-     1.794,
-     4,
+     1.572,
+     3,
      5,
-     0.175
+     0.17
     ],
     [
      "Brock",
@@ -3074,7 +3074,7 @@
     [
      "Terry",
      85,
-     -0.487,
+     -0.49,
      1,
      6,
      null
@@ -3136,8 +3136,8 @@
    "nature": "Modest",
    "first": 0.379,
    "early": 0.477,
-   "late": 0.41,
-   "overall": 0.414,
+   "late": 0.403,
+   "overall": 0.412,
    "best": [
     {
      "name": "Erika",
@@ -3310,7 +3310,7 @@
     [
      "Sabrina",
      59,
-     0.834,
+     0.665,
      3,
      6,
      null
@@ -3524,8 +3524,8 @@
    "nature": "Adamant",
    "first": 0.82,
    "early": 0.147,
-   "late": 0.091,
-   "overall": 0.397,
+   "late": 0.09,
+   "overall": 0.396,
    "best": [
     {
      "name": "Falkner",
@@ -3650,7 +3650,7 @@
     [
      "Morty",
      47,
-     1.159,
+     1.16,
      4,
      6,
      null
@@ -3834,7 +3834,7 @@
     [
      "Agatha",
      85,
-     0.282,
+     0.265,
      2,
      6,
      null
@@ -3850,7 +3850,7 @@
     [
      "Terry",
      85,
-     -0.977,
+     -0.99,
      0,
      6,
      null
@@ -3909,11 +3909,11 @@
    "ability": "Torrent",
    "hidden": "Damp",
    "bst": 535,
-   "nature": "Jolly",
-   "first": 0.533,
-   "early": 0.184,
-   "late": 0.389,
-   "overall": 0.395,
+   "nature": "Adamant",
+   "first": 0.499,
+   "early": 0.183,
+   "late": 0.377,
+   "overall": 0.377,
    "best": [
     {
      "name": "May",
@@ -3922,35 +3922,35 @@
      "size": 6
     },
     {
+     "name": "Whitney",
+     "cap": 36,
+     "handles": 4,
+     "size": 6
+    },
+    {
      "name": "Falkner",
      "cap": 16,
      "handles": 3,
      "size": 5
-    },
-    {
-     "name": "Whitney",
-     "cap": 36,
-     "handles": 3,
-     "size": 6
     }
    ],
    "worst": [
     {
-     "name": "Lorelei",
-     "cap": 85,
+     "name": "Terry",
+     "cap": 28,
      "handles": 0,
      "size": 6
     },
     {
-     "name": "Terry",
-     "cap": 28,
-     "handles": 1,
+     "name": "Lorelei",
+     "cap": 85,
+     "handles": 0.5,
      "size": 6
     },
     {
-     "name": "Koga",
-     "cap": 68,
-     "handles": 1,
+     "name": "Terry",
+     "cap": 85,
+     "handles": 0,
      "size": 6
     }
    ],
@@ -3961,7 +3961,7 @@
      0.564,
      1,
      3,
-     0.042
+     0.017
     ],
     [
      "Falkner",
@@ -3985,20 +3985,20 @@
      0.6,
      2,
      5,
-     0.08
+     0.015
     ],
     [
      "Terry",
      28,
-     -0.503,
-     1,
+     -1,
+     0,
      6,
      null
     ],
     [
      "Bugsy",
      28,
-     0.339,
+     0.338,
      1.5,
      6,
      null
@@ -4014,8 +4014,8 @@
     [
      "Whitney",
      36,
-     1.403,
-     3,
+     1.9,
+     4,
      6,
      null
     ],
@@ -4038,7 +4038,7 @@
     [
      "Morty",
      47,
-     0.363,
+     0.439,
      2,
      6,
      null
@@ -4046,8 +4046,8 @@
     [
      "Giovanni",
      47,
-     0.724,
-     2,
+     0.372,
+     1,
      6,
      null
     ],
@@ -4086,7 +4086,7 @@
     [
      "Sabrina",
      59,
-     1.151,
+     1,
      3,
      6,
      null
@@ -4094,8 +4094,8 @@
     [
      "Brock",
      68,
-     0.425,
-     1,
+     0.603,
+     2,
      6,
      null
     ],
@@ -4110,7 +4110,7 @@
     [
      "Lt. Surge",
      68,
-     0.531,
+     0.699,
      2,
      6,
      null
@@ -4118,16 +4118,16 @@
     [
      "Koga",
      68,
-     -0.42,
-     1,
+     0.246,
+     2,
      6,
      null
     ],
     [
      "Pryce",
      73,
-     0.213,
-     1.3,
+     0.097,
+     1,
      6,
      null
     ],
@@ -4142,7 +4142,7 @@
     [
      "May",
      73,
-     1.814,
+     1.981,
      4,
      6,
      null
@@ -4150,8 +4150,8 @@
     [
      "Jasmine",
      76,
-     0.457,
-     2,
+     -0.036,
+     1,
      6,
      null
     ],
@@ -4174,23 +4174,23 @@
     [
      "Giovanni",
      80,
-     -0.259,
-     0,
+     0.577,
+     2,
      6,
      null
     ],
     [
      "Clair",
      81,
-     0.671,
-     2,
+     -0.124,
+     1,
      6,
      null
     ],
     [
      "Terry",
      82,
-     0.986,
+     1.153,
      3,
      6,
      null
@@ -4198,7 +4198,7 @@
     [
      "Brendan",
      82,
-     0.831,
+     0.665,
      3,
      6,
      null
@@ -4206,15 +4206,15 @@
     [
      "Lorelei",
      85,
-     -0.753,
-     0,
+     -0.666,
+     0.5,
      6,
      null
     ],
     [
      "Bruno",
      85,
-     -0.283,
+     -0.281,
      1,
      6,
      null
@@ -4222,7 +4222,7 @@
     [
      "Agatha",
      85,
-     0.261,
+     -0.017,
      1,
      6,
      null
@@ -4238,7 +4238,7 @@
     [
      "Terry",
      85,
-     -0.29,
+     -0.636,
      0,
      6,
      null
@@ -4258,15 +4258,15 @@
      "lv": 1
     },
     {
-     "id": 330,
-     "lv": 38
-    },
-    {
      "id": 157,
      "lv": 25
+    },
+    {
+     "id": 330,
+     "lv": 38
     }
    ],
-   "tier": "A",
+   "tier": "B",
    "rank": 11
   },
   {
@@ -4300,8 +4300,8 @@
    "nature": "Modest",
    "first": 0.768,
    "early": -0.083,
-   "late": 0.2,
-   "overall": 0.356,
+   "late": 0.193,
+   "overall": 0.354,
    "best": [
     {
      "name": "Whitney",
@@ -4426,7 +4426,7 @@
     [
      "Morty",
      47,
-     0.185,
+     0.2,
      1,
      6,
      null
@@ -4610,7 +4610,7 @@
     [
      "Agatha",
      85,
-     -0.103,
+     -0.12,
      1,
      6,
      null
@@ -4626,8 +4626,8 @@
     [
      "Terry",
      85,
-     -0.349,
-     1,
+     -0.544,
+     0,
      6,
      null
     ]
@@ -4998,7 +4998,7 @@
     [
      "Agatha",
      85,
-     -0.698,
+     -0.7,
      0,
      6,
      null
@@ -5076,8 +5076,8 @@
    "nature": "Adamant",
    "first": 0.805,
    "early": -0.249,
-   "late": 0.169,
-   "overall": 0.319,
+   "late": 0.16,
+   "overall": 0.316,
    "best": [
     {
      "name": "Brendan",
@@ -5346,8 +5346,8 @@
     [
      "Clair",
      81,
-     0.166,
-     2,
+     -0.016,
+     1,
      6,
      null
     ],
@@ -5402,7 +5402,7 @@
     [
      "Terry",
      85,
-     0.302,
+     0.235,
      2,
      6,
      null
@@ -5464,8 +5464,8 @@
    "nature": "Adamant",
    "first": 0.488,
    "early": -0.077,
-   "late": 0.301,
-   "overall": 0.281,
+   "late": 0.289,
+   "overall": 0.277,
    "best": [
     {
      "name": "May",
@@ -5474,15 +5474,15 @@
      "size": 6
     },
     {
-     "name": "Sabrina",
-     "cap": 59,
-     "handles": 3,
-     "size": 6
-    },
-    {
      "name": "Erika",
      "cap": 73,
      "handles": 2,
+     "size": 6
+    },
+    {
+     "name": "Brock",
+     "cap": 16,
+     "handles": 4,
      "size": 6
     }
    ],
@@ -5638,7 +5638,7 @@
     [
      "Sabrina",
      59,
-     1.226,
+     1.146,
      3,
      6,
      null
@@ -5734,7 +5734,7 @@
     [
      "Clair",
      81,
-     -0.006,
+     -0.227,
      1,
      6,
      null
@@ -5774,7 +5774,7 @@
     [
      "Agatha",
      85,
-     -0.299,
+     -0.327,
      1,
      6,
      null
@@ -5851,8 +5851,8 @@
    "nature": "Adamant",
    "first": 0.688,
    "early": -0.138,
-   "late": 0.052,
-   "overall": 0.259,
+   "late": 0.044,
+   "overall": 0.256,
    "best": [
     {
      "name": "Brock",
@@ -6121,7 +6121,7 @@
     [
      "Clair",
      81,
-     -0.029,
+     -0.256,
      1,
      6,
      null
@@ -6161,7 +6161,7 @@
     [
      "Agatha",
      85,
-     0.338,
+     0.334,
      2,
      6,
      null
@@ -6238,9 +6238,9 @@
    "bst": 528,
    "nature": "Adamant",
    "first": 0.457,
-   "early": -0.089,
-   "late": 0.266,
-   "overall": 0.254,
+   "early": -0.088,
+   "late": 0.246,
+   "overall": 0.247,
    "best": [
     {
      "name": "Erika",
@@ -6325,7 +6325,7 @@
     [
      "Bugsy",
      28,
-     -0.389,
+     -0.385,
      0.5,
      6,
      null
@@ -6421,7 +6421,7 @@
     [
      "Brock",
      68,
-     -0.638,
+     -0.698,
      0,
      6,
      null
@@ -6509,8 +6509,8 @@
     [
      "Clair",
      81,
-     0.826,
-     3,
+     0.353,
+     2,
      6,
      null
     ],
@@ -6624,10 +6624,10 @@
    "hidden": "Sniper",
    "bst": 530,
    "nature": "Timid",
-   "first": 0.807,
+   "first": 0.806,
    "early": -0.193,
-   "late": -0.074,
-   "overall": 0.248,
+   "late": -0.078,
+   "overall": 0.247,
    "best": [
     {
      "name": "Brock",
@@ -6680,7 +6680,7 @@
     [
      "Falkner",
      16,
-     1.39,
+     1.385,
      3,
      5,
      0.015
@@ -6928,7 +6928,7 @@
     [
      "Bruno",
      85,
-     -0.152,
+     -0.257,
      1,
      6,
      null
@@ -7014,8 +7014,8 @@
    "nature": "Adamant",
    "first": 0.795,
    "early": -0.232,
-   "late": -0.049,
-   "overall": 0.243,
+   "late": -0.058,
+   "overall": 0.24,
    "best": [
     {
      "name": "Brock",
@@ -7140,7 +7140,7 @@
     [
      "Morty",
      47,
-     1.117,
+     1.118,
      3,
      6,
      null
@@ -7284,7 +7284,7 @@
     [
      "Clair",
      81,
-     -0.04,
+     -0.274,
      1,
      6,
      null
@@ -7324,7 +7324,7 @@
     [
      "Agatha",
      85,
-     -0.2,
+     -0.216,
      0,
      6,
      null
@@ -7340,7 +7340,7 @@
     [
      "Terry",
      85,
-     -0.59,
+     -0.571,
      0,
      6,
      null
@@ -7790,8 +7790,8 @@
    "nature": "Adamant",
    "first": 0.511,
    "early": -0.349,
-   "late": 0.198,
-   "overall": 0.187,
+   "late": 0.196,
+   "overall": 0.186,
    "best": [
     {
      "name": "Brock",
@@ -8060,7 +8060,7 @@
     [
      "Clair",
      81,
-     -0.01,
+     -0.041,
      1,
      6,
      null
@@ -8536,6 +8536,394 @@
    "rank": 22
   },
   {
+   "s": 921,
+   "name": "Sprigatito",
+   "gen": 9,
+   "ball": 1,
+   "type": "Grass",
+   "rival": "Charmander",
+   "stages": [
+    {
+     "s": 921,
+     "lv": 5
+    },
+    {
+     "s": 922,
+     "lv": 16
+    },
+    {
+     "s": 923,
+     "lv": 36
+    }
+   ],
+   "types": [
+    "Grass",
+    "Dark"
+   ],
+   "ability": "Overgrow",
+   "hidden": "Protean",
+   "bst": 530,
+   "nature": "Adamant",
+   "first": 0.339,
+   "early": -0.196,
+   "late": -0.21,
+   "overall": 0.013,
+   "best": [
+    {
+     "name": "Brock",
+     "cap": 16,
+     "handles": 3,
+     "size": 6
+    },
+    {
+     "name": "Whitney",
+     "cap": 36,
+     "handles": 3,
+     "size": 6
+    },
+    {
+     "name": "Terry",
+     "cap": 82,
+     "handles": 3,
+     "size": 6
+    }
+   ],
+   "worst": [
+    {
+     "name": "Terry",
+     "cap": 85,
+     "handles": 0,
+     "size": 6
+    },
+    {
+     "name": "Lance",
+     "cap": 85,
+     "handles": 0,
+     "size": 6
+    },
+    {
+     "name": "Bruno",
+     "cap": 85,
+     "handles": 0,
+     "size": 6
+    }
+   ],
+   "fights": [
+    [
+     "Terry",
+     16,
+     0.333,
+     1,
+     3,
+     0.117
+    ],
+    [
+     "Falkner",
+     16,
+     0.167,
+     1,
+     5,
+     0.035
+    ],
+    [
+     "Brock",
+     16,
+     1.155,
+     3,
+     6,
+     0.008
+    ],
+    [
+     "Archer",
+     23,
+     0.184,
+     2,
+     5,
+     0.13
+    ],
+    [
+     "Terry",
+     28,
+     -0.507,
+     1,
+     6,
+     null
+    ],
+    [
+     "Bugsy",
+     28,
+     -0.845,
+     0,
+     6,
+     null
+    ],
+    [
+     "Misty",
+     28,
+     -0.318,
+     1,
+     6,
+     null
+    ],
+    [
+     "Whitney",
+     36,
+     0.982,
+     3,
+     6,
+     null
+    ],
+    [
+     "Lt. Surge",
+     36,
+     -0.291,
+     1,
+     6,
+     null
+    ],
+    [
+     "Erika",
+     44,
+     -0.678,
+     0,
+     6,
+     null
+    ],
+    [
+     "Morty",
+     47,
+     0.926,
+     2,
+     6,
+     null
+    ],
+    [
+     "Giovanni",
+     47,
+     -0.632,
+     0,
+     6,
+     null
+    ],
+    [
+     "Terry",
+     56,
+     -0.283,
+     1,
+     6,
+     null
+    ],
+    [
+     "Archer",
+     56,
+     -0.802,
+     0,
+     3,
+     null
+    ],
+    [
+     "Giovanni",
+     57,
+     0.552,
+     2,
+     6,
+     null
+    ],
+    [
+     "Chuck",
+     59,
+     -0.211,
+     1,
+     6,
+     null
+    ],
+    [
+     "Sabrina",
+     59,
+     -0.507,
+     1,
+     6,
+     null
+    ],
+    [
+     "Brock",
+     68,
+     -0.263,
+     1,
+     6,
+     null
+    ],
+    [
+     "Misty",
+     68,
+     0.232,
+     2,
+     6,
+     null
+    ],
+    [
+     "Lt. Surge",
+     68,
+     -0.01,
+     2,
+     6,
+     null
+    ],
+    [
+     "Koga",
+     68,
+     0.333,
+     2,
+     6,
+     null
+    ],
+    [
+     "Pryce",
+     73,
+     0.168,
+     1.7,
+     6,
+     null
+    ],
+    [
+     "Erika",
+     73,
+     -0.333,
+     1,
+     6,
+     null
+    ],
+    [
+     "May",
+     73,
+     -0.372,
+     1,
+     6,
+     null
+    ],
+    [
+     "Jasmine",
+     76,
+     0.161,
+     2,
+     6,
+     null
+    ],
+    [
+     "Blaine",
+     76,
+     -0.333,
+     1,
+     6,
+     null
+    ],
+    [
+     "Ariana",
+     79,
+     -0.255,
+     1,
+     4,
+     null
+    ],
+    [
+     "Giovanni",
+     80,
+     -0.267,
+     1,
+     6,
+     null
+    ],
+    [
+     "Clair",
+     81,
+     -0.032,
+     1,
+     6,
+     null
+    ],
+    [
+     "Terry",
+     82,
+     0.981,
+     3,
+     6,
+     null
+    ],
+    [
+     "Brendan",
+     82,
+     -0.57,
+     0,
+     6,
+     null
+    ],
+    [
+     "Lorelei",
+     85,
+     -0.149,
+     1.5,
+     6,
+     null
+    ],
+    [
+     "Bruno",
+     85,
+     -1,
+     0,
+     6,
+     null
+    ],
+    [
+     "Agatha",
+     85,
+     -0.332,
+     1,
+     6,
+     null
+    ],
+    [
+     "Lance",
+     85,
+     -1,
+     0,
+     6,
+     null
+    ],
+    [
+     "Terry",
+     85,
+     -1,
+     0,
+     6,
+     null
+    ]
+   ],
+   "keyMoves": [
+    {
+     "id": 463,
+     "lv": 36
+    },
+    {
+     "id": 765,
+     "lv": 52
+    },
+    {
+     "id": 282,
+     "lv": 49
+    },
+    {
+     "id": 387,
+     "lv": 0
+    },
+    {
+     "id": 428,
+     "lv": 46
+    }
+   ],
+   "tier": "D",
+   "rank": 23
+  },
+  {
    "s": 764,
    "name": "Froakie",
    "gen": 6,
@@ -8564,10 +8952,10 @@
    "hidden": "Protean",
    "bst": 530,
    "nature": "Modest",
-   "first": 0.518,
+   "first": 0.486,
    "early": -0.312,
-   "late": -0.307,
-   "overall": 0.022,
+   "late": -0.3,
+   "overall": 0.012,
    "best": [
     {
      "name": "Brock",
@@ -8584,7 +8972,7 @@
     {
      "name": "Falkner",
      "cap": 16,
-     "handles": 3,
+     "handles": 2,
      "size": 5
     }
    ],
@@ -8620,8 +9008,8 @@
     [
      "Falkner",
      16,
-     0.991,
-     3,
+     0.742,
+     2,
      5,
      0
     ],
@@ -8692,7 +9080,7 @@
     [
      "Morty",
      47,
-     0.297,
+     0.315,
      1,
      6,
      null
@@ -8852,7 +9240,7 @@
     [
      "Brendan",
      82,
-     0.165,
+     0.333,
      1,
      6,
      null
@@ -8876,7 +9264,7 @@
     [
      "Agatha",
      85,
-     -0.203,
+     -0.21,
      1,
      6,
      null
@@ -8921,394 +9309,6 @@
     }
    ],
    "tier": "D",
-   "rank": 23
-  },
-  {
-   "s": 921,
-   "name": "Sprigatito",
-   "gen": 9,
-   "ball": 1,
-   "type": "Grass",
-   "rival": "Charmander",
-   "stages": [
-    {
-     "s": 921,
-     "lv": 5
-    },
-    {
-     "s": 922,
-     "lv": 16
-    },
-    {
-     "s": 923,
-     "lv": 36
-    }
-   ],
-   "types": [
-    "Grass",
-    "Dark"
-   ],
-   "ability": "Overgrow",
-   "hidden": "Protean",
-   "bst": 530,
-   "nature": "Adamant",
-   "first": 0.339,
-   "early": -0.196,
-   "late": -0.203,
-   "overall": 0.016,
-   "best": [
-    {
-     "name": "Brock",
-     "cap": 16,
-     "handles": 3,
-     "size": 6
-    },
-    {
-     "name": "Whitney",
-     "cap": 36,
-     "handles": 3,
-     "size": 6
-    },
-    {
-     "name": "Terry",
-     "cap": 82,
-     "handles": 3,
-     "size": 6
-    }
-   ],
-   "worst": [
-    {
-     "name": "Terry",
-     "cap": 85,
-     "handles": 0,
-     "size": 6
-    },
-    {
-     "name": "Lance",
-     "cap": 85,
-     "handles": 0,
-     "size": 6
-    },
-    {
-     "name": "Bruno",
-     "cap": 85,
-     "handles": 0,
-     "size": 6
-    }
-   ],
-   "fights": [
-    [
-     "Terry",
-     16,
-     0.333,
-     1,
-     3,
-     0.117
-    ],
-    [
-     "Falkner",
-     16,
-     0.167,
-     1,
-     5,
-     0.035
-    ],
-    [
-     "Brock",
-     16,
-     1.155,
-     3,
-     6,
-     0.008
-    ],
-    [
-     "Archer",
-     23,
-     0.184,
-     2,
-     5,
-     0.13
-    ],
-    [
-     "Terry",
-     28,
-     -0.507,
-     1,
-     6,
-     null
-    ],
-    [
-     "Bugsy",
-     28,
-     -0.845,
-     0,
-     6,
-     null
-    ],
-    [
-     "Misty",
-     28,
-     -0.318,
-     1,
-     6,
-     null
-    ],
-    [
-     "Whitney",
-     36,
-     0.982,
-     3,
-     6,
-     null
-    ],
-    [
-     "Lt. Surge",
-     36,
-     -0.291,
-     1,
-     6,
-     null
-    ],
-    [
-     "Erika",
-     44,
-     -0.678,
-     0,
-     6,
-     null
-    ],
-    [
-     "Morty",
-     47,
-     0.916,
-     2,
-     6,
-     null
-    ],
-    [
-     "Giovanni",
-     47,
-     -0.632,
-     0,
-     6,
-     null
-    ],
-    [
-     "Terry",
-     56,
-     -0.283,
-     1,
-     6,
-     null
-    ],
-    [
-     "Archer",
-     56,
-     -0.802,
-     0,
-     3,
-     null
-    ],
-    [
-     "Giovanni",
-     57,
-     0.552,
-     2,
-     6,
-     null
-    ],
-    [
-     "Chuck",
-     59,
-     -0.211,
-     1,
-     6,
-     null
-    ],
-    [
-     "Sabrina",
-     59,
-     -0.507,
-     1,
-     6,
-     null
-    ],
-    [
-     "Brock",
-     68,
-     -0.263,
-     1,
-     6,
-     null
-    ],
-    [
-     "Misty",
-     68,
-     0.232,
-     2,
-     6,
-     null
-    ],
-    [
-     "Lt. Surge",
-     68,
-     -0.01,
-     2,
-     6,
-     null
-    ],
-    [
-     "Koga",
-     68,
-     0.333,
-     2,
-     6,
-     null
-    ],
-    [
-     "Pryce",
-     73,
-     0.168,
-     1.7,
-     6,
-     null
-    ],
-    [
-     "Erika",
-     73,
-     -0.333,
-     1,
-     6,
-     null
-    ],
-    [
-     "May",
-     73,
-     -0.372,
-     1,
-     6,
-     null
-    ],
-    [
-     "Jasmine",
-     76,
-     0.161,
-     2,
-     6,
-     null
-    ],
-    [
-     "Blaine",
-     76,
-     -0.333,
-     1,
-     6,
-     null
-    ],
-    [
-     "Ariana",
-     79,
-     -0.255,
-     1,
-     4,
-     null
-    ],
-    [
-     "Giovanni",
-     80,
-     -0.267,
-     1,
-     6,
-     null
-    ],
-    [
-     "Clair",
-     81,
-     0.163,
-     2,
-     6,
-     null
-    ],
-    [
-     "Terry",
-     82,
-     0.981,
-     3,
-     6,
-     null
-    ],
-    [
-     "Brendan",
-     82,
-     -0.57,
-     0,
-     6,
-     null
-    ],
-    [
-     "Lorelei",
-     85,
-     -0.149,
-     1.5,
-     6,
-     null
-    ],
-    [
-     "Bruno",
-     85,
-     -1,
-     0,
-     6,
-     null
-    ],
-    [
-     "Agatha",
-     85,
-     -0.317,
-     1,
-     6,
-     null
-    ],
-    [
-     "Lance",
-     85,
-     -1,
-     0,
-     6,
-     null
-    ],
-    [
-     "Terry",
-     85,
-     -1,
-     0,
-     6,
-     null
-    ]
-   ],
-   "keyMoves": [
-    {
-     "id": 463,
-     "lv": 36
-    },
-    {
-     "id": 765,
-     "lv": 52
-    },
-    {
-     "id": 282,
-     "lv": 49
-    },
-    {
-     "id": 387,
-     "lv": 0
-    },
-    {
-     "id": 428,
-     "lv": 46
-    }
-   ],
-   "tier": "D",
    "rank": 24
   },
   {
@@ -9341,7 +9341,7 @@
    "nature": "Modest",
    "first": 0.478,
    "early": -0.468,
-   "late": -0.243,
+   "late": -0.244,
    "overall": -0.011,
    "best": [
     {
@@ -9611,7 +9611,7 @@
     [
      "Clair",
      81,
-     -0.307,
+     -0.333,
      1,
      6,
      null
@@ -9727,7 +9727,7 @@
    "hidden": "Unburden",
    "bst": 530,
    "nature": "Modest",
-   "first": 0.167,
+   "first": 0.169,
    "early": -0.079,
    "late": -0.178,
    "overall": -0.015,
@@ -9745,8 +9745,8 @@
      "size": 3
     },
     {
-     "name": "Terry",
-     "cap": 82,
+     "name": "Brock",
+     "cap": 16,
      "handles": 3,
      "size": 6
     }
@@ -9783,7 +9783,7 @@
     [
      "Falkner",
      16,
-     -0.613,
+     -0.927,
      0,
      5,
      0
@@ -9791,10 +9791,10 @@
     [
      "Brock",
      16,
-     0.954,
-     2,
+     1.147,
+     3,
      6,
-     0
+     0.046
     ],
     [
      "Archer",
@@ -10039,7 +10039,7 @@
     [
      "Agatha",
      85,
-     -0.329,
+     -0.333,
      1,
      6,
      null
@@ -10426,7 +10426,7 @@
     [
      "Agatha",
      85,
-     -0.332,
+     -0.333,
      1,
      6,
      null
