@@ -677,20 +677,32 @@
   let HELD_SET = null;
   function heldSet() { if (!HELD_SET) HELD_SET = new Set(heldItems().map(x => x.id)); return HELD_SET; }
   /** Where a package is on the run path (for ordering): its area's step, or the fight that wins its badge. */
+  /** The run step of the fight a package comes after (pk.tr, a trainer id read from the game's scripts and maps:
+   *  the Rocket at the end of Nugget Bridge, Archer before Mt. Moon's exit...), or -1. */
+  const careFightStep = (pk, P) => pk.tr == null ? -1
+    : P.steps.findIndex(st => st.step.kind === 'fight' && st.step.g.members.some(i => D.bosses[i].id === pk.tr));
   function careOrder(pk, P) {
-    const k = P.steps.findIndex(st => pk.after === 'Champion' ? st.step.kind === 'champion'
+    const f = pk.after ? -1 : careFightStep(pk, P);
+    const k = f >= 0 ? f + 0.5 : P.steps.findIndex(st => pk.after === 'Champion' ? st.step.kind === 'champion'
       : pk.after ? st.step.kind === 'fight' && st.step.g.members.some(i => D.bosses[i].ms === pk.after)
       : st.step.kind === 'areas' && st.step.areas.includes(pk.area));
     return k < 0 ? 1e9 : k;
   }
-  /** Has the run reached this package? Its badge (or the Champion) is won, or its area is behind you or has an encounter logged. */
+  /** Has the run reached this package? Its badge (or the Champion) is won; the fight it comes after is won, skipped
+   *  or behind you; or else its area is behind you or has an encounter logged. */
   function carePassed(pk, P) {
     if (pk.after === 'Champion') return !!S.run.postgame || !!(FLOW.champ && FLOW.champ.members.some(i => S.run.beaten.includes(i)));
     if (pk.after) return D.bosses.some((b, i) => b.ms === pk.after && S.run.beaten.includes(i));
+    const f = careFightStep(pk, P);
+    if (f >= 0) return !!(P.steps[f].done || P.steps[f].passed || f < P.current);
     if ((S.run.enc || {})[pk.area]) return true;
     return P.steps.some((st, k) => k < P.current && st.step.kind === 'areas' && st.step.areas.includes(pk.area));
   }
-  function careWhere(pk) { return pk.after === 'Champion' ? 'from Mom after you become Champion' : pk.after ? `after the ${pk.after}` : `in ${pk.area}`; }
+  function careWhere(pk) {
+    if (pk.after) return pk.after === 'Champion' ? 'from Mom after you become Champion' : `after the ${pk.after}`;
+    const b = pk.tr != null && D.bosses.find(x => x.id === pk.tr);
+    return b ? `in ${pk.area}, after ${b.cls ? b.cls + ' ' : ''}${b.n}` : `in ${pk.area}`;
+  }
   let CARE = null;
   /** The care package so far: packages in run order (got or not), items handed over (id -> where) and items still to come. */
   function careState() {
@@ -713,7 +725,7 @@
     const names = pk => pk.items.map(([id, q]) => E.itemName(id) + (q !== 10 ? ` ×${q}` : '')).join(', ');
     return `<details class="more"><summary>Care package: ${C.list.filter(x => x.got).length} of ${C.list.length} so far${next ? ` · next ${esc(careWhere(next.pk))}` : ''}</summary>
       <div class="care-list">${C.list.map(x => `<div class="care-row${x.got ? ' got' : ''}"><span class="care-mark" aria-hidden="true">${x.got ? '✓' : '○'}</span><div><b>${esc(careWhere(x.pk).replace(/^in /, ''))}</b><span class="small muted"> ${esc(names(x.pk))}</span></div></div>`).join('')}</div>
-      <p class="note" style="margin:0">${modeNow() === 'normal' ? 'Normal Mode with Minimal Grinding adds weather rocks, terrain seeds, Weakness Policy, Throat Spray, Air Balloon and Terrain Extender to Hardcore’s lists (no EV items: Minimal Grinding).' : 'Hardcore Mode leaves some items out (weather rocks, terrain seeds, Weakness Policy, Throat Spray, Air Balloon, Terrain Extender, EV items).'} Each checkpoint is a spot you walk over in that area, except the three after gym wins and Mom's after the Champion.</p></details>`;
+      <p class="note" style="margin:0">${modeNow() === 'normal' ? 'Normal Mode with Minimal Grinding adds weather rocks, terrain seeds, Weakness Policy, Throat Spray, Air Balloon and Terrain Extender to Hardcore’s lists (no EV items: Minimal Grinding).' : 'Hardcore Mode leaves some items out (weather rocks, terrain seeds, Weakness Policy, Throat Spray, Air Balloon, Terrain Extender, EV items).'} Each checkpoint is a spot you walk over in that area. Some sit past a fight or a gym there (they count once that fight is behind you), and Mom's comes after the Champion.</p></details>`;
   }
   /** Items the advice may hand out: the care package so far, what you've ticked, and what your team holds. */
   function itemPool() {
@@ -1824,9 +1836,36 @@
     return `<div class="row"><h3 class="grow" style="font-family:var(--font-display);font-size:18px">vs ${esc(b.n)} · turn ${L.st.turn + 1}</h3><button class="btn small ghost" id="lv-end">End battle</button></div>`;
   }
   /** Under the battle screen: the turn report, the turn playing, or how the battle ended. */
+  /** What's on the field that the report doesn't ask about: weather, terrain, hazards, screens, and effects still to come
+   *  (a Wish, Future Sight or Doom Desire, perish counts, a Healing Wish waiting). */
+  function fieldLineHTML(st) {
+    const bits = [], turns = n => `${n} turn${n === 1 ? '' : 's'}`;
+    const W = { Sun: 'Harsh sun', Rain: 'Rain', Sand: 'Sandstorm', Snow: 'Snow' };
+    if (st.weather) bits.push(`${W[st.weather] || st.weather} (${turns(st.weatherTurns)} left)`);
+    if (st.terrain) bits.push(`${st.terrain} Terrain (${turns(st.terrainTurns)} left)`);
+    if (st.trickRoom) bits.push(`Trick Room (${turns(st.trickRoom)} left)`);
+    const when = n => (n <= 1 ? 'at the end of this turn' : n === 2 ? 'at the end of next turn' : `in ${n} turns`);
+    for (const side of ['a', 'p']) {
+      const sd = st[side], whose = side === 'a' ? 'their' : 'your';
+      const hz = sd.hazards || {}, laid = [];
+      if (hz.sr) laid.push('Stealth Rock');
+      if (hz.spikes) laid.push(`Spikes ×${hz.spikes}`);
+      if (hz.tspikes) laid.push(`Toxic Spikes ×${hz.tspikes}`);
+      if (hz.web) laid.push('Sticky Web');
+      if (laid.length) bits.push(`${laid.join(', ')} on ${whose} side`);
+      const sc = sd.screens || {};
+      for (const [k, n] of [['reflect', 'Reflect'], ['light', 'Light Screen'], ['veil', 'Aurora Veil']]) if (sc[k]) bits.push(`${n} on ${whose} side (${turns(sc[k])})`);
+      if (sd.tailwind) bits.push(`Tailwind on ${whose} side (${turns(sd.tailwind)})`);
+      for (const [slot, w] of Object.entries(sd.wish || {})) { const t = SIM.actives(st, side).find(x => x.slot === +slot); bits.push(`${shortName(w.name)}'s Wish heals ${t ? shortName(t.name) + ' (or whoever is in)' : 'whoever comes in'} ${when(w.left)}`); }
+      for (const [slot, f] of Object.entries(sd.future || {})) { const t = SIM.actives(st, side).find(x => x.slot === +slot); bits.push(`${shortName(f.name)}'s ${(E.mv(f.move) || {}).f || 'Future Sight'} hits ${whose} ${t ? shortName(t.name) + ' (or whoever is in)' : 'side'} ${when(f.left)}`); }
+      for (const [, hwName] of Object.entries(sd.healWish || {})) bits.push(`${hwName} will fully heal ${whose} next Pokémon that comes in hurt`);
+      for (const m of SIM.actives(st, side)) if (m.perish != null) bits.push(`${shortName(m.name)} faints ${m.perish <= 0 ? 'at the end of this turn' : `in ${turns(m.perish + 1)}`} (Perish Song)`);
+    }
+    return bits.length ? `<p class="small lv-field" style="margin:0 0 6px">🌐 ${bits.map(esc).join(' · ')}</p>` : '';
+  }
   function liveBelowHTML() {
     const L = S.live, st = L.st, b = D.bosses[L.bi];
-    let html = L.lesson ? `<p class="note lv-lesson">${esc(L.lesson)}</p>` : '';
+    let html = (L.lesson ? `<p class="note lv-lesson">${esc(L.lesson)}</p>` : '') + (st.over ? '' : fieldLineHTML(st));
     if (st.over) {
       const won = st.winner === 'p';
       const fallen = st.p.team.filter(m => m.fainted);
@@ -1848,6 +1887,7 @@
         opts = st.policies.p.evaluate(st, 'p');
         recs = opts[0] ? [opts[0].type === 'switch' ? { type: 'switch', to: opts[0].to } : { type: 'move', id: opts[0].id, z: !!opts[0].z }] : [];
         pred = [st.policies.a.choose(st, 'a', SIM.expectedDice(), true, true)];
+        L.predOdds = sampleBoss(st);
         alts = opts.slice(1, 3).map(x => `<div class="small muted">or: ${esc(x.label)} ${riskBadge(x.risk)}</div>`).join('');
       }
       L.pred = pred; L.recs = recs;
@@ -1860,8 +1900,8 @@
     } else if (L.step === 'anim') {
       html += `<div class="card"><div class="row"><span class="grow small muted">Playing the turn the Coach expects. Tap the screen to skip.</span><button class="btn small" id="lv-skip">Skip</button></div></div>`;
     }
-    const n = L.checks.length, ok = L.checks.filter(c => c.ok).length;
-    if (n) html += `<p class="note">AI check this fight: ${ok} of ${n} boss moves predicted.${L.checks.filter(c => !c.ok).slice(-2).map(c => ` Turn ${c.turn}: ${esc(c.mon)} used ${esc(c.actual)}, not ${esc(c.predicted)}.`).join('')}</p>`;
+    const n = L.checks.length, ok = L.checks.filter(c => c.ok).length, fl = L.checks.filter(c => c.flagged).length;
+    if (n) html += `<p class="note">AI check this fight: ${ok} of ${n} boss moves predicted${fl ? `, and ${fl} more were a coin flip the Coach flagged` : ''}.${L.checks.filter(c => !c.ok && !c.flagged).slice(-2).map(c => ` Turn ${c.turn}: ${esc(c.mon)} used ${esc(c.actual)}, not ${esc(c.predicted)}.`).join('')}</p>`;
     return html;
   }
   // ---------------- the turn report: what happened, in taps or in words; the Coach re-plans from it ----------------
@@ -1888,10 +1928,40 @@
     return `${esc(mv.f)}: ${rng}; ${ko}.`;
   }
   const fmtPct = p => (p >= 0.995 ? '100%' : p < 0.01 ? (p < 0.001 ? '<0.1%' : (100 * p).toFixed(1) + '%') : Math.round(100 * p) + '%');
+  /** How often the boss AI picks each action right now, from 24 tries with real dice (action key -> share). The engine
+   *  flips coins: a sweeper it can save for later leaves half the time (by U-turn when it has one), a sleeping Pokemon
+   *  switches half the time, equal scores are a coin flip. */
+  function sampleBoss(st) {
+    const tally = {}, n = 24, pivots = {};
+    for (let i = 0; i < n; i++) {
+      const a = st.policies.a.choose(st, 'a', SIM.mulberry32(7919 * (st.turn + 1) + i), false, true);
+      const k = actKey(a);
+      tally[k] = (tally[k] || 0) + 1 / n;
+      if (a.pivotTo != null) pivots[k] = a.pivotTo;   // who it U-turns (Volt Switches...) to when it picks that
+    }
+    S.live.predPivot = pivots;
+    return tally;
+  }
+  function keyLabel(st, k) {
+    const [kind, x] = k.split(':');
+    if (kind === 's') return 'switch to ' + shortName((st.a.team[+x] || {}).name || '?');
+    return (kind === 'z' ? 'Z-' : '') + ((E.mv(+x) || {}).f || '?');
+  }
+  /** Other picks the sampled odds give at least 15% (their key and share), most likely first. */
+  function otherPicks(a) {
+    const odds = S.live && !S.live.doubles ? S.live.predOdds : null;
+    return odds ? Object.entries(odds).filter(([k, p]) => k !== actKey(a) && p >= 0.15).sort((x, y) => y[1] - x[1]) : [];
+  }
   function predictionHTML(st, m, a) {
     const main = `<b>${esc(m.name)}: ${esc(actionLabel(st, 'a', a))}</b>`;
+    const odds = otherPicks(a).slice(0, 2).map(([k, p]) => `, or <b>${esc(keyLabel(st, k))}</b> about ${Math.round(100 * p)}% of the time`).join('');
     const sc = a && a.scores ? Object.values(a.scores).filter(x => x && x.id).sort((x, y) => y.score - x.score) : [];
-    if (!a || a.type !== 'move' || sc.length < 2) return main;
+    if (!a || a.type !== 'move' || sc.length < 2) return main + odds;
+    if (odds) {
+      const top = sc.find(x => x.id === a.id) || sc[0];
+      const why = (top.why || []).map(w => w.replace(/^[+-]\d+\s*/, '')).filter(Boolean).join(', ');
+      return main + (why ? ` <span class="muted">(${esc(why)})</span>` : '') + odds + ' <span class="muted">(the engine flips a coin here)</span>';
+    }
     const top = sc.find(x => x.id === a.id) || sc[0], next = sc.find(x => x.id !== top.id);
     const why = (top.why || []).map(w => w.replace(/^[+-]\d+\s*/, '')).filter(Boolean).join(', ');
     let s = main + (why ? ` <span class="muted">(${esc(why)})</span>` : '');
@@ -1901,16 +1971,30 @@
   }
   function lvActsInit(L) {
     if (L.acts && L.actsTurn === L.st.turn) return;
-    L.acts = { p: (L.recs || []).slice(), a: (L.pred || []).map(a => (a ? { type: a.type, id: a.id, to: a.to, z: !!a.z, target: a.target } : null)) };
-    L.actsTurn = L.st.turn; L.hpEdits = {}; L.statEdits = {}; L.cnfEdits = {}; L.sendout = {}; L.prev = null; L.wiz = 'you';
+    L.acts = { p: (L.recs || []).slice(), a: (L.pred || []).map(a => (a ? { type: a.type, id: a.id, to: a.to, z: !!a.z, target: a.target, pivotTo: a.pivotTo } : null)) };
+    L.actsTurn = L.st.turn; L.hpEdits = {}; L.statEdits = {}; L.cnfEdits = {}; L.sendout = {}; L.pivotIn = {}; L.pivotDefault = {}; L.prev = null; L.wiz = 'you';
   }
   /** The turn as entered, played out with average rolls: the report starts from this (HP, status, who is out). */
   function lvPreview() {
     const L = S.live, st = L.st;
     const nx = SIM.cloneState(st);
     nx.opts.record = true;
+    // who came in after a U-turn, Volt Switch, Baton Pass, Teleport (or a Roar or Dragon Tail): what you said, else the
+    // AI's own pick for the boss and the Coach's for you
+    const pin = L.pivotIn || {};
+    const said = (s2, side, slot) => { const k = side + ':' + (slot || 0); return k in pin && !s2[side].team[pin[k]].fainted && !s2[side].slots.includes(pin[k]) ? pin[k] : null; };
     const fixed = (acts, base) => ({ chooseAll: () => acts, choose: (s2, side, rng, e, pk, slot) => acts[SIM.actives(s2, side).findIndex(x => x.slot === slot)] || acts[0],
-      replace: (s2, side, rng, why, slot) => base.replace(s2, side, rng, why, slot) });
+      replace: (s2, side, rng, why, slot) => {
+        if (why === 'pivot') {
+          const k = said(s2, side, slot);
+          if (k != null) return k;
+          const a = acts[0];
+          const to = a && (a.pivotTo != null ? a.pivotTo : (L.predPivot || {})[actKey(a)]);
+          if (side === 'a' && to != null && !s2.a.team[to].fainted && !s2.a.slots.includes(to)) return to;
+        }
+        return base.replace(s2, side, rng, why, slot);
+      },
+      forced: (s2, side, slot) => said(s2, side, slot) });
     nx.policies = { p: fixed(L.acts.p, st.policies.p), a: fixed(L.acts.a, st.policies.a) };
     const before = nx.log.length;
     SIM.playTurn(nx, SIM.expectedDice());
@@ -1919,6 +2003,18 @@
   /** Who the boss AI would send in for a fallen Pokémon (several when it's a coin flip), and who the Coach would send for you. */
   function aiChoicesAfter(nx, orig, k) { const probe = SIM.cloneState(nx); probe.a.slots[k] = orig; return SIM.AI.switchChoices(probe, 'a'); }
   function coachReplace(nx, orig, k) { const probe = SIM.cloneState(nx); probe.p.slots[k] = orig; return S.live.st.policies.p.replace(probe, 'p', SIM.expectedDice(), 'faint', k); }
+  /** This turn's pivots in the preview (U-turn, Volt Switch, Flip Turn, Parting Shot, Baton Pass, Teleport, Shed Tail,
+   *  Chilly Reception, and Roar or Dragon Tail dragging one in): side, slot, who came in and why. */
+  function turnPivots(nx) {
+    return nx.events.filter(e => e.turn === nx.turn && e.type === 'switch' && (e.why === 'pivot' || e.why === 'forced out'))
+      .map(e => ({ side: e.side, slot: e.slot || 0, to: nx[e.side].team.findIndex(m => m.key === e.to), why: e.why })).filter(p => p.to >= 0);
+  }
+  /** Who is in each slot once the turn is over: the last one a pivot brought in, else the one that took the turn's hits. */
+  function finalAt(side, nx) {
+    const f = fieldedAt(side);
+    for (const p of turnPivots(nx)) if (p.side === side) f[p.slot] = p.to;
+    return f;
+  }
   /** Which Pokemon took this turn's hits in each slot: the one that switched in, else the one that started. */
   function fieldedAt(side) {
     const L = S.live, st = L.st;
@@ -1928,12 +2024,13 @@
   function predMarks(k) {
     const a = (S.live.pred || [])[k], marks = {};
     if (!a) return marks;
-    if (a.type === 'switch') { marks['s:' + a.to] = 'likely'; return marks; }
+    if (a.type === 'switch') { marks['s:' + a.to] = 'likely'; for (const [key, p] of otherPicks(a)) marks[key] = `${Math.round(100 * p)}%`; return marks; }
     const sc = a.scores ? Object.values(a.scores).filter(x => x && x.id).sort((x, y) => y.score - x.score) : [];
     const top = sc.find(x => x.id === a.id) || sc[0];
     const tied = top ? sc.filter(x => x.id !== a.id && x.score === top.score) : [];
     marks['m:' + a.id] = tied.length ? 'coin flip' : 'likely';
     for (const x of sc) if (x.id !== a.id && top && top.score - x.score <= 3) marks['m:' + x.id] = x.score === top.score ? 'coin flip' : 'maybe';
+    for (const [key, p] of otherPicks(a)) marks[key] = `${Math.round(100 * p)}%`;
     return marks;
   }
   function actKey(a) { return !a ? '' : a.type === 'switch' ? 's:' + a.to : (a.z ? 'z:' : 'm:') + a.id; }
@@ -2137,9 +2234,21 @@
         <div class="rp-st">${cnf ? `<button class="rp-cnf" data-cnf="${side}:${i}" aria-pressed="${cnfNow(side, i)}" aria-label="${nm}: confused">Confused</button>` : ''}<select class="inline" data-stat="${side}:${i}" aria-label="${nm}: status">${STATUS_OPTS.map(([k, l]) => `<option value="${k}" ${stNow(side, i) === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
         <div class="rp-hp"><button class="rp-nudge" data-nudge="${side}:${i}:-1" aria-label="${nm}: less HP">−</button><input type="range" min="0" max="${max}" step="1" value="${val}" data-hp="${side}:${i}" data-max="${max}" aria-label="${nm}: HP left${side === 'a' ? ', percent' : ''}"><button class="rp-nudge" data-nudge="${side}:${i}:1" aria-label="${nm}: more HP">+</button><output data-hpo="${side}:${i}">${out}</output></div></div>`;
     };
-    const sendRows = side => fieldedAt(side).map((cur, k) => {
+    const pivotRows = () => turnPivots(nx).map(p => {
+      const key = p.side + ':' + p.slot, from = fieldedAt(p.side)[p.slot], fm = st[p.side].team[from];
+      const cands = st[p.side].team.map((m, i) => i).filter(i => i !== from && !st[p.side].slots.includes(i) && !st[p.side].team[i].fainted);
+      if (!fm || !cands.length) return '';
+      if (!(key in (L.pivotDefault || {}))) (L.pivotDefault = L.pivotDefault || {})[key] = p.to;   // what the AI (or the Coach) would bring in
+      const dflt = L.pivotDefault[key];
+      const a = (L.acts[p.side] || [])[0];
+      const how = p.why === 'forced out' ? 'was forced out' : `used ${esc(a && E.mv(a.id) ? E.mv(a.id).f : 'its move')} and went back`;
+      const tagFor = i => (i === dflt ? (p.side === 'a' ? (p.why === 'forced out' ? 'random' : 'AI pick') : 'Coach pick') : '');
+      return `<div class="rp-out"><div class="lbl">${p.side === 'a' ? 'Their' : 'Your'} ${esc(shortName(fm.name))} ${how}. Who came in?</div>
+        <div class="chips">${cands.map(i => { const m = st[p.side].team[i]; return `<button class="chipbtn" data-pivotin="${key}:${i}" aria-pressed="${i === p.to}">${icon(m.spec.s)}${esc(shortName(m.name))}${tagFor(i) ? ` <span class="tag">${tagFor(i)}</span>` : ''}</button>`; }).join('')}</div></div>`;
+    }).join('');
+    const sendRows = side => finalAt(side, nx).map((cur, k) => {
       if (cur == null || !st[side].team[cur] || pctNow(side, cur) > 0) return '';
-      const taken = new Set(fieldedAt(side));
+      const taken = new Set(fieldedAt(side).concat(finalAt(side, nx)));
       const cands = nx[side].team.map((m, i) => i).filter(i => !taken.has(i) && !st[side].slots.includes(i) && !nx[side].team[i].fainted && pctNow(side, i) > 0);
       if (!cands.length) return '';
       const key = side + ':' + k;
@@ -2152,8 +2261,8 @@
           return `<button class="chipbtn" data-sendout="${key}:${i}" aria-pressed="${i === chosen}">${icon(m.spec.s)}${esc(shortName(m.name))}${tag ? ` <span class="tag">${tag}</span>` : ''}</button>`;
         }).join('')}</div>${side === 'a' && picks.length > 1 ? '<p class="note" style="margin:0">The engine flips a coin between equally good switch-ins, so either can come.</p>' : ''}</div>`;
     }).join('');
-    const rows = side => fieldedAt(side).filter(i => i != null && st[side].team[i]).map(i => hpRow(side, i)).join('');
-    return rows('a') + rows('p') + sendRows('a') + sendRows('p');
+    const rows = side => [...new Set(fieldedAt(side).concat(finalAt(side, nx)))].filter(i => i != null && st[side].team[i]).map(i => hpRow(side, i)).join('');
+    return pivotRows() + rows('a') + rows('p') + sendRows('a') + sendRows('p');
   }
   /** Doubles (and anything unusual): every question on one card. */
   function renderReportAll() {
@@ -2255,6 +2364,12 @@
       (L.cnfEdits = L.cnfEdits || {})[b.dataset.cnf] = on; b.setAttribute('aria-pressed', String(on));
     });
     box.querySelectorAll('[data-sendout]').forEach(b => b.onclick = () => { const [side, k, i] = b.dataset.sendout.split(':'); L.sendout[side + ':' + k] = +i; renderReport(); });
+    box.querySelectorAll('[data-pivotin]').forEach(b => b.onclick = () => {
+      const [side, k, i] = b.dataset.pivotin.split(':');
+      (L.pivotIn = L.pivotIn || {})[side + ':' + k] = +i;
+      L.prev = null; L.hpEdits = {}; L.statEdits = {}; L.cnfEdits = {}; L.sendout = {};   // play the turn again with that one coming in
+      renderReport();
+    });
     const words = box.querySelector('.rp-words');
     if (words) {
       words.addEventListener('toggle', () => { L.wordsOpen = words.open; });
@@ -2272,7 +2387,9 @@
       const p = (L.pred || [])[k], a = L.acts.a[k];
       if (!p || !a) return;
       const same = p.type === a.type && (a.type === 'switch' ? p.to === a.to : p.id === a.id);
+      const flagged = !same && !L.doubles && otherPicks(p).some(([key]) => key === actKey(a));
       const c = { turn: st.turn + 1, boss: D.bosses[L.bi].n, mon: m.name, predicted: actionLabel(st, 'a', p), actual: actionLabel(st, 'a', a), ok: same, at: Date.now() };
+      if (flagged) c.flagged = true;
       L.checks.push(c);
       const AC = S.run.aiChecks || (S.run.aiChecks = { n: 0, ok: 0, misses: [] });
       AC.n++; if (same) AC.ok++; else AC.misses = AC.misses.concat([c]).slice(-60);
@@ -2293,7 +2410,7 @@
     for (const [key, on] of Object.entries(L.cnfEdits || {})) { const [side, i] = key.split(':'); const m = nx[side].team[+i]; if (m && !m.fainted) m.confused = on ? Math.max(m.confused || 0, 3) : 0; }
     // who is out now: whoever took the turn's hits in each slot (the starter, or the one that switched in) stays in if it
     // is still standing; if it fell, the one you said came out replaces it (else the AI's pick, or the Coach's for you)
-    for (const side of ['p', 'a']) fieldedAt(side).forEach((cur, k) => {
+    for (const side of ['p', 'a']) finalAt(side, nx).forEach((cur, k) => {
       const o = nx[side].team[cur]; if (!o) return;
       if (!o.fainted) {
         if (nx[side].slots[k] !== cur) { const was = nx[side].slots[k]; if (nx[side].team[was]) nx[side].team[was].slot = null; nx[side].slots[k] = cur; o.slot = k; }
@@ -2320,7 +2437,7 @@
     else { nx.over = false; nx.winner = null; }
     L.st = nx; L.step = 'anim';
     L.anim = { from: SIM.snapshot(st), lines: L.prev.lines };
-    L.prev = null; L.acts = null; L.hpEdits = {}; L.statEdits = {}; L.cnfEdits = {}; L.sendout = {}; L.words = ''; L.wordsNote = '';
+    L.prev = null; L.acts = null; L.hpEdits = {}; L.statEdits = {}; L.cnfEdits = {}; L.sendout = {}; L.pivotIn = {}; L.pivotDefault = {}; L.words = ''; L.wordsNote = '';
     refreshLive();
     if (liveStage && liveStage.alive && $('#lv-stage') && $('#lv-stage').firstElementChild) playLive(); else mountLiveStage();
   }
@@ -2428,7 +2545,7 @@
     const a1 = act('p', me, r.you_used), a2 = act('a', foe, r.they_used);
     if (a1) { L.acts.p[0] = a1; got.push(`you used ${actionLabel(st, 'p', a1)}`); }
     if (a2) { L.acts.a[0] = a2; got.push(`${shortName(foe.name)} used ${actionLabel(st, 'a', a2)}`); }
-    L.prev = null; L.hpEdits = {}; L.statEdits = {}; L.sendout = {};
+    L.prev = null; L.hpEdits = {}; L.statEdits = {}; L.sendout = {}; L.pivotIn = {}; L.pivotDefault = {};
     lvPreview();
     const pct = v => (v == null || v === '' || isNaN(+v) ? null : Math.max(0, Math.min(100, Math.round(+v))));
     const yh = pct(r.your_hp), th = pct(r.their_hp);
@@ -2562,7 +2679,7 @@
       if (!L.acts) return;
       const [kind, x] = btn.dataset.mvpick.split(':');
       L.acts.p[0] = kind === 's' ? { type: 'switch', to: +x, why: 'switch' } : { type: 'move', id: +x, z: false, target: { side: 'a', slot: 0 } };
-      L.prev = null; L.hpEdits = {}; L.statEdits = {}; L.sendout = {};
+      L.prev = null; L.hpEdits = {}; L.statEdits = {}; L.sendout = {}; L.pivotIn = {}; L.pivotDefault = {};
       renderReport();
     });
     if (L.step === 'choose' && !st.over) { lvActsInit(L); renderReport(); }

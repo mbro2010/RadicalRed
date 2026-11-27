@@ -21,8 +21,9 @@
     ['Route 1', 'Terry', 16], ['Viridian City', 'Terry', 16], ['Pallet Town', 'Terry', 16, 0, ROD], ['Route 21', 'Terry', 16], ['Route 22', 'Terry', 16],
     ['Route 2', 'Terry', 16], ['Viridian Forest', 'Terry', 16],          // open before the rival on Route 22
     ["Diglett's Cave", 'Falkner', 16], ['Pewter City', 'Falkner', 16],   // its Route 2 end (Lv 7) is open before Falkner
-    ['Route 3', 'Sally', 23], ['Mt. Moon', 'Miguel', 23],
-    ['Route 4', 'Terry', 28], ['Cerulean City', 'Terry', 28, 0, ROD], ['Route 24', 'Cale', 28], ['Route 25', 'Bugsy', 28],
+    ['Route 3', 'Sally', 23], ['Route 4', 'Miguel', 23], ['Mt. Moon', 'Miguel', 23],   // Route 4's west end is open before Mt. Moon
+    ['Cerulean City', 'Terry', 28, 0, ROD],
+    ['Route 24', 'Bugsy', 28], ['Route 25', 'Bugsy', 28],   // Route 24's grass is north of Nugget Bridge: after its trainers
     ['Route 5', 'Jeff', 36], ['Underground Path', 'Jeff', 36], ['Route 6', 'Jeff', 36],
     ['Vermilion City', 'Ann', 36, 0, ROD], ['S.S. Anne', 'Ann', 36, 0, ROD],
     ['Route 11', 'Whitney', 36],

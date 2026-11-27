@@ -41,6 +41,11 @@
   const LOCK_WORDS = { rampage: 'is rampaging', rollout: 'keeps rolling', uproar: 'is in an uproar', bide: 'is storing energy' };
   const LOCKS_IN = mm => mm.eff === RAMPAGE || mm.eff === ROLLOUT || mm.eff === UPROAR || mm.eff === BIDE;
   const HEAL_HALF = 32, HEAL_WEATHER = 132;
+  // moves whose effect comes later (the engine's gWishFutureKnock and Perish Song timers): Wish heals that spot at the end
+  // of the next turn; Future Sight and Doom Desire hit that spot two turns after the turn they're used; Perish Song knocks
+  // out everyone who heard it three turns after the turn it's sung; Healing Wish and Lunar Dance (the Memento effect, like
+  // Memento and Final Gambit) faint the user and heal whoever comes into its spot
+  const WISH = 179, FUTURE = 148, PERISH = 114, MEMENTO = 168;
   const PROTECT_EFF = 111, HAZARD = 112;
   const RESIST_BERRY = { 'Occa Berry': 'Fire', 'Passho Berry': 'Water', 'Wacan Berry': 'Electric', 'Rindo Berry': 'Grass', 'Yache Berry': 'Ice',
     'Chople Berry': 'Fighting', 'Kebia Berry': 'Poison', 'Shuca Berry': 'Ground', 'Coba Berry': 'Flying', 'Payapa Berry': 'Psychic',
@@ -244,6 +249,18 @@
     const m = act(st, side, slot || 0);
     m.firstTurn = true; m.enteredTurn = st.turn; m.lock = null; m.charging = null; m.invuln = false; m.rampage = 0; m.protectStreak = 0; m.toxic = m.status === 'tox' ? 0 : m.toxic;
     clearVolatile(m);
+    const pass = st.passOn && st.passOn.side === side ? st.passOn : null;
+    if (pass) {
+      st.passOn = null;
+      if (pass.baton) { Object.assign(m, pass.baton, { boosts: Object.assign({}, pass.baton.boosts) }); log(st, `${m.name} takes over what was passed to it`); }
+      if (pass.sub) { m.sub = pass.sub; log(st, `${m.name} keeps the substitute`); }
+    }
+    const hw = (st[side].healWish || {})[slot || 0];
+    if (hw && (m.hp < m.maxHp || m.status)) {
+      const rest = Object.assign({}, st[side].healWish); delete rest[slot || 0]; st[side].healWish = rest;
+      m.hp = m.maxHp; m.status = ''; m.sleep = 0; m.toxic = 0;
+      log(st, `The ${hw === 'Lunar Dance' ? 'mystical moonlight' : 'healing wish'} came true for ${m.name}`, 'heal', m);
+    }
     const hz = st[side].hazards;
     if (itemName(m) !== 'Heavy-Duty Boots' && m.ability !== 'Magic Guard') {
       if (hz.sr) { const dmg = Math.floor(m.maxHp * 0.125 * E.typeEff('Rock', m.types)); hurt(st, m, dmg, 'Stealth Rock'); }
@@ -283,7 +300,7 @@
       st[side].lastOut = out.key; st[side].lastOutTurn = st.turn;
       out.boosts = { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, acc: 0, eva: 0 };
       out.lock = null; out.charging = null; out.invuln = false; out.seeded = false; out.yawn = 0; out.rampage = 0; out.sub = 0; out.destinyBond = false; out.stockpile = 0;
-      out.confused = 0; out.taunt = 0; out.encore = 0; out.encoreMove = null; out.lastMove = null;
+      out.confused = 0; out.taunt = 0; out.encore = 0; out.encoreMove = null; out.lastMove = null; out.perish = null; out.focus = false;
       clearVolatile(out);
       releaseHolds(st, out);
       if (out.ability === 'Regenerator') out.hp = Math.min(out.maxHp, out.hp + Math.floor(out.maxHp / 3));
@@ -601,6 +618,7 @@
     }
 
     // ---- damaging moves ----
+    if (mm.eff === FUTURE) { if (targets[0]) futureAttack(st, user, targets[0], moveId, mm); else log(st, 'But there was no target'); return; }
     if (!targets.length) { log(st, 'But there was no target'); cancelLock(user); return; }
     const spread = targets.length > 1 ? 0.75 : 1;
     let total = 0, anyHit = false;
@@ -758,6 +776,7 @@
         if (['Gooey', 'Tangling Hair'].includes(target.ability)) applyBoosts(st, user, { spe: -1 }, 'foe');
       }
     }
+    if (dealt > 0) onHitAbility(st, user, target, moveId, mm, rr.type, dealt, crit, rng);
     if (user.fainted || target.fainted || zk) return { dealt, hit: true };
     // knock off
     if (mm.eff === 188 && target.item && target.ability !== 'Sticky Hold') { log(st, `${target.name}'s ${tItem} is knocked off`); consume(target); }
@@ -773,7 +792,8 @@
       if (mm.eff === 152 && mm.name === 'Thunder' && roll(rng, chanceOf(ec)) && canStatus(st, target, 'par', mm.name, user)) inflict(st, target, 'par', rng, mm.name);
       if (mm.eff === 36 && roll(rng, chanceOf(20))) { const s = ['brn', 'par', 'frz'][rng.expected ? 0 : Math.floor(rng() * 3)]; if (canStatus(st, target, s, mm.name, user)) inflict(st, target, s, rng, mm.name); }
       if (FANG[mm.name] && roll(rng, chanceOf(10)) && canStatus(st, target, FANG[mm.name], mm.name, user)) inflict(st, target, FANG[mm.name], rng, mm.name);
-      const flinchP = mm.eff === 31 ? ec : (mm.eff === FAKE_OUT ? 100 : 0) + (['King\'s Rock', 'Razor Fang'].includes(itemName(user)) && mm.eff !== 31 ? 10 : 0);
+      // Fake Out always flinches; First Impression shares its effect (first turn only) but skips the flinch (BS_158_FakeOut)
+      const flinchP = mm.eff === 31 ? ec : (mm.eff === FAKE_OUT && mm.name === 'Fake Out' ? 100 : 0) + (['King\'s Rock', 'Razor Fang'].includes(itemName(user)) && mm.eff !== 31 ? 10 : 0);
       if (flinchP && !target.movedThisTurn && target.ability !== 'Inner Focus' && roll(rng, chanceOf(flinchP))) { target.flinch = true; }
       if (mm.eff === 76 && roll(rng, chanceOf(ec || 100))) confuse(st, target, rng, mm.name);
       if (HIT_DROP[mm.eff] && roll(rng, chanceOf(ec || 100))) applyBoosts(st, target, { [HIT_DROP[mm.eff]]: mm.name === 'Acid Spray' || mm.name === 'Lumina Crash' ? -2 : -1 }, 'foe');
@@ -791,16 +811,15 @@
     }
     // forced switch on the target (Dragon Tail, Circle Throw)
     if (mm.eff === 28 && bench(st, tside).length && target.ability !== 'Suction Cups') {
-      const opts = bench(st, tside);
-      const pick = opts[rng.expected ? 0 : Math.floor(rng() * opts.length)];
-      switchIn(st, tside, st[tside].team.indexOf(pick), rng, 'forced out', target.slot);
+      switchIn(st, tside, forcedPick(st, tside, target.slot, rng), rng, 'forced out', target.slot);
     }
     return { dealt, hit: true };
   }
 
   function statusMove(st, user, target, mm, rng) {
     const n = mm.name, e = mm.eff;
-    const foeTargeted = !(e in EFFECT_BOOST) && !SETUP[n] && ![HEAL_HALF, HEAL_WEATHER, 37, PROTECT_EFF, HAZARD, 35, 65, 136, 137, 115, 164, 228, 239, 98, 97, 153, 124, 79, 142, 109, 176, 180, 235, 177, FOCUS_ENERGY, BIDE].includes(e) || n === 'Strength Sap' || n === 'Parting Shot' || n === 'Leech Seed';
+    const foeTargeted = (!(e in EFFECT_BOOST) && !SETUP[n] && ![HEAL_HALF, HEAL_WEATHER, 37, PROTECT_EFF, HAZARD, 35, 65, 136, 137, 115, 164, 228, 239, 98, 97, 153, 124, 79, 142, 109, 176, 180, 235, 177, FOCUS_ENERGY, BIDE, WISH, PERISH].includes(e)
+      && n !== 'Healing Wish' && n !== 'Lunar Dance') || n === 'Strength Sap' || n === 'Parting Shot' || n === 'Leech Seed';
     if (foeTargeted && target && target.protect) { log(st, `${target.name} protects itself`); return; }
     const FO = user.forced || {};
     if (foeTargeted && target && !target.fainted && FO.o !== 'hit' && (FO.o === 'miss' || !roll(rng, hitChance(st, user, target, mm)))) {
@@ -854,12 +873,35 @@
       case 25: for (const s of ['p', 'a']) for (const x of actives(st, s)) x.boosts = { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, acc: 0, eva: 0 }; return;
       case 172: if (st.size > 1) { user.redirect = n; log(st, `${user.name} becomes the center of attention`); } return;
       case 176: { const ally = actives(st, user.side).find(m => m !== user); if (ally) { ally.helped = true; log(st, `${user.name} is ready to help ${ally.name}`); } return; }
-      case TELEPORT: if (bench(st, user.side).length) pivot(st, user.side, rng, user.slot); return;
-      case PIVOT:
-        if (n === 'Parting Shot' && target && !target.fainted) applyBoosts(st, target, { atk: -1, spa: -1 }, 'foe');
-        if (n === 'Shed Tail') { if (user.hp <= user.maxHp / 2) return; hurt(st, user, Math.ceil(user.maxHp / 2), 'Shed Tail'); }
+      case TELEPORT:
+        if (n === 'Chilly Reception') setWeather(st, 'Snow', user);   // snow first, then out
         if (bench(st, user.side).length) pivot(st, user.side, rng, user.slot);
         return;
+      case PIVOT:
+        if (n === 'Parting Shot' && target && !target.fainted) applyBoosts(st, target, { atk: -1, spa: -1 }, 'foe');
+        if (n === 'Shed Tail') { if (user.hp <= user.maxHp / 2 || !bench(st, user.side).length) { log(st, 'But it failed'); return; } hurt(st, user, Math.ceil(user.maxHp / 2), 'Shed Tail'); }
+        if (bench(st, user.side).length) pivot(st, user.side, rng, user.slot, n);
+        return;
+      case WISH: {
+        const w = st[user.side].wish || {};
+        if (w[user.slot]) { log(st, 'But it failed'); return; }
+        st[user.side].wish = Object.assign({}, w, { [user.slot]: { left: 2, hp: Math.max(1, Math.floor(user.maxHp / 2)), name: user.name } });
+        log(st, `${user.name} made a wish`, 'wish', user); return;
+      }
+      case PERISH: {
+        let heard = 0;
+        for (const s2 of ['p', 'a']) for (const x of actives(st, s2)) if (x.perish == null && x.ability !== 'Soundproof') { x.perish = 3; heard++; }
+        if (!heard) { log(st, 'But it failed'); return; }
+        log(st, 'All Pokémon that heard the song will faint in three turns', 'perish', user); return;
+      }
+      case MEMENTO:
+        if (n === 'Healing Wish' || n === 'Lunar Dance') {
+          if (!bench(st, user.side).length) { log(st, 'But it failed'); return; }
+          st[user.side].healWish = Object.assign({}, st[user.side].healWish, { [user.slot]: n });
+          faint(st, user, n); return;
+        }
+        if (n === 'Memento') { if (target && !target.fainted) applyBoosts(st, target, { atk: -2, spa: -2 }, 'foe'); faint(st, user, n); return; }
+        break;
       case 175: if (target && !target.fainted) { if (target.taunt || target.ability === 'Oblivious' || itemName(target) === 'Mental Herb') log(st, 'But it failed'); else { target.taunt = 3; log(st, `${target.name} fell for the taunt`); } } return;
       case 90: if (target && !target.fainted) { if (!target.lastMove || target.encore || !target.moves.includes(target.lastMove)) log(st, 'But it failed'); else { target.encore = 3; target.encoreMove = target.lastMove; target.lock = null; log(st, `${target.name} must repeat ${meta(target.lastMove).name}`); } } return;
       case 49: if (target && !target.fainted) confuse(st, target, rng, n); return;
@@ -878,7 +920,7 @@
         target.torment = true; log(st, `${target.name} was subjected to torment`); return;
       case 118: if (target && !target.fainted) { applyBoosts(st, target, { atk: 2 }, 'foe'); confuse(st, target, rng, n); } return;
       case 166: if (target && !target.fainted) { applyBoosts(st, target, { spa: 1 }, 'foe'); confuse(st, target, rng, n); } return;
-      case 28: if (target && !target.fainted && bench(st, target.side).length && target.ability !== 'Suction Cups') { const o = bench(st, target.side); switchIn(st, target.side, st[target.side].team.indexOf(o[rng.expected ? 0 : Math.floor(rng() * o.length)]), rng, 'forced out', target.slot); } return;
+      case 28: if (target && !target.fainted && bench(st, target.side).length && target.ability !== 'Suction Cups') switchIn(st, target.side, forcedPick(st, target.side, target.slot, rng), rng, 'forced out', target.slot); return;
       default: break;
     }
     if (!target || target.fainted) return;
@@ -946,22 +988,139 @@
     st.events.push({ turn: st.turn, type: 'mega', side, key: m.key, to });
     abilityOnEntry(st, side, m);
   }
-  function pivot(st, side, rng, slot) {
+  /** A move that switches the user out. Baton Pass hands its stat changes, Substitute, confusion, Focus Energy, Leech Seed
+   *  and perish count to the Pokemon coming in; Shed Tail hands over a Substitute (a quarter of its max HP). */
+  function pivot(st, side, rng, slot, how) {
     const pol = st.policies[side];
+    const out = act(st, side, slot || 0);
     const idx = pol.replace(st, side, rng, 'pivot', slot || 0);
-    if (idx != null && !st[side].slots.includes(idx)) switchIn(st, side, idx, rng, 'pivot', slot || 0);
+    if (idx == null || st[side].slots.includes(idx)) return;
+    if (out && how === 'Baton Pass') st.passOn = { side, baton: { boosts: Object.assign({}, out.boosts), sub: out.sub || 0, confused: out.confused || 0, focus: !!out.focus, seeded: !!out.seeded, seededBy: out.seededBy || null, perish: out.perish != null ? out.perish : null } };
+    if (out && how === 'Shed Tail') st.passOn = { side, sub: Math.floor(out.maxHp / 4) };
+    switchIn(st, side, idx, rng, 'pivot', slot || 0);
+    st.passOn = null;
+  }
+  const NO_ABILITY_CHANGE = new Set(['Mummy', 'Lingering Aroma', 'Battle Bond', 'Comatose', 'Disguise', 'Multitype', 'Power Construct', 'RKS System', 'Schooling', 'Shields Down', 'Stance Change', 'Ice Face', 'Zen Mode']);
+  /** The target's ability answering a hit that did damage (the engine's ABILITYEFFECT_MOVE_END list; Sand Spit and the
+   *  Paldea abilities as their games have them). Contact punishment (Rough Skin, Static, ...) is handled before this. */
+  function onHitAbility(st, user, target, moveId, mm, type, dealt, crit, rng) {
+    const a = target.ability;
+    if (!a || user === target) return;
+    const up = b => applyBoosts(st, target, b);
+    const alive = !target.fainted;
+    const halved = alive && target.hp < target.maxHp / 2 && target.hp + dealt > target.maxHp / 2;   // this hit took it below half
+    switch (a) {
+      case 'Sand Spit': if (st.weather !== 'Sand') { log(st, `${target.name}'s Sand Spit`); setWeather(st, 'Sand', target); } break;
+      case 'Seed Sower': if (st.terrain !== 'Grassy') { log(st, `${target.name}'s Seed Sower turns the ground into grass`); setTerrain(st, 'Grassy', target); } break;
+      case 'Toxic Debris':
+        if (mm.cat === 'P' && st[user.side].hazards.tspikes < 2) { st[user.side].hazards.tspikes++; log(st, `Poison spikes were scattered on ${user.side === 'p' ? 'your' : 'their'} side (${target.name}'s Toxic Debris)`); }
+        break;
+      case 'Weak Armor': if (alive && mm.cat === 'P') up({ def: -1, spe: 2 }); break;
+      case 'Stamina': if (alive) up({ def: 1 }); break;
+      case 'Water Compaction': if (alive && type === 'Water') up({ def: 2 }); break;
+      case 'Steam Engine': if (alive && (type === 'Water' || type === 'Fire')) up({ spe: 6 }); break;
+      case 'Justified': if (alive && type === 'Dark') up({ atk: 1 }); break;
+      case 'Rattled': if (alive && ['Dark', 'Bug', 'Ghost'].includes(type)) up({ spe: 1 }); break;
+      case 'Thermal Exchange': if (alive && type === 'Fire') up({ atk: 1 }); break;
+      case 'Anger Point': if (alive && crit && target.boosts.atk < 6) { target.boosts.atk = 6; log(st, `${target.name}'s Anger Point maxed its Attack`); } break;
+      case 'Berserk': if (halved && user.ability !== 'Sheer Force') up({ spa: 1 }); break;
+      case 'Anger Shell': if (halved) up({ atk: 1, spa: 1, spe: 1, def: -1, spd: -1 }); break;
+      case 'Cotton Down':
+        for (const x of actives(st, 'p').concat(actives(st, 'a'))) if (x !== target) applyBoosts(st, x, { spe: -1 }, 'foe');
+        break;
+      case 'Cursed Body':
+        if (!user.fainted && mm.eff !== FUTURE && !user.disabled && roll(rng, 1 / 3)) { user.disabled = moveId; user.disableTurns = 4; log(st, `${user.name}'s ${mm.name} was disabled by ${target.name}'s Cursed Body`); }
+        break;
+      case 'Mummy': case 'Lingering Aroma':
+        if (mm.contact && !user.fainted && !NO_ABILITY_CHANGE.has(user.ability)) { user.ability = a; log(st, `${user.name}'s ability became ${a}`); }
+        break;
+      case 'Wandering Spirit':
+        if (mm.contact && !NO_ABILITY_CHANGE.has(user.ability) && user.ability !== a) { target.ability = user.ability; user.ability = a; log(st, `${user.name} and ${target.name} swapped abilities`); }
+        break;
+      case 'Perish Body':
+        if (mm.contact) { let n = 0; for (const x of [user, target]) if (!x.fainted && x.perish == null) { x.perish = 3; n++; } if (n) log(st, 'Both Pokémon will faint in three turns (Perish Body)', 'perish', target); }
+        break;
+      case 'Aftermath': if (target.fainted && mm.contact && !user.fainted && user.ability !== 'Magic Guard') hurt(st, user, Math.max(1, Math.floor(user.maxHp / 4)), 'Aftermath'); break;
+      case 'Innards Out': if (target.fainted && !user.fainted && user.ability !== 'Magic Guard') hurt(st, user, Math.max(1, dealt), 'Innards Out'); break;
+      default: break;
+    }
+  }
+  /** Who a Roar, Whirlwind, Dragon Tail or Circle Throw drags in: one of the bench at random (a live battle can say who). */
+  function forcedPick(st, side, slot, rng) {
+    const opts = bench(st, side);
+    const pol = st.policies && st.policies[side];
+    const said = pol && pol.forced ? pol.forced(st, side, slot) : null;
+    if (said != null && opts.includes(st[side].team[said])) return said;
+    return st[side].team.indexOf(opts[rng.expected ? 0 : Math.floor(rng() * opts.length)]);
+  }
+  /** Future Sight / Doom Desire: set up the hit on the target's spot (fails if one is already coming there). */
+  function futureAttack(st, user, target, moveId, mm) {
+    const fut = st[target.side].future || {};
+    if (fut[target.slot]) { log(st, 'But it failed'); return; }
+    st[target.side].future = Object.assign({}, fut, { [target.slot]: { left: 3, side: user.side, key: user.key, move: moveId, name: user.name } });
+    log(st, mm.name === 'Doom Desire' ? `${user.name} chose Doom Desire as its destiny` : `${user.name} foresaw an attack`, 'future', user);
+  }
+  /** End of turn: Future Sight and Doom Desire come down, then wishes come true (the engine's ET_Future_Sight, ET_Wish).
+   *  The counters run down even with no one in the spot; the hit or the heal goes to whoever is there when they run out. */
+  function delayedEffects(st, rng) {
+    for (const side of ['p', 'a']) {
+      const fut = st[side].future;
+      if (!fut) continue;
+      const next = {};
+      for (const [slot, f] of Object.entries(fut)) {
+        if (f.left > 1) { next[slot] = Object.assign({}, f, { left: f.left - 1 }); continue; }
+        const t = act(st, side, +slot);
+        if (t && !t.fainted) futureHit(st, f, t, rng);
+      }
+      st[side].future = next;
+    }
+    for (const side of ['p', 'a']) {
+      const ws = st[side].wish;
+      if (!ws) continue;
+      const next = {};
+      for (const [slot, w] of Object.entries(ws)) {
+        if (w.left > 1) { next[slot] = Object.assign({}, w, { left: w.left - 1 }); continue; }
+        const t = act(st, side, +slot);
+        if (t && !t.fainted && t.hp < t.maxHp) { log(st, `${w.name}'s wish came true`, 'wish', t); heal(st, t, w.hp, 'Wish'); }
+      }
+      st[side].wish = next;
+    }
+  }
+  /** The delayed hit itself: worked out now, from the user as it is now (with its stat changes if it's still out). */
+  function futureHit(st, f, t, rng) {
+    const src = st[f.side].team.find(x => x.key === f.key);
+    if (!src) return;
+    const spec = specNow(src);
+    if (!isActive(st, src)) spec.boosts = { atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
+    log(st, `${t.name} took the ${meta(f.move).name} attack`, 'future', t);
+    const rr = E.rawRolls(spec, specNow(t), f.move, Object.assign({}, fieldOpts(st, t.side)));
+    const rolls = (rr && rr.rolls) || [];
+    let dmg = rolls.length ? rolls[rng.expected ? 7 : Math.floor(rng() * rolls.length)] : 0;
+    if (!dmg) { log(st, `It doesn't affect ${t.name}`); return; }
+    if (t.hp === t.maxHp && dmg >= t.hp && (t.ability === 'Sturdy' || itemName(t) === 'Focus Sash')) {
+      dmg = t.hp - 1;
+      if (itemName(t) === 'Focus Sash') consume(t);
+    }
+    const dealt = Math.min(t.hp, dmg);
+    t.hp -= dealt;
+    if (st.opts.record) log(st, `${t.name} loses ${Math.round(100 * dealt / t.maxHp)}% (${Math.round(100 * t.hp / t.maxHp)}% left)`, 'dmg', t);
+    if (t.hp <= 0) faint(st, t, meta(f.move).name);
+    else berryCheck(st, t);
   }
 
   // ---------------- end of turn ----------------
   function endOfTurn(st, rng) {
     const w = st.weather;
     const field = actives(st, 'p').concat(actives(st, 'a')).sort((x, y) => speed(st, y) - speed(st, x));
+    // the engine's order: weather damage for everyone, then Future Sight and Wish, then each battler's own effects
+    for (const m of field) {
+      if (m && !m.fainted && w === 'Sand' && !['Rock', 'Ground', 'Steel'].some(t => hasType(m, t)) && !['Sand Veil', 'Sand Rush', 'Sand Force', 'Overcoat', 'Magic Guard'].includes(m.ability) && itemName(m) !== 'Safety Goggles')
+        hurt(st, m, Math.max(1, Math.floor(m.maxHp / 16)), 'sandstorm');
+    }
+    delayedEffects(st, rng);
     for (const m of field) {
       if (!m || m.fainted) continue;
       const side = m.side;
-      if (w === 'Sand' && !['Rock', 'Ground', 'Steel'].some(t => hasType(m, t)) && !['Sand Veil', 'Sand Rush', 'Sand Force', 'Overcoat', 'Magic Guard'].includes(m.ability) && itemName(m) !== 'Safety Goggles')
-        hurt(st, m, Math.floor(m.maxHp / 16), 'sandstorm');
-      if (m.fainted) continue;
       const it = itemName(m);
       if (it === 'Leftovers') heal(st, m, m.maxHp / 16, 'Leftovers');
       if (it === 'Black Sludge') { if (hasType(m, 'Poison')) heal(st, m, m.maxHp / 16, 'Black Sludge'); else hurt(st, m, Math.floor(m.maxHp / 8), 'Black Sludge'); }
@@ -992,6 +1151,10 @@
       if (m.octolock && m.trappedBy) applyBoosts(st, m, { def: -1, spd: -1 }, 'foe');
       if (m.disabled && --m.disableTurns <= 0) { m.disabled = null; log(st, `${m.name}'s move is no longer disabled`); }
       if (m.yawn) { m.yawn--; if (m.yawn === 0 && !m.status) inflict(st, m, 'slp', rng, 'Yawn'); }
+      if (m.perish != null) {   // the count shows, then drops; at 0 it knocks out
+        if (m.perish <= 0) { m.perish = null; log(st, `${m.name}'s perish count fell to 0`, 'perish', m); faint(st, m, 'Perish Song'); continue; }
+        log(st, `${m.name}'s perish count fell to ${m.perish}`, 'perish', m); m.perish--;
+      }
       if (m.ability === 'Speed Boost' && !m.firstTurn) applyBoosts(st, m, { spe: 1 });
       if (!m.status && it === 'Flame Orb' && !hasType(m, 'Fire')) inflict(st, m, 'brn', rng, 'Flame Orb');
       if (!m.status && it === 'Toxic Orb' && !hasType(m, 'Poison') && !hasType(m, 'Steel')) inflict(st, m, 'tox', rng, 'Toxic Orb');
@@ -1082,7 +1245,7 @@
     if (e === 152 && mm.name === 'Thunder') out.add('par');
     if (e === 36) { out.add('brn'); out.add('par'); out.add('frz'); }
     if (FANG[mm.name]) out.add(FANG[mm.name]);
-    if (e === 31 || e === FAKE_OUT || ['King\'s Rock', 'Razor Fang'].includes(itemName(user))) out.add('flinch');
+    if (e === 31 || (e === FAKE_OUT && mm.name === 'Fake Out') || ['King\'s Rock', 'Razor Fang'].includes(itemName(user))) out.add('flinch');
     if (e === 76) out.add('conf');
     return out;
   }
@@ -1190,7 +1353,7 @@
             const d = dmg.find(x => x.id === id) || { frac: 0, ko: 0, pri: 0 };
             s = Math.min(100, d.frac * 100);
             if (d.ko >= 0.5) s = 200 + d.ko * 20 + (d.pri > 0 && !firstMover(st, me, foe, 0, foeBest.pri) ? 30 : 0);
-            if (mm.eff === FAKE_OUT && me.firstTurn) s = Math.max(s, 120);
+            if (mm.eff === FAKE_OUT && mm.name === 'Fake Out' && me.firstTurn) s = Math.max(s, 120);   // a free flinch (First Impression doesn't flinch)
             if (mm.eff === 7 && me.hp > me.maxHp / 2) s *= 0.3;
             if (mm.eff === PIVOT && threatened && bench(st, side).length) s += 25;
             if (mm.eff === SUCKER && !(foeDmg.length)) s *= 0.2;

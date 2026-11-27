@@ -240,3 +240,88 @@ test('engine: Radical Red\'s changes, checked against the game\'s own damage cod
   assert(roll(mon('Wartortle', 16), mon('Lileep', 16, { ability: 'Storm Drain' }), 'Water Gun').every(x => x === 0), 'Storm Drain takes Water moves');
   assert(roll(mon('Pikachu', 20), mon('Lanturn', 20, { ability: 'Volt Absorb' }), 'Thunder Shock').every(x => x === 0), 'Volt Absorb takes Electric moves');
 });
+// a fixed choice each turn, and who comes in when one is needed
+function playWith(st, pMove, aMove, pIn, aIn) {
+  const fixed = (id, inIdx) => ({ choose: () => (typeof id === 'object' ? id : { type: 'move', id }), replace: () => (inIdx == null ? null : inIdx) });
+  st.policies = { p: fixed(pMove, pIn), a: fixed(aMove, aIn) };
+  SIM.playTurn(st, SIM.expectedDice());
+}
+test('sim: Wish heals whoever is in its spot at the end of the next turn (half the wisher\'s max HP); one at a time', () => {
+  const st = duel([mon('Togekiss', 40, { moves: ['Wish', 'Air Slash'] }), mon('Snorlax', 40, { moves: ['Body Slam'] })], [mon('Blissey', 50, { moves: ['Splash'] })]);
+  const t = SIM.act(st, 'p'), lax = st.p.team[1];
+  t.hp = Math.floor(t.maxHp / 2);
+  playWith(st, mid('Wish'), mid('Splash'));
+  assert(t.hp === Math.floor(t.maxHp / 2), 'nothing yet at the end of the turn it was made');
+  lax.hp = 10;
+  playWith(st, { type: 'switch', to: 1 }, mid('Splash'));   // the wisher leaves: the wish goes to whoever is there
+  assert(lax.hp === 10 + Math.floor(t.maxHp / 2), 'Snorlax got the wish: ' + lax.hp);
+  playWith(st, mid('Body Slam'), mid('Splash'));
+  assert(!Object.keys(st.p.wish || {}).length, 'and it is used up');
+  const st2 = duel([mon('Togekiss', 40, { moves: ['Wish'] })], [mon('Blissey', 50, { moves: ['Splash'] })]);
+  playWith(st2, mid('Wish'), mid('Splash'));
+  playWith(st2, mid('Wish'), mid('Splash'));
+  assert(st2.log.some(l => /But it failed/.test(l.text)), 'a second Wish while one is coming fails');
+});
+test('sim: Future Sight hits two turns after the turn it is used, on whoever is there; a second one fails meanwhile', () => {
+  const st = duel([mon('Alakazam', 50, { moves: ['Future Sight', 'Calm Mind'] })], [mon('Snorlax', 60, { moves: ['Splash'] }), mon('Blissey', 60, { moves: ['Splash'] })]);
+  const lax = SIM.act(st, 'a'), hp0 = lax.hp;
+  playWith(st, mid('Future Sight'), mid('Splash'));
+  assert(lax.hp === hp0 && st.a.future[0] && st.a.future[0].left === 2, 'no damage when used');
+  playWith(st, mid('Future Sight'), mid('Splash'));
+  assert(lax.hp === hp0 && st.log.some(l => /But it failed/.test(l.text)), 'a second one fails; still nothing');
+  playWith(st, mid('Calm Mind'), mid('Splash'));
+  assert(lax.hp < hp0 && !Object.keys(st.a.future).length, 'it comes down at the end of the third turn: ' + (hp0 - lax.hp));
+});
+test('sim: Perish Song knocks out everyone who heard it at the end of the third turn after; switching out escapes it', () => {
+  const st = duel([mon('Lapras', 40, { moves: ['Perish Song', 'Surf'] }), mon('Snorlax', 40, { moves: ['Body Slam'] })], [mon('Blissey', 70, { moves: ['Splash'] }), mon('Chansey', 70, { moves: ['Splash'] })]);
+  const lap = SIM.act(st, 'p'), bl = SIM.act(st, 'a');
+  playWith(st, mid('Perish Song'), mid('Splash'));
+  assert(lap.perish === 2 && bl.perish === 2, 'both heard it (count 3 shown, then down)');
+  playWith(st, { type: 'switch', to: 1 }, mid('Splash'));
+  assert(lap.perish == null, 'switching out ends it');
+  playWith(st, mid('Body Slam'), mid('Splash'));
+  assert(!bl.fainted && bl.perish === 0, 'count 0 now');
+  playWith(st, mid('Body Slam'), mid('Splash'), null, 1);
+  assert(bl.fainted && SIM.act(st, 'a') !== bl, 'it faints at the end of the turn its count is 0');
+  const sp = duel([mon('Lapras', 40, { moves: ['Perish Song'] })], [mon('Exploud', 40, { ability: 'Soundproof', moves: ['Splash'] })]);
+  playWith(sp, mid('Perish Song'), mid('Splash'));
+  assert(SIM.act(sp, 'a').perish == null && SIM.act(sp, 'p').perish === 2, 'Soundproof is spared');
+});
+test('sim: Healing Wish faints the user and fully heals the hurt Pokemon that comes in; Baton Pass hands over boosts; Chilly Reception snows', () => {
+  const st = duel([mon('Jirachi', 50, { moves: ['Healing Wish'] }), mon('Snorlax', 40, { moves: ['Body Slam'] })], [mon('Blissey', 70, { moves: ['Splash'] })]);
+  const lax = st.p.team[1];
+  lax.hp = 20; lax.status = 'par';
+  playWith(st, mid('Healing Wish'), mid('Splash'), 1);
+  assert(st.p.team[0].fainted && SIM.act(st, 'p') === lax && lax.hp === lax.maxHp && !lax.status, 'Snorlax comes in healed: ' + lax.hp + '/' + lax.maxHp);
+  const bp = duel([mon('Ninjask', 40, { moves: ['Swords Dance', 'Baton Pass'] }), mon('Snorlax', 40, { moves: ['Body Slam'] })], [mon('Blissey', 70, { moves: ['Splash'] })]);
+  playWith(bp, mid('Swords Dance'), mid('Splash'));
+  playWith(bp, mid('Baton Pass'), mid('Splash'), 1);
+  assert(SIM.act(bp, 'p') === bp.p.team[1] && bp.p.team[1].boosts.atk === 2, 'Snorlax gets +2 Attack');
+  const cr = duel([mon('Slowpoke', 40, { moves: ['Chilly Reception'] }), mon('Snorlax', 40, { moves: ['Body Slam'] })], [mon('Blissey', 70, { moves: ['Splash'] })]);
+  playWith(cr, mid('Chilly Reception'), mid('Splash'), 1);
+  assert(cr.weather === 'Snow' && SIM.act(cr, 'p') === cr.p.team[1], 'snow, then out');
+});
+test('sim: Sand Spit whips up a sandstorm when hit, Toxic Debris scatters Toxic Spikes, Stamina and Weak Armor react', () => {
+  const ss = duel([mon('Machamp', 40, { moves: ['Karate Chop'] })], [mon('Silicobra', 40, { ability: 'Sand Spit', moves: ['Splash'] })]);
+  playWith(ss, mid('Karate Chop'), mid('Splash'));
+  assert(ss.weather === 'Sand', 'sandstorm after the hit');
+  const td = duel([mon('Machamp', 40, { moves: ['Karate Chop'] })], [mon('Glimmora', 40, { ability: 'Toxic Debris', moves: ['Splash'] })]);
+  playWith(td, mid('Karate Chop'), mid('Splash'));
+  assert(td.p.hazards.tspikes === 1, 'a layer of Toxic Spikes on the attacker\'s side');
+  const sm = duel([mon('Machamp', 40, { moves: ['Karate Chop'] })], [mon('Mudsdale', 60, { ability: 'Stamina', moves: ['Splash'] })]);
+  playWith(sm, mid('Karate Chop'), mid('Splash'));
+  assert(SIM.act(sm, 'a').boosts.def === 1, 'Stamina: +1 Defense');
+  const wa = duel([mon('Machamp', 40, { moves: ['Karate Chop'] })], [mon('Skarmory', 60, { ability: 'Weak Armor', moves: ['Splash'] })]);
+  playWith(wa, mid('Karate Chop'), mid('Splash'));
+  assert(SIM.act(wa, 'a').boosts.def === -1 && SIM.act(wa, 'a').boosts.spe === 2, 'Weak Armor: -1 Defense, +2 Speed');
+});
+test('sim: First Impression works only on the first turn out, like Fake Out, but never flinches (BS_158_FakeOut)', () => {
+  const st = duel([mon('Gyarados', 27, { moves: ['Thrash', 'Wish'] })], [mon('Lokix', 23, { moves: ['First Impression'] })]);
+  playWith(st, mid('Wish'), mid('First Impression'));
+  assert(!st.log.some(l => /flinch/i.test(l.text)) && st.p.wish && st.p.wish[0], 'Gyarados still moves (and makes its wish)');
+  playWith(st, mid('Thrash'), mid('First Impression'));
+  assert(st.log.some(l => /But it failed/.test(l.text)), 'not on its second turn out');
+  const fo = duel([mon('Gyarados', 27, { moves: ['Wish'] })], [mon('Persian', 30, { moves: ['Fake Out'] })]);
+  playWith(fo, mid('Wish'), mid('Fake Out'));
+  assert(fo.log.some(l => /flinch/i.test(l.text)), 'Fake Out does flinch');
+});

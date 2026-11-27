@@ -25,7 +25,8 @@ test('flow: areas with wild Pokemon are placed once, in story order around the f
   const fight = (n, cap) => F.steps.findIndex(s => s.kind === 'fight' && D.bosses[s.g.first].n === n && D.bosses[s.g.first].cap === cap);
   assert(pos('Route 1') < fight('Terry', 16) && pos('Viridian Forest') < fight('Sammy', 16), 'early game');
   assert(fight('Brock', 16) < pos('Route 3') && pos('Route 3') < fight('Sally', 23), 'Route 3 after Brock');
-  assert(pos('Route 24') < fight('Cale', 28) && fight('Misty', 28) > pos('Route 25'), 'Nugget Bridge before Misty');
+  assert(pos('Route 4') < fight('Miguel', 23) && pos('Route 4') === pos('Mt. Moon'), "Route 4's west end before Mt. Moon");
+  assert(fight('Grunt', 28) < pos('Route 24') && pos('Route 24') < fight('Bugsy', 28) && fight('Misty', 28) > pos('Route 25'), "Route 24's grass past Nugget Bridge, before Bugsy and Misty");
   assert(pos('Pokémon Tower') < fight('Ruth', 56) && fight('Giovanni', 47) < pos('Pokémon Tower'), 'Pokémon Tower after the Hideout');
   assert(pos('Victory Road') < fight('Lorelei', 85), 'Victory Road before the Elite Four');
   // wild levels rise along the path for the main story's grass and caves
@@ -62,7 +63,7 @@ test('flow: progress finds the step to do now', () => {
   assert(p.steps.slice(2, brockStep).every(s => s.passed), 'unlogged steps you went past count as passed');
   const sally = D.bosses.find(b => b.n === 'Sally').i;
   p = F.progress({ started: 1, starter: 1, beaten: [brock], skipped: [sally], passed: ['areas@' + sally], enc: {} });
-  assert(name(F.steps[p.current]) === 'Mt. Moon', 'skipping a fight moves on');
+  assert(name(F.steps[p.current]) === 'Route 4+Mt. Moon', 'skipping a fight moves on: ' + name(F.steps[p.current]));
   // the Champion: celebrate, and the post-game only when chosen
   const beatenAll = D.bosses.filter(b => !b.route && b.i <= F.champ.members[2]).map(b => b.i);
   p = F.progress({ started: 1, starter: 1, beaten: beatenAll, enc: {} });
@@ -80,8 +81,11 @@ test('flow: every area comes before the fights held there (fight places from the
   const located = D.bosses.filter(b => b.loc && b.loc.length).length;
   assert(located >= 150, 'boss fights with a place: ' + located);
   const pos = n => F.steps.findIndex(s => s.kind === 'areas' && s.areas.includes(n));
+  // Route 24's grass is north of Nugget Bridge: the bridge trainers come first
+  const past = { 'Route 24': ['Cale', 'Ali', 'Timmy', 'Reli', 'Ethan', 'Grunt'] };
   for (const s of F.steps) if (s.kind === 'fight') for (const i of s.g.members) for (const a of D.bosses[i].loc || []) {
     const p = pos(a);
+    if ((past[a] || []).includes(D.bosses[i].n)) { assert(p > s.k, `${a} after ${D.bosses[i].n}`); continue; }
     assert(p < 0 || p < s.k, `${a} is placed after ${D.bosses[i].n} (#${i}), who is fought there`);
   }
 });

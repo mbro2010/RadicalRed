@@ -124,14 +124,15 @@
   const takingResidual = (st, m) => residual(st, m) > 0;
 
   /** Per-decision context: AI damage numbers (93% roll), predictions and knockout checks, computed once. */
-  function context(st, side, rng, meIn, foeIn) {
+  function context(st, side, rng, meIn, foeIn, opt) {
     const me = meIn || act(st, side);
     const foe = foeIn || (act(st, other(side)) && !act(st, other(side)).fainted ? act(st, other(side)) : (actives(st, other(side))[0] || act(st, other(side))));
     // doubles logic runs while it isn't one-on-one ("Doubles is now defined as being a non 1v1 Double Battle")
     const doubles = st.size > 1 && (actives(st, side).length > 1 || actives(st, other(side)).length > 1);
-    const cache = new Map();
+    // damage numbers, shared with the context the prediction runs in (same battle state, same numbers both ways)
+    const cache = (opt && opt.cache) || new Map();
     const zero = { atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
-    const specs = new Map();
+    const specs = (opt && opt.specs) || new Map();
     const specOf = m => {
       let sp = specs.get(m);
       if (!sp) { sp = Object.freeze(m === act(st, m.side) ? specNow(m) : Object.assign(specNow(m), { boosts: zero })); specs.set(m, sp); }
@@ -177,9 +178,10 @@
       return Math.round(100 * hitChance(st, from, to, meta(id)));
     };
     /** The engine's strongest move (CalcStrongestMove): most damage, capped at the target's HP; ties go to priority, then accuracy. */
-    function strongest(from, to) {
+    function strongest(from, to, ignore) {
       let best = null, bd = -1, bp = -99, ba = -1;
       for (const id of attacks(from)) {
+        if (id === ignore) continue;
         const mm = meta(id);
         if (mm.eff === 38) continue;   // one-hit KO moves only if they surely hit
         const d = Math.min(dmg(from, to, id), to.hp);
@@ -191,8 +193,10 @@
       return best;
     }
     const foeStrongest = strongest(foe, me);
-    // the move the AI expects the player to use: their strongest attack, else their first move
-    const predicted = foeStrongest || (moves(foe)[0] || null);
+    // the move the AI expects the player to use (PredictMovesForBanks): the AI's own scoring run on the player's moves,
+    // the best one; none at all while the player can't act, and a switch when none of them reaches 100
+    const pred = opt && opt.noPredict ? { move: null, sw: false } : predictMove(st, foe, me, rng, cache, specs);
+    const predicted = pred.move;
     // CalcShouldAIUseZMove: a Z-Move unless the plain move already knocks out (and more foes remain), never into a
     // Substitute, a Disguise or a predicted Protect; moves with a charge or recharge turn always become Z-Moves
     for (const id of usable(me, st)) {
@@ -205,7 +209,6 @@
       const plainKOs = kos(me, foe, id, 1) && acc(me, foe, id) >= 90 && alive(st, foe.side).length >= 2 && !mm.recoil && mm.eff !== 204 && !(H.SELF_DROP[mm.name]);
       if (always || !plainKOs) (zSet = zSet || new Set()).add(id);
     }
-    if (zSet) cache.clear();
     const myStrongest = strongest(me, foe);
     const firstVs = (a, b, aMove, bMove) => {
       const pa = aMove ? priorityOf(st, a, aMove) : 0, pb = bMove ? priorityOf(st, b, bMove) : 0;
@@ -218,12 +221,51 @@
       st, side, rng, me, foe, dmg, kos, canKO, zSet, can2HKO, acc, strongest, myStrongest, foeStrongest, predicted, firstVs, hitsFirst, moves, attacks,
       cls: doubles ? fightingStyleDoubles(st, me) : fightingStyle(st, me), doubles,
       meSpe: speed(st, me), foeSpe: speed(st, foe),
+      predSwitch: pred.sw,
       foeKOsMe: !!predicted && meta(predicted).cat !== 'X' && kos(foe, me, predicted, 1),
       foeCanKOMe: canKO(foe, me), foeCan2HKOMe: can2HKO(foe, me),
       iCanKO: canKO(me, foe), iCan2HKO: can2HKO(me, foe),
     };
     return c;
   }
+
+  /** PredictMovesForBanks for one Pokemon against one foe: nothing while it recharges, loafs (Truant) or sleeps without
+   *  Sleep Talk or Snore; its locked move while locked in; else the AI's own scripts run on its moves (with no guess
+   *  about the other side's move yet): the best one, ties at random, or a switch when none reaches 100. */
+  function predictMove(st, m, vs, rng, cache, specs) {
+    const none = { move: null, sw: false };
+    if (!m || m.fainted || !vs || vs.fainted) return none;
+    if (m.recharge || (m.ability === 'Truant' && m.truantLoaf)) return none;
+    if (m.status === 'slp' && !m.moves.some(id => ['Sleep Talk', 'Snore'].includes(meta(id).name))) return none;
+    const locked = m.charging || (m.rampage && m.lock);
+    if (locked && m.moves.includes(locked)) return { move: locked, sw: false };
+    const scores = scoreMoves(context(st, m.side, rng, m, vs, { noPredict: true, cache, specs }), false);
+    if (!scores.length) return none;
+    const top = Math.max(...scores.map(x => x.score));
+    if (top < 100) return { move: null, sw: true };
+    const best = scores.filter(x => x.score === top);
+    return { move: (best.length === 1 || rng.expected ? best[0] : best[Math.floor(rng() * best.length)]).id, sw: false };
+  }
+
+  const WISH_ID = 'wish';
+  /** A Wish waiting to come true in this Pokemon's spot, a future attack coming down on it. */
+  const wishPending = (st, m) => !!(st[m.side].wish && st[m.side].wish[m.slot]);
+  const futurePending = (st, m) => !!(st[m.side].future && st[m.side].future[m.slot]);
+  /** ShouldUseWishAromatherapy (singles): only a cleric bothers, and only with someone under 65% HP (Wish) or statused
+   *  (Heal Bell); never as the last Pokemon when it would fall before the wish comes true, nor against a last foe it can
+   *  knock out. */
+  function wishWorthIt(c, kind) {
+    const { st, me, foe } = c;
+    if (kind === WISH_ID && alive(st, me.side).length <= 1) {
+      if ((c.foeCan2HKOMe && !me.moves.some(id => meta(id).eff === 111)) || willFaintSecondary(st, me)) return false;
+    }
+    if (c.iCanKO && alive(st, foe.side).length <= 1) return false;
+    if (c.doubles || c.cls !== 'cleric') return false;
+    const team = st[me.side].team.filter(m => !m.fainted);
+    return kind === WISH_ID ? team.some(m => m.hp * 100 / m.maxHp < 65) : team.some(m => m.status);
+  }
+  /** TeamFullyHealedMinusBank: every teammate still standing is at full HP. */
+  const teamFull = (st, me) => st[me.side].team.every(m => m === me || m.fainted || m.hp >= m.maxHp);
 
   // ---------------- move scoring ----------------
   function badIdeaToStatus(c, s) {
@@ -337,54 +379,106 @@
     if (mm.eff === 37) return me.maxHp - me.hp;
     return Math.floor(me.maxHp / 2);
   }
-  // ShouldPivot: 'pivot', 'try' (no change) or 'dont'
+  /** AnyUsefulOffseniveStatIsRaised: a raised stat it can use (Attack with a physical move, Defense with Body Press,
+   *  Sp. Atk with a special move, any Speed), an active Flash Fire with a Fire move, or Unburden going. */
+  function usefulBoost(st, m) {
+    const mv = usable(m, st), b = m.boosts;
+    return (b.atk > 0 && realPhysical(st, m)) || (b.def > 0 && mv.some(id => meta(id).name === 'Body Press'))
+      || (b.spa > 0 && special(st, m)) || b.spe > 0 || (m.flashFire && mv.some(id => meta(id).type === 'Fire' && meta(id).cat !== 'X'))
+      || (m.unburden && !m.item);
+  }
+  /** RealPhysicalMoveInMoveset / SpecialMoveInMoveset: usable attacks of that kind (not Counter, Fake Out, Foul Play,
+   *  Body Press; not Mirror Coat). */
+  const realPhysical = (st, m) => usable(m, st).some(id => { const x = meta(id); return x.cat === 'P' && x.power > 0 && x.eff !== 89 && !['Fake Out', 'Foul Play', 'Body Press'].includes(x.name); });
+  const special = (st, m) => usable(m, st).some(id => { const x = meta(id); return x.cat === 'S' && x.power > 0 && x.eff !== 144; });
+  /** The game's check for a damager whose attacking stat has been cut to -3 or lower (OFFENSIVE_STAT_MIN_NUM). With
+   *  both kinds of attack the game compares a constant instead of the Attack stage, so only Sp. Atk counts there. */
+  function attackStatsBad(st, m) {
+    const phys = realPhysical(st, m), spec = special(st, m);
+    if (phys && !spec) return m.boosts.atk <= -3;
+    if (!phys && spec) return m.boosts.spa <= -3;
+    if (phys && spec) return m.boosts.spa <= -3;
+    return false;
+  }
+  /** WillTakeSignificantDamageFromEntryHazards: Stealth Rock and Spikes would take its current HP, or 1/n of its max. */
+  const bigEntryDamage = (st, m, n) => { const d = hazardDamage(st, m.side, m); return d > 0 && (d >= m.hp || d >= Math.floor(m.maxHp / n)); };
+  /** WillFaintFromSecondaryDamage: its perish count is up, or end-of-turn damage (after its own healing) takes it out. */
+  const willFaintSecondary = (st, m) => m.perish === 0 || willFaintResidual(st, m);
+  /** IsTrapped (for switching): bound, caught by Mean Look and the like, or kept in by Shadow Tag, Arena Trap or Magnet
+   *  Pull; never a Ghost type or a Shed Shell holder. */
+  function trapped(st, m) {
+    if (hasType(m, 'Ghost') || itemName(m) === 'Shed Shell') return false;
+    if (m.bound || m.trappedBy) return true;
+    return actives(st, other(m.side)).some(f => (f.ability === 'Shadow Tag' && m.ability !== 'Shadow Tag') || (f.ability === 'Arena Trap' && grounded(m)) || (f.ability === 'Magnet Pull' && hasType(m, 'Steel')));
+  }
+  /** IsAffectedByFocusSash / IsAffectedBySturdy / IsDamageHalvedDueToFullHP: at full HP behind a Sash, Sturdy, Multiscale
+   *  (unless the attacker breaks the mold) or Shadow Shield. */
+  const fullHpGuard = (c, id) => {
+    const { me, foe } = c;
+    if (foe.hp !== foe.maxHp) return false;
+    return itemName(foe) === 'Focus Sash' || foe.ability === 'Sturdy' || (foe.ability === 'Multiscale' && !MOLD.has(me.ability)) || foe.ability === 'Shadow Shield';
+  };
+  /** CanKnockOutWithoutMove (ignoring Future Sight and Doom Desire, which can't knock out now). */
+  const koWithout = (c, id) => c.attacks(c.me).some(x => x !== id && meta(x).eff !== 148 && c.kos(c.me, c.foe, x, 1));
+  /** ShouldPivot (ai_advanced.c), line by line: 'now' (the switch check chose to pivot), 'pivot', 'try' (no change)
+   *  or 'dont'. */
   function shouldPivot(c, id) {
     const { st, me, foe } = c;
+    if (c.goodToPivot) return 'now';
+    const boosted = (usefulBoost(st, me) && isDamager(c.cls)) || (foe.boosts.eva || 0) >= 4;
+    const best = c.bestSw || (c.bestSw = pickSwitch(c.ranked || (c.ranked = switchScores(st, me.side, c)), c.rng));
+    const flags = best ? best.flags : 0;
+    if (bigEntryDamage(st, me, 4)) return 'dont';
     if (!bench(st, me.side).length) return 'try';
-    if (hazardDamage(st, me.side, me) >= me.maxHp / 4) return 'dont';
-    const sw = (c.ranked || (c.ranked = switchScores(st, me.side, c)))[0];
-    const flags = sw ? sw.flags : 0;
-    const boosted = isDamager(c.cls) && (me.boosts.atk > 0 || me.boosts.spa > 0);
-    const breaksSash = foe.hp === foe.maxHp && (itemName(foe) === 'Focus Sash' || foe.ability === 'Sturdy' || foe.ability === 'Multiscale' || foe.ability === 'Shadow Shield');
+    if (c.predSwitch && !boosted) return 'pivot';   // switch to a better answer to whatever comes in
+    const damaging = meta(id).cat !== 'X';
+    const guard = fullHpGuard(c, id);
+    const hz = st[me.side].hazards, hazardsHere = hz.sr || hz.spikes || hz.tspikes || hz.web;
     if (c.hitsFirst(id)) {
-      const koOther = c.attacks(me).some(x => x !== id && c.kos(me, foe, x, 1));
-      if (koOther) return 'dont';
-      if (c.iCanKO) return 'try';
-      if (isDamager(c.cls) && c.iCan2HKO) {
-        if (c.foeCanKOMe) return 'pivot';
-        if (meta(id).cat !== 'X' && ((flags & F.RESIST_ALL && flags & (F.KO | F.HAZARDS)) || breaksSash)) return 'pivot';
-        return 'dont';
-      }
-      if (!boosted) {
-        if (isDamager(c.cls) && meta(id).cat !== 'X' && breaksSash) return 'pivot';
-        if (flags & (F.WALLS | F.RESIST_ALL)) {
-          if (willFaintResidual(st, me)) return 'pivot';
-          if (isDamager(c.cls) && (me.boosts.atk <= -2 || me.boosts.spa <= -2)) return 'pivot';
-          return 'try';
+      if (!koWithout(c, id)) {
+        if (c.iCanKO) return 'try';   // this is its only knockout move
+        if (isDamager(c.cls) && c.iCan2HKO) {
+          if (c.foeCanKOMe) return 'pivot';
+          if (damaging && ((flags & F.RESIST_ALL && flags & (F.KO | F.HAZARDS)) || guard)) return 'pivot';
+        } else if (!boosted) {
+          if (isDamager(c.cls) && damaging && guard) return 'pivot';
+          if (flags & (F.WALLS | F.RESIST_ALL)) {
+            if (hazardsHere && flags & F.HAZARDS) return 'pivot';
+            if (willFaintSecondary(st, me)) return 'pivot';
+            if (isDamager(c.cls)) return attackStatsBad(st, me) ? 'pivot' : 'try';
+          }
         }
       }
-      return 'dont';
-    }
-    if (c.foeCanKOMe) return meta(id).eff === 153 ? 'dont' : 'try';
-    if (c.foeCan2HKOMe) {
-      if ((flags & F.KO && flags & (F.OUTSPEEDS | F.WALLS | F.RESIST_ALL)) || (flags & F.RESIST_ALL && flags & F.HAZARDS) || breaksSash) return 'pivot';
-      return 'dont';
-    }
-    if (isDamager(c.cls) && flags & F.KO && flags & F.OUTSPEEDS) return 'pivot';
-    if (!boosted && flags & (F.OUTSPEEDS | F.WALLS | F.RESIST_ALL)) {
-      if (willFaintResidual(st, me)) return 'pivot';
-      if (isDamager(c.cls) && (me.boosts.atk <= -2 || me.boosts.spa <= -2)) return 'pivot';
-      return 'try';
+    } else if (c.foeCanKOMe) {
+      return meta(id).eff === 153 ? 'dont' : 'try';   // Teleport goes last: use something else
+    } else if (c.foeCan2HKOMe) {
+      if (c.iCanKO) { if (!koWithout(c, id)) return 'try'; }
+      else if (isDamager(c.cls) && flags & F.KO && flags & (F.OUTSPEEDS | F.WALLS | F.RESIST_ALL)) return 'pivot';
+    } else if (c.iCanKO) {
+      if (!koWithout(c, id) && !boosted) return 'try';
+    } else if (c.iCan2HKO) {
+      if (isDamager(c.cls) && damaging && ((flags & F.KO && flags & (F.OUTSPEEDS | F.WALLS | F.RESIST_ALL)) || (flags & F.RESIST_ALL && flags & F.HAZARDS) || guard)) return 'pivot';
+    } else {
+      if (isDamager(c.cls) && flags & F.KO && flags & F.OUTSPEEDS) return 'pivot';
+      if (!boosted && flags & (F.OUTSPEEDS | F.WALLS | F.RESIST_ALL)) {
+        if (hazardsHere && flags & F.HAZARDS) return 'pivot';
+        if (willFaintSecondary(st, me)) return 'pivot';
+        if (isDamager(c.cls) && attackStatsBad(st, me)) return 'pivot';
+        return 'try';
+      }
     }
     return 'dont';
   }
-  const PIVOT_BONUS = { kill: 3, setup: 9, status: 9, stall: 9, baton: 9, cleric: 9, screens: 9, setupScreens: 9, phaze: 9, hazards: 9 };
+  // IncreasePivotViability by fighting style
+  const PIVOT_BONUS = { kill: 3, setup: 9, status: 9, stall: 9, baton: 9, cleric: 7, screens: 7, setupScreens: 7, phaze: 4, hazards: 3 };
 
   /** AIScript_Negatives: moves that would fail, be absorbed or backfire. */
   function negatives(c, id) {
     const { st, me, foe } = c, mm = meta(id), n = mm.name, e = mm.eff;
     const mold = MOLD.has(me.ability);
     if (mm.cat !== 'X') {
+      if (e === 148 && futurePending(st, foe)) return -10;   // a future attack is already coming there
+      if (e === 168 && !bench(st, me.side).length) return -10;   // Final Gambit, the Memento effect: no one to come in after
       if (!mold && ABSORBS[foe.ability] === mm.type && !(foe.ability === 'Levitate')) return -20;
       if (c.dmg(me, foe, id) === 0 && !(mm.power <= 1)) return -10;   // no effect (type immunity, Levitate, Wonder Guard)
       if (e === 8 && foe.status !== 'slp') return -10;
@@ -393,7 +487,8 @@
       if (e === 7) return -10;   // the explosion check; the positives add some back when it's the right call
       return 0;
     }
-    const foeTargeted = !(BOOST_EFFECTS.has(e) || H.SETUP[n] || HEAL_EFFECTS.has(e) || [37, 111, 112, 35, 65, 136, 137, 115, 164, 228, 239, 98, 153, 124, 79, 142, 160, 127].includes(e)) || n === 'Parting Shot';
+    const foeTargeted = (!(BOOST_EFFECTS.has(e) || H.SETUP[n] || HEAL_EFFECTS.has(e) || [37, 111, 112, 35, 65, 136, 137, 115, 164, 228, 239, 98, 153, 124, 79, 142, 160, 127, 179, 114].includes(e))
+      && n !== 'Healing Wish' && n !== 'Lunar Dance') || n === 'Parting Shot';
     if (foeTargeted && foe.ability === 'Magic Bounce' && !mold) return -10;
     if (foeTargeted && foe.sub && !mm.sound && me.ability !== 'Infiltrator' && e !== 28) return -10;
     if (STATUS_EFFECT[e]) return canStatus(st, foe, STATUS_EFFECT[e], n, me) ? 0 : -10;
@@ -411,6 +506,17 @@
       if ((foe.boosts[k] || 0) <= -6 || ['Clear Body', 'White Smoke', 'Full Metal Body', 'Mirror Armor'].includes(foe.ability) || itemName(foe) === 'Clear Amulet') return -10;
       if (['Contrary', 'Defiant', 'Competitive'].includes(foe.ability)) return -10;
       return 0;
+    }
+    if (e === 179) return wishPending(st, me) ? -10 : 0;   // Wish: one at a time
+    if (e === 114) {   // Perish Song (singles): not as the last Pokemon against more than one, not on a foe already singing along
+      if (alive(st, me.side).length === 1 && me.ability !== 'Soundproof' && alive(st, foe.side).length >= 2) return -10;
+      return foe.perish != null || foe.ability === 'Soundproof' ? -10 : 0;
+    }
+    if (e === 168) {   // the Memento effect: Healing Wish, Lunar Dance, Memento
+      if (!bench(st, me.side).length) return -10;
+      if (n === 'Healing Wish' || n === 'Lunar Dance') return teamFull(st, me) ? -10 : 0;
+      if (foe.sub && me.ability !== 'Infiltrator') return -10;
+      return foe.boosts.atk <= -6 && foe.boosts.spa <= -6 ? -10 : 0;
     }
     if (HEAL_EFFECTS.has(e) || n === 'Strength Sap') return me.hp >= me.maxHp ? -10 : 0;
     if (e === 37) return me.hp >= me.maxHp || ['Insomnia', 'Vital Spirit', 'Comatose', 'Purifying Salt'].includes(me.ability) || (st.terrain === 'Electric' && grounded(me)) ? -10 : 0;
@@ -500,6 +606,14 @@
       }
     } else if (e === 142 && n === 'Belly Drum') {
       if (me.moves.some(x => meta(x).cat === 'P')) add(statBonus(c, id, 'atk', 6, 2), 'Belly Drum');
+    } else if (e === 179) {
+      // Wish: +8 when a cleric's team needs it, else scored like a healing move (AI_RECOVER)
+      if (wishWorthIt(c, WISH_ID)) add(8, 'Wish for the team');
+      else if (shouldRecover(c, id, healAmount(c, id))) add(cls === 'stall' || cls === 'phaze' ? 8 : statusBonus(c, 3), 'Wish');
+    } else if (e === 114) {
+      if (trapped(st, foe)) add(statusBonus(c, 3), 'Perish Song on a trapped foe');
+    } else if (e === 168 && n === 'Memento') {
+      add(-5, 'Memento');
     } else if (HEAL_EFFECTS.has(e) || n === 'Strength Sap' || e === 37) {
       if (shouldRecover(c, id, healAmount(c, id))) add(cls === 'stall' || cls === 'phaze' ? 8 : statusBonus(c, 3), 'heal');
     } else if (e === 3 && mm.cat !== 'X') {
@@ -517,15 +631,18 @@
       const useful = n === 'Aurora Veil' || c.foe.moves.some(x => meta(x).cat === (wantPhys ? 'P' : 'S'));
       if (useful) add(isScreener(cls) ? (n === 'Aurora Veil' ? 8 : 7) : statusBonus(c, 2), 'screen');
     } else if (e === 127 && ['U-turn', 'Volt Switch', 'Flip Turn', 'Parting Shot'].includes(n)) {
-      const p = c.goodToPivot ? 'now' : shouldPivot(c, id);
+      const p = shouldPivot(c, id);
       if (p === 'now') add(9, 'pivot out (wants to switch)');
       else if (p === 'pivot') add(PIVOT_BONUS[cls] || 3, 'pivot');
-      else if (p === 'dont') add(-9, 'bad time to pivot');
+      else if (p === 'dont') {
+        if (c.myStrongest === id) c.myStrongest = c.strongest(me, foe, id);   // RecalcStrongestMoveIgnoringMove
+        add(-9, 'bad time to pivot');
+      } else if (wishPending(st, me) && wishWorthIt(c, WISH_ID)) add(7, 'pass on the wish');
     } else if (e === 111) {
       const useful = (takingResidual(st, foe) && !takingResidual(st, me)) || (me.ability === 'Speed Boost' && me.boosts.spe < 6 && c.meSpe <= c.foeSpe)
         || (me.firstTurn && ['Toxic Orb', 'Flame Orb'].includes(itemName(me)) && ['Poison Heal', 'Guts', 'Toxic Boost', 'Flare Boost', 'Magic Guard'].includes(me.ability));
       if (useful) add(statusBonus(c, 3), 'Protect');
-    } else if (e === 158) {
+    } else if (e === 158 && n === 'Fake Out') {
       if (me.firstTurn && !(foe.ability === 'Inner Focus' || foe.ability === 'Shield Dust') && !blockedBySub) add(cls === 'kill' ? 4 : statusBonus(c, 3) || 4, 'Fake Out');
     } else if (e === 28) {
       if ((Object.values(foe.boosts).some(x => x >= 2)) && bench(st, foe.side).length) add(cls === 'phaze' ? 8 : statusBonus(c, 2), 'phaze');
@@ -567,7 +684,7 @@
       if (e === 172 && ally) add(cls === 'dUtility' ? 16 : statusBonus(c, 3), 'draw attacks away from its partner');
       else if (e === 176 && ally && ally.moves.some(x => meta(x).cat !== 'X')) add(statusBonus(c, 2), 'Helping Hand');
       else if (n === 'Wide Guard' && actives(st, foe.side).some(f => f.moves.some(x => [8, 32].includes((E.mv(x) || {}).tg) && meta(x).cat !== 'X'))) add(statusBonus(c, 3), 'Wide Guard');
-      else if (e === 158 && me.firstTurn && foe.ability !== 'Inner Focus') add(cls === 'dUtility' ? 17 : statusBonus(c, 3), 'Fake Out');
+      else if (e === 158 && n === 'Fake Out' && me.firstTurn && foe.ability !== 'Inner Focus') add(cls === 'dUtility' ? 17 : statusBonus(c, 3), 'Fake Out');
     }
     return v;
   }
@@ -599,7 +716,7 @@
     const desperateAllowed = !me.aiDesperate || coin(c.rng, foe.lastMove && meta(foe.lastMove).cat === 'X' ? 0.25 : 0.75);
     const normallySlower = pri > 0 && c.meSpe < c.foeSpe;
     const hazardsLeft = me.moves.some(x => negatives(c, x) === 0 && meta(x).eff === 112);
-    const fakeOutUseful = me.firstTurn && me.moves.some(x => meta(x).eff === 158);
+    const fakeOutUseful = me.firstTurn && me.moves.some(x => meta(x).name === 'Fake Out') && foe.ability !== 'Inner Focus';   // Fake Out itself, if it would flinch
     if (desperateAllowed && !hasProtect && c.foeKOsMe && strongestFirst(c, id)
         && (cls !== 'hazards' || coin(c.rng, 0.5) || !hazardsLeft) && (cls !== 'phaze' || normallySlower) && (cls !== 'stall' || normallySlower)
         && !c.goodToPivot && !fakeOutUseful) {
@@ -684,7 +801,7 @@
     const foe = foeIn || (c && c.foe) || actives(st, other(side))[0] || act(st, other(side));
     const out = [];
     if (!foe || foe.fainted) return out;
-    const ctx = c || context(st, side, H.expectedDice());
+    const ctx = c || context(st, side, H.expectedDice(), null, null, { noPredict: true });   // damage numbers only
     st[side].team.forEach((m, i) => {
       if (m.fainted || st[side].slots.includes(i)) return;
       const entry = hazardDamage(st, side, m);
@@ -825,7 +942,61 @@
     }
     return true;
   }
-  /** ShouldSwitch (singles): the checks that matter for boss fights, in the engine's order. */
+  /** PredictedMoveWontKOMon: the move the AI expects (no move, a status move, Sucker Punch: nothing) plus entry hazards
+   *  won't knock this switch-in out. */
+  function wontKO(c, cand) {
+    const p = c.predicted;
+    if (!p || meta(p).cat === 'X' || meta(p).eff === 237) return true;
+    const m = cand.m;
+    const d = (m.disguise ? Math.floor(m.maxHp / 8) : c.dmg(c.foe, m, p)) + hazardDamage(c.st, m.side, m);
+    return d < m.hp;
+  }
+  /** PredictedMoveKOsSelfDueToContact: the expected move makes contact and the switch-in's Rough Skin, Iron Barbs or
+   *  Rocky Helmet would knock the attacker out. */
+  function contactKOs(c, cand) {
+    const p = c.predicted, foe = c.foe;
+    if (!p || !meta(p).contact || foe.ability === 'Magic Guard' || foe.ability === 'Long Reach' || itemName(foe) === 'Protective Pads') return false;
+    let d = 0;
+    if (['Rough Skin', 'Iron Barbs'].includes(cand.m.ability)) d += Math.floor(foe.maxHp / 8);
+    if (itemName(cand.m) === 'Rocky Helmet') d += Math.floor(foe.maxHp / 6);
+    return d > 0 && d >= foe.hp;
+  }
+  /** FastPivotingMoveInMovesetThatAffects: U-turn, Volt Switch, Flip Turn or Parting Shot that works on the foe and goes
+   *  first. With one, the switch checks below pivot out with it instead of switching (ConfirmAISwitch). */
+  function fastPivot(c) {
+    const { st, me, foe } = c;
+    return usable(me, st).some(id => {
+      const mm = meta(id);
+      if (mm.eff !== 127 || mm.name === 'Baton Pass' || mm.name === 'Shed Tail') return false;
+      if (mm.cat !== 'X' && c.dmg(me, foe, id) === 0) return false;   // Volt Switch into a Ground type
+      return c.hitsFirst(id);
+    });
+  }
+  /** The best and second-best switch-ins (GetMostSuitableMonToSwitchInto and the second), then the rest in party order. */
+  function switchOrder(c, ranked) {
+    const best = c.bestSw || (c.bestSw = pickSwitch(ranked, c.rng));
+    const second = pickSwitch(ranked.filter(r => r !== best), H.expectedDice());
+    return { best, second, rest: ranked.filter(r => r !== best && r !== second).sort((a, b) => a.i - b.i) };
+  }
+  /** SwitchToBestResistMon: a switch-in that resists everything the foe has (or whose Rough Skin, Iron Barbs or Rocky
+   *  Helmet would knock out the attacker it takes a contact hit from). */
+  function bestResist(c, ranked, willPivot, useFoe, why) {
+    const { best, second, rest } = switchOrder(c, ranked);
+    for (const r of [best, second].concat(rest)) {
+      if (r && (r.flags & F.RESIST_ALL || (useFoe && contactKOs(c, r) && wontKO(c, r)))) return { to: r.i, why, pivot: willPivot };
+    }
+    return null;
+  }
+  /** The AI's own expected move this turn (its prediction for itself: its best-scoring move). */
+  function ownPrediction(c) {
+    if (!c.scores) c.scores = scoreMoves(c, true);
+    const top = Math.max(...c.scores.map(x => x.score));
+    const t = c.scores.find(x => x.score === top);
+    return t ? t.id : null;
+  }
+  /** ShouldSwitch (singles), in the engine's order (ai_switching.c). The rarer checks are left out: stopping a locked
+   *  move, Wonder Guard and the semi-invulnerable "troll" switch. A switch the engine makes with ConfirmAISwitch while
+   *  holding a fast pivot comes back as { pivot: true }: it uses the pivot move instead of switching. */
   function shouldSwitch(c) {
     const { st, me, foe } = c;
     const side = me.side;
@@ -838,7 +1009,7 @@
     const ranked = c.ranked || (c.ranked = switchScores(st, side, c));
     if (!ranked.length) return null;
     const p = c.predicted;
-    // 1. a teammate absorbs the move the player is about to use
+    // a teammate absorbs the move the player is about to use (FindMonThatAbsorbsOpponentsMove)
     if (p && meta(p).cat !== 'X' && !me.absorbCooldown && me.boosts.eva < 3) {
       const t = meta(p).type;
       const damagerFoe = isDamager(fightingStyle(st, foe));
@@ -851,7 +1022,14 @@
         }
       }
     }
-    // 2. only bad moves left (ShouldSwitchIfOnlyBadMovesLeft): to the best switch-in, else the second best, if it has an
+    // a Wish is about to come true here: let a teammate under half HP take it (PassOnWish)
+    if (wishPending(st, me) && !(me.hp < me.maxHp / 2 && (!c.foeCanKOMe || me.moves.some(id => meta(id).eff === 111)))) {
+      const { best, second, rest } = switchOrder(c, ranked);
+      for (const r of [best, second].concat(rest)) if (r && r.m.hp < r.m.maxHp / 2 && hazardDamage(st, side, r.m) < r.m.hp && wontKO(c, r)) return { to: r.i, why: 'pass on the wish' };
+    }
+    // its perish count is up (ShouldSwitchIfPerishSong)
+    if (me.perish === 0) { const r = c.bestSw || (c.bestSw = pickSwitch(ranked, c.rng)); if (r) return { to: r.i, why: 'its perish count is up' }; }
+    // only bad moves left (ShouldSwitchIfOnlyBadMovesLeft): to the best switch-in, else the second best, if it has an
     //    edge (outspeeds, walls the foe or resists all its attacks) and the predicted attack won't do too much to it
     if (!cooldown && !(me.destinyBond && c.foeKOsMe && !c.firstVs(me, foe, c.myStrongest, p)) && onlyBadMovesLeft(c, ranked)) {
       const best = c.bestSw || (c.bestSw = pickSwitch(ranked, c.rng));
@@ -860,15 +1038,45 @@
       if (me.lock && /^Choice /.test(itemName(me) || ''))   // choice-locked: any switch-in that won't be knocked out
         for (const r of [best, second]) if (r && !(r.flags & F.FAINTS) && wontDoTooMuch(c, r)) return { to: r.i, why: 'only bad moves left (choice-locked)' };
     }
-    // 3. about to fall asleep from Yawn
+    // Natural Cure or Regenerator (ShouldSwitchIfNaturalCureOrRegenerator)
+    let heals = false;
+    if (me.ability === 'Natural Cure' && !bigEntryDamage(st, me, 4)) {
+      const hz = st[side].hazards;
+      const repoison = hz.tspikes && (me.status === 'psn' || me.status === 'tox') && grounded(me) && !hasType(me, 'Poison');
+      const b = c.bestSw || (c.bestSw = pickSwitch(ranked, c.rng));
+      if (!(repoison && !(b && hasType(b.m, 'Poison') && grounded(b.m)))) heals = me.status === 'slp' || (!!me.status && me.hp >= me.maxHp / 2);
+    } else if (me.ability === 'Regenerator' && me.hp <= me.maxHp / 2 && !bigEntryDamage(st, me, 3)) {
+      if (p && meta(p).cat !== 'X' && c.kos(foe, me, p, 1)) {
+        const own = ownPrediction(c);
+        heals = !(own && meta(own).cat !== 'X' && c.firstVs(me, foe, own, p) && c.kos(me, foe, own, 1));
+      }
+    }
+    if (heals) {
+      const why = me.ability === 'Natural Cure' ? 'Natural Cure' : 'Regenerator';
+      const res = bestResist(c, ranked, false, false, why);
+      if (res) return res;
+      const b = c.bestSw || (c.bestSw = pickSwitch(ranked, c.rng));
+      if (b && (wontDoTooMuch(c, b) || (wontKO(c, b) && !coin(c.rng, 0.5)))) return { to: b.i, why };
+    }
+    // about to fall asleep from Yawn
     if (me.yawn === 1 && !me.status && !cooldown) {
       for (const r of ranked.slice(0, 2)) if (wontDoTooMuch(c, r) && r.flags & (F.WALLS | F.RESIST_ALL | F.KO)) return { to: r.i, why: 'avoid falling asleep' };
     }
-    // 4. taking heavy end-of-turn damage (bad poison, Leech Seed)
+    // asleep: half the time it switches out (ShouldSwitchWhileAsleep)
+    if (!cooldown && me.status === 'slp' && coin(c.rng, 0.5)) {
+      const b = me.boosts, boosted = b.atk >= 2 || b.spa >= 2 || b.spe >= 2 || b.eva >= 3;
+      const sleeper = ['Shed Skin', 'Early Bird'].includes(me.ability) || (me.ability === 'Hydration' && st.weather === 'Rain' && st.weatherTurns !== 1)
+        || me.moves.some(id => ['Sleep Talk', 'Snore'].includes(meta(id).name) || meta(id).eff === 37) || (c.cls === 'stall' && trapped(st, foe));
+      if (!(boosted && coin(c.rng, 0.5)) && !sleeper) {
+        const r = c.bestSw || (c.bestSw = pickSwitch(ranked, c.rng));
+        if (r && !(r.m.status === 'slp' && (r.m.sleep || 0) > 1) && wontDoTooMuch(c, r)) return { to: r.i, why: 'asleep' };
+      }
+    }
+    // taking heavy end-of-turn damage (bad poison, Leech Seed)
     if (!cooldown && ((me.status === 'tox' && (me.toxic || 0) >= 2) || me.seeded) && me.hp > me.maxHp / 3) {
       for (const r of ranked.slice(0, 2)) if (r.flags & (F.WALLS | F.RESIST_ALL) && wontDoTooMuch(c, r)) return { to: r.i, why: 'shake off end-of-turn damage' };
     }
-    // 5. would be knocked out before moving
+    // would be knocked out before moving
     if (!cooldown && !me.destinyBond && p && meta(p).cat !== 'X' && !(me.status === 'par' && me.hp < me.maxHp / 3 && !['Quick Feet', 'Natural Cure'].includes(me.ability))) {
       const aiFirst = c.myStrongest && c.firstVs(me, foe, c.myStrongest, p);
       if (!aiFirst && c.foeKOsMe && hazardDamage(st, side, me) < me.maxHp / 3 && (me.hp > me.maxHp / 5 || ranked[0].score >= SW.MAX)) {
@@ -880,14 +1088,91 @@
         }
       }
     }
-    // 6. its attacking stat has been cut
-    if (!cooldown && isDamager(c.cls)) {
-      const phys = me.moves.some(id => meta(id).cat === 'P'), spec = me.moves.some(id => meta(id).cat === 'S');
-      const low = (phys && !spec && me.boosts.atk <= -2) || (spec && !phys && me.boosts.spa <= -2) || (phys && spec && me.boosts.atk <= -2 && me.boosts.spa <= -2);
-      if (low) for (const r of ranked.slice(0, 2)) if (r.flags & (F.WALLS | F.RESIST_ALL | F.OUTSPEEDS) && wontDoTooMuch(c, r)) return { to: r.i, why: 'its attack has been lowered' };
+    // an attacking stat cut to -3 or lower (ShouldSwitchWhenOffensiveStatsAreLow)
+    if (!cooldown && isDamager(c.cls) && (me.boosts.atk <= -3 || me.boosts.spa <= -3 || me.boosts.acc <= -3)) {
+      const mv = usable(me, st).filter(id => meta(id).power > 0);
+      const phys = mv.some(id => meta(id).cat === 'P' && meta(id).eff !== 89 && !['Body Press', 'Foul Play'].includes(meta(id).name));
+      const spec = mv.some(id => meta(id).cat === 'S' && meta(id).eff !== 144);
+      const b = me.boosts;
+      const cleared = (b.atk <= -3 && phys && !spec) || (b.spa <= -3 && spec && !phys) || (b.atk <= -3 && b.spa <= -3 && phys && spec)
+        || (b.acc <= -3 && usable(me, st).every(id => c.acc(me, foe, id) < 70) && c.cls !== 'stall');
+      if (cleared && (!c.foeCanKOMe || b.acc <= -3)) {
+        const r = c.bestSw || (c.bestSw = pickSwitch(ranked, c.rng));
+        if (r && (r.flags & (F.WALLS | F.RESIST_ALL) || (r.flags & F.OUTSPEEDS && wontDoTooMuch(c, r)))) return { to: r.i, why: 'its attack has been lowered', pivot: fastPivot(c) };
+      }
     }
+    // a damager that can't knock the foe out now: save it for later and bring in something better (ShouldSaveSweeperForLater)
+    const save = saveSweeper(c, ranked, cooldown);
+    if (save) return save;
     return null;
   }
+  /** ShouldSaveSweeperForLater: a damager that can't knock the foe out (and isn't paralyzed, set up, keeping a trapped
+   *  foe taking damage, or about to lose a quarter of its HP to hazards coming back) leaves when the foe would knock it
+   *  out first, or (no useful boosts or setup move) when the best switch-in can knock the foe out, or otherwise half the
+   *  time, a quarter if it could 2HKO, unless it already resists everything or drains with its best move. It goes to a
+   *  switch-in that outspeeds and knocks out (when the foe threatens it), else one that resists everything, by U-turn
+   *  or Volt Switch when it has one that goes first. This is the swap that keeps a boss pivoting between attackers. */
+  function saveSweeper(c, ranked, cooldown) {
+    const { st, me, foe } = c;
+    if (cooldown || c.doubles) return null;
+    if (me.status === 'par' && !['Quick Feet', 'Guts'].includes(me.ability)) return null;
+    if (!isDamager(c.cls)) return null;
+    const p = c.predicted;
+    const fakeOutHurts = p && meta(p).name === 'Fake Out' && me.ability !== 'Inner Focus' && !me.sub && c.dmg(foe, me, p) >= me.maxHp / 2;
+    if (c.iCanKO && !fakeOutHurts) return null;
+    if (me.sub && !foe.moves.some(id => meta(id).cat !== 'X' && (meta(id).sound || foe.ability === 'Infiltrator'))) return null;
+    if (bigEntryDamage(st, me, 4)) return null;
+    const foeStuck = trapped(st, foe) && takingResidual(st, foe);
+    if (foeStuck) return null;
+    let go = false;
+    if (c.foeCanKOMe && !canHealFirst(c)) go = true;
+    else if (!usefulBoost(st, me) && (me.boosts.eva || 0) < 3 && !offensiveSetup(c)) {
+      const b = c.bestSw || (c.bestSw = pickSwitch(ranked, c.rng));
+      if (b && b.flags & F.KO) go = true;
+      else {
+        const r = c.rng.expected ? 0 : Math.floor(c.rng() * 4);   // AIRandom: bit 1 for half the time, bit 2 when it could 2HKO
+        go = (r & 1) && (!c.iCan2HKO || (r & 2)) && !resistsAll(c) && !strongestDrains(c);
+      }
+    }
+    if (!go) return null;
+    const own = ownPrediction(c);
+    if (own && ((meta(own).name === 'Fake Out' && foe.ability !== 'Inner Focus') || meta(own).eff === 111)) return null;   // use it, then switch
+    const willPivot = fastPivot(c);
+    if (c.foeCanKOMe) {
+      if (own && meta(own).eff === 98 && c.firstVs(me, foe, own, p)) return null;   // Destiny Bond
+      if (me.destinyBond && !c.firstVs(me, foe, own, p)) return null;
+      const { best, second } = switchOrder(c, ranked);
+      for (const r of [best, second]) {
+        if (!r) continue;
+        if ((r.flags & F.OUTSPEEDS && r.flags & F.KO && wontDoTooMuch(c, r)) || (contactKOs(c, r) && wontKO(c, r))) return { to: r.i, why: 'save it for later', pivot: willPivot };
+      }
+    }
+    return bestResist(c, ranked, willPivot, true, 'save it for later');
+  }
+  /** CanHealFirstToPreventKnockOut: a healing move (or Protect against the expected move) that goes first and keeps it
+   *  out of knockout range. */
+  function canHealFirst(c) {
+    const { st, me, foe } = c;
+    for (const id of usable(me, st)) {
+      const mm = meta(id);
+      if (!(HEAL_EFFECTS.has(mm.eff) || mm.eff === 3 || mm.eff === 8 || mm.eff === 111)) continue;
+      if (!c.hitsFirst(id)) continue;
+      if (mm.eff === 111) { if (c.predicted && meta(c.predicted).cat !== 'X') return true; continue; }
+      const heal = mm.cat !== 'X' ? Math.floor(c.dmg(me, foe, id) / 2) : healAmount(c, id);
+      const after = Math.min(me.maxHp, me.hp + heal);
+      if (!c.attacks(foe).some(x => c.dmg(foe, me, x) >= after)) return true;
+    }
+    return false;
+  }
+  /** OffensiveSetupMoveInMoveset: a move that raises its attacking stats (or evasion). */
+  const offensiveSetup = c => usable(c.me, c.st).some(id => {
+    const mm = meta(id), b = H.SETUP[mm.name] || H.EFFECT_BOOST[mm.eff];
+    return mm.cat === 'X' && b && (b.atk > 0 || b.spa > 0 || b.eva > 0 || b.spe > 1);
+  }) || usable(c.me, c.st).some(id => meta(id).name === 'Belly Drum');
+  /** ResistsAllMoves: none of the foe's moves does a third of its HP. */
+  const resistsAll = c => usable(c.foe, c.st).every(id => meta(id).cat === 'X' || c.dmg(c.foe, c.me, id) < c.me.hp / 3);
+  /** IsStrongestMoveHPDrainingMove */
+  const strongestDrains = c => { const s = c.myStrongest; return !!s && (meta(s).eff === 3 || meta(s).eff === 8); };
 
   /** One battler's action in doubles: the best move against each target (ChooseMoveOrAction_Doubles), then the best target
    *  (ChooseTarget_Doubles: highest score, then more knockouts, then more damage). Partners never target each other here. */
@@ -942,9 +1227,8 @@
         const c = context(st, side, rng);
         const sw = shouldSwitch(c);
         if (sw) {
-          // with U-turn, Volt Switch or Flip Turn it pivots out instead (PIVOT_IMMEDIATELY)
-          const piv = forced.find(id => meta(id).eff === 127 && ['U-turn', 'Volt Switch', 'Flip Turn', 'Parting Shot'].includes(meta(id).name) && negatives(c, id) === 0);
-          if (piv) c.goodToPivot = true;
+          // ConfirmAISwitch with a fast pivot: it U-turns (or Volt Switches...) to that Pokemon instead (PIVOT_IMMEDIATELY)
+          if (sw.pivot) { c.goodToPivot = true; c.pivotTarget = sw.to; if (!peek) st[side].pivotTo = { to: sw.to, turn: st.turn, foe: c.foe.key }; }
           else {
             if (!peek && /absorbs/.test(sw.why)) st[side].team[sw.to].absorbCooldown = true;
             return { type: 'switch', to: sw.to, why: sw.why };
@@ -952,11 +1236,13 @@
         }
         // scores computed during the switch check are reused unless the pivot decision changed them
         const scores = (!c.goodToPivot && c.scores) || scoreMoves(c, true);
+        if (c.goodToPivot) c.scores = scores;
         const top = Math.max(...scores.map(s => s.score));
         const best = scores.filter(s => s.score === top);
         const pick = best.length === 1 || rng.expected ? best[0] : best[Math.floor(rng() * best.length)];
         if (!peek) { me.aiDesperate = !!(c.desperate && c.desperate.has(pick.id)); me.absorbCooldown = false; }
         const res = { type: 'move', id: pick.id, z: !!(c.zSet && c.zSet.has(pick.id)) };
+        if (c.goodToPivot && meta(pick.id).eff === 127) res.pivotTo = c.pivotTarget;   // who it means to bring in
         if (explain || o.explain) { res.scores = scores; res.style = c.cls; res.ties = best.length; }
         return res;
       },
@@ -974,6 +1260,13 @@
         return out;
       },
       replace(st, side, rng, why, slot) {
+        // a pivot goes to the Pokemon the switch check picked, unless it's gone or the foe it was picked against has changed
+        const pt = st[side].pivotTo;
+        if (why === 'pivot' && pt && pt.turn === st.turn) {
+          st[side].pivotTo = null;
+          const m = st[side].team[pt.to], foe = act(st, other(side));
+          if (m && !m.fainted && !st[side].slots.includes(pt.to) && foe && foe.key === pt.foe) return pt.to;
+        }
         if (st.size > 1) {
           // the best switch-in against everything on the other side of the field
           const total = new Map();

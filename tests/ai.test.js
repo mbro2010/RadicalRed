@@ -79,3 +79,51 @@ test('ai: the switching cooldown (2 after a chosen switch, 1 after a replacement
   SIM.switchIn(st, 'a', 2, SIM.expectedDice(), 'replace', 0);
   assert(SIM.actives(st, 'a')[0].swCooldown === 1, 'a replacement after a faint sets 1');
 });
+// Normal Mode Bugsy (run 6): Lokix, Ledian, Scyther, Scizor
+function normalBugsy(top) {
+  const bi = D.bosses.findIndex(b => b.n === 'Bugsy' && b.id === 47), b = D.bosses[bi], saved = b.party;
+  b.party = b.np.map(m => Object.assign({}, m, { nat: m.nat != null ? m.nat : 0, ab: m.ab || E.sp(m.s).a[0], iv: m.iv || [31, 31, 31, 31, 31, 31], mv: (m.mv || []).filter(id => E.mv(id)) }));
+  try { return E.bossTeam(bi, top).map((m, i) => Object.assign({ key: 'b' + i, label: E.sp(m.s).n }, m)); } finally { b.party = saved; }
+}
+test('ai: a damager that can\'t knock out U-turns to a teammate that resists everything, half the time (ShouldSaveSweeperForLater; run 6, Bugsy)', () => {
+  E.setMode('normal', false);
+  try {
+    const boss = normalBugsy(27);
+    const team = ['Gyarados', 'Grimer', 'Solrock'].map(n => mon(n, 27));
+    const scizor = boss.findIndex(m => m.label === 'Scizor');
+    let uturn = 0, to = new Set();
+    for (let seed = 1; seed <= 60; seed++) {
+      const st = SIM.newBattle(team, boss, {});
+      st.policies = { p: SIM.plannerPolicy(), a: SIM.bossPolicy() };
+      const rng = SIM.mulberry32(seed);
+      SIM.begin(st, rng); st.turn = 1;
+      const r = st.policies.a.choose(st, 'a', rng, false, true);
+      if (r.type === 'move' && E.mv(r.id).f === 'U-turn') { uturn++; to.add(r.pivotTo); }
+    }
+    assert(uturn >= 12 && uturn <= 48, 'Lokix U-turns about half the time: ' + uturn + '/60');
+    assert(to.size === 1 && to.has(scizor), 'to Scizor, which resists everything Gyarados has: ' + [...to]);
+    const st = SIM.newBattle(team, boss, {});
+    st.policies = { p: SIM.plannerPolicy(), a: SIM.bossPolicy() };
+    SIM.begin(st, SIM.expectedDice()); st.turn = 1;
+    const r = st.policies.a.choose(st, 'a', SIM.expectedDice(), true, true);
+    assert(E.mv(r.id).f === 'First Impression', 'without the coin flip: First Impression');
+    assert(!r.scores.find(s => E.mv(s.id).f === 'First Impression').why.some(w => /Fake Out/.test(w)), 'First Impression gets no Fake Out bonus (that is Fake Out\'s alone)');
+  } finally { E.setMode('hardcore'); }
+});
+test('ai: it pivots when it expects you to switch (none of your moves would do anything)', () => {
+  const st = battle([mon('Rattata', 20, { moves: ['Tackle', 'Quick Attack'] }), mon('Pidgey', 20)], [mon('Gengar', 30, { moves: ['U-turn', 'Shadow Ball'] }), mon('Snorlax', 30)]);
+  SIM.begin(st, SIM.expectedDice());
+  const r = st.policies.a.choose(st, 'a', SIM.expectedDice(), true, true);
+  const u = r.scores.find(s => E.mv(s.id).f === 'U-turn');
+  assert(u.why.some(w => /pivot/.test(w)), 'U-turn scored as a pivot: ' + JSON.stringify(u.why));
+});
+test('ai: no second Wish while one is coming; Future Sight not while one is on its way', () => {
+  const st = battle([mon('Machamp', 30)], [mon('Togekiss', 30, { moves: ['Wish', 'Air Slash', 'Future Sight'] }), mon('Snorlax', 30)]);
+  SIM.begin(st, SIM.expectedDice());
+  const scores = () => { const r = st.policies.a.choose(st, 'a', SIM.expectedDice(), true, true); return n => r.scores.find(s => E.mv(s.id).f === n).score; };
+  const before = scores();
+  st.a.wish = { 0: { left: 1, hp: 50, name: 'Togekiss' } };
+  st.p.future = { 0: { left: 2, side: 'a', key: 'x', move: mid('Future Sight'), name: 'Togekiss' } };
+  const after = scores();
+  assert(after('Wish') === 90 && after('Future Sight') === before('Future Sight') - 10, 'both lose 10: Wish ' + after('Wish') + ', Future Sight ' + before('Future Sight') + ' -> ' + after('Future Sight'));
+});

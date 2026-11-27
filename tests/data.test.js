@@ -42,11 +42,18 @@ test('data: gifts, items and TM locations from the map scripts', () => {
 test('data: the care package cheat (SO2Toxic) by checkpoint, Hardcore lists', () => {
   const name = id => D.items[id] && D.items[id].n;
   const at = (area, after) => D.care.find(p => p.area === area && (after ? p.after === after : !p.after));
-  assert(D.care.length === 16, 'sixteen packages: ' + D.care.length);
+  assert(D.care.length === 17, 'seventeen packages (Fuchsia City hands over part on arrival, the rest after Brendan): ' + D.care.length);
+  // checkpoints past a fight: the Rocket at the end of Nugget Bridge, the one behind the burgled house, Archer before
+  // Mt. Moon's exit, Herman on Route 10's south end, Brendan in Fuchsia City; Pewter's aide waits past the gym guide
+  const tr = (area, id) => D.care.find(p => p.area === area && p.tr === id);
+  assert(tr('Route 24', 356) && tr('Route 24', 356).items.some(([id]) => name(id) === 'Wacan Berry'), 'Wacan Berry after the Nugget Bridge Rocket');
+  assert(tr('Cerulean City', 355) && tr('Route 4', 46) && tr('Route 10', 163) && tr('Fuchsia City', 57), 'checkpoints behind a fight');
+  assert(at('Pewter City', 'Boulder Badge'), "Pewter City's package after the Boulder Badge");
   assert(at('Route 2') && at('Route 2').items.some(([id]) => name(id) === 'Mystic Water'), 'the DexNav aide on Route 2 hands over the type items');
   assert(at('Cinnabar Island', 'Volcano Badge').items.some(([id]) => name(id) === 'Life Orb'), 'Life Orb after Blaine');
   assert(at('Pallet Town', 'Champion').items.some(([id]) => name(id) === 'Choice Band'), 'the Choice items only after the Champion');
-  assert(at('Fuchsia City').items.some(([id]) => name(id) === 'Leftovers'), 'Leftovers in Fuchsia City');
+  assert(tr('Fuchsia City', 57).items.some(([id]) => name(id) === 'Leftovers'), 'Leftovers in Fuchsia City, after Brendan');
+  assert(D.care.some(p => p.area === 'Fuchsia City' && p.tr == null && p.items.some(([id]) => name(id) === 'Liechi Berry')), 'the berries when you arrive');
   const all = D.care.flatMap(p => p.items.map(([id]) => name(id)));
   for (const n of ['WeaknessPol.', 'Heat Rock', 'Throat Spray', 'Air Balloon', 'Protein']) assert(!all.includes(n), 'Hardcore leaves out ' + n);
 });
@@ -68,8 +75,8 @@ test('data: Normal Mode with Minimal Grinding (its boss records, its own caps an
   assert(rivals.map(b => b.nv).join() === 'Squirtle,Bulbasaur,Charmander', 'rival lines ' + rivals.map(b => b.nv));
   // the care package: Normal with Minimal Grinding adds weather rocks and terrain seeds, never EV items
   const name = id => D.items[id] && D.items[id].n;
-  const fuchsia = D.care.find(p => p.area === 'Fuchsia City');
-  assert(fuchsia.n.some(([id]) => name(id) === 'Damp Rock') && !fuchsia.items.some(([id]) => name(id) === 'Damp Rock'), 'Damp Rock in Normal only');
+  const fuchsia = D.care.filter(p => p.area === 'Fuchsia City');
+  assert(fuchsia.some(p => p.n.some(([id]) => name(id) === 'Damp Rock')) && !fuchsia.some(p => p.items.some(([id]) => name(id) === 'Damp Rock')), 'Damp Rock in Normal only');
   assert(D.care.every(p => p.n.length >= p.items.length), 'Normal lists hold Hardcore\'s');
   const N = require('../app/starters-normal.json');
   assert(N.starters.length === 27 && N.mode === 'normal' && N.starters.every(s => 'SABCD'.includes(s.tier)), 'Normal tier list');

@@ -14,9 +14,13 @@ Grinding sets only 0x1032, so each package is also walked with that flag alone (
 Each package is placed by walking every map's scripts (script_walk.entry_points) to the `checkflag 0x103F` that
 gives it. A package handed over after a gym win records the badge set on the way (flags 0x820-0x827); the one in
 Pallet Town is Mom's, after you become Champion ("There are a lot of new perks after becoming Champion", 0x9111463).
-Every other package comes from a one-time trigger you walk over in that area. The code-entry script itself (which
-hands over the packages for checkpoints already passed) is skipped, and a package that only repeats part of another
-one in the same area (Fuchsia City calls part of its package from two places) is folded into it.
+Every other package comes from a one-time trigger you walk over in that area. A trigger that starts a battle first
+hands the package over only once you win (the script goes on past `trainerbattle` only after a win), so the package
+records that trainer: the Rocket at the end of Nugget Bridge (Route 24) and the one behind the burgled house in
+Cerulean City. Three more triggers sit behind a fight on the way there (read off the maps, see GATES). The
+code-entry script itself (which hands over the packages for checkpoints already passed) is skipped, and a package
+that only repeats part of another one in the same area (Fuchsia City calls part of its package from two places) is
+folded into it.
 
 usage: RR_ROM=/path/to/rom python3 tools/extract_care_package.py data
 """
@@ -104,6 +108,7 @@ def walk(start, path, seen, found, depth=0):
             cont = BATTLE_CONT.get(typ)
             if cont and depth < 10 and isptr(u32(o + cont)):
                 walk(u32(o + cont) - G, path + [('trainer', tid)], seen, found, depth + 1)
+            path = path + [('trainer', tid)]              # the script carries on past it only once that trainer is beaten
             o += 2 + BATTLE_LEN.get(typ, 12)
             continue
         if op not in L:
@@ -133,6 +138,15 @@ for mp in maps:
 
 BADGES = ['Boulder', 'Cascade', 'Thunder', 'Rainbow', 'Soul', 'Marsh', 'Volcano', 'Earth']
 AFTER_CHAMPION = {'Pallet Town'}                          # Mom's package (see above)
+# Triggers you can only walk to past a fight (map 3.2 is Pewter City, 3.22 Route 4, 1.3 Mt. Moon B2F, 3.28 Route 10):
+# - Pewter City: Oak's aide (x43 y21-23) waits at the east exit, one step past the trigger (x42 y21-23) where the gym
+#   guide walks you back to the gym unless you have the Boulder Badge (checkflag 0x820).
+# - Route 4: the trigger (x31-33 y6-7) is outside Mt. Moon's east exit (x32). Inside, the ladder up to that exit
+#   (B2F x6 y10) is in a pocket you only reach across Archer's trigger (B2F x4-5 y7, trainer 46). Route 4's west end,
+#   before Mt. Moon, has its own grass but no way east.
+# - Route 10: the trigger is the south end (y78), past Rock Tunnel (entrance y19, exit y57) and the one-tile gap
+#   (x13 y74) next to Herman (x11 y73, trainer 163).
+GATES = {'Pewter City': {'after': 'Boulder Badge'}, 'Route 4': {'trainer': 46}, 'Route 10': {'trainer': 163}}
 packages = []
 for site, sub in sorted(sites.items()):
     if site not in placed:
@@ -146,18 +160,29 @@ for site, sub in sorted(sites.items()):
     pk = {'area': area, 'items': hard, 'otherModes': other, 'normal': normal, 'script': hex(site)}
     if badge is not None:
         pk['after'] = BADGES[badge] + ' Badge'
-        if trainer is not None:
-            pk['trainer'] = trainer
     elif area in AFTER_CHAMPION:
         pk['after'] = 'Champion'
+    if trainer is not None:
+        pk['trainer'] = trainer
+    pk.update({k: v for k, v in GATES.get(area, {}).items() if k not in pk})
     packages.append(pk)
-# fold packages that only repeat part of another one in the same area
+# fold packages that only repeat part of another one in the same area. When the part comes earlier than the whole
+# (Fuchsia City's west entrance hands over part of what Brendan's battle there ends with), keep both: the part when
+# you arrive, and only the rest after the fight.
 keep = []
 for pk in packages:
     whole = next((q for q in packages if q is not pk and q['area'] == pk['area'] and len(q['items']) > len(pk['items'])
                   and all(x in q['items'] for x in pk['items'])), None)
     if not whole:
         keep.append(pk)
+    elif (whole.get('after'), whole.get('trainer')) != (pk.get('after'), pk.get('trainer')):
+        keep.append(pk)
+        pk['_whole'] = whole
+for pk in keep:
+    whole = pk.pop('_whole', None)
+    if whole:
+        for key in ('items', 'otherModes', 'normal'):
+            whole[key] = [x for x in whole[key] if x not in pk[key]]
 packages = keep
 
 with open(os.path.join(OUT, 'care_package.json'), 'w') as fh:
