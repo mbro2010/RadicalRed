@@ -1,4 +1,4 @@
-"""Dump item names by item ID.  usage: python3 tools/extract_items.py data"""
+"""Dump item names and hold effects by item ID.  usage: python3 tools/extract_items.py data"""
 import json, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from rom import rom, s, cm
@@ -18,4 +18,7 @@ for i in range(1, 2000):
         bad += 1
         if bad > 20: break
 json.dump(items, open(os.path.join(sys.argv[1], 'items.json'), 'w'), indent=0, ensure_ascii=False)
+# what each item does when held: its hold effect and that effect's number (a type, a percentage...), item struct +18/+19
+effects = {i: [rom[ITEMS + i*44 + 18], rom[ITEMS + i*44 + 19]] for i in items}
+json.dump(effects, open(os.path.join(sys.argv[1], 'item_effects.json'), 'w'), separators=(',', ':'))
 print('items', len(items), 'last id', max(items))

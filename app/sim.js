@@ -47,6 +47,9 @@
     'Tanga Berry': 'Bug', 'Charti Berry': 'Rock', 'Kasib Berry': 'Ghost', 'Haban Berry': 'Dragon', 'Colbur Berry': 'Dark',
     'Babiri Berry': 'Steel', 'Roseli Berry': 'Fairy', 'Chilan Berry': 'Normal' };
   const CURE_BERRY = { 'Chesto Berry': 'slp', 'Cheri Berry': 'par', 'Rawst Berry': 'brn', 'Pecha Berry': 'psn', 'Aspear Berry': 'frz' };
+  // the moves that cure frostbite: the game's lists of thawing moves (using one cures the user; being hit by either cures the target)
+  const THAW_USER = new Set((E.D.moveLists && E.D.moveLists.unfreezeAttacker) || []);
+  const THAW_TARGET = new Set((E.D.moveLists && E.D.moveLists.unfreezeTarget) || []);
   const PINCH_HEAL = new Set(['Figy Berry', 'Wiki Berry', 'Mago Berry', 'Aguav Berry', 'Iapapa Berry']);
   const PINCH_STAT = { 'Liechi Berry': 'atk', 'Ganlon Berry': 'def', 'Salac Berry': 'spe', 'Petaya Berry': 'spa', 'Apicot Berry': 'spd' };
   const NO_INTIMIDATE = new Set(['Clear Body', 'White Smoke', 'Hyper Cutter', 'Full Metal Body', 'Inner Focus', 'Own Tempo', 'Oblivious', 'Scrappy']);
@@ -60,6 +63,8 @@
     'Flash Fire': ['Fire', 'none'], 'Well-Baked Body': ['Fire', 'def2'], 'Levitate': ['Ground', 'none'] };
 
   const metaCache = new Map();
+  const romList = k => new Set((E.D.moveLists && E.D.moveLists[k]) || []);
+  const ROM_SOUND = romList('sound'), ROM_RECOIL25 = romList('recoil25'), ROM_RECOIL33 = romList('recoil33'), ROM_RECOIL50 = romList('recoil50');
   function meta(id) {
     let m = metaCache.get(id);
     if (m) return m;
@@ -70,9 +75,10 @@
       eff: r ? r.e : 0, ec: r ? r.ec : 0,
       multihit: base && Array.isArray(base.multihit) ? base.multihit : null,
       drain: base && base.drain ? base.drain : (r && r.e === 3 && r.k !== 'X' ? [1, 2] : null),
-      recoil: base && base.recoil ? base.recoil : null,
-      contact: base ? !!(base.flags && base.flags.contact) : (r && r.k === 'P'),
-      sound: base ? !!(base.flags && base.flags.sound) : false,
+      // recoil, contact and sound: the game's own move flags and lists (Volt Tackle is 25% recoil here, Chloroblast 50%)
+      recoil: ROM_RECOIL25.has(id) ? [1, 4] : ROM_RECOIL33.has(id) ? [33, 100] : ROM_RECOIL50.has(id) ? [1, 2] : (base && base.recoil ? base.recoil : null),
+      contact: r && r.fl != null ? !!(r.fl & 1) : base ? !!(base.flags && base.flags.contact) : (r && r.k === 'P'),
+      sound: ROM_SOUND.size ? ROM_SOUND.has(id) : base ? !!(base.flags && base.flags.sound) : false,
       highCrit: E.HIGH_CRIT.has(r && r.f), alwaysCrit: E.ALWAYS_CRIT.has(r && r.f),
     };
     metaCache.set(id, m);
@@ -266,6 +272,8 @@
       applyBoosts(st, m, fs.def * STAGE(foe.boosts.def) < fs.spd * STAGE(foe.boosts.spd) ? { atk: 1 } : { spa: 1 });
     }
     if (a === 'Valiant Shield') applyBoosts(st, m, { def: 1 });
+    if (a === 'Intrepid Sword') applyBoosts(st, m, { atk: 1 });      // "Raises Attack on entry"
+    if (a === 'Dauntless Shield') applyBoosts(st, m, { def: 1 });
     seedCheck(st, m);
   }
   function switchIn(st, side, idx, rng, why, slot) {
@@ -393,7 +401,7 @@
     target.status = status;
     if (status === 'slp') target.sleep = rng.expected ? 2 : 1 + Math.floor(rng() * 3);
     if (status === 'tox') target.toxic = 0;
-    log(st, `${target.name} is ${{ brn: 'burned', par: 'paralyzed', psn: 'poisoned', tox: 'badly poisoned', slp: 'asleep', frz: 'frozen' }[status]}${why ? ' (' + why + ')' : ''}`, 'status', target);
+    log(st, `${target.name} ${{ brn: 'is burned', par: 'is paralyzed', psn: 'is poisoned', tox: 'is badly poisoned', slp: 'is asleep', frz: 'got frostbite' }[status]}${why ? ' (' + why + ')' : ''}`, 'status', target);
     const cure = itemName(target);
     if (cure === 'Lum Berry' || CURE_BERRY[cure] === status) { consume(target); target.status = ''; target.sleep = 0; log(st, `${target.name}'s ${cure} cures it`); }
   }
@@ -490,11 +498,8 @@
         } else if (!talk) { cant('slp', `${user.name} is fast asleep.`); return; }
       } else { user.status = ''; log(st, `${user.name} woke up!`, 'cure', user); }
     }
-    if (user.status === 'frz' || F === 'frz') {
-      if (F === 'frz') { user.status = 'frz'; cant('frz', `${user.name} is frozen solid!`); return; }
-      if (F || roll(rng, 0.2) || /Scald|Flare Blitz|Sacred Fire|Flame Wheel|Scorching Sands|Steam Eruption|Pyro Ball|Burn Up/.test(mm0.name)) { user.status = ''; log(st, `${user.name} thawed out!`, 'cure', user); }
-      else { cant('frz', `${user.name} is frozen solid!`); return; }
-    }
+    // Radical Red's freeze is frostbite (CFRU's FROSTBITE): it still moves, and using a thawing move cures it
+    if (user.status === 'frz' && THAW_USER.has(moveId)) { user.status = ''; log(st, `${user.name}'s frostbite was cured!`, 'cure', user); }
     if (F === 'flinch' || (user.flinch && !F)) { cant('flinch', `${user.name} flinched and couldn't move!`); return; }
     if (user.ability === 'Truant') {   // every other turn it loafs around
       if (user.truantLoaf) { user.truantLoaf = false; cant('truant', `${user.name} is loafing around!`); return; }
@@ -648,7 +653,7 @@
     const tside = target.side;
     if (tside !== user.side && st[tside].wideGuard && (tg === 8 || tg === 32)) { log(st, `Wide Guard protects ${target.name}`); return none; }
     if (tside !== user.side && st[tside].quickGuard && priorityOf(st, user, moveId) > 0) { log(st, `Quick Guard protects ${target.name}`); return none; }
-    if (target.protect && mm.name !== 'Feint' && !zk) {
+    if (target.protect && mm.name !== 'Feint' && !zk && !(user.ability === 'Unseen Fist' && mm.contact)) {   // Unseen Fist: contact moves get through
       log(st, `${target.name} protects itself`);
       if (mm.contact) {
         const pt = target.protectKind;
@@ -673,6 +678,8 @@
     // the calculator gives Meteor Beam and Electro Shot their +1 Sp. Atk itself; the battle already raised it on the charge turn
     const atkSpec = specNow(user);
     if ((mm.name === 'Meteor Beam' || mm.name === 'Electro Shot') && !zk) atkSpec.boosts = Object.assign({}, atkSpec.boosts, { spa: Math.max(-6, (atkSpec.boosts.spa || 0) - 1) });
+    // who moved first this turn: Bolt Beak and Fishious Rend double before the target moves, Analytic boosts after
+    if (target.movedThisTurn) atkSpec.movesLast = true; else atkSpec.movesFirst = true;
     const rr = E.rawRolls(atkSpec, specNow(target), moveId, Object.assign({ crit, hits, z: !!zk, bp: ctx.bp || 0 }, fo));
     const rolls = rr.rolls;
     let dmg = rolls[rng.expected ? 7 : Math.floor(rng() * rolls.length)] || 0;
@@ -710,6 +717,9 @@
     target.hitThisTurn = true;
     const dealt = Math.min(target.hp, dmg);
     target.hp -= dealt;
+    if (target.status === 'frz' && dealt > 0 && target.hp > 0 && (THAW_TARGET.has(moveId) || THAW_USER.has(moveId))) {
+      target.status = ''; log(st, `${target.name}'s frostbite was cured!`, 'cure', target);
+    }
     if (target.bide) target.bide.dmg += dealt;
     if (st.opts.record) log(st, `${target.name} loses ${Math.round(100 * dealt / target.maxHp)}% (${Math.round(100 * target.hp / target.maxHp)}% left)`, 'dmg', target);
     // the game's order: the hit, then "A critical hit!", then how effective it was
@@ -758,7 +768,8 @@
     if (!sheer && !shielded) {
       const ec = mm.ec || 0;
       const statusByEff = { 2: 'psn', 4: 'brn', 5: 'frz', 6: 'par', 209: 'tox' };
-      if (statusByEff[mm.eff] && roll(rng, chanceOf(ec)) && canStatus(st, target, statusByEff[mm.eff], mm.name, user)) inflict(st, target, statusByEff[mm.eff], rng, mm.name);
+      const hailFrost = statusByEff[mm.eff] === 'frz' && /Hail|Snow/.test(st.weather || '') ? 2 : 1;   // hail doubles frostbite's chance
+      if (statusByEff[mm.eff] && roll(rng, chanceOf(ec * hailFrost)) && canStatus(st, target, statusByEff[mm.eff], mm.name, user)) inflict(st, target, statusByEff[mm.eff], rng, mm.name);
       if (mm.eff === 152 && mm.name === 'Thunder' && roll(rng, chanceOf(ec)) && canStatus(st, target, 'par', mm.name, user)) inflict(st, target, 'par', rng, mm.name);
       if (mm.eff === 36 && roll(rng, chanceOf(20))) { const s = ['brn', 'par', 'frz'][rng.expected ? 0 : Math.floor(rng() * 3)]; if (canStatus(st, target, s, mm.name, user)) inflict(st, target, s, rng, mm.name); }
       if (FANG[mm.name] && roll(rng, chanceOf(10)) && canStatus(st, target, FANG[mm.name], mm.name, user)) inflict(st, target, FANG[mm.name], rng, mm.name);
@@ -963,7 +974,8 @@
       if (m.seeded) { const by = m.seededBy ? act(st, m.seededBy.side, m.seededBy.slot) : actives(st, other(side))[0]; const d = hurt(st, m, Math.floor(m.maxHp / 8), 'Leech Seed'); if (by && !by.fainted) heal(st, by, d, 'Leech Seed'); }
       if (m.fainted) continue;
       if (m.ability !== 'Magic Guard') {
-        if (m.status === 'brn') hurt(st, m, Math.floor(m.maxHp / 16), 'burn');
+        if (m.status === 'brn') hurt(st, m, Math.max(1, Math.floor(m.maxHp / 16)), 'burn');
+        else if (m.status === 'frz') hurt(st, m, Math.max(1, Math.floor(m.maxHp / 16)), 'frostbite');
         else if (m.status === 'psn') { if (m.ability === 'Poison Heal') heal(st, m, m.maxHp / 8, 'Poison Heal'); else hurt(st, m, Math.floor(m.maxHp / 8), 'poison'); }
         else if (m.status === 'tox') { m.toxic++; if (m.ability === 'Poison Heal') heal(st, m, m.maxHp / 8, 'Poison Heal'); else hurt(st, m, Math.floor(m.maxHp * m.toxic / 16), 'toxic'); }
       }
@@ -1054,7 +1066,8 @@
     out.acc = out.self || out.heal ? 1 : mm.acc ? mm.acc / 100 : 1;
     return out;
   }
-  /** What a move can do to its target this turn that stops it moving: par, slp, frz, conf, flinch (and brn, psn, tox). */
+  /** What a move can do to its target this turn that stops it moving: par, slp, conf, flinch (and brn, psn, tox, and frz:
+   *  frostbite, which doesn't stop it). */
   function mayCause(user, moveId) {
     const mm = meta(moveId), e = mm.eff, out = new Set();
     if (mm.cat === 'X') {

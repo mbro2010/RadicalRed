@@ -204,3 +204,39 @@ test('sim: the planner sees a Rollout lock coming (run 5: Geodude against Flittl
     assert(opts[0].label !== 'Use Rollout', 'and not picked against a Calm Mind user: ' + opts.slice(0, 3).map(x => x.label).join(', '));
   } finally { E.setMode('hardcore'); }
 });
+test('sim: frostbite (Radical Red\'s freeze) never stops a move, chips 1/16 a turn, halves special hits, and Scald cures it', () => {
+  const st = duel([mon('Alakazam', 40, { moves: ['Psychic'] }), mon('Rattata', 20)], [mon('Snorlax', 60, { moves: ['Splash'] })]);
+  const p = SIM.act(st, 'p'), a = SIM.act(st, 'a');
+  p.status = 'frz';
+  const hp0 = a.hp, myHp0 = p.hp;
+  play(st, mid('Psychic'), mid('Splash'));
+  assert(a.hp < hp0, 'a frostbitten Pokemon still attacks');
+  assert(myHp0 - p.hp === Math.max(1, Math.floor(p.maxHp / 16)), 'and loses 1/16 at the end of the turn');
+  const ala = mon('Alakazam', 40, { moves: ['Psychic'] }), lax = mon('Snorlax', 60);
+  const hot = E.rawRolls(ala, lax, mid('Psychic'), {}).rolls, cold = E.rawRolls(Object.assign({}, ala, { status: 'frz' }), lax, mid('Psychic'), {}).rolls;
+  assert(cold[15] < hot[15] * 0.55 && cold[15] > hot[15] * 0.45, 'its special moves do half: ' + cold[15] + ' vs ' + hot[15]);
+  const sc = duel([mon('Snorlax', 40, { moves: ['Body Slam'] })], [mon('Vaporeon', 40, { moves: ['Scald'] })]);
+  SIM.act(sc, 'p').status = 'frz';
+  play(sc, mid('Body Slam'), mid('Scald'));
+  assert(SIM.act(sc, 'p').status !== 'frz', 'a Scald that hits cures it');
+});
+test('engine: Radical Red\'s changes, checked against the game\'s own damage code (tools/game_damage.py)', () => {
+  const roll = (a, d, mv, o) => E.rawRolls(a, d, mid(mv), o || {}).rolls;
+  const lax = mon('Snorlax', 50), champ = mon('Machamp', 50, { ability: 'Iron Fist' });
+  // Iron Fist x1.3 (the calculator has x1.2): same numbers the emulator gave
+  const fist = roll(champ, lax, 'Mach Punch'), plain = roll(Object.assign({}, champ, { ab: 'No Guard' }), lax, 'Mach Punch');
+  assert(fist[15] > plain[15] * 1.25, 'Iron Fist is x1.3 here');
+  // Gems x1.5, frozen Pokemon hit back at half power with special moves, Defeatist at a third, Hard Press stays at 1 power
+  const gem = mon('Snorlax', 50, { item: 'Normal Gem', moves: ['Body Slam'] });
+  assert(roll(gem, lax, 'Body Slam')[15] >= Math.floor(roll(mon('Snorlax', 50), lax, 'Body Slam')[15] * 1.45), 'Gems x1.5');
+  const archen = (hp) => Object.assign(mon('Archen', 50, { ability: 'Defeatist' }), { hpPct: hp });
+  assert(roll(archen(40), lax, 'Rock Slide')[15] === roll(archen(100), lax, 'Rock Slide')[15], 'Defeatist does nothing above a third');
+  assert(roll(archen(30), lax, 'Rock Slide')[15] < roll(archen(100), lax, 'Rock Slide')[15] * 0.6, 'and halves at a third');
+  assert(roll(mon('Steelix', 50), lax, 'Hard Press')[15] <= 4, 'Hard Press keeps its 1 power in this game');
+  // the random roll comes last: the lowest roll is the highest one times 85%, rounded down
+  const r = roll(mon('Pidgeotto', 20), mon('Grookey', 14), 'Air Slash');
+  assert(r[0] === Math.floor(r[15] * 85 / 100), 'rolls run 85-100% of the top roll: ' + r[0] + '-' + r[15]);
+  // abilities that take a move in: Storm Drain, Volt Absorb, Wonder Guard
+  assert(roll(mon('Wartortle', 16), mon('Lileep', 16, { ability: 'Storm Drain' }), 'Water Gun').every(x => x === 0), 'Storm Drain takes Water moves');
+  assert(roll(mon('Pikachu', 20), mon('Lanturn', 20, { ability: 'Volt Absorb' }), 'Thunder Shock').every(x => x === 0), 'Volt Absorb takes Electric moves');
+});

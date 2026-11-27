@@ -11,7 +11,7 @@ const mid = n => { const m = D.moves.find(x => x.f === n || x.n === n); if (!m) 
 const nat = n => D.natures.findIndex(x => x.n === n);
 function levelMoves(s, lv) {
   const k = [];
-  for (const [l, id] of (D.learn[s] || { l: [] }).l) if (l <= lv && E.mv(id) && !k.includes(id)) { k.push(id); if (k.length > 4) k.shift(); }
+  for (const [l, id] of (D.learn[s] || { l: [] }).l) if (l <= lv && E.mv(id)) { const at = k.indexOf(id); if (at >= 0) k.splice(at, 1); k.push(id); if (k.length > 4) k.shift(); }
   return k;
 }
 /** A player Pokemon spec: name, level, optional { nature, moves (names), item (name), ability, key }. */

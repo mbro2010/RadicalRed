@@ -16,15 +16,15 @@
   'use strict';
   const win = typeof window !== 'undefined' ? window : null;
   const reduce = !!(win && win.matchMedia && win.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  const STATUS = { par: 'PAR', brn: 'BRN', psn: 'PSN', tox: 'PSN', slp: 'SLP', frz: 'FRZ' };
+  const STATUS = { par: 'PAR', brn: 'BRN', psn: 'PSN', tox: 'PSN', slp: 'SLP', frz: 'FRB' };   // FRB: frostbite (Radical Red's freeze)
   const STAT_NAME = { ATK: 'Attack', DEF: 'Defense', SPA: 'Sp. Atk', SPD: 'Sp. Def', SPE: 'Speed', ACC: 'accuracy', EVA: 'evasiveness' };
   // the game's own lines for status and damage that isn't a hit
   const STATUS_TEXT = { paralyzed: 'is paralyzed! It may be unable to move!', burned: 'was burned!', poisoned: 'was poisoned!',
-    'badly poisoned': 'was badly poisoned!', asleep: 'fell asleep!', frozen: 'was frozen solid!' };
+    'badly poisoned': 'was badly poisoned!', asleep: 'fell asleep!', frostbite: 'got frostbite!' };
   const HURT_TEXT = {
     'hurt itself in confusion': () => 'It hurt itself in its confusion!', recoil: n => `${n} is damaged by the recoil!`,
     crash: n => `${n} kept going and crashed!`, 'Life Orb': n => `${n} lost some of its HP!`, poison: n => `${n} is hurt by poison!`,
-    toxic: n => `${n} is hurt by poison!`, burn: n => `${n} is hurt by its burn!`, sandstorm: n => `${n} is buffeted by the sandstorm!`,
+    toxic: n => `${n} is hurt by poison!`, burn: n => `${n} is hurt by its burn!`, frostbite: n => `${n} is hurt by its frostbite!`, sandstorm: n => `${n} is buffeted by the sandstorm!`,
     'Stealth Rock': n => `Pointed stones dug into ${n}!`, spikes: n => `${n} is hurt by the spikes!`, 'Leech Seed': n => `${n}’s health is sapped by Leech Seed!`,
     'Rocky Helmet': n => `${n} was hurt by the Rocky Helmet!`, Curse: n => `${n} is afflicted by the curse!`, Substitute: n => `${n} put in a substitute!`,
     'Black Sludge': n => `${n} is hurt by its Black Sludge!`, hail: n => `${n} is buffeted by the hail!`,
@@ -233,8 +233,8 @@
         break;
       }
       case 'cant': {
-        // couldn't move: fully paralyzed, asleep, frozen, flinched, recharging
-        const k = /paralyzed/.test(l.text) ? 'par' : /asleep/.test(l.text) ? 'slp' : /frozen/.test(l.text) ? 'frz' : '';
+        // couldn't move: fully paralyzed, asleep, flinched, recharging (frostbite doesn't stop it)
+        const k = /paralyzed/.test(l.text) ? 'par' : /asleep/.test(l.text) ? 'slp' : '';
         if (k) anim(x.mon, 'st-' + k);
         await say(foePre(side) + l.text, 420);
         break;
@@ -251,7 +251,7 @@
         break;
       }
       case 'status': {
-        const what = (/ is ([a-z ]+?)(?: \(|$)/.exec(l.text) || [])[1] || 'affected';
+        const what = / got frostbite/.test(l.text) ? 'frostbite' : (/ is ([a-z ]+?)(?: \(|$)/.exec(l.text) || [])[1] || 'affected';
         anim(x.mon, 'st-' + (ent.st || 'par'));
         await say(`${foePre(side)}${nm} ${STATUS_TEXT[what] || 'is ' + what + '!'}`, 320);
         break;

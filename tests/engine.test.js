@@ -86,7 +86,8 @@ test('advice: the plan\'s setup hands out held items by biggest gain, as many as
   const { ADV } = require('./lib');
   const item = n => +Object.keys(D.items).find(k => D.items[k].n === n);
   const team = bossSpecs(414);   // Brock
-  const wart = mon('Wartortle', 16, { moves: ['Water Gun', 'Bite', 'Rapid Spin', 'Withdraw'] });
+  // (at 14 Mystic Water turns some of its matchups; with the game's exact rolls a level-16 Wartortle wins the same ones without it)
+  const wart = mon('Wartortle', 14, { moves: ['Water Gun', 'Bite', 'Rapid Spin', 'Withdraw'] });
   const mankey = (key, o) => mon('Mankey', 16, Object.assign({ key, moves: ['Karate Chop', 'Low Kick', 'Fury Swipes'] }, o));
   // one Mystic Water and one Black Belt: each goes where it wins matchups
   let r = ADV.planSetup([wart, mankey('M1')], team, [[item('Mystic Water'), 1], [item('Black Belt'), 1]]);

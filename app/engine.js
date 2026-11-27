@@ -10,6 +10,9 @@
   const toID = C.toID;
   const STAT = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
   const species = new Map(D.species.map(s => [s.i, s]));
+  // Radical Red's own damage formula (app/damage.js); the calculator is the fallback for what it doesn't cover
+  const RRD = (typeof module === 'object' && module && module.exports && typeof require === 'function') ? require('./damage.js')
+    : (typeof self !== 'undefined' ? self : this).createRRDamage;
   const moves = new Map(D.moves.map(m => [m.i, m]));
   const banned = new Set(D.bans.moves);
   const condBanned = new Set(D.bans.cond);
@@ -23,6 +26,11 @@
     'Crabhammer', 'Razor Leaf', 'Air Cutter', 'Aeroblast', 'Attack Order', 'Blaze Kick', 'Cross Poison', 'Drill Run', 'Poison Tail',
     'Sky Attack', 'Spacial Rend', 'Razor Wind', 'Snipe Shot', 'Esper Wing', 'Aqua Cutter', 'Ivy Cudgel', 'Triple Arrows', 'Shadow Blast']);
   const ALWAYS_CRIT = new Set(['Frost Breath', 'Storm Throw', 'Wicked Blow', 'Surging Strikes', 'Flower Trick', 'Zippy Zap']);
+  // the game's own lists, where the data has them (Radical Red adds Drill Peck and Razor Shell to the high-crit moves)
+  for (const [k, set] of [['highCrit', HIGH_CRIT], ['alwaysCrit', ALWAYS_CRIT]]) {
+    const ids = D.moveLists && D.moveLists[k];
+    if (ids && ids.length) { set.clear(); for (const i of ids) { const m = D.moves.find(x => x.i === i); if (m) set.add(m.f); } }
+  }
   const WEATHER_SETTERS = { Drizzle: 'Rain', 'Primordial Sea': 'Heavy Rain', Drought: 'Sun', 'Desolate Land': 'Harsh Sunshine',
     'Orichalcum Pulse': 'Sun', 'Sand Stream': 'Sand', 'Snow Warning': 'Snow' };
   const STATUS_CODE = { 8: 'psn', 16: 'brn', 32: 'frz', 64: 'par', 128: 'tox' };
@@ -57,20 +65,25 @@
   // how much of current HP a damage roll depends on: pinch abilities only care about 1/3, Multiscale about full HP,
   // Defeatist and Berserk about half; HP-based moves (Eruption, Flail, ...) need the HP itself
   const PINCH = new Set(['Blaze', 'Torrent', 'Overgrow', 'Swarm']), FULL_HP = new Set(['Multiscale', 'Shadow Shield', 'Tera Shell']);
+  // (the game compares whole HP: at or below a third of max HP for the pinch abilities and Radical Red's Defeatist)
   function hpPart(spec, mode) {
     const pct = spec.hpPct == null ? 100 : spec.hpPct;
     if (mode === 'roll') {
-      if (PINCH.has(spec.ab)) return pct <= 100 / 3 ? 'L' : 'H';
-      if (FULL_HP.has(spec.ab)) return pct >= 100 ? 'F' : 'D';
+      if (pct >= 100) return 'F';
+      if (PINCH.has(spec.ab) || spec.ab === 'Defeatist') {
+        const mx = maxHP(spec), hp = Math.max(1, Math.round(mx * pct / 100));
+        return hp <= Math.floor(mx / 3) ? 'L' : 'H';
+      }
+      if (FULL_HP.has(spec.ab)) return 'D';
       if (HP_SENSITIVE_AB.has(spec.ab)) return pct <= 50 ? 'L' : 'H';
       return '';
     }
-    return Math.round(pct / 2);
+    return Math.round(pct * 10);
   }
   function specKeyRaw(spec, hpRelevant) {
     const b = spec.boosts || {};
     return [spec.s, spec.lv, spec.nat, spec.ab, spec.it || 0, spec.iv ? spec.iv.join('.') : '', spec.ev ? spec.ev.join('.') : '', b.atk || 0, b.def || 0, b.spa || 0, b.spd || 0, b.spe || 0,
-      spec.status || (spec.st ? STATUS_CODE[spec.st] : ''), spec.firstTurn ? 1 : 0, spec.entry === false ? 0 : 1,
+      spec.status || (spec.st ? STATUS_CODE[spec.st] : ''), spec.firstTurn ? 1 : 0, spec.entry === false ? 0 : 1, spec.movesFirst ? 1 : 0, spec.movesLast ? 1 : 0,
       hpRelevant ? hpPart(spec, hpRelevant) : ''].join(',');
   }
   const HP_TYPES = ['Fighting', 'Flying', 'Poison', 'Ground', 'Rock', 'Bug', 'Ghost', 'Steel', 'Fire', 'Water', 'Grass', 'Electric', 'Psychic', 'Ice', 'Dragon', 'Dark'];
@@ -216,6 +229,8 @@
     const key = ['R', specKey(attSpec, hpRel), specKey(defSpec, hpRel), moveId, o.weather || '', o.terrain || '',
       ds ? [ds.isReflect ? 1 : 0, ds.isLightScreen ? 1 : 0, ds.isAuroraVeil ? 1 : 0].join('') : '', o.crit ? 1 : 0, o.hits || 0, o.z ? 'Z' : '', o.bp || ''].join('|');
     return memo(key, () => {
+      const game = gameRolls(attSpec, defSpec, moveId, o, ds);
+      if (game) return game;
       const att = buildMon(attSpec), def = buildMon(defSpec);
       const move = buildMove(moveId, attSpec, { crit: !!o.crit, maxHits: o.maxHits, z: !!o.z, bp: o.bp });
       if (o.hits && !o.z) move.hits = o.hits;
@@ -241,6 +256,59 @@
         contact: !!(move.flags && move.flags.contact) || (!m.c && m.k === 'P'), punch: !!(move.flags && move.flags.punch),
         sound: !!(move.flags && move.flags.sound), notes };
     });
+  }
+
+  // The game's damage, step for step (app/damage.js), for one use of a move; null when it doesn't handle the move
+  let rrd = null;
+  const PB_BANNED = new Set((D.moveLists && D.moveLists.parentalBondBanned) || []);
+  function rrBattler(spec) {
+    const s = sp(spec.s);
+    const st = rawStats(Object.assign({}, spec, { ab: null }));   // the game's stats; abilities act inside the formula
+    const maxHP = st.hp;
+    const hp = spec.hpPct == null || spec.hpPct >= 100 ? maxHP : Math.max(1, Math.round(maxHP * spec.hpPct / 100));
+    const b = Object.assign({}, spec.boosts || {});
+    if (spec.ab === 'Valiant Shield' && spec.entry !== false) b.def = Math.min(6, (b.def || 0) + 1);
+    // raised on entry (the calculator used to add these itself)
+    if (spec.ab === 'Intrepid Sword' && spec.entry !== false) b.atk = Math.min(6, (b.atk || 0) + 1);
+    if (spec.ab === 'Dauntless Shield' && spec.entry !== false) b.def = Math.min(6, (b.def || 0) + 1);
+    return { sp: s, lv: spec.lv, st, b, ab: canonAbility(spec.ab), it: spec.it ? D.items[spec.it] || null : null, itId: spec.it || 0,
+      status: spec.status || (spec.st ? STATUS_CODE[spec.st] || '' : ''), hp, maxHP, types: s.t, iv: spec.iv,
+      firstTurn: !!spec.firstTurn, movesLast: !!spec.movesLast, movesFirst: !!spec.movesFirst, disguised: !!spec.disguised, charged: !!spec.charged, flashFire: !!spec.flashFire };
+  }
+  function gameRolls(attSpec, defSpec, moveId, o, ds) {
+    if (!RRD || o.z) return null;
+    if (!rrd) rrd = RRD(D, (mt, dt) => typeEff(mt, [dt]), hiddenPowerType);
+    const m = mv(moveId);
+    const base = m.c ? gen.moves.get(toID(m.c)) : null;
+    if (base && (base.ohko || base.damage)) return null;                 // fixed damage and one-hit KOs: the calculator's
+    if (/^(Seismic Toss|Night Shade|Super Fang|Ruination|Nature's Madness|Endeavor|Final Gambit|Psywave|Counter|Mirror Coat|Metal Burst|Comeuppance|Bide|Beat Up|Spit Up|Present|Magnitude|Fling|Natural Gift|Triple Kick|Triple Axel|Multi-Attack|Techno Blast|Aura Wheel|Raging Bull|Ivy Cudgel|Tera Blast)$/.test(m.f)) return null;
+    const att = rrBattler(attSpec), def = rrBattler(defSpec);
+    att.spe = speedOf(attSpec, o.weather, o.terrain); def.spe = speedOf(defSpec, o.weather, o.terrain);
+    att.qp = qpStat(attSpec, o.weather, o.terrain); def.qp = qpStat(defSpec, o.weather, o.terrain);
+    // Meteor Beam and Electro Shot raise Sp. Atk on the charge turn, before they hit (callers that already raised it take one off)
+    if (m.f === 'Meteor Beam' || m.f === 'Electro Shot') att.b = Object.assign({}, att.b, { spa: Math.min(6, (att.b.spa || 0) + 1) });
+    const fo = { weather: o.weather || null, terrain: o.terrain || null, crit: !!o.crit, bp: o.bp || 0, priority: priorityOfMove(attSpec, m),
+      reflect: !!(ds && ds.isReflect), lightScreen: !!(ds && ds.isLightScreen), auroraVeil: !!(ds && ds.isAuroraVeil) };
+    const first = rrd.rolls(att, def, m, fo);
+    if (!first) return null;
+    let hits = 1;
+    if (o.hits) hits = o.hits;
+    else if (base && base.multihit) hits = typeof base.multihit === 'number' ? base.multihit : (attSpec.ab === 'Skill Link' ? base.multihit[1] : base.multihit[0] + 1);
+    let rolls = first.rolls.slice();
+    if (hits > 1) {
+      // later hits land on a target that's no longer at full HP (Multiscale)
+      const later = (def.ab === 'Multiscale' || def.ab === 'Shadow Shield') ? rrd.rolls(att, Object.assign({}, def, { hp: def.maxHP - 1 }), m, fo) : first;
+      rolls = rolls.map((x, i) => x + later.rolls[i] * (hits - 1));
+    } else if (att.ab === 'Parental Bond' && !PB_BANNED.has(m.i) && m.tg !== 8) {
+      const second = rrd.rolls(att, def, m, Object.assign({}, fo, { parentalBond: true }));
+      rolls = rolls.map((x, i) => x + second.rolls[i]);
+    }
+    const notes = first.notes.slice();
+    if (att.ab === 'ORAORAORAORA!' && first.punch) { rolls = rolls.map(x => Math.floor(x * 1.5)); notes.push('ORAORAORAORA!: punches hit again for 50%'); }
+    if (attSpec.ab === 'Striker' && rrd.has('kick', m.i)) notes.push('Striker: kicking move ×1.3');
+    if (attSpec.ab === 'Iron Fist' && first.punch) notes.push('Iron Fist: punching move ×1.3 (Radical Red)');
+    return { rolls, eff: first.eff, type: first.moveType, hits, priority: m.r || 0, contact: first.contact, punch: first.punch, sound: first.sound, notes,
+      ...(first.immune ? { immune: first.immune } : {}) };
   }
 
   function rollsOf(result) {
@@ -406,20 +474,27 @@
     const mod = k => Math.floor(r[k] * ((b[k] || 0) >= 0 ? (2 + (b[k] || 0)) / 2 : 2 / (2 - b[k])));
     return ['def', 'spa', 'spd', 'spe'].reduce((best, k) => (mod(k) > mod(best) ? k : best), 'atk');
   }
+  // The game's SpeedCalc order: stage, weather abilities, other abilities, held item, then Quick Feet or paralysis
   function speedOf(spec, weather, terrain) {
     let s = rawStats(spec).spe;
     const b = (spec.boosts && spec.boosts.spe) || 0;
-    s = Math.floor(s * (b >= 0 ? (2 + b) / 2 : 2 / (2 - b)));
-    if (qpStat(spec, weather, terrain) === 'spe') s = Math.floor(s * 1.5);
-    const item = itemName(spec.it);
-    if (item === 'Choice Scarf') s = Math.floor(s * 1.5);
-    if (item === 'Iron Ball') s = Math.floor(s / 2);
+    const R = [[10, 40], [10, 35], [10, 30], [10, 25], [10, 20], [10, 15], [10, 10], [15, 10], [20, 10], [25, 10], [30, 10], [35, 10], [40, 10]][Math.max(0, Math.min(12, 6 + b))];
+    s = Math.floor(s * R[0] / R[1]);
+    const it = spec.it ? D.items[spec.it] || {} : {};
+    const item = it.c || itemName(spec.it);
     const a = spec.ab;
     const w = weather || '';
-    if ((a === 'Swift Swim' && /Rain/.test(w)) || (a === 'Chlorophyll' && /Sun/.test(w)) || (a === 'Sand Rush' && w === 'Sand') || (a === 'Slush Rush' && /Snow|Hail/.test(w))) s *= 2;
+    const umbrella = item === 'Utility Umbrella';
+    if ((a === 'Swift Swim' && /Rain/.test(w) && !umbrella) || (a === 'Chlorophyll' && /Sun/.test(w) && !umbrella) || (a === 'Sand Rush' && w === 'Sand') || (a === 'Slush Rush' && /Snow|Hail/.test(w))) s *= 2;
+    if (a === 'Surge Surfer' && terrain === 'Electric') s *= 2;
+    if (qpStat(spec, weather, terrain) === 'spe') s = Math.floor(s * 1.5);
     if (a === 'Bull Rush' && spec.firstTurn) s = Math.floor(s * 1.5);
+    if (it.he === 24) s = Math.floor(s * 3 / 4);                          // Radical Red: Macho Brace and the Power items cost a quarter
+    else if (item === 'Choice Scarf') s = Math.floor(s * 15 / 10);
+    else if (item === 'Iron Ball') s = Math.floor(s / 2);
+    else if (item === 'Quick Powder' && /^Ditto/.test((sp(spec.s) || {}).n || '')) s *= 2;
     const status = spec.status || (spec.st ? STATUS_CODE[spec.st] : '');
-    if (a === 'Quick Feet' && status) s = Math.floor(s * 1.5);
+    if (a === 'Quick Feet' && status) s = Math.floor(s * 15 / 10);
     else if (status === 'par') s = Math.floor(s / 2);
     return s;
   }

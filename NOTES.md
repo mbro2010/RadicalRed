@@ -97,6 +97,8 @@ An earlier reading had step 3 missing (the Normal records used only by the battl
 
 Record-based teams are built by `0x09078F9C`, one Pokémon at a time by `0x09078C48`. Personality, nature, ability and shininess are generated in `0x09077088`. EVs from records and spreads are skipped when Minimal Grinding (`0x1032`) or Easy (`0x1033`) is set.
 
+**Checked by running it**: `tools/game_parties.py` calls the builder itself in the emulator (`tools/gba_emu.py`: `CreateMon`, `GetMonData`, `FlagSet` from FireRed; the save block pointers, the player's trainer ID and the rival's name at `SB1+0x3A4C` set up first) for every trainer, in Hardcore and in Normal, with 8 random seeds to see what changes between battles. `data/game_parties.json` is what it built: species (with forms), level, nature, ability, item, moves, IVs, EVs and the computed stats. `tools/build_app_data.js` fills the natures and abilities the tables leave open from it (a trainer's personality comes from its name and the species, so it's the same every battle), marks the 13 trainers whose spread rolls an ability each battle, and checks every boss and route trainer against it: 2,400 Pokémon, no differences in any field. A Pokémon without set moves knows the last four it learned by its level, a move it already knows moving to the end (the game's rule, used for wild Pokémon too).
+
 ## Flags
 
 | Flag | Meaning |
@@ -211,11 +213,11 @@ From the engine source (`atkB3_rolloutdamagecalculation`, `CancelMultiTurnMoves`
 | Shadow Tag, Arena Trap (grounded), Magnet Pull (Steel) | while the holder is in | | `canSwitch` |
 | Disable (86), Torment (165) | 4 turns; until it switches out | | `usable` |
 
-"Can't move" is sleep, freeze, full paralysis, a flinch, hurting itself in confusion or Truant: the engine's attack canceler calls `CancelMultiTurnMoves`, which also drops a charging two-turn move. Ghost types and Shed Shell always get out of traps; nothing gets out of its own lock, charge or recharge turn. `canSwitch` is the one rule for both sides (the ported AI uses it too), and `lockInfo` tells the live battle what to say.
+"Can't move" is sleep, full paralysis, a flinch, hurting itself in confusion or Truant (Radical Red's freeze is frostbite, which doesn't stop a move; see below): the engine's attack canceler calls `CancelMultiTurnMoves`, which also drops a charging two-turn move. Ghost types and Shed Shell always get out of traps; nothing gets out of its own lock, charge or recharge turn. `canSwitch` is the one rule for both sides (the ported AI uses it too), and `lockInfo` tells the live battle what to say.
 
 ## Live turns as the game plays them
 
-The turn report's third step replays the turn with what you saw (`useMove` and `playTurn` in `sim.js`): an action can carry `first` (it moved first: beats priority and Speed in singles, and skips Custap), `outcome` (`hit`, `crit`, `miss`, or `par`, `slp`, `frz`, `conf`, `flinch`: couldn't move; asleep or frozen with a moved outcome means it woke or thawed; `conf` hurts itself with the game's 40-power typeless hit), `ko` (its hit knocked the target out, past Sturdy and a Sash) and `noKO` (the target held on at 1 HP or more). The report sets `ko` or `noKO` on the other side's move when you move a Pokémon's HP to 0 or back up from 0, so who got to move stays right. Each attempt leaves an `outcome` event, which is how the report reads the order and the result back. A status set by hand starts its counter (sleep: 2 turns).
+The turn report's third step replays the turn with what you saw (`useMove` and `playTurn` in `sim.js`): an action can carry `first` (it moved first: beats priority and Speed in singles, and skips Custap), `outcome` (`hit`, `crit`, `miss`, or `par`, `slp`, `conf`, `flinch`: couldn't move; asleep with a moved outcome means it woke; `conf` hurts itself with the game's 40-power typeless hit), `ko` (its hit knocked the target out, past Sturdy and a Sash) and `noKO` (the target held on at 1 HP or more). The report sets `ko` or `noKO` on the other side's move when you move a Pokémon's HP to 0 or back up from 0, so who got to move stays right. Each attempt leaves an `outcome` event, which is how the report reads the order and the result back. A status set by hand starts its counter (sleep: 2 turns).
 
 **Speed** (`speedLesson` in `app.js`): when the order you report contradicts the Speeds the Coach assumed (same priority, no Trick Room, no Quick Claw, Custap, Quick Draw or Stall), it searches your Pokémon's raw Speed (between IV 0 / EV 0 and IV 31 / EV 252) for the closest value that explains it, keeps it for the rest of the battle (`speRaw`, used by `speed()`), and saves a Speed IV estimate (or EVs, if it moved first) with the Pokémon (`iv`, `ev`, `ivGuess`), unless you entered its real stats. A tie is left as a tie.
 
@@ -225,14 +227,67 @@ The turn report's third step replays the turn with what you saw (`useMove` and `
 
 `statusEffect` (`sim.js`) says what a status move does: boosts for you (Swords Dance, Shell Smash…), drops for the target (Growl, Leer, Scary Face…), a status, confusion (Supersonic, Swagger, Flatter) or healing. The planner (`plannerPolicy`) and the move advice (`duelPlan` in `advice.js`) both weigh using one first: the foe gets one free hit (its best move's average; the chance it knocks you out from there), then the one-on-one race is worked out again from the new state (`E.matchup` with the boosts, drops or status). Paralysis, sleep and confusion don't change the damage, so their effect on the race is worked out from it (`statusRisk`): the foe gets the same number of chances to hit (`hitsTaken`) and needs as many hits to knock you out (`toKOme`), but a paralyzed foe acts 3 turns in 4 (binomial), a sleeping one loses 1 to 3 turns (averaged), a confused one hurts itself 1 time in 3 for about three turns. A move gets no credit in a race you can't win (no way to knock the foe out), and its cost counts what losing your Pokémon means for the rest of your team and the HP left after the whole fight, so attacking wins a tie. Move advice values a moveset as the sum, over the next two big fights' Pokémon, of the best plan against each (verdict and risk) plus damage; a status move that helps against none of them counts a little against the set. `bestSet(..., true)` (the move plan) swaps up to two status or stat moves into the damage-coverage set when that handles their team better.
 
+## Radical Red's damage, from the game's own code
+
+`app/damage.js` is the damage formula step for step as the game does it, and `tools/game_damage.py` checks it against the ROM's own code running in a CPU emulator (Unicorn; `tools/gba_emu.py` maps the ROM and RAM, handles the BIOS calls it needs and calls functions). Each case writes two battlers into `gBattleMons` and runs the battle script commands an attack runs: `atk05_damagecalc` (`0x09087430`), `atk06_typecalc` (`0x09082A48`), then `atk07_adjustnormaldamage` (`0x09083E86`) once per roll. `tools/damage_cases.js` makes random cases with the engine's 16 rolls; `tools/damage_compare.js` compares. 30,000 random cases, all 16 rolls: no differences (every ability below 256 and every held item once each way, weather, terrain, screens, crits, burn, frostbite, stages, low HP, variable-power moves, multi-hit moves per hit). The harness doesn't run the attack canceler, so moves the game stops before its damage step (Volt Absorb, Wonder Guard, Soundproof, priority into Psychic Terrain...) are counted apart, and Mold Breaker is mimicked by clearing the target's ability (the canceler does that for the move: `DisabledMoldBreakerAbilities`). Focus Sash and Sturdy cap the game's numbers at the target's HP − 1.
+
+Addresses (Radical Red 4.1): battle script command table `0x0903EF20` (repointed from FireRed's `0x0825011C`); `atk04_critcalc` `0x0908252C`; `CalculateBaseDamage` `0x09085A10`; the base-power boosts (`AdjustBasePower`) `0x09085304`; the random roll `0x09081BA0`, which calls the LCG at `0x0808322C` (state `0x020386D0`, `s*0x41C64E6D + 0x3039`); `gNewBS` pointer `0x0203E038` (`criticalMultiplier[bank]` +`0x15C` in tenths, `ResultFlags[bank]` +`0x160`, the Protosynthesis / Quark Drive stat +`0x19`); terrain `0x0203E028`; the in-battle ability getter `0x090757D0` (0 when suppressed: Gastro Acid, Neutralizing Gas); `GetActualSpeciesWeight` `0x09084288` (alternate sizes `0x09161F7A`, the Pokédex `0x09814030`); `CanEvolve` (Eviolite) `0x090C1B90`, which asks the *party slot*, so the harness creates party Pokémon too. In `gBattleMons` (`0x02023BE4`, `0x58` each) CFRU keeps a third type at `+0x18`, where FireRed's unused HP stat stage was; the stages run from `+0x19` (Attack).
+
+The game's order, all whole numbers: base power (variable powers) and its boosts (ability, then item, then Charge, terrain, sports), the attacking and defending stats with their ability and item boosts, sandstorm and hail, then the stages (a crit ignores the attacker's drops and the target's raises); `((2L/5+2) × power × A / D) / 50 + 2`; then Knock Off, Solar Beam in weather, weather, auras, Tinted Lens or Sniper, Expert Belt, the target's damage-cutting abilities, resist berries, screens, burn or frostbite, Parental Bond's second hit, spread; then ×1.5 for a crit (`atk05`); STAB (×1.5, ×2 Adaptability) and each of the target's types in turn, never below 1 (`atk06`); and the random roll last, `damage × (100 − (Random() & 15)) / 100` (`atk07`). So the lowest roll is always the highest roll × 85%, rounded down. The standard calculator applies the roll before STAB and type and chains its boosts in 4096ths, which put about 40% of rolls 1-3 HP off.
+
+Radical Red's own changes, each read from its code or found by the emulator and then checked there:
+
+| | Radical Red | Main series / standard calculator |
+| --- | --- | --- |
+| Iron Fist | ×1.3 (punching list at `0x103FE9A`) | ×1.2 |
+| Gems | ×1.5 | ×1.3 |
+| Life Orb | ×1.3 on base power | ×1.3 on the final damage |
+| Liquid Voice | Water and ×1.2 | Water only |
+| Transistor | ×1.5 | ×1.3 (Gen 9) |
+| Illusion | ×1.3 while disguised | none |
+| Rivalry | ×1.25 same gender, nothing otherwise | ×0.75 for the opposite gender |
+| Reckless | its own list, Explosion, Self-Destruct, Misty Explosion, Chloroblast and Draco Barrage included, Axe Kick not | recoil and crash moves |
+| Sheer Force | its own list of 184 (Blast Burn, Hydro Cannon, Frenzy Plant, Scale Shot included; many Gen 9 moves not) | moves with secondary effects |
+| Mega Launcher | adds Flash Cannon, Snipe Shot, Octazooka, Armor Cannon | pulse moves |
+| Sharpness | adds False Swipe, Shadow Claw | slicing moves |
+| Bulletproof | adds Spike Cannon, Flash Cannon, Snipe Shot | ball and bomb moves |
+| Striker (RR) | ×1.3 on its kicking list (Stomp, Pyro Ball, High Horsepower, Low Sweep, Triple Arrows, Aqua Step...; not Axe Kick) | |
+| Wind Rider | its list (Sonic Slash in, Aeroblast and Tailwind out) | wind moves |
+| High-crit moves | adds Drill Peck, Razor Shell | |
+| Defeatist | at 1/3 HP or less | at 1/2 |
+| Primal Armor (RR) | super-effective hits ×0.5 | |
+| Purifying Salt | Ghost damage ×0.5 at the end | Ghost attacker's stat ×0.5 |
+| Protosynthesis, Quark Drive | ×1.3 to the stat stored when they switched on (Def and Sp. Def too) | ×1.3 (5325/4096) |
+| Orichalcum Pulse, Hadron Engine | ×4/3 Attack in sun, Sp. Atk in Electric Terrain | ×5461/4096 |
+| Terapagos (its ability is Multiscale's number, shown as Tera Shell) | at full HP, ×0.5 for each type slot and the blank third one (×1/4 for one type), and no Multiscale | Tera Shell: not very effective |
+| Frostbite (replaces freeze) | special moves ×0.5 (see below) | freeze |
+| Hail | Ice types' Defense ×1.5, like snow | damage only (Gen 3-8) |
+| Explosion, Self-Destruct, Misty Explosion | the target's Defense (Sp. Def for Misty Explosion) counts half | no |
+| Barb Barrage | ×2 against any status | against poison |
+| Hex, Bitter Malice, Infernal Parade | ×2 against any status (`0x1040272`) | Bitter Malice: no |
+| Hard Press | keeps its table power of 1 (2-3 HP) | 100 × the target's HP fraction |
+| Judgment | the user's first type (Arceus's follows its plate) | the plate's type |
+| Electro Ball | 60 at least | 40 when slower |
+| Electro Drift | ×1.3 on base power when super effective | ×5461/4096 |
+| Psyblade, Expanding Force, Rising Voltage, Terrain Pulse, Misty Explosion | ×1.5, ×1.5, ×2, ×2, ×1.5 in their terrain | |
+| Knock Off | no ×1.5 against a Z-Crystal, the holder's own Mega Stone, any Mega's stone, or the items forms need | |
+| Weights | the game's Pokédex (Low Kick, Grass Knot, Heavy Slam, Heat Crash): 78 differ from the standard data, a few oddly (Fraxure and Volcanion weigh 0, so Heavy Slam against them is 40 power; Cherrim 0.1 kg; Vanillite 172 kg) | |
+| Macho Brace, Power items | Speed ×0.75 | ×0.5 |
+
+**Abilities past number 255** (Pure Power, Filter, Shell Armor, Rough Skin, Air Lock, Shadow Shield, Prism Armor, Libero, Tera Shell...) are display names only: the battle code keeps abilities in one byte, and a Pokémon shown with one of them has the number of an ability that works the same (Filter shows for Solid Rock's). Species data therefore lists the working ability.
+
+**Mold Breaker** and the moves that ignore abilities (the list at `0x1040136`: Moongeist Beam, Sunsteel Strike, Photon Geyser, Shell Side Arm) work in the attack canceler, which switches the target's breakable abilities off for the move; `damage.js` drops them the same way.
+
+## Frostbite
+
+Radical Red turns on CFRU's `FROSTBITE` option (the in-game text: "A frostbite reduces Sp Attack. It also causes ongoing HP loss."; `"{x} got frostbite!"`, `"{x} is hurt by its frostbite!"`). A frostbitten Pokémon still moves (the canceler's freeze check is compiled out), its special moves do half damage, it loses 1/16 of its max HP at the end of each turn (not with Magic Guard), and it's cured by using a thawing move (`0x1040180`: Flame Wheel, Sacred Fire, Flare Blitz, Scald, Scorching Sands, Fusion Flare...) or by being hit by one or by Scald, Steam Eruption, Scorching Sands or Matcha Gotcha (`0x1040196`); not every Fire move. Hail doubles the chance of inflicting it. Ice types, Magma Armor and sun prevent it. The boss AI's `IsBankIncapacitated` doesn't count it, and its "thaw yourself" bonus is off. `sim.js` plays all of this; the live battle no longer offers "frozen solid".
+
 ## Open questions
 
 - Which abilities Hardcore or Restricted Mode restricts for the player
 - Boss Pokémon byte `+24` and bits 1–2 of byte `+25`
-- Natures of regular trainers' Pokémon without a spread (fixed personality; formula not decoded)
 - Flags `0x38` and `0x53` (inferred from level consistency)
 - Level-up learnsets (3-byte entries: u16 move, u8 level), needed for regular trainers that use default moves
-- Type chart and battle-mechanic changes, needed for the damage calculator
 
 ## Evolutions, encounters, maps, trainers, tutors, sprites
 

@@ -4,7 +4,7 @@ self.window = self;
 self.importScripts(
   'https://cdn.jsdelivr.net/npm/@smogon/calc@0.12.0/dist/data/production.min.js',
   'https://cdn.jsdelivr.net/npm/@smogon/calc@0.12.0/dist/production.min.js',
-  'engine.js', 'ai.js', 'sim.js', 'advice.js');
+  'damage.js', 'engine.js', 'ai.js', 'sim.js', 'advice.js');
 let SIM = null, E = null, ADV = null, ready = null;
 function init() {
   if (!ready) ready = fetch('rrdata.json').then(r => r.json()).then(D => { E = self.createEngine(self.calc, D); SIM = self.createSim(E); ADV = self.createAdvice(E, SIM); });

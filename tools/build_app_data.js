@@ -14,6 +14,8 @@ const moves = read('moves.json');
 const abilityNames = read('abilities.json');
 const abilityText = read('ability_descriptions.json');
 const items = read('items.json');
+const itemEffects = read('item_effects.json');
+const moveLists = read('move_lists.json');
 const natures = read('natures.json');
 const learn = read('learnsets.json');
 const tms = read('tms.json');
@@ -24,10 +26,40 @@ const caps = read('level_caps.json');
 const restrictions = read('restrictions.json');
 
 const STAT = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
+// Every trainer's party as the game's own party builder makes it (tools/game_parties.py runs it in an emulator): it
+// fills in what the tables leave to the game. Regular-table trainers' natures and abilities come from a personality the
+// game works out from the trainer's name and species (the same every time); Arceus takes its Plate's form and Keldeo
+// its Resolute form. Fields the game leaves to chance (three trainers' abilities) stay open.
+const gameParties = fs.existsSync(path.join(D, 'game_parties.json')) ? read('game_parties.json') : null;
+const speciesById = Object.fromEntries(species.map(s => [s.id, s]));
+const gameWarnings = [];
+function fromGame(party, tid, mode) {
+  const g = gameParties && gameParties[mode] && gameParties[mode][tid];
+  if (!g) return party;
+  const random = (gameParties.random || {})[`${mode}:${tid}`] || {};
+  return party.map((m, k) => {
+    const x = g[k];
+    if (!x) return m;
+    const out = Object.assign({}, m);
+    const sameKind = (speciesById[x.s] || {}).name === (speciesById[m.s] || {}).name;
+    if (x.s !== m.s && sameKind) out.s = x.s;
+    else if (x.s !== m.s) { gameWarnings.push(`${mode} trainer ${tid} #${k + 1}: species ${m.s} here, ${x.s} in the game`); return m; }
+    if (out.nat == null) out.nat = x.nat;
+    const rolled = random[k] && random[k].fields.includes('ab');
+    if (out.ab == null && !rolled) out.ab = x.ab;
+    if (rolled) out.abr = random[k].ab;   // the game rolls one of these each battle (the Coach plans with the first slot)
+    if (out.nat !== x.nat) gameWarnings.push(`${mode} trainer ${tid} #${k + 1}: nature ${out.nat} here, ${x.nat} in the game`);
+    if ((out.it || 0) !== (x.it || 0)) gameWarnings.push(`${mode} trainer ${tid} #${k + 1}: item ${out.it} here, ${x.it} in the game`);
+    if ((out.mv || []).join() !== x.mv.join()) gameWarnings.push(`${mode} trainer ${tid} #${k + 1}: moves differ`);
+    return out;
+  });
+}
 
 // ---------- species ----------
 const firstIdByName = {};
 for (const s of species) if (s.name && !(s.name in firstIdByName)) firstIdByName[s.name] = s.id;
+const evolutionsAll = read('evolutions.json');
+const weights = read('weights.json');             // the battle code's own weights (hectograms), from tools/extract_weights.py
 const outSpecies = [];
 for (const s of species) {
   const m = calc.species[s.id];
@@ -45,6 +77,8 @@ for (const s of species) {
     s: STAT.map(k => s.base[k]),
     a: [s.abilities[0], s.abilities[1], s.hiddenAbility].map(x => x ? x.trim() : null),
     w: m.weightkg || 10, gr: s.growthRate || 0, gd: s.genderRatio,
+    ...((evolutionsAll[s.id] || []).some(e => e.method && e.method !== 0xFE) ? { ce: 1 } : {}),   // can evolve, as Eviolite checks it
+    ...(weights[s.id] != null ? { wt: weights[s.id] } : {}),
     ...(battleOnly ? { bo: 1 } : {}),
     ...(m.custom ? { x: 1 } : {}),
   });
@@ -58,6 +92,7 @@ for (const m of moves) {
   outMoves.push({
     i: m.id, n: m.name, f: c.calc || m.name, c: c.calc, t: m.type, p: m.power, a: m.accuracy,
     k: { physical: 'P', special: 'S', status: 'X' }[m.category], r: m.priority, z: m.zPower, e: m.effect, ec: m.effectChance, tg: m.target,
+    fl: m.flags,                                    // the game's move flags (1 = makes contact)
     ...(c.custom ? { x: 1 } : {}),
   });
 }
@@ -83,6 +118,8 @@ for (const [id, name] of Object.entries(items)) if (name && !(name in itemIdByNa
 for (const [id, name] of Object.entries(items)) {
   if (!name || /^Free Space|^\?+$/.test(name)) continue;
   outItems[id] = { n: name, c: calc.items[id] || null };
+  const he = itemEffects[id];
+  if (he && (he[0] || he[1])) { outItems[id].he = he[0]; outItems[id].hq = he[1]; }   // hold effect and its number (a type, a %)
 }
 
 // ---------- learnsets ----------
@@ -142,7 +179,8 @@ function defaultMoves(sid, lv) {
   const L = outLearn[sid];
   if (!L) return [];
   const known = [];
-  for (const [l, mv] of L.l) if (l <= lv && !known.includes(mv)) { known.push(mv); if (known.length > 4) known.shift(); }
+  // the game's initial moveset: learnset order, a move it already knows moves to the end, the last four kept
+  for (const [l, mv] of L.l) if (l <= lv) { const at = known.indexOf(mv); if (at >= 0) known.splice(at, 1); known.push(mv); if (known.length > 4) known.shift(); }
   return known;
 }
 
@@ -168,12 +206,12 @@ const bosses = order.map((tid, i) => {
   const ov = t.hardcoreOverride.find(p => p.order === i);
   const b = {
     i, id: tid, n: t.name, cls: t.class, cat: category(t), dbl: ov.double ? 1 : 0, cap: HC[done], ...(bossLoc[tid] ? { loc: bossLoc[tid] } : {}),
-    party: ov.party.map(recordMon),
+    party: fromGame(ov.party.map(recordMon), tid, 'hardcore'),
   };
   b.mi = done;   // milestones done before this fight: the level cap in any mode is caps[mode][mi]
   // Normal Mode (with Minimal Grinding): the same fight, from the Normal boss records (else every-mode, else regular)
   const nt = normalTeam(t);
-  b.np = nt.party; b.ndbl = nt.dbl;
+  b.np = fromGame(nt.party, tid, 'normal'); b.ndbl = nt.dbl;
   if (MILESTONE_AFTER[tid]) { b.ms = MILESTONE_AFTER[tid]; b.capAfter = HC[done + 1]; done++; }
   return b;
 });
@@ -252,7 +290,7 @@ for (const [tid, places] of Object.entries(locations)) {
   const t = trainers[tid];
   if (!t || bossIds.has(+tid)) continue;
   const team = regularTeam(t);
-  outTrainers[tid] = { n: t.name, cls: t.class, dbl: team.dbl, a: places, party: team.party };
+  outTrainers[tid] = { n: t.name, cls: t.class, dbl: team.dbl, a: places, party: fromGame(team.party, tid, 'normal') };
 }
 
 // ---------- gifts, static encounters, items, shops, and where each TM is ----------
@@ -285,7 +323,7 @@ for (const [area, a] of Object.entries(finds.areas)) {
 const out = {
   version: 'Radical Red 4.1', calcVersion: '@smogon/calc 0.12.0 (gen 9 mechanics)',
   natures: natures.map(n => ({ n: n.name, u: n.up, d: n.down })),
-  species: outSpecies, moves: outMoves, abilities: outAbilities, items: outItems,
+  species: outSpecies, moves: outMoves, abilities: outAbilities, items: outItems, moveLists,
   learn: outLearn, tms: tmMoves,
   bans: {
     moves: restrictions.bannedMoves.map(n => moveIdByName[n]).filter(Boolean),
@@ -303,5 +341,6 @@ const out = {
 };
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, JSON.stringify(out));
+if (gameParties) console.log(`checked against the game's own parties: ${gameWarnings.length} differences${gameWarnings.length ? '\n  ' + gameWarnings.slice(0, 12).join('\n  ') : ''}`);
 console.log(`areas ${outAreas.length}, route trainers ${Object.keys(outTrainers).length}, species with evolutions ${Object.keys(outEvo).length}, Mega forms ${Object.keys(outMega).length}`);
 console.log(`species ${outSpecies.length}, moves ${outMoves.length}, abilities ${Object.keys(outAbilities).length}, items ${Object.keys(outItems).length}, bosses ${bosses.length}, milestones ${done}, ${(fs.statSync(OUT).size / 1024).toFixed(0)} KB`);

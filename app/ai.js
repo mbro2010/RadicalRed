@@ -321,7 +321,8 @@
   function shouldRecover(c, id, heal) {
     const { st, me, foe } = c;
     const foeD = c.foeStrongest ? c.dmg(foe, me, c.foeStrongest) : 0;
-    const incapacitated = foe.status === 'slp' || foe.status === 'frz' || foe.recharge;
+    // IsBankIncapacitated: asleep, recharging or loafing (with FROSTBITE on, frostbite doesn't count)
+    const incapacitated = foe.status === 'slp' || foe.recharge || (foe.ability === 'Truant' && foe.truantLoaf);
     if (c.hitsFirst(id)) {
       if (c.foeCanKOMe && !(foeD >= Math.min(me.maxHp, me.hp + heal))) return true;
       if (c.foeCan2HKOMe && !incapacitated && heal > me.hp && coin(c.rng, 0.5)) return true;
@@ -568,7 +569,6 @@
       else if (n === 'Wide Guard' && actives(st, foe.side).some(f => f.moves.some(x => [8, 32].includes((E.mv(x) || {}).tg) && meta(x).cat !== 'X'))) add(statusBonus(c, 3), 'Wide Guard');
       else if (e === 158 && me.firstTurn && foe.ability !== 'Inner Focus') add(cls === 'dUtility' ? 17 : statusBonus(c, 3), 'Fake Out');
     }
-    if (me.status === 'frz' && ['Flame Wheel', 'Sacred Fire', 'Flare Blitz', 'Fusion Flare', 'Scald', 'Steam Eruption', 'Burn Up', 'Pyro Ball', 'Scorching Sands', 'Matcha Gotcha'].includes(n)) add(10, 'thaw');
     return v;
   }
 
@@ -625,7 +625,7 @@
     const { st, me, foe } = c;
     const foes = [foe].concat(actives(st, other(me.side)).filter(f => f !== foe));
     const ally = actives(st, me.side).find(m => m !== me);
-    const wideGuard = foes.some(f => f.moves.some(x => meta(x).name === 'Wide Guard') && f.status !== 'slp' && f.status !== 'frz') && coin(c.rng, 0.75);
+    const wideGuard = foes.some(f => f.moves.some(x => meta(x).name === 'Wide Guard') && f.status !== 'slp') && coin(c.rng, 0.75);
     let best = null, bestScore = -99, bestTg = -1;
     for (const id of c.attacks(me)) {
       const tg = (E.mv(id) || {}).tg || 0;

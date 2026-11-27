@@ -1103,10 +1103,12 @@
   }
 
   // ---------------- editor sheet ----------------
+  /** The moves a Pokemon starts with at a level, the way the game gives them (wild ones and trainers' without set moves):
+   *  every learnset move up to its level in order, a move it already knows moving to the end, the last four kept. */
   function wildMoves(sid, lv) {
     const L = D.learn[sid]; if (!L) return [];
     const k = [];
-    for (const [l, id] of L.l) if (l <= lv && E.mv(id) && !k.includes(id)) { k.push(id); if (k.length > 4) k.shift(); }
+    for (const [l, id] of L.l) if (l <= lv && E.mv(id)) { const at = k.indexOf(id); if (at >= 0) k.splice(at, 1); k.push(id); if (k.length > 4) k.shift(); }
     return k;
   }
   function openEditor(existing, prefill) {
@@ -1156,11 +1158,7 @@
       m.nick = $('#ed-nick').value.trim(); m.met = $('#ed-met').value.trim(); m.box = $('#ed-box').value;
       if (!$('#ed-item').value.trim()) m.it = null;
     }
-    function defaultMoves() {
-      const L = D.learn[m.s]; if (!L) return [];
-      const seen = []; for (const [lv, id] of L.l) if (lv <= m.lv && E.mv(id) && !seen.includes(id)) seen.push(id);
-      return seen.slice(-4);
-    }
+    function defaultMoves() { return wildMoves(m.s, m.lv); }
     function wire() {
       $('#ed-cancel').onclick = close;
       attachSearch($('#ed-species'), $('#ed-species-list'), speciesSource, it => {
@@ -1220,7 +1218,7 @@
     const s = E.sp(t.s);
     const mega = SIM.megaTarget({ spec: t, item: t.it }) ;
     return `<div class="slot">${icon(t.s, 'x2')}<div class="who"><b>${esc(s.n)}</b><div class="row" style="gap:6px">${typesHTML(s.t)}<span class="lv">Lv ${t.lv}</span>${t.rel != null ? `<span class="tag">your top ${t.rel ? (t.rel > 0 ? '+' : '−') + Math.abs(t.rel) : ''}</span>` : ''}${mega ? `<span class="tag ban">Mega Evolves: ${esc(E.sp(mega).n)}</span>` : ''}${/ Z$/.test(E.itemName(t.it) || '') ? '<span class="tag ban">Z-Move</span>' : ''}</div></div></div>
-      <div class="small muted">${esc(t.ab)} · ${esc(E.itemName(t.it) || 'no item')} · ${esc(D.natures[t.nat].n)}${t.st ? ' · starts ' + esc({ 8: 'poisoned', 16: 'burned', 64: 'paralyzed', 128: 'badly poisoned' }[t.st] || 'statused') : ''}</div>
+      <div class="small muted">${t.abr ? `${esc(t.abr.join(' or '))} (the game rolls it each battle)` : esc(t.ab)} · ${esc(E.itemName(t.it) || 'no item')} · ${esc(D.natures[t.nat].n)}${t.st ? ' · starts ' + esc({ 8: 'poisoned', 16: 'burned', 64: 'paralyzed', 128: 'badly poisoned' }[t.st] || 'statused') : ''}</div>
       <div class="moves">${t.mv.map(id => moveChip(id)).join('')}</div>`;
   }
   function answerHTML(a) {
@@ -1867,7 +1865,7 @@
     return html;
   }
   // ---------------- the turn report: what happened, in taps or in words; the Coach re-plans from it ----------------
-  const STATUS_OPTS = [['', 'OK'], ['par', 'PAR'], ['brn', 'BRN'], ['psn', 'PSN'], ['tox', 'TOX'], ['slp', 'SLP'], ['frz', 'FRZ']];
+  const STATUS_OPTS = [['', 'OK'], ['par', 'PAR'], ['brn', 'BRN'], ['psn', 'PSN'], ['tox', 'TOX'], ['slp', 'SLP'], ['frz', 'FRB']];   // FRB: frostbite, Radical Red's freeze
   const shortName = n => String(n || '').replace(/ \(.*\)$/, '');
   /** The boss's likely move, why the AI likes it, and how close the next choice is (a tie is a coin flip in the engine). */
   /** What their move does to your Pokemon from the HP it has now: every damage roll, critical hits and their accuracy.
@@ -2034,7 +2032,7 @@
   // ---------------- what happened, in the game's order: who moved first, and how each move went ----------------
   const OUTCOME_LABEL = { hit: 'Hit', crit: 'Critical hit', miss: 'Missed', par: 'Fully paralyzed', slp: 'Fast asleep', frz: 'Frozen solid',
     conf: 'Hurt itself in confusion', flinch: 'Flinched', recharge: 'Had to recharge' };
-  const CANT = ['par', 'slp', 'frz', 'conf', 'flinch', 'recharge'];
+  const CANT = ['par', 'slp', 'conf', 'flinch', 'recharge'];   // (frostbite, Radical Red's freeze, doesn't stop a Pokemon moving)
   /** The turn as the simulator played it: who acted in which order, and how each one's move went. */
   function turnOutcomes(nx) {
     const order = [], o = {};
@@ -2081,14 +2079,13 @@
     if (atFoe && mv.a > 0 && m.ability !== 'No Guard' && (!foe || foe.ability !== 'No Guard')) out.push('miss');
     const can = new Set();
     if (m.status === 'slp') can.add('slp');
-    if (m.status === 'frz') can.add('frz');
     if (m.status === 'par') can.add('par');
     if (m.confused) can.add('conf');
     if (foeFirst && foeAct && foeAct.type === 'move' && foe) {
-      for (const k of SIM.mayCause(foe, foeAct.id)) if (['par', 'slp', 'frz', 'conf', 'flinch'].includes(k)) can.add(k);
+      for (const k of SIM.mayCause(foe, foeAct.id)) if (['par', 'slp', 'conf', 'flinch'].includes(k)) can.add(k);
       if (m.ability === 'Inner Focus') can.delete('flinch');
     }
-    return out.concat(['slp', 'frz', 'par', 'conf', 'flinch'].filter(k => can.has(k)));
+    return out.concat(['slp', 'par', 'conf', 'flinch'].filter(k => can.has(k)));
   }
   function timelineHTML(st, nx) {
     const L = S.live;
@@ -2114,7 +2111,7 @@
       const foeFirst = order.indexOf(fsd) >= 0 && order.indexOf(fsd) < n;
       const choices = outcomeChoices(st, sd, m, a, who[fsd], acts[fsd], foeFirst);
       const label = k => (k === 'hit' && mv.k === 'X' ? 'It worked' : OUTCOME_LABEL[k]);
-      const sleepy = m.status === 'slp' ? 'Hit, Missed or Critical hit means it woke up.' : m.status === 'frz' ? 'Hit, Missed or Critical hit means it thawed out.' : '';
+      const sleepy = m.status === 'slp' ? 'Hit, Missed or Critical hit means it woke up.' : '';
       h += `<div class="tl-row"><span class="tl-n">${n + 1}</span>${icon(m.spec.s)}<span>${sd === 'a' ? 'Their' : 'Your'} <b>${esc(shortName(m.name))}</b> used <b>${esc(mv.f)}</b></span></div>`;
       h += o
         ? `<div class="chips tl-out">${choices.map(k => `<button class="chipbtn${CANT.includes(k) ? ' cant' : ''}" data-out="${sd}:${k}" aria-pressed="${k === o}">${esc(label(k))}</button>`).join('')}</div>${sleepy ? `<p class="note" style="margin:0 0 0 30px">${sleepy}</p>` : ''}`
@@ -2596,7 +2593,7 @@
     const meSpec = specOf(meM, { hpPct: B.meHp, boosts: B.meBoost, status: B.meStatus, entry: false });
     const themSpec = Object.assign({}, team[B.them], { hpPct: B.themHp, boosts: B.themBoost, status: B.themStatus || (team[B.them].st ? E.STATUS_CODE[team[B.them].st] : ''), entry: false });
     let weather = B.weather === 'auto' ? (E.WEATHER_SETTERS[themSpec.ab] || E.WEATHER_SETTERS[meSpec.ab] || E.teamWeather(team) || null) : (B.weather === 'none' ? null : B.weather);
-    const statusSel = (id, v) => `<select id="${id}" class="inline">${[['', 'Healthy'], ['par', 'Paralyzed'], ['brn', 'Burned'], ['psn', 'Poisoned'], ['tox', 'Badly poisoned'], ['slp', 'Asleep'], ['frz', 'Frozen']].map(([k, l]) => `<option value="${k}" ${v === k ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
+    const statusSel = (id, v) => `<select id="${id}" class="inline">${[['', 'Healthy'], ['par', 'Paralyzed'], ['brn', 'Burned'], ['psn', 'Poisoned'], ['tox', 'Badly poisoned'], ['slp', 'Asleep'], ['frz', 'Frostbite']].map(([k, l]) => `<option value="${k}" ${v === k ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
     const arena = `<div class="arena"><div class="side">${front(meM.s, 'x2 flip')}<div class="plate"><b>${esc(monName(meM))}</b><span class="small">Lv ${meM.lv}</span>${hpBar(B.meHp)}</div></div>
       <div class="side">${front(team[B.them].s, 'x2')}<div class="plate"><b>${esc(E.sp(team[B.them].s).n)}</b><span class="small">Lv ${team[B.them].lv}</span>${hpBar(B.themHp)}</div></div></div>`;
     const quick = `<section class="section">
@@ -3887,7 +3884,7 @@
     D.routeStart = D.bosses.length;
     for (const [tid, t] of Object.entries(D.trainers || {})) {
       const party = t.party.filter(m => E.sp(m.s)).map(m => ({ s: m.s, lv: m.lv, rel: m.rel, iv: m.iv || [31, 31, 31, 31, 31, 31], ev: m.ev || null,
-        nat: m.nat != null ? m.nat : 0, ab: m.ab || E.sp(m.s).a[0], it: m.it || null, mv: (m.mv || []).filter(id => E.mv(id)) }));
+        nat: m.nat != null ? m.nat : 0, ab: m.ab || E.sp(m.s).a[0], abr: m.abr || undefined, it: m.it || null, mv: (m.mv || []).filter(id => E.mv(id)) }));
       if (!party.length) continue;
       D.bosses.push({ i: D.bosses.length, id: +tid, n: t.n, cls: t.cls, cat: 'trainer', dbl: t.dbl, cap: null, party, route: true, areas: t.a });
     }
