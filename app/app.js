@@ -351,7 +351,7 @@
   }
 
   // ---------------- screens: your run, and the tools in the menu ----------------
-  const SCREENS = { run: 'Your run', team: 'Pokémon', areas: 'All areas', fight: 'Plan any fight', check: 'Quick check', runs: 'Past runs & starters' };
+  const SCREENS = { run: 'Your run', team: 'Pokémon', areas: 'All areas', side: 'Side quests & services', fight: 'Plan any fight', check: 'Quick check', runs: 'Past runs & starters' };
   function go(screen) {
     if (screen === 'newrun') { toggleMenu(false); startNewRun(); return; }
     S.screen = SCREENS[screen] ? screen : 'run';
@@ -387,6 +387,7 @@
     else if (scr === 'areas') renderRoutes();
     else if (scr === 'fight') renderPlan();
     else if (scr === 'runs') renderRuns();
+    else if (scr === 'side') renderSide();
     else renderWhatIf('');
   }
 
@@ -1314,8 +1315,22 @@
   /** Most boss levels follow your highest-level party Pokemon. The plan picks your party, so it plans for the
    *  highest level you have (it stays put when you set your party up the plan's way). */
   function planTop() { return Math.max(1, ...alive().map(m => m.lv)); }
+  /** A boss's own rule about your party (Hardcore Clair: no Fairy types anywhere in it, nor Altaria, Absol or Audino with
+   *  the Mega Stone that makes them Fairy; she won't battle otherwise). null when there's none. */
+  function bossRule(bi) {
+    const b = D.bosses[bi];
+    const r = b && (D.rules || {})[b.id];
+    return r && (!r.mode || r.mode === modeNow()) ? r : null;
+  }
+  function breaksRule(r, m) {
+    if (!r) return false;
+    const sp = E.sp(m.s);
+    if (sp && (r.noTypes || []).some(t => sp.t.includes(t))) return true;
+    return (r.noMegaStones || []).some(([s, it]) => sp && sp.g === s && m.it && E.itemName(m.it) === it);
+  }
   function planInputs() {
-    const roster = alive();
+    const rule = bossRule(S.planBoss);
+    const roster = alive().filter(m => !breaksRule(rule, m));
     const top = planTop();
     const team = E.bossTeam(S.planBoss, top).map((t, i) => Object.assign({ key: 'b' + i, label: E.sp(t.s).n }, t));
     return { roster, specs: roster.map(r => specOf(r, { label: monName(r), keepItem: keepsItem(r) || undefined })), team, top };
@@ -2432,8 +2447,9 @@
     L.faints = (L.faints || []).concat(newly);
     speedLesson(st, nx);
     nx.policies = st.policies;
-    if (!SIM.actives(nx, 'a').length && !nx.a.team.some(m => !m.fainted)) { nx.over = true; nx.winner = 'p'; }
-    else if (!nx.p.team.some(m => !m.fainted)) { nx.over = true; nx.winner = 'a'; }
+    // both sides out at once is a draw, and the game counts a draw as your loss (sim.js battleOver)
+    if (!nx.p.team.some(m => !m.fainted)) { nx.over = true; nx.winner = 'a'; nx.draw = !nx.a.team.some(m => !m.fainted); }
+    else if (!SIM.actives(nx, 'a').length && !nx.a.team.some(m => !m.fainted)) { nx.over = true; nx.winner = 'p'; }
     else { nx.over = false; nx.winner = null; }
     L.st = nx; L.step = 'anim';
     L.anim = { from: SIM.snapshot(st), lines: L.prev.lines };
@@ -3332,8 +3348,93 @@
     h += card(a.n, true);
     if (wild && !s.post) h += `<details class="more small"><summary>What your team still needs</summary>${gapsHTML()}</details>`;
     if (older.length && first) h += `<details class="more" id="older" ${S.olderOpen ? 'open' : ''}><summary>Still open from earlier (${older.length})</summary><div class="section" style="margin-top:8px">${older.map(n => card(n)).join('')}</div></details>`;
+    if (first) h += earlyHTML(s, older) + sideNowHTML(s);
     if (first) h += otherAreaHTML(s, older);
     return h;
+  }
+  /** Areas the story order puts later that you can already reach (the ROM's maps say so), some behind an optional fight. */
+  function earlyHTML(s, older) {
+    const here = s.areas || [];
+    const early = FLOW.openEarly(S.run, s.k).filter(x => !here.includes(x.area) && !older.includes(x.area));
+    if (!early.length) return '';
+    const fightName = t => { const b = D.bosses.find(x => x.id === t); return b ? `${b.cls} ${b.n}${b.loc && b.loc.length ? ` (${b.loc[0]})` : ''}` : 'a fight'; };
+    const via = [...new Set(early.filter(x => x.via != null).map(x => x.via))];
+    const open = early.filter(x => x.via == null);
+    let body = '';
+    if (open.length) body += `<p class="small" style="margin:0">You can already walk there and meet wild Pokémon, though the story takes you later:</p>${open.map(x => areaCard(D.areas.find(a => a.n === x.area), FLOW.needOf(x.area))).join('')}`;
+    for (const t of via) {
+      const list = early.filter(x => x.via === t).map(x => x.area);
+      body += `<p class="small" style="margin:8px 0 0">Win the optional fight with <b>${esc(fightName(t))}</b> (you can reach it now) and these open: ${list.map(esc).join(', ')}.</p>${list.map(n => areaCard(D.areas.find(a => a.n === n), FLOW.needOf(n))).join('')}`;
+    }
+    return `<details class="more" id="early" ${S.earlyOpen ? 'open' : ''}><summary>Open early (${early.length}): you don't have to go in order</summary><div class="section" style="margin-top:8px">${body}</div></details>`;
+  }
+  /** Side quests, services and trials whose place opens around here (and nothing you've already passed). */
+  function sideNowHTML(s) {
+    if (!FLOW.WORLD) return '';
+    const L = FLOW.sideList();
+    const now = x => x.open && x.open.step < s.k;
+    const fresh = x => now(x) && x.open.step >= (FLOW.progress(S.run).last || -1) - 1;
+    const items = L.trials.filter(now).map(t => ({ name: trialName(t), area: t.area, what: trialPrize(t) }))
+      .concat(L.extras.filter(e => fresh(e) && ['skill', 'gift', 'trial'].includes(e.k)).map(e => ({ name: e.n, area: e.area, what: e.takes })));
+    const seen = new Set();
+    const list = items.filter(x => !seen.has(x.name) && seen.add(x.name));
+    if (!list.length) return '';
+    return `<details class="more" id="sidenow" ${S.sideOpen ? 'open' : ''}><summary>Side quests you can do now (${list.length})</summary><div class="section" style="margin-top:8px">
+      ${list.map(x => `<div class="small"><b>${esc(x.name)}</b> · ${esc(x.area)}${x.what ? ` · ${esc(x.what)}` : ''}</div>`).join('')}
+      <div class="row" style="margin-top:6px"><button class="btn small" data-go="side">All side quests and services</button></div></div></details>`;
+  }
+  const TRIAL_NAMES = { 7: 'PokéVial trial', 6: 'Move Relearner trial', 5: 'Day Care rental battle (Eevee)', 14: 'Metronome bet' };
+  function trialName(t) { return TRIAL_NAMES[t.tr] || `${t.kind === 'puzzle' ? 'Puzzle' : 'Rental'} battle`; }
+  /** "Open from the start", "Opens after Leader Misty (Cerulean City)": when a place opens in your run (the ROM's maps). */
+  function opensText(o) {
+    if (!o) return '';
+    if (o.after === 'start') return 'Open from the start';
+    const b = D.bosses.find(x => x.id === o.after);
+    return b ? `Opens after ${b.cls} ${b.n}${b.loc && b.loc.length ? ` (${b.loc[0]})` : ''}` : '';
+  }
+  const KIND_TITLES = { skill: 'Skills and key unlocks', gift: 'Gifts you can earn', service: 'Services', codes: 'Cheat codes', item: 'Items' };
+  const stripCodes = t => String(t || '').replace(/\{[^}]*\}/g, ' ').replace(/\s+/g, ' ').trim();
+  // ---------------- SIDE QUESTS & SERVICES ----------------
+  function renderSide() {
+    const L = FLOW.sideList();
+    const monLine = m => `${esc(E.sp(m.s).n)}${m.lv ? ` Lv ${m.lv}` : ''}${m.it ? ` @ ${esc(E.itemName(m.it))}` : ''}${m.ab ? ` · ${esc(m.ab)}` : ''}<span class="muted"> · ${m.mv.map(id => esc((E.mv(id) || {}).f || '?')).join(', ')}</span>`;
+    let h = `<div class="card"><h2>Side quests &amp; services</h2><p class="small" style="margin:0">Everything on the side, read from the game's own map scripts: trials with a prize, skills, gifts, rematches, and the people who change natures, IVs, EVs and moves. Each says where it is and when your run can first reach it (worked out from the game's maps, not the story order).</p></div>`;
+    h += `<div class="section"><div class="lbl">Trials: borrowed Pokémon, a real prize</div>`;
+    for (const t of L.trials) {
+      const solved = t.sol && t.sol[0];
+      const how = solved
+        ? `<div class="lbl" style="margin-top:6px">How to win${solved.odds != null ? ` (won ${Math.round(100 * solved.odds)}% of replays with real dice)` : ''}</div>
+          <p class="small" style="margin:0">Take <b>${solved.lineup.map(esc).join(', ')}</b>, leading with ${esc(solved.lineup[0])}. It wins whatever he picks each turn:</p>
+          <ol class="small">${solved.turns.map(tt => `<li><b>${esc(tt.you)}</b><div class="muted">${tt.log.slice(0, 6).map(esc).join(' · ')}</div></li>`).join('')}</ol>`
+        : t.bets && t.bets.length ? '<p class="small">Every Pokémon on both sides only knows Metronome: it is luck, so save before you bet.</p>'
+          : t.odds != null ? `<p class="small">With all six, the Coach's planner wins about ${Math.round(100 * t.odds)}% of the time. Nothing of yours is at stake: try again as often as you like.</p>` : '';
+      h += `<details class="card more"><summary><b>${esc(trialName(t))}</b> · ${esc(t.area)}${trialPrize(t) ? ` · ${esc(trialPrize(t))}` : ''}<div class="small muted">${esc(opensText(t.open))}</div></summary>
+        <p class="small">${t.kind === 'puzzle' ? `Pick ${t.pick} of the ${t.rentals.length} Pokémon he lends you. His Pokémon come out in order and he never switches. A draw (your last Pokémon and his go down together) counts as a loss.` : 'He lends you all six.'}</p>
+        <div class="lbl">Yours to ${t.kind === 'puzzle' ? 'pick from' : 'use'}</div><div class="small">${t.rentals.map(monLine).join('<br>')}</div>
+        <div class="lbl" style="margin-top:6px">His team</div><div class="small">${t.opp.map(monLine).join('<br>')}</div>
+        ${how}
+        ${t.hint ? `<p class="small muted">His hint after a loss: “${esc(stripCodes(t.hint))}”</p>` : ''}
+        ${t.bets && t.bets.length ? `<p class="small">Bets: ${t.bets.map(b => `$${b.bet.toLocaleString()} wins $${b.win.toLocaleString()}`).join(', ')}</p>` : ''}</details>`;
+    }
+    h += `</div>`;
+    for (const kind of ['skill', 'item', 'gift', 'service', 'codes']) {
+      const list = L.extras.filter(e => e.k === kind);
+      if (!list.length) continue;
+      h += `<div class="section"><div class="lbl">${esc(KIND_TITLES[kind])}</div>${list.map(e => `<div class="card"><b>${esc(e.n)}</b> · ${esc(e.area)}
+        <div class="small">${esc(e.what)}</div><div class="small muted">Takes: ${esc(e.takes)}${e.open ? ` · ${esc(opensText(e.open))}` : ''}</div></div>`).join('')}</div>`;
+    }
+    if (L.rematches.length) {
+      h += `<div class="section"><div class="lbl">Leader rematches</div><p class="small" style="margin:0">Once you have their badge, these trainers battle again when you carry the item, for a prize.</p>
+        ${L.rematches.map(r => { const b = D.bosses.find(x => x.id === r.tr); return `<div class="card"><b>${esc(b ? `${b.cls} ${b.n}` : 'Trainer ' + r.tr)}</b> · ${esc(r.area)}${b ? ` · cap ${b.cap}` : ''}
+          <div class="small">Needs the ${r.needs.map(esc).join(' and the ')} · gives ${r.gives.map(esc).join(', ')}</div></div>`; }).join('')}</div>`;
+    }
+    main.innerHTML = h;
+  }
+  function trialPrize(t) {
+    if (t.prize && t.prize.unlocks && t.prize.unlocks.length) return t.prize.unlocks.join(', ');
+    if (t.prize && t.prize.mons && t.prize.mons.length) return t.prize.mons.map(m => `${E.sp(m.s).n} (Lv ${m.lv})`).join(', ');
+    if (t.bets && t.bets.length) return 'double your bet';
+    return '';
   }
   function trainersPageHTML(pg) {
     const a = pg.area, list = trainersNow(a, pg.cap);
@@ -3601,12 +3702,22 @@
       <div class="small muted">${esc(b.cls)}${b.loc ? ' · ' + esc(b.loc.join(', ')) : ''} · cap ${cap}${b.ms ? ` · a win raises it to ${b.capAfter}` : ''}</div>
       <div class="vs-team">${team.map((m, k) => `<span class="vs-mon" style="--k:${k}" title="${esc(E.sp(m.s).n)}">${front(m.s, 's48') || icon(m.s)}<span>Lv ${m.lv}</span></span>`).join('')}</div>
       ${g.members.length > 1 ? variantHTML(g, bi) : ''}
+      ${ruleHTML(bi)}
       ${focusHTML(st, g)}
     </div>`;
     const tab = fightTab(g.first, bi);
     h += fightTabsHTML(g.first, tab);
     h += fightPanelHTML(g.first, tab, bi, cap, resultHTML(g, bi));
+    // what else you could do before this fight: areas and side quests the story order puts later
+    if (g === st.step.g) h += `<div class="section">${earlyHTML(st.step, FLOW.stillOpen(S.run, st.step.k))}${sideNowHTML(st.step)}</div>`;
     return h;
+  }
+  /** The boss's rule, and who in your party breaks it (box them before you talk to the boss). */
+  function ruleHTML(bi) {
+    const r = bossRule(bi);
+    if (!r) return '';
+    const bad = alive().filter(m => breaksRule(r, m));
+    return `<div class="banner warn" style="margin-top:8px"><b>Gym rule:</b> ${esc(r.text)}${bad.length ? `<br>Put these in your PC before you talk to ${esc(D.bosses[bi].n)}: <b>${bad.map(m => esc(monShort(m))).join(', ')}</b>. The plan leaves them out.` : ' Your team is fine.'}</div>`;
   }
   function evolveMon(m, to) {
     const from = E.sp(m.s), into = E.sp(to);
@@ -3664,6 +3775,8 @@
     // areas
     wireRoutes();
     const older = $('#older'); if (older) older.addEventListener('toggle', () => { S.olderOpen = older.open; });
+    const early = $('#early'); if (early) early.addEventListener('toggle', () => { S.earlyOpen = early.open; });
+    const sidenow = $('#sidenow'); if (sidenow) sidenow.addEventListener('toggle', () => { S.sideOpen = sidenow.open; });
     const oa = $('#other-area'); if (oa) oa.onchange = () => { S.extraArea = oa.value || null; S.openArea = oa.value || null; render(); };
     on('#step-next', () => { const id = $('#step-next').dataset.id; S.run.passed = [...new Set((S.run.passed || []).concat(id))]; S.extraArea = null; S.openArea = null; render(); store.saveRun(); });
     wireFight();

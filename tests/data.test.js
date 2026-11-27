@@ -55,7 +55,7 @@ test('data: the care package cheat (SO2Toxic) by checkpoint, Hardcore lists', ()
   assert(tr('Fuchsia City', 57).items.some(([id]) => name(id) === 'Leftovers'), 'Leftovers in Fuchsia City, after Brendan');
   assert(D.care.some(p => p.area === 'Fuchsia City' && p.tr == null && p.items.some(([id]) => name(id) === 'Liechi Berry')), 'the berries when you arrive');
   const all = D.care.flatMap(p => p.items.map(([id]) => name(id)));
-  for (const n of ['WeaknessPol.', 'Heat Rock', 'Throat Spray', 'Air Balloon', 'Protein']) assert(!all.includes(n), 'Hardcore leaves out ' + n);
+  for (const n of ['WeaknessPol.', 'Weakness Policy', 'Heat Rock', 'Throat Spray', 'Air Balloon', 'Protein']) assert(!all.includes(n), 'Hardcore leaves out ' + n);
 });
 
 test('data: Normal Mode with Minimal Grinding (its boss records, its own caps and care package)', () => {
@@ -80,4 +80,17 @@ test('data: Normal Mode with Minimal Grinding (its boss records, its own caps an
   assert(D.care.every(p => p.n.length >= p.items.length), 'Normal lists hold Hardcore\'s');
   const N = require('../app/starters-normal.json');
   assert(N.starters.length === 27 && N.mode === 'normal' && N.starters.every(s => 'SABCD'.includes(s.tier)), 'Normal tier list');
+});
+test('data: trials, side quests and boss rules from the ROM scripts', () => {
+  if (!D.side) return;
+  const t = D.side.trials;
+  assert(t.length === 4, 'four trials (PokéVial, Move Relearner, Day Care Eevee, Metronome bet)');
+  const vial = t.find(x => x.tr === 7);
+  assert(vial.kind === 'puzzle' && vial.pick === 3 && vial.rentals.length === 6 && vial.opp.length === 6, 'Viridian: pick 3 of 6 against six Shedinja');
+  assert(vial.sol.length && vial.sol[0].odds === 1, 'a line that wins against anything the Shedinja do');
+  assert(t.find(x => x.tr === 5).prize.mons[0].s === 133, 'the Day Care man gives an Eevee');
+  const ids = new Set(D.side.extras.map(e => e.id));
+  for (const id of ['inf-repel', 'time-changer', 'pc-services', 'codes', 'egg-seller', 'hp-ivs', 'ability-swap']) assert(ids.has(id), 'extra ' + id);
+  assert(D.side.rematches.some(r => r.tr === 48 && r.needs.includes('Mega Ring') && r.gives.some(g => /Finizen/.test(g))), "Misty's Mega Ring rematch gives a Finizen");
+  assert(D.rules && D.rules[74] && D.rules[74].noTypes.includes('Fairy'), "Hardcore Clair's no-Fairy rule");
 });

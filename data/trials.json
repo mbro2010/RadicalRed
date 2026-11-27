@@ -1,0 +1,1936 @@
+[
+ {
+  "map": [
+   5,
+   2
+  ],
+  "mapName": "Viridian City",
+  "script": 151329471,
+  "kind": "puzzle",
+  "trainer": 7,
+  "rentalRow": 0,
+  "pick": 3,
+  "rentals": [
+   {
+    "s": 1113,
+    "n": "Rookidee",
+    "lv": 5,
+    "capRel": null,
+    "nat": 18,
+    "nature": "Bashful",
+    "it": null,
+    "item": null,
+    "mv": [
+     332,
+     730,
+     602,
+     395
+    ],
+    "moves": [
+     "Aerial Ace",
+     "DualWingbeat",
+     "Power Trip",
+     "Roost"
+    ],
+    "ab": "Frisk",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 227,
+    "n": "Skarmory",
+    "lv": 5,
+    "capRel": null,
+    "nat": 18,
+    "nature": "Bashful",
+    "it": null,
+    "item": null,
+    "mv": [
+     191,
+     65,
+     468,
+     395
+    ],
+    "moves": [
+     "Spikes",
+     "Drill Peck",
+     "Stealth Rock",
+     "Roost"
+    ],
+    "ab": "Sturdy",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 496,
+    "n": "Gible",
+    "lv": 5,
+    "capRel": null,
+    "nat": 18,
+    "nature": "Bashful",
+    "it": 700,
+    "item": "Eviolite",
+    "mv": [
+     468,
+     317,
+     404,
+     715
+    ],
+    "moves": [
+     "Stealth Rock",
+     "Rock Tomb",
+     "Bulldoze",
+     "Scale Shot"
+    ],
+    "ab": "Iron Barbs",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 382,
+    "n": "Aron",
+    "lv": 5,
+    "capRel": null,
+    "nat": 18,
+    "nature": "Bashful",
+    "it": 700,
+    "item": "Eviolite",
+    "mv": [
+     46,
+     468,
+     86,
+     521
+    ],
+    "moves": [
+     "Roar",
+     "Stealth Rock",
+     "Thunder Wave",
+     "Metal Burst"
+    ],
+    "ab": "Sturdy",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 213,
+    "n": "Shuckle",
+    "lv": 5,
+    "capRel": null,
+    "nat": 18,
+    "nature": "Bashful",
+    "it": 44,
+    "item": "Berry Juice",
+    "mv": [
+     481,
+     227,
+     495,
+     156
+    ],
+    "moves": [
+     "Sticky Web",
+     "Encore",
+     "Final Gambit",
+     "Rest"
+    ],
+    "ab": "Sturdy",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 769,
+    "n": "Fletchling",
+    "lv": 5,
+    "capRel": null,
+    "nat": 18,
+    "nature": "Bashful",
+    "it": 683,
+    "item": "Focus Sash",
+    "mv": [
+     361,
+     442,
+     216,
+     395
+    ],
+    "moves": [
+     "Brave Bird",
+     "U-turn",
+     "Return",
+     "Roost"
+    ],
+    "ab": "Frisk",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   }
+  ],
+  "opponent": [
+   {
+    "s": 303,
+    "n": "Shedinja",
+    "lv": 100,
+    "capRel": null,
+    "nat": 13,
+    "nature": "Jolly",
+    "it": 683,
+    "item": "Focus Sash",
+    "mv": [
+     400,
+     398
+    ],
+    "moves": [
+     "X-Scissor",
+     "Shadow Sneak"
+    ],
+    "ab": "Wonder Guard",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 303,
+    "n": "Shedinja",
+    "lv": 100,
+    "capRel": null,
+    "nat": 13,
+    "nature": "Jolly",
+    "it": 683,
+    "item": "Focus Sash",
+    "mv": [
+     400,
+     398
+    ],
+    "moves": [
+     "X-Scissor",
+     "Shadow Sneak"
+    ],
+    "ab": "Wonder Guard",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 303,
+    "n": "Shedinja",
+    "lv": 100,
+    "capRel": null,
+    "nat": 13,
+    "nature": "Jolly",
+    "it": 683,
+    "item": "Focus Sash",
+    "mv": [
+     398,
+     400
+    ],
+    "moves": [
+     "Shadow Sneak",
+     "X-Scissor"
+    ],
+    "ab": "Wonder Guard",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 303,
+    "n": "Shedinja",
+    "lv": 100,
+    "capRel": null,
+    "nat": 13,
+    "nature": "Jolly",
+    "it": 683,
+    "item": "Focus Sash",
+    "mv": [
+     400,
+     398
+    ],
+    "moves": [
+     "X-Scissor",
+     "Shadow Sneak"
+    ],
+    "ab": "Wonder Guard",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 303,
+    "n": "Shedinja",
+    "lv": 100,
+    "capRel": null,
+    "nat": 13,
+    "nature": "Jolly",
+    "it": 683,
+    "item": "Focus Sash",
+    "mv": [
+     398,
+     400
+    ],
+    "moves": [
+     "Shadow Sneak",
+     "X-Scissor"
+    ],
+    "ab": "Wonder Guard",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 303,
+    "n": "Shedinja",
+    "lv": 100,
+    "capRel": null,
+    "nat": 13,
+    "nature": "Jolly",
+    "it": 725,
+    "item": "HeavyDBoots",
+    "mv": [
+     398,
+     400
+    ],
+    "moves": [
+     "Shadow Sneak",
+     "X-Scissor"
+    ],
+    "ab": "Wonder Guard",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   }
+  ],
+  "intro": "Hm… you're a trainer aren't you?{FB}… I figured as much.{FB}Perhaps you don't have much to learn from me, but I have a proposal.{FB}Pass this simple trial of mine, and I'll give you a nice little prize.{FB}Are you interested?",
+  "rules": "The rules are simple.{FB}You select 3 Pokémon from 6 that I provide for you.{FB}I assure you that among these choices lie a guaranteed path to victory.{FB}The order I send out my Pokémon will stay consistent, and I will not{FA}manually switch.",
+  "hint": "Good effort. If you need a hint…{FB}Hazards are key against {FC}{06}Shedinja.{FB}{FC}{04}Passive damage may be key, too.",
+  "prize": {
+   "unlocks": [
+    "PokéVial"
+   ],
+   "flags": [
+    4167
+   ],
+   "mons": [],
+   "items": [],
+   "texts": [
+    "Nicely done trainer, it does take a while for my students to{FA}pass that!{FB}As promised, here is my prize.{FB}I hope it doesn't disappoint!",
+    "{FC}{02}You received a PokéVial!",
+    "The PokéVial is essentially a portable Pokémon Center.{FB}You can access your PokéVial by clicking on {F8}{02} in the overworld to{FA}bring up your Skills Menu.{FB}You can use it 6 times, but getting healed by Nurse Joy refills it.{FB}It's sure to come in handy!"
+   ]
+  },
+  "bets": [],
+  "at": [
+   6,
+   2
+  ]
+ },
+ {
+  "map": [
+   7,
+   8
+  ],
+  "mapName": "Cerulean City",
+  "script": 151329876,
+  "kind": "puzzle",
+  "trainer": 6,
+  "rentalRow": 1,
+  "pick": 3,
+  "rentals": [
+   {
+    "s": 231,
+    "n": "Phanpy",
+    "lv": 5,
+    "capRel": null,
+    "nat": 13,
+    "nature": "Jolly",
+    "it": 683,
+    "item": "Focus Sash",
+    "mv": [
+     216,
+     89,
+     381,
+     157
+    ],
+    "moves": [
+     "Return",
+     "Earthquake",
+     "Ice Shard",
+     "Rock Slide"
+    ],
+    "ab": "Sand Veil",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 769,
+    "n": "Fletchling",
+    "lv": 5,
+    "capRel": null,
+    "nat": 13,
+    "nature": "Jolly",
+    "it": 678,
+    "item": "Life Orb",
+    "mv": [
+     361,
+     442,
+     406,
+     98
+    ],
+    "moves": [
+     "Brave Bird",
+     "U-turn",
+     "Flame Charge",
+     "Quick Attack"
+    ],
+    "ab": "Gale Wings",
+    "iv": [
+     0,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 304,
+    "n": "Taillow",
+    "lv": 5,
+    "capRel": null,
+    "nat": 2,
+    "nature": "Brave",
+    "it": 681,
+    "item": "Flame Orb",
+    "mv": [
+     361,
+     442,
+     263,
+     182
+    ],
+    "moves": [
+     "Brave Bird",
+     "U-turn",
+     "Facade",
+     "Protect"
+    ],
+    "ab": "Guts",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 390,
+    "n": "Anorith",
+    "lv": 5,
+    "capRel": null,
+    "nat": 2,
+    "nature": "Brave",
+    "it": 204,
+    "item": "Hard Stone",
+    "mv": [
+     358,
+     89,
+     157,
+     400
+    ],
+    "moves": [
+     "Aqua Tail",
+     "Earthquake",
+     "Rock Slide",
+     "X-Scissor"
+    ],
+    "ab": "Battle Armor",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 672,
+    "n": "Mienfoo",
+    "lv": 5,
+    "capRel": null,
+    "nat": 11,
+    "nature": "Hasty",
+    "it": 674,
+    "item": "Muscle Band",
+    "mv": [
+     252,
+     280,
+     282,
+     216
+    ],
+    "moves": [
+     "Fake Out",
+     "Brick Break",
+     "Knock Off",
+     "Return"
+    ],
+    "ab": "Inner Focus",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 480,
+    "n": "Buneary",
+    "lv": 5,
+    "capRel": null,
+    "nat": 13,
+    "nature": "Jolly",
+    "it": 217,
+    "item": "Silk Scarf",
+    "mv": [
+     252,
+     470,
+     371,
+     216
+    ],
+    "moves": [
+     "Fake Out",
+     "Healing Wish",
+     "Drain Punch",
+     "Return"
+    ],
+    "ab": "Limber",
+    "iv": [
+     15,
+     31,
+     31,
+     29,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   }
+  ],
+  "opponent": [
+   {
+    "s": 382,
+    "n": "Aron",
+    "lv": 5,
+    "capRel": null,
+    "nat": 13,
+    "nature": "Jolly",
+    "it": 683,
+    "item": "Focus Sash",
+    "mv": [
+     468,
+     38,
+     157,
+     404
+    ],
+    "moves": [
+     "Stealth Rock",
+     "Double-Edge",
+     "Rock Slide",
+     "Bulldoze"
+    ],
+    "ab": "Rock Head",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 1091,
+    "n": "Pikachu (Electric/Ice)",
+    "lv": 5,
+    "capRel": null,
+    "nat": 13,
+    "nature": "Jolly",
+    "it": 202,
+    "item": "Light Ball",
+    "mv": [
+     85,
+     745,
+     344
+    ],
+    "moves": [
+     "Thunderbolt",
+     "Freezy Frost",
+     "Volt Tackle"
+    ],
+    "ab": "Lightning Rod",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 92,
+    "n": "Gastly",
+    "lv": 5,
+    "capRel": null,
+    "nat": 10,
+    "nature": "Timid",
+    "it": 678,
+    "item": "Life Orb",
+    "mv": [
+     85,
+     247,
+     188,
+     202
+    ],
+    "moves": [
+     "Thunderbolt",
+     "Shadow Ball",
+     "Sludge Bomb",
+     "Giga Drain"
+    ],
+    "ab": "Levitate",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 504,
+    "n": "Skorupi",
+    "lv": 5,
+    "capRel": null,
+    "nat": 2,
+    "nature": "Brave",
+    "it": 689,
+    "item": "Black Sludge",
+    "mv": [
+     424,
+     400
+    ],
+    "moves": [
+     "Poison Jab",
+     "X-Scissor"
+    ],
+    "ab": "Battle Armor",
+    "iv": [
+     31,
+     31,
+     0,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 585,
+    "n": "Timburr",
+    "lv": 5,
+    "capRel": null,
+    "nat": 10,
+    "nature": "Timid",
+    "it": 695,
+    "item": "Choice Scarf",
+    "mv": [
+     8
+    ],
+    "moves": [
+     "Ice Punch"
+    ],
+    "ab": "Sheer Force",
+    "iv": [
+     31,
+     0,
+     15,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 689,
+    "n": "Larvesta",
+    "lv": 5,
+    "capRel": null,
+    "nat": 18,
+    "nature": "Bashful",
+    "it": 702,
+    "item": "Rocky Helmet",
+    "mv": [
+     434,
+     442,
+     234,
+     261
+    ],
+    "moves": [
+     "Flare Blitz",
+     "U-turn",
+     "Morning Sun",
+     "Will-O-Wisp"
+    ],
+    "ab": "Flame Body",
+    "iv": [
+     31,
+     31,
+     31,
+     15,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   }
+  ],
+  "intro": "Which Pokémon needs tutoring?",
+  "rules": "The rules are simple.{FB}You select 3 Pokémon from 6 that I provide for you.{FB}I assure you that among these choices lie a guaranteed path to victory.{FB}The order I send out my Pokémon will stay consistent, and I will not{FA}manually switch.",
+  "hint": "Nice try. If you need a hint…{FB}Try leading with {FC}{06}Buneary.{FB}{FC}{08}An essential partner to it in this fight is {FC}{06}Fletchling.",
+  "prize": {
+   "unlocks": [
+    "Move Relearner"
+   ],
+   "flags": [
+    4169
+   ],
+   "mons": [],
+   "items": [],
+   "texts": [
+    "Alright, alright! A deal's a deal.{FB}Here, I've unlocked it in the Pokémon menu for you.{FB}If you'd rather get me to teach them to your Pokémon,{FA}I can do that too.",
+    "Which Pokémon needs tutoring?",
+    "Which move should I teach?",
+    "If your Pokémon need to learn a move, come back to me."
+   ]
+  },
+  "bets": [],
+  "at": [
+   7,
+   5
+  ]
+ },
+ {
+  "map": [
+   10,
+   14
+  ],
+  "mapName": "Celadon City",
+  "script": 151283491,
+  "kind": "rental",
+  "trainer": 14,
+  "rentalRow": 3,
+  "pick": 6,
+  "rentals": [
+   {
+    "s": 521,
+    "n": "Togekiss",
+    "lv": 100,
+    "capRel": null,
+    "nat": 20,
+    "nature": "Calm",
+    "it": 138,
+    "item": "Leppa Berry",
+    "mv": [
+     118
+    ],
+    "moves": [
+     "Metronome"
+    ],
+    "ab": "Serene Grace",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 1161,
+    "n": "Alcremie",
+    "lv": 100,
+    "capRel": null,
+    "nat": 5,
+    "nature": "Bold",
+    "it": 138,
+    "item": "Leppa Berry",
+    "mv": [
+     118
+    ],
+    "moves": [
+     "Metronome"
+    ],
+    "ab": "Sweet Veil",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 76,
+    "n": "Golem",
+    "lv": 100,
+    "capRel": null,
+    "nat": 2,
+    "nature": "Brave",
+    "it": 138,
+    "item": "Leppa Berry",
+    "mv": [
+     118
+    ],
+    "moves": [
+     "Metronome"
+    ],
+    "ab": "Rock Head",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 62,
+    "n": "Poliwrath",
+    "lv": 100,
+    "capRel": null,
+    "nat": 2,
+    "nature": "Brave",
+    "it": 138,
+    "item": "Leppa Berry",
+    "mv": [
+     118
+    ],
+    "moves": [
+     "Metronome"
+    ],
+    "ab": "Water Absorb",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 1153,
+    "n": "Grimmsnarl",
+    "lv": 100,
+    "capRel": null,
+    "nat": 2,
+    "nature": "Brave",
+    "it": 138,
+    "item": "Leppa Berry",
+    "mv": [
+     118
+    ],
+    "moves": [
+     "Metronome"
+    ],
+    "ab": "Prankster",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 519,
+    "n": "Electivire",
+    "lv": 100,
+    "capRel": null,
+    "nat": 18,
+    "nature": "Bashful",
+    "it": 138,
+    "item": "Leppa Berry",
+    "mv": [
+     118
+    ],
+    "moves": [
+     "Metronome"
+    ],
+    "ab": "Motor Drive",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   }
+  ],
+  "opponent": [
+   {
+    "s": 530,
+    "n": "Dusknoir",
+    "lv": 100,
+    "capRel": null,
+    "nat": 23,
+    "nature": "Careful",
+    "it": 92,
+    "item": "Reaper Cloth",
+    "mv": [
+     118
+    ],
+    "moves": [
+     "Metronome"
+    ],
+    "ab": "Hustle",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 297,
+    "n": "Ludicolo",
+    "lv": 100,
+    "capRel": null,
+    "nat": 18,
+    "nature": "Bashful",
+    "it": 138,
+    "item": "Leppa Berry",
+    "mv": [
+     118
+    ],
+    "moves": [
+     "Metronome"
+    ],
+    "ab": "Own Tempo",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 357,
+    "n": "Medicham",
+    "lv": 100,
+    "capRel": null,
+    "nat": 13,
+    "nature": "Jolly",
+    "it": 561,
+    "item": "Medichamite",
+    "mv": [
+     118
+    ],
+    "moves": [
+     "Metronome"
+    ],
+    "ab": "Huge Power",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 65,
+    "n": "Alakazam",
+    "lv": 100,
+    "capRel": null,
+    "nat": 10,
+    "nature": "Timid",
+    "it": 678,
+    "item": "Life Orb",
+    "mv": [
+     118
+    ],
+    "moves": [
+     "Metronome"
+    ],
+    "ab": "Magic Guard",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 36,
+    "n": "Clefable",
+    "lv": 100,
+    "capRel": null,
+    "nat": 17,
+    "nature": "Quiet",
+    "it": 678,
+    "item": "Life Orb",
+    "mv": [
+     118
+    ],
+    "moves": [
+     "Metronome"
+    ],
+    "ab": "Magic Guard",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 143,
+    "n": "Snorlax",
+    "lv": 100,
+    "capRel": null,
+    "nat": 8,
+    "nature": "Impish",
+    "it": 200,
+    "item": "Leftovers",
+    "mv": [
+     118
+    ],
+    "moves": [
+     "Metronome"
+    ],
+    "ab": "Thick Fat",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   }
+  ],
+  "intro": "{FC}{08}Hah! A minor! Disappointed you can't gamble? Lucky you, I've{FA}got quite the proposition.{FB}Slots here just don't really do it for me now.",
+  "rules": null,
+  "hint": "Well, I'll be keeping your money!{FB}Although you're probably going to reset to your last save{FA}like a little cheater, so this{FA}basically never happened.",
+  "prize": {
+   "unlocks": [],
+   "flags": [],
+   "mons": [],
+   "items": [],
+   "texts": [
+    "Agh, you got me you got me!{FB}{FC} … lucky bastard…",
+    "Here's your dang money…",
+    "I'll be here if you still want to go."
+   ]
+  },
+  "bets": [
+   {
+    "bet": 10000,
+    "win": 20000
+   },
+   {
+    "bet": 50000,
+    "win": 100000
+   },
+   {
+    "bet": 100000,
+    "win": 200000
+   }
+  ],
+  "at": [
+   10,
+   9
+  ]
+ },
+ {
+  "map": [
+   17,
+   0
+  ],
+  "mapName": "Route 5",
+  "script": 151339652,
+  "kind": "rental",
+  "trainer": 5,
+  "rentalRow": 2,
+  "pick": 6,
+  "rentals": [
+   {
+    "s": 1296,
+    "n": "Electrode (Electric/Grass)",
+    "lv": 100,
+    "capRel": null,
+    "nat": 14,
+    "nature": "Naive",
+    "it": 678,
+    "item": "Life Orb",
+    "mv": [
+     443,
+     757,
+     237,
+     153
+    ],
+    "moves": [
+     "Volt Switch",
+     "Chloroblast",
+     "Hidden Power",
+     "Explosion"
+    ],
+    "ab": "Reckless",
+    "iv": [
+     31,
+     30,
+     30,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 1305,
+    "n": "Sneasler",
+    "lv": 100,
+    "capRel": null,
+    "nat": 13,
+    "nature": "Jolly",
+    "it": 678,
+    "item": "Life Orb",
+    "mv": [
+     365,
+     14,
+     424,
+     282
+    ],
+    "moves": [
+     "Close Combat",
+     "Swords Dance",
+     "Poison Jab",
+     "Knock Off"
+    ],
+    "ab": "Poison Touch",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 1302,
+    "n": "Ursaluna",
+    "lv": 100,
+    "capRel": null,
+    "nat": 13,
+    "nature": "Jolly",
+    "it": 680,
+    "item": "Toxic Orb",
+    "mv": [
+     182,
+     89,
+     263,
+     365
+    ],
+    "moves": [
+     "Protect",
+     "Earthquake",
+     "Facade",
+     "Close Combat"
+    ],
+    "ab": "Bulletproof",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 1299,
+    "n": "Typhlosion-Hisui",
+    "lv": 100,
+    "capRel": null,
+    "nat": 10,
+    "nature": "Timid",
+    "it": 696,
+    "item": "Choice Specs",
+    "mv": [
+     753,
+     53,
+     237,
+     284
+    ],
+    "moves": [
+     "InfernoMarch",
+     "Flamethrower",
+     "Hidden Power",
+     "Eruption"
+    ],
+    "ab": "Flash Fire",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     30,
+     30
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 1281,
+    "n": "Zoroark-Hisui",
+    "lv": 100,
+    "capRel": null,
+    "nat": 13,
+    "nature": "Jolly",
+    "it": 200,
+    "item": "Leftovers",
+    "mv": [
+     14,
+     216,
+     725,
+     164
+    ],
+    "moves": [
+     "Swords Dance",
+     "Return",
+     "Poltergeist",
+     "Substitute"
+    ],
+    "ab": "Illusion",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 1300,
+    "n": "Samurott (Water/Dark)",
+    "lv": 100,
+    "capRel": null,
+    "nat": 13,
+    "nature": "Jolly",
+    "it": 200,
+    "item": "Leftovers",
+    "mv": [
+     455,
+     754,
+     14,
+     357
+    ],
+    "moves": [
+     "Razor Shell",
+     "Cease Edge",
+     "Swords Dance",
+     "Aqua Jet"
+    ],
+    "ab": "Sharpness",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   }
+  ],
+  "opponent": [
+   {
+    "s": 1308,
+    "n": "Overqwil",
+    "lv": 100,
+    "capRel": null,
+    "nat": 23,
+    "nature": "Careful",
+    "it": 689,
+    "item": "Black Sludge",
+    "mv": [
+     469,
+     621,
+     424,
+     127
+    ],
+    "moves": [
+     "Toxic Spikes",
+     "Throat Chop",
+     "Poison Jab",
+     "Waterfall"
+    ],
+    "ab": "Intimidate",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 1298,
+    "n": "Goodra-Hisui",
+    "lv": 100,
+    "capRel": null,
+    "nat": 15,
+    "nature": "Modest",
+    "it": 711,
+    "item": "Assault Vest",
+    "mv": [
+     370,
+     449,
+     53,
+     85
+    ],
+    "moves": [
+     "Dragon Pulse",
+     "Flash Cannon",
+     "Flamethrower",
+     "Thunderbolt"
+    ],
+    "ab": "Sap Sipper",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 1272,
+    "n": "Arcanine (Fire/Rock)",
+    "lv": 100,
+    "capRel": null,
+    "nat": 13,
+    "nature": "Jolly",
+    "it": 678,
+    "item": "Life Orb",
+    "mv": [
+     434,
+     380,
+     577,
+     100
+    ],
+    "moves": [
+     "Flare Blitz",
+     "Head Smash",
+     "Accelerock",
+     "Teleport"
+    ],
+    "ab": "Rock Head",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 1303,
+    "n": "Lilligant-Hisui",
+    "lv": 100,
+    "capRel": null,
+    "nat": 13,
+    "nature": "Jolly",
+    "it": 683,
+    "item": "Focus Sash",
+    "mv": [
+     752,
+     371,
+     348,
+     429
+    ],
+    "moves": [
+     "VictoryDance",
+     "Drain Punch",
+     "Leaf Blade",
+     "Stone Edge"
+    ],
+    "ab": "Hustle",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 1309,
+    "n": "Avalugg (Ice/Rock)",
+    "lv": 100,
+    "capRel": null,
+    "nat": 8,
+    "nature": "Impish",
+    "it": 200,
+    "item": "Leftovers",
+    "mv": [
+     413,
+     429,
+     381,
+     105
+    ],
+    "moves": [
+     "Icicle Crash",
+     "Stone Edge",
+     "Ice Shard",
+     "Recover"
+    ],
+    "ab": "Technician",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "s": 1273,
+    "n": "Kleavor",
+    "lv": 100,
+    "capRel": null,
+    "nat": 13,
+    "nature": "Jolly",
+    "it": 678,
+    "item": "Life Orb",
+    "mv": [
+     14,
+     400,
+     577,
+     750
+    ],
+    "moves": [
+     "Swords Dance",
+     "X-Scissor",
+     "Accelerock",
+     "Stone Axe"
+    ],
+    "ab": "Sharpness",
+    "iv": [
+     31,
+     31,
+     31,
+     31,
+     31,
+     31
+    ],
+    "ev": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   }
+  ],
+  "intro": "{FC}{08}Ah, hello there trainer.{FB}Back in my younger days, I was quite the talented trainer,{FA}travelling across all regions{FA}and taking on many formidable{FA}opponents.{FB}Now, I simply help out here at the daycare.{FB}But, I want a feeling of that rush again!{FB}I have some powerful Pokémon I'll let you borrow if you'd like{FA}to entertain me for a bit.{FB}Shall we?",
+  "rules": null,
+  "hint": "Thank you for the opportunity young one.{FB}If you show you can beat me, I have a prize ready.",
+  "prize": {
+   "unlocks": [],
+   "flags": [
+    4172
+   ],
+   "mons": [
+    {
+     "s": 133,
+     "n": "Eevee",
+     "lv": 5
+    }
+   ],
+   "items": [],
+   "texts": [
+    "What a wonderful fight.{FB}It definitely brought back some memories, good and{FA}bad…{FB}Those Pokémon I have are Hisuian Pokémon.{FB}They are fairly rare in the Kanto Region, but I've heard{FA}reports of them on the Sevii{FA}Islands.{FB}Anywho, I'd like you to have this for defeating me.",
+    "{FC}{02}You received an {FC}{06}Eevee!",
+    "Continue travelling and find- ing new unique strategies.{FB}This is how I became a stronger trainer."
+   ]
+  },
+  "bets": [],
+  "at": [
+   6,
+   4
+  ]
+ }
+]

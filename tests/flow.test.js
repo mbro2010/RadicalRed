@@ -2,12 +2,27 @@ const { D, test, assert } = require('./lib');
 const F = require('../app/flow.js')(D);
 const name = s => (s.kind === 'fight' ? D.bosses[s.g.first].n : s.kind === 'areas' ? s.areas.join('+') : s.kind);
 
-test('flow: every boss fight is on the path once, in the boss table order', () => {
+test('flow: every boss fight is on the path once, in the boss table order (unless the maps say it opens later)', () => {
   const fights = F.steps.filter(s => s.kind === 'fight');
   const seen = fights.flatMap(s => s.g.members);
   const all = D.bosses.filter(b => !b.route).map(b => b.i);
-  assert(seen.join() === all.join(), 'fights in order, each once');
+  assert(seen.slice().sort((a, b) => a - b).join() === all.join(), 'each fight once');
   assert(fights.length === F.groups.length, 'one step per fight');
+  // in the table's order, except fights moved to right after the milestone that opens them
+  const kept = fights.filter(s => s.g.after == null).flatMap(s => s.g.members);
+  assert(kept.join() === kept.slice().sort((a, b) => a - b).join(), 'the rest keep the table order');
+  for (const s of fights.filter(x => x.g.after != null)) {
+    const gate = F.steps.findIndex(x => x.kind === 'fight' && x.g.first === s.g.after);
+    assert(gate >= 0 && gate < s.k, `${D.bosses[s.g.first].n} comes after the fight that opens it`);
+  }
+});
+test("flow: Radical Red's gate on Routes 12 and 16 (Erika's and Sabrina's badges) moves their trainers after Sabrina", () => {
+  if (!D.world || !D.world.hardcore) return;
+  const fight = (n, id) => F.steps.findIndex(s => s.kind === 'fight' && s.g.members.some(i => D.bosses[i].id === id));
+  const sabrina = F.steps.findIndex(s => s.kind === 'fight' && D.bosses[s.g.first].n === 'Sabrina');
+  for (const id of [199, 250, 285, 477, 300, 206, 307]) assert(fight('', id) > sabrina, `trainer ${id} after Sabrina`);
+  const giovanni = F.steps.findIndex(s => s.kind === 'fight' && D.bosses[s.g.first].id === 348);
+  assert(giovanni > 0 && F.steps[giovanni].g.after == null, 'the Rocket Hideout stays where it is');
 });
 test('flow: versions of one fight are grouped, separate grunts are not', () => {
   const g = i => F.groupOf(i).members.length;
@@ -100,4 +115,18 @@ test('flow: Normal Mode chapters follow its level caps', () => {
   const createFlow = require('../app/flow.js');
   const F = createFlow(Object.assign({}, D, { bosses: D.bosses.map(b => Object.assign({}, b, { cap: D.caps.normal[b.mi] })) }), 'normal');
   assert(F.chapters[0].cap === 15 && F.chapters[1].cap === 22, 'normal chapter caps: ' + F.chapters.slice(0, 3).map(c => c.cap));
+});
+test('flow: the world data opens Route 5 early, behind the optional fight with the Dig Grunt in Cerulean (before Misty)', () => {
+  if (!D.world || !D.world.hardcore) return;
+  const FH = require('../app/flow.js')(D, 'hardcore');
+  const misty = FH.steps.findIndex(s => s.kind === 'fight' && D.bosses[s.g.first].n === 'Misty' && D.bosses[s.g.first].cap === 28);
+  const bugsy = FH.steps.findIndex(s => s.kind === 'fight' && D.bosses[s.g.first].n === 'Bugsy');
+  const grunt = D.bosses.find(b => b.id === 356);
+  const run = { beaten: [grunt.i], enc: {} };
+  const early = FH.openEarly(run, bugsy);
+  const r5 = early.find(x => x.area === 'Route 5');
+  assert(r5 && r5.via === 355, 'Route 5 opens once you beat the Dig Grunt (#355)');
+  assert(bugsy < misty, 'and that is before Misty');
+  const done = FH.openEarly({ beaten: [grunt.i, D.bosses.find(b => b.id === 355).i], enc: {} }, bugsy).find(x => x.area === 'Route 5');
+  assert(done && done.via == null, 'with the Dig Grunt beaten it is simply open');
 });

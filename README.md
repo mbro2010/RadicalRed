@@ -36,6 +36,9 @@ The ROM is **not** in this repository. Bring your own copy.
 - `finds.json`: per area, gift Pokémon, one-time encounters, eggs, item balls, hidden items, items people give you, and shop stock (from the maps' scripts)
 - `starters.json`: the 27 starters Oak's Lab offers (a generation setting swaps the three balls) and which rival line each one gives you
 - `starter_tiers.json`: the starter tier list (see below)
+- `world_hardcore.json`, `world_normal.json`: what's open when, walked from the maps and scripts: for each fight, the maps, wild Pokémon (by grass, Surf, each rod, Rock Smash), items, gifts and unlocks it opens, and when each fight can first be reached
+- `trials.json`, `trial_solutions.json`: the four battles with borrowed Pokémon and a prize (the PokéVial, the Move Relearner, the Day Care Eevee, the Metronome bet): rentals, the opponent's team, rules, the game's hint, and a line that wins
+- `extras.json`: skills, services, gifts you earn, cheat codes and leader rematches, with where each one is
 
 ## Rebuilding the data
 
@@ -56,6 +59,11 @@ node tools/map_names.js data                 # prints every match that needed re
 python3 tools/extract_world.py data         # evolutions, encounters, map names, trainer locations
 python3 tools/extract_tutors.py data
 python3 tools/extract_finds.py data          # gifts, one-time encounters, items, shops
+python3 tools/extract_trials.py data app/rrdata.json   # puzzle and rental battles (after build_app_data.js once)
+python3 tools/extract_extras.py data app/rrdata.json   # skills, services, gifts, codes, leader rematches
+node tools/fight_order.js app/rrdata.json hardcore > order_hardcore.json
+python3 tools/world_logic.py data app/rrdata.json hardcore order_hardcore.json data/world_hardcore.json > report.txt   # ~10 s; normal likewise
+node tools/solve_trials.js data/trials.json app/rrdata.json > data/trial_solutions.json   # TRIAL=7 for one; slow for Cerulean
 python3 tools/extract_fight_places.py data   # where each scripted fight starts, and who hands over key items
 python3 tools/extract_care_package.py data   # the care package cheat (SO2Toxic): items per checkpoint
 python3 tools/extract_starters.py data

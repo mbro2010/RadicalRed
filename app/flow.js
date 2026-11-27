@@ -61,6 +61,45 @@
     g.ms = g.members.some(i => D.bosses[i].ms);
   }
   const champ = groups.find(g => D.bosses[g.first].cls === 'Champion');
+  // A fight the story order puts before you can reach it (Radical Red's Cycling Road gate wants Erika's and Sabrina's
+  // badges, so Route 16-18's trainers come after Sabrina) moves to right after the fight that opens it (the world data:
+  // tools/world_logic.py). Fights are never moved earlier: those that open early are offered as they come up.
+  const WORLD0 = (D.world || {})[mode === 'normal' ? 'normal' : 'hardcore'] || null;
+  if (WORLD0 && WORLD0.seen) {
+    const gOfT = new Map();
+    for (const g of groups) for (const i of g.members) gOfT.set(D.bosses[i].id, g);
+    const pos = new Map(groups.map((g, k) => [g, k]));
+    const champAt = champ ? pos.get(champ) : groups.length;
+    // the gate of a fight: the last milestone (badge or story fight) the world solver had won when it could first reach
+    // it (the solver takes optional fights as soon as it can, so the fight just before isn't the gate; the milestone is)
+    const takenAt = new Map((WORLD0.taken || []).map((t, k) => [t, k]));
+    const gateOf = t => {
+      const s = WORLD0.seen[t];
+      if (s == null) return undefined;           // not worked out (after the Champion)
+      if (s === 'start') return null;
+      for (let k = takenAt.has(s) ? takenAt.get(s) : -1; k >= 0; k--) { const g = gOfT.get(WORLD0.taken[k]); if (g && g.ms) return g; }
+      return null;
+    };
+    const opener = g => {
+      let best = null;
+      for (const i of g.members) {
+        const o = gateOf(D.bosses[i].id);
+        if (o === undefined) return null;
+        if (o === null) return null;              // reachable before any milestone
+        if (best == null || pos.get(o) < pos.get(best)) best = o;   // any version of the fight will do
+      }
+      return best;
+    };
+    const order = [], later = new Map();
+    const place = g => { order.push(g); const d = later.get(g); if (d) { later.delete(g); d.forEach(place); } };
+    for (const g of groups) {
+      const o = opener(g);
+      if (o && pos.get(o) > pos.get(g) && pos.get(o) < champAt && !g.ms) { if (!later.has(o)) later.set(o, []); later.get(o).push(g); g.after = o.first; continue; }
+      place(g);
+    }
+    for (const d of later.values()) d.forEach(place);
+    groups.length = 0; groups.push(...order);
+  }
   function variantsOf(i) { const g = groupOf.get(i); return g ? g.members.slice() : [i]; }
 
   // ---- areas ----
@@ -176,6 +215,63 @@
     return out;
   }
 
+  // ---- what's open when, from the ROM's maps (tools/world_logic.py): earlier than the story order puts it ----
+  const WORLD = (D.world || {})[mode === 'normal' ? 'normal' : 'hardcore'] || null;
+  const stepOfTrainer = new Map();
+  for (const s of steps) if (s.kind === 'fight') for (const i of s.g.members) stepOfTrainer.set(D.bosses[i].id, s.k);
+  const groupOfTrainer = new Map();
+  for (const g of groups) for (const i of g.members) groupOfTrainer.set(D.bosses[i].id, g);
+  /** The step after which something opens (-1: from the start), or null when the world data doesn't say. */
+  const stepAfter = t => (t === 'start' ? -1 : stepOfTrainer.has(t) ? stepOfTrainer.get(t) : null);
+  /** The fight (trainer id) after which you can first meet wild Pokemon in an area, or null. */
+  function areaOpensAfter(n) { return WORLD && WORLD.areas[n] != null ? WORLD.areas[n] : null; }
+  /** Where you stand in the world: the fights you've won (and whether each is behind you). */
+  function wonTrainers(run) {
+    const won = new Set();
+    for (const i of run.beaten || []) won.add(D.bosses[i] ? D.bosses[i].id : i);
+    return won;
+  }
+  /** Areas the story order puts later that you can already reach with an encounter, or reach once you win an optional
+   *  fight you can reach now (the Dig Grunt in Cerulean, once Bill is helped, opens Route 5 and Vermilion before Misty).
+   *  [{ area, via: null | trainer id of the fight that opens it }] */
+  function openEarly(run, uptoStep) {
+    if (!WORLD) return [];
+    const enc = run.enc || {};
+    const won = wonTrainers(run);
+    const reachable = t => t === 'start' || won.has(t) || (stepAfter(t) != null && stepAfter(t) < uptoStep);
+    const out = [];
+    for (const s of steps) {
+      if (s.kind !== 'areas' || s.k <= uptoStep || (s.post && !run.postgame)) continue;
+      for (const n of s.areas) {
+        if (!isWild(n) || enc[n] || out.some(x => x.area === n)) continue;
+        const t = areaOpensAfter(n);
+        if (t == null) continue;
+        if (reachable(t)) { out.push({ area: n, via: null }); continue; }
+        // a fight you can reach now (it was reached before it was won) that opens it
+        const seen = WORLD.seen && WORLD.seen[t];
+        const g = groupOfTrainer.get(t);
+        if (seen != null && reachable(seen) && g && !D.bosses[g.first].ms) out.push({ area: n, via: t });
+      }
+    }
+    return out;
+  }
+  /** When a map can first be reached: { after: trainer id or 'start', step } or null. */
+  function mapOpens(key) {
+    if (!WORLD || WORLD.maps[key] == null) return null;
+    const t = WORLD.maps[key];
+    return { after: t, step: stepAfter(t) };
+  }
+  /** Side quests, services and trials, each with the step after which its map opens (null: no world data). */
+  function sideList() {
+    const side = D.side || { extras: [], rematches: [], trials: [] };
+    const when = keys => { const s = keys.map(k => mapOpens(k)).filter(Boolean).sort((a, b) => a.step - b.step)[0]; return s || null; };
+    return {
+      extras: side.extras.map(e => Object.assign({}, e, { open: when(e.m) })),
+      rematches: side.rematches.map(r => Object.assign({}, r, { open: when([r.m]) })),
+      trials: side.trials.map(t => Object.assign({}, t, { open: when([t.m]) })),
+    };
+  }
+
   return { steps, chapters, groups, champ, PLACES, postAreas, variantsOf, groupOf: i => groupOf.get(i) || null, isWild, waterOnly, needOf, placeOf: n => place.get(n) || null,
-    chapterTitle, chosenFight, progress, stillOpen, RIVAL_POS };
+    chapterTitle, chosenFight, progress, stillOpen, RIVAL_POS, WORLD, openEarly, areaOpensAfter, mapOpens, sideList, stepAfter };
 });

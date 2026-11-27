@@ -132,7 +132,9 @@
   }
   function sp(id) { return species.get(id); }
   function mv(id) { return moves.get(id); }
-  function itemName(id) { return id && D.items[id] ? D.items[id].n : null; }
+  // the full name where the calculator has one (the ROM shortens 58 of them: "HeavyDBoots", "WeaknessPol."), so every
+  // check by name works and the page shows the real name
+  function itemName(id) { return id && D.items[id] ? D.items[id].c || D.items[id].n : null; }
   function natureName(i) { return D.natures[i] ? D.natures[i].n : 'Hardy'; }
   // The ROM spells some abilities its own way ("SupremeOverlord", "ThermalExchange", "Sword Of Ruin", "Bone Zone "): one
   // spelling everywhere, the calculator's where it has one, so every check by name works on both sides

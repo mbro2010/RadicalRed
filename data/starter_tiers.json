@@ -7400,10 +7400,10 @@
    "hidden": "Chlorophyll",
    "bst": 525,
    "nature": "Modest",
-   "first": 0.547,
+   "first": 0.544,
    "early": -0.054,
    "late": -0.062,
-   "overall": 0.184,
+   "overall": 0.182,
    "best": [
     {
      "name": "Terry",
@@ -7451,7 +7451,7 @@
      1.667,
      2,
      3,
-     0.358
+     0.35
     ],
     [
      "Falkner",

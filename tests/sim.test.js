@@ -325,3 +325,43 @@ test('sim: First Impression works only on the first turn out, like Fake Out, but
   playWith(fo, mid('Wish'), mid('Fake Out'));
   assert(fo.log.some(l => /flinch/i.test(l.text)), 'Fake Out does flinch');
 });
+
+// ---- this round: what the Viridian puzzle battle turned up ----
+const itemId = n => +Object.keys(D.items).find(k => D.items[k].n === n || D.items[k].c === n);
+test('sim: both sides out of Pokemon after one action is a draw, and the game counts a draw as your loss', () => {
+  const st = duel([mon('Electrode', 30, { moves: ['Explosion'] })], [mon('Magikarp', 5, { moves: ['Splash'] })]);
+  playWith(st, mid('Explosion'), mid('Splash'));
+  assert(st.over && st.winner === 'a' && st.draw, 'Explosion taking the last two down loses');
+  const ok = duel([mon('Electrode', 30, { moves: ['Explosion'] }), mon('Pikachu', 30, { moves: ['Thunderbolt'] })], [mon('Magikarp', 5, { moves: ['Splash'] })]);
+  playWith(ok, mid('Explosion'), mid('Splash'));
+  assert(ok.over && ok.winner === 'p' && !ok.draw, 'with one left standing it is a win');
+});
+test('sim: residual damage is at least 1 HP (Stealth Rock and Iron Barbs knock out a Shedinja), and fainting on entry brings the next one in at once', () => {
+  const sr = duel([mon('Aron', 50, { moves: ['Stealth Rock'] })], [mon('Shedinja', 50, { moves: ['Shadow Sneak'] }), mon('Shedinja', 50, { moves: ['Shadow Sneak'] }), mon('Magikarp', 50, { moves: ['Splash'] })]);
+  const t0 = sr.a.team[0]; t0.hp = 0; t0.fainted = true;   // the lead is gone: the next one comes in through the rocks
+  sr.p.hazards = sr.p.hazards; sr.a.hazards.sr = 1;
+  const order = (s, side) => { const i = s[side].team.findIndex((m, k) => !m.fainted && !s[side].slots.includes(k)); return i >= 0 ? i : null; };
+  sr.policies = { p: { choose: () => ({ type: 'move', id: mid('Stealth Rock') }), replace: order }, a: { choose: () => ({ type: 'move', id: mid('Splash') }), replace: order } };
+  SIM.playTurn(sr, SIM.expectedDice());
+  assert(sr.a.team[1].fainted, 'the second Shedinja falls to Stealth Rock as it comes in (1/8 of 1 HP rounds up to 1)');
+  assert(SIM.act(sr, 'a').name === 'Magikarp', 'and the next one is sent at once');
+  const barbs = duel([mon('Gible', 5, { moves: ['Tackle'], ability: 'Iron Barbs' })], [mon('Shedinja', 60, { moves: ['X-Scissor'] })]);
+  playWith(barbs, mid('Tackle'), mid('X-Scissor'));
+  assert(barbs.p.team[0].fainted && barbs.a.team[0].fainted, 'Iron Barbs still hurts the attacker when the holder faints');
+});
+test("sim: items the ROM shortens work (Heavy-Duty Boots, Weakness Policy), and Wonder Guard lets only super-effective hits in", () => {
+  const boots = duel([mon('Aron', 50, { moves: ['Splash'] })], [mon('Magikarp', 50, { moves: ['Splash'] }), mon('Charizard', 50, { moves: ['Splash'], item: 'HeavyDBoots' })]);
+  boots.a.hazards.sr = 1;
+  const before = boots.a.team[1].hp;
+  SIM.switchIn(boots, 'a', 1, SIM.expectedDice(), 'switch', 0);
+  assert(boots.a.team[1].hp === before, 'Heavy-Duty Boots keep Charizard out of the rocks');
+  const wp = duel([mon('Machamp', 40, { moves: ['Close Combat'] })], [mon('Snorlax', 60, { moves: ['Splash'], item: 'WeaknessPol.' })]);
+  playWith(wp, mid('Close Combat'), mid('Splash'));
+  assert(wp.a.team[0].boosts.atk === 2 && !wp.a.team[0].item, 'Weakness Policy goes off on a super-effective hit');
+  const wg = duel([mon('Machamp', 40, { moves: ['Close Combat'] })], [mon('Shedinja', 40, { moves: ['Splash'] })]);
+  playWith(wg, mid('Close Combat'), mid('Splash'));
+  assert(!wg.a.team[0].fainted, 'Close Combat does nothing to Shedinja');
+  const fg = duel([mon('Shuckle', 40, { moves: ['Final Gambit'] })], [mon('Gengar', 40, { moves: ['Splash'] })]);
+  playWith(fg, mid('Final Gambit'), mid('Splash'));
+  assert(!fg.a.team[0].fainted && !fg.p.team[0].fainted, "Final Gambit can't touch a Ghost (and the user stays)");
+});

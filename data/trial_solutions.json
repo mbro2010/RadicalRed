@@ -1,0 +1,271 @@
+[
+ {
+  "map": [
+   5,
+   2
+  ],
+  "mapName": "Viridian City",
+  "trainer": 7,
+  "kind": "puzzle",
+  "searched": 120,
+  "solutions": [
+   {
+    "lineup": [
+     "Skarmory",
+     "Aron",
+     "Gible"
+    ],
+    "lead": "Skarmory",
+    "odds": 1,
+    "guaranteed": true,
+    "turns": 4,
+    "branches": 47,
+    "play": {
+     "turns": [
+      {
+       "you": "Skarmory: Spikes",
+       "log": [
+        "Boss Shedinja uses Shadow Sneak",
+        "Skarmory endures with Sturdy",
+        "Skarmory loses 96% (4% left)",
+        "Your Skarmory uses Spikes",
+        "Spikes is laid on their side"
+       ]
+      },
+      {
+       "you": "Skarmory: Spikes",
+       "log": [
+        "Boss Shedinja uses X-Scissor",
+        "Skarmory loses 4% (0% left)",
+        "It's not very effective…",
+        "Skarmory faints (Shedinja's X-Scissor)",
+        "You send out Aron"
+       ]
+      },
+      {
+       "you": "Aron: Roar",
+       "log": [
+        "Boss Shedinja uses Shadow Sneak",
+        "Aron endures with Sturdy",
+        "Aron loses 95% (5% left)",
+        "Your Aron uses Roar",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Spikes)",
+        "Shedinja faints (Spikes)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Spikes)",
+        "Shedinja faints (Spikes)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Spikes)",
+        "Shedinja faints (Spikes)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Spikes)",
+        "Shedinja faints (Spikes)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Spikes)",
+        "Shedinja faints (Spikes)",
+        "Boss sends out Shedinja"
+       ]
+      },
+      {
+       "you": "Aron: switch to Gible",
+       "log": [
+        "You send out Gible",
+        "Boss Shedinja uses Shadow Sneak",
+        "Gible loses 100% (0% left)",
+        "Gible faints (Shedinja's Shadow Sneak)",
+        "Shedinja loses 100% (Iron Barbs)",
+        "Shedinja faints (Iron Barbs)"
+       ]
+      }
+     ],
+     "winner": "p",
+     "draw": false
+    }
+   },
+   {
+    "lineup": [
+     "Aron",
+     "Skarmory",
+     "Gible"
+    ],
+    "lead": "Aron",
+    "odds": 1,
+    "guaranteed": true,
+    "turns": 4,
+    "branches": 63,
+    "play": {
+     "turns": [
+      {
+       "you": "Aron: Stealth Rock",
+       "log": [
+        "Boss Shedinja uses Shadow Sneak",
+        "Aron endures with Sturdy",
+        "Aron loses 95% (5% left)",
+        "Your Aron uses Stealth Rock",
+        "Stealth Rock is laid on their side"
+       ]
+      },
+      {
+       "you": "Aron: Roar",
+       "log": [
+        "Boss Shedinja uses X-Scissor",
+        "Aron loses 5% (0% left)",
+        "It's not very effective…",
+        "Aron faints (Shedinja's X-Scissor)",
+        "You send out Skarmory"
+       ]
+      },
+      {
+       "you": "Skarmory: switch to Gible",
+       "log": [
+        "You send out Gible",
+        "Boss Shedinja uses Shadow Sneak",
+        "Gible loses 100% (0% left)",
+        "Gible faints (Shedinja's Shadow Sneak)",
+        "Shedinja loses 100% (Iron Barbs)",
+        "Shedinja faints (Iron Barbs)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Stealth Rock)",
+        "Shedinja faints (Stealth Rock)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Stealth Rock)",
+        "Shedinja faints (Stealth Rock)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Stealth Rock)",
+        "Shedinja faints (Stealth Rock)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Stealth Rock)",
+        "Shedinja faints (Stealth Rock)",
+        "Boss sends out Shedinja",
+        "You send out Skarmory"
+       ]
+      },
+      {
+       "you": "Skarmory: Drill Peck",
+       "log": [
+        "Boss Shedinja uses Shadow Sneak",
+        "Skarmory endures with Sturdy",
+        "Skarmory loses 96% (4% left)",
+        "Your Skarmory uses Drill Peck",
+        "Shedinja loses 100% (0% left)",
+        "It's super effective!",
+        "Shedinja faints (Skarmory's Drill Peck)"
+       ]
+      }
+     ],
+     "winner": "p",
+     "draw": false
+    }
+   },
+   {
+    "lineup": [
+     "Aron",
+     "Gible",
+     "Skarmory"
+    ],
+    "lead": "Aron",
+    "odds": 1,
+    "guaranteed": true,
+    "turns": 4,
+    "branches": 63,
+    "play": {
+     "turns": [
+      {
+       "you": "Aron: Stealth Rock",
+       "log": [
+        "Boss Shedinja uses Shadow Sneak",
+        "Aron endures with Sturdy",
+        "Aron loses 95% (5% left)",
+        "Your Aron uses Stealth Rock",
+        "Stealth Rock is laid on their side"
+       ]
+      },
+      {
+       "you": "Aron: Roar",
+       "log": [
+        "Boss Shedinja uses X-Scissor",
+        "Aron loses 5% (0% left)",
+        "It's not very effective…",
+        "Aron faints (Shedinja's X-Scissor)",
+        "You send out Gible"
+       ]
+      },
+      {
+       "you": "Gible: Stealth Rock",
+       "log": [
+        "Boss Shedinja uses X-Scissor",
+        "Gible loses 100% (0% left)",
+        "Gible faints (Shedinja's X-Scissor)",
+        "Shedinja loses 100% (Iron Barbs)",
+        "Shedinja faints (Iron Barbs)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Stealth Rock)",
+        "Shedinja faints (Stealth Rock)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Stealth Rock)",
+        "Shedinja faints (Stealth Rock)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Stealth Rock)",
+        "Shedinja faints (Stealth Rock)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Stealth Rock)",
+        "Shedinja faints (Stealth Rock)",
+        "Boss sends out Shedinja",
+        "You send out Skarmory"
+       ]
+      },
+      {
+       "you": "Skarmory: Drill Peck",
+       "log": [
+        "Boss Shedinja uses Shadow Sneak",
+        "Skarmory endures with Sturdy",
+        "Skarmory loses 96% (4% left)",
+        "Your Skarmory uses Drill Peck",
+        "Shedinja loses 100% (0% left)",
+        "It's super effective!",
+        "Shedinja faints (Skarmory's Drill Peck)"
+       ]
+      }
+     ],
+     "winner": "p",
+     "draw": false
+    }
+   }
+  ]
+ },
+ {
+  "map": [
+   7,
+   8
+  ],
+  "mapName": "Cerulean City",
+  "trainer": 6,
+  "kind": "puzzle",
+  "searched": 120,
+  "solutions": [],
+  "note": "no line found that wins against every reply within 12 turns; the game hint names Buneary and Fletchling"
+ },
+ {
+  "map": [
+   17,
+   0
+  ],
+  "mapName": "Route 5",
+  "trainer": 5,
+  "kind": "rental",
+  "odds": 0.565,
+  "note": "all six are yours; the planner plays it"
+ },
+ {
+  "map": [
+   10,
+   14
+  ],
+  "mapName": "Celadon City",
+  "trainer": 14,
+  "kind": "rental",
+  "odds": null,
+  "note": "every Pokémon on both sides only knows Metronome: luck (the simulator does not play Metronome)"
+ }
+]

@@ -320,6 +320,60 @@ for (const [area, a] of Object.entries(finds.areas)) {
   for (const shop of a.shops) for (const id of shop) addItem(id, area, 'shop');
 }
 
+// ---------- what's open when (tools/world_logic.py), side quests and services (tools/extract_extras.py), trials ----------
+// world: per difficulty, the fight after which each area's first wild encounter can be had (by any way its tables
+// list: grass and caves, Surf, each rod, Rock Smash), when each map can first be reached, and when each fight can
+// first be reached ('start': from the beginning). Fights are named by their trainer id.
+const mapsList = read('maps.json');
+const mapName = Object.fromEntries(mapsList.map(m => [m.group + '.' + m.num, m.name]));
+function worldFor(mode) {
+  const f = path.join(D, `world_${mode}.json`);
+  if (!fs.existsSync(f)) return null;
+  const w = read(path.basename(f));
+  const rank = new Map([['start', -1]].concat(w.taken.map((t, i) => [t, i])));
+  const earliest = list => list.filter(x => rank.has(x)).sort((a, b) => rank.get(a) - rank.get(b))[0];
+  const areas = {};
+  for (const a of outAreas) {
+    if (a.fo) continue;
+    const when = [];
+    for (const p of a.parts) {
+      const key = p.g + '.' + p.m;
+      for (const [kind, rows] of Object.entries(p.k)) {
+        const all = Object.values(rows).flat();
+        if (!all.length) continue;
+        if (kind === 'land') when.push(w.methods[key + '|land']);
+        else if (kind === 'water') when.push(w.methods[key + '|surf']);
+        else if (kind === 'rock') when.push(w.methods[key + '|rock']);
+        else if (kind === 'fish') for (const rod of new Set(all.map(r => r[4]))) when.push(w.methods[key + '|fish:' + rod]);
+      }
+    }
+    const e = earliest(when.filter(x => x != null));
+    if (e != null) areas[a.n] = e;
+  }
+  const opens = {};
+  for (const st of w.steps) {
+    const names = [...new Set(st.opens.map(([g, n]) => mapName[g + '.' + n]).filter(Boolean))];
+    if (names.length) opens[st.after] = names;
+  }
+  return { areas, maps: w.firstReached, seen: w.seenAfter, taken: w.taken, opens,
+    rewards: w.rewards.filter(r => r.kind !== 'item' || (outItems[r.what] && /HM|Ring|Rod|Bike|Pass|Ticket|Key|Scope|Flute|Card/.test(outItems[r.what].n)))
+      .map(r => ({ k: r.kind, w: r.what, m: r.map.join('.'), a: r.after })) };
+}
+const extras = fs.existsSync(path.join(D, 'extras.json')) ? read('extras.json') : { extras: [], rematches: [] };
+const trialsData = fs.existsSync(path.join(D, 'trials.json')) ? read('trials.json') : [];
+const solutions = fs.existsSync(path.join(D, 'trial_solutions.json')) ? read('trial_solutions.json') : [];
+const trialMon = m => ({ s: m.s, lv: m.lv, it: m.it, mv: m.mv, ab: m.ab, nat: m.nat });
+const side = {
+  extras: extras.extras.map(e => ({ id: e.id, k: e.kind, n: e.name, what: e.what, takes: e.takes, m: (e.maps || [e.map]).map(x => x.join('.')), area: e.mapName, at: e.at })),
+  rematches: extras.rematches.map(r => ({ m: r.map.join('.'), area: r.mapName, tr: r.trainer, needs: r.needs, gives: r.gives })),
+  trials: trialsData.map(t => {
+    const sol = solutions.find(x => x.trainer === t.trainer && x.map.join('.') === t.map.join('.')) || {};
+    return { tr: t.trainer, m: t.map.join('.'), area: t.mapName, at: t.at, kind: t.kind, pick: t.pick, rentals: t.rentals.map(trialMon), opp: t.opponent.map(trialMon),
+      hint: t.hint, prize: t.prize, bets: t.bets, odds: sol.odds != null ? sol.odds : null,
+      sol: (sol.solutions || []).slice(0, 3).map(x => ({ lineup: x.lineup, odds: x.odds, turns: x.play ? x.play.turns.map(tt => ({ you: tt.you, log: tt.log })) : [] })) };
+  }),
+};
+
 const out = {
   version: 'Radical Red 4.1', calcVersion: '@smogon/calc 0.12.0 (gen 9 mechanics)',
   natures: natures.map(n => ({ n: n.name, u: n.up, d: n.down })),
@@ -339,6 +393,13 @@ const out = {
   care: fs.existsSync(path.join(D, 'care_package.json')) ? read('care_package.json').packages.map(p => Object.assign(
     { area: p.area, items: p.items.filter(([id]) => items[id]), n: (p.normal || p.items).filter(([id]) => items[id]) },
     p.after ? { after: p.after } : {}, p.trainer != null ? { tr: p.trainer } : {})) : [],
+  world: { hardcore: worldFor('hardcore'), normal: worldFor('normal') },
+  side,
+  // bosses with a rule about your party, read from their scripts: Hardcore Clair (Viridian Gym, trainer 74) checks your
+  // whole party with the routine at 0x9077E3C before she battles (no Fairy types; no Altaria, Absol or Audino holding the
+  // Mega Stone that makes it Fairy) and turns you away otherwise
+  rules: { 74: { mode: 'hardcore', noTypes: ['Fairy'], noMegaStones: [['Altaria', 'Altarianite'], ['Absol', 'Absolite'], ['Audino', 'Audinite']],
+    text: "In Hardcore, Clair won't battle you with a Fairy type anywhere in your party (Megas count: no Altaria with Altarianite, Absol with Absolite or Audino with Audinite)." } },
 };
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, JSON.stringify(out));

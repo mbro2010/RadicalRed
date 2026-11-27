@@ -1,0 +1,637 @@
+{
+ "extras": [
+  {
+   "id": "inf-repel",
+   "kind": "skill",
+   "name": "Infinite Repel",
+   "what": "Keeps wild Pokémon away until you switch it off in the skills menu.",
+   "takes": "Beat Lass Anne in Viridian Forest",
+   "map": [
+    1,
+    0
+   ],
+   "mapName": "Viridian Forest",
+   "at": [
+    15,
+    16
+   ],
+   "script": 151369645
+  },
+  {
+   "id": "running-shoes",
+   "kind": "item",
+   "name": "Running Shoes",
+   "what": "Run with B.",
+   "takes": "Oak's Aide catches up with you",
+   "map": [
+    3,
+    2
+   ],
+   "mapName": "Pewter City",
+   "at": [
+    46,
+    0
+   ],
+   "script": 135684777
+  },
+  {
+   "id": "egg-seller",
+   "kind": "gift",
+   "name": "Egg seller",
+   "what": "Sells one egg: a Wonder Egg (a random first-form Pokémon, even Cosmog) or a Paldean Egg (a Paldean Pokémon).",
+   "takes": "$5,000",
+   "map": [
+    3,
+    2
+   ],
+   "mapName": "Pewter City",
+   "at": [
+    26,
+    10
+   ],
+   "script": 151369800
+  },
+  {
+   "id": "egg-seller",
+   "kind": "gift",
+   "name": "Egg seller",
+   "what": "Sells one egg: a Wonder Egg (a random first-form Pokémon, even Cosmog) or a Paldean Egg (a Paldean Pokémon).",
+   "takes": "$5,000",
+   "map": [
+    3,
+    5
+   ],
+   "mapName": "Vermilion City",
+   "at": [
+    27,
+    10
+   ],
+   "script": 151370544
+  },
+  {
+   "id": "codes",
+   "kind": "codes",
+   "name": "Cheat codes",
+   "what": "Woyaopp: Rare Candy cheat (the youngster in Viridian City sells them; the Pokémon Center helper sets a Pokémon to the level cap). DexAll: DexNav cheat. SO2Toxic: care packages. TeamPreview: see the opponent's team before a battle. EZCatch: easy catching.",
+   "takes": "Type the code at the sign",
+   "map": [
+    4,
+    1
+   ],
+   "mapName": "Pallet Town",
+   "at": [
+    6,
+    5
+   ],
+   "script": 151322735
+  },
+  {
+   "id": "time-changer",
+   "kind": "skill",
+   "name": "Time Changer",
+   "what": "Sets the time of day (day, night or dusk) from the skills menu: night encounters and night or day evolutions on demand.",
+   "takes": "Answer three questions: Pancham (no night evolution), 5 PM (night encounters start), Never",
+   "map": [
+    4,
+    3
+   ],
+   "mapName": "Pallet Town",
+   "at": [
+    3,
+    11
+   ],
+   "script": 151324699
+  },
+  {
+   "id": "pokevial",
+   "kind": "trial",
+   "name": "PokéVial trial",
+   "what": "Win his puzzle battle for the PokéVial: a portable Pokémon Center in the skills menu, 6 heals, refilled by Nurse Joy.",
+   "takes": "Win the puzzle battle",
+   "map": [
+    5,
+    2
+   ],
+   "mapName": "Viridian City",
+   "at": [
+    6,
+    2
+   ],
+   "script": 151329471
+  },
+  {
+   "id": "egg-seller",
+   "kind": "gift",
+   "name": "Egg seller",
+   "what": "Sells one egg: a Wonder Egg (a random first-form Pokémon, even Cosmog) or a Paldean Egg (a Paldean Pokémon).",
+   "takes": "$5,000",
+   "map": [
+    7,
+    2
+   ],
+   "mapName": "Cerulean City",
+   "at": [
+    7,
+    5
+   ],
+   "script": 151370183
+  },
+  {
+   "id": "relearner",
+   "kind": "trial",
+   "name": "Move Maniac (Move Relearner)",
+   "what": "Win his puzzle battle and the Move Relearner is unlocked in your party menu for good; he also teaches the moves himself.",
+   "takes": "Win the puzzle battle (or two Tiny Mushrooms or a Big Mushroom per move before that)",
+   "map": [
+    7,
+    8
+   ],
+   "mapName": "Cerulean City",
+   "at": [
+    7,
+    5
+   ],
+   "script": 151329876
+  },
+  {
+   "id": "ev-audino",
+   "kind": "service",
+   "name": "EV trainer",
+   "what": "A battle against a family of Audinos for Exp. ($10,000), or EV training ($2,000).",
+   "takes": "Money",
+   "map": [
+    8,
+    4
+   ],
+   "mapName": "Lavender Town",
+   "at": [
+    4,
+    4
+   ],
+   "script": 151302820
+  },
+  {
+   "id": "metronome",
+   "kind": "trial",
+   "name": "Metronome gambler",
+   "what": "Bet $10,000, $50,000 or $100,000 on a battle of six Lv 100 Metronome-only Pokémon on each side; a win pays double.",
+   "takes": "Money to bet; pure luck (save first)",
+   "map": [
+    10,
+    14
+   ],
+   "mapName": "Celadon City",
+   "at": [
+    10,
+    9
+   ],
+   "script": 151283491
+  },
+  {
+   "id": "move-deleter",
+   "kind": "service",
+   "name": "Move Deleter",
+   "what": "Makes a Pokémon forget a move (even an HM).",
+   "takes": "Nothing",
+   "map": [
+    11,
+    9
+   ],
+   "mapName": "Fuchsia City",
+   "at": [
+    4,
+    4
+   ],
+   "script": 135714965
+  },
+  {
+   "id": "egg-tutor",
+   "kind": "service",
+   "name": "Egg Move tutor",
+   "what": "Teaches Egg moves without breeding.",
+   "takes": "Name four Pokémon from their cries",
+   "map": [
+    11,
+    9
+   ],
+   "mapName": "Fuchsia City",
+   "at": [
+    7,
+    4
+   ],
+   "script": 151297950
+  },
+  {
+   "id": "wild-doubles",
+   "kind": "service",
+   "name": "Wild double battles",
+   "what": "Turns wild double battles on or off.",
+   "takes": "Nothing",
+   "map": [
+    11,
+    9
+   ],
+   "mapName": "Fuchsia City",
+   "at": [
+    4,
+    5
+   ],
+   "script": 151298790
+  },
+  {
+   "id": "ev-reducer",
+   "kind": "service",
+   "name": "EV reducer",
+   "what": "Takes EVs off a stat or resets them all.",
+   "takes": "Nothing",
+   "map": [
+    14,
+    9
+   ],
+   "mapName": "Saffron City",
+   "at": [
+    7,
+    13
+   ],
+   "script": 151341278
+  },
+  {
+   "id": "ability-swap",
+   "kind": "service",
+   "name": "Ability swapper",
+   "what": "Swaps a Pokémon between its hidden ability and a normal one.",
+   "takes": "A Bottle Cap",
+   "map": [
+    14,
+    9
+   ],
+   "mapName": "Saffron City",
+   "at": [
+    8,
+    0
+   ],
+   "script": 151340160
+  },
+  {
+   "id": "ev-checker",
+   "kind": "service",
+   "name": "EV checker",
+   "what": "Shows a Pokémon's EVs.",
+   "takes": "Nothing",
+   "map": [
+    14,
+    9
+   ],
+   "mapName": "Saffron City",
+   "at": [
+    10,
+    11
+   ],
+   "script": 151342039
+  },
+  {
+   "id": "iv-zero",
+   "kind": "service",
+   "name": "IV setter",
+   "what": "Sets one IV to 0 (minimum Speed for Trick Room).",
+   "takes": "Nothing",
+   "map": [
+    14,
+    9
+   ],
+   "mapName": "Saffron City",
+   "at": [
+    5,
+    11
+   ],
+   "script": 151300996
+  },
+  {
+   "id": "iv-checker",
+   "kind": "service",
+   "name": "IV checker",
+   "what": "Shows a Pokémon's IVs.",
+   "takes": "Nothing",
+   "map": [
+    14,
+    9
+   ],
+   "mapName": "Saffron City",
+   "at": [
+    10,
+    10
+   ],
+   "script": 151342234
+  },
+  {
+   "id": "ball-swap",
+   "kind": "service",
+   "name": "Ball switcher",
+   "what": "Moves a Pokémon to another kind of Poké Ball.",
+   "takes": "Nothing",
+   "map": [
+    14,
+    9
+   ],
+   "mapName": "Saffron City",
+   "at": [
+    3,
+    13
+   ],
+   "script": 151301367
+  },
+  {
+   "id": "hp-ivs",
+   "kind": "service",
+   "name": "Hidden Power IVs",
+   "what": "Sets the IVs for the Hidden Power type you want (every IV must be 30 or more).",
+   "takes": "Nothing",
+   "map": [
+    14,
+    9
+   ],
+   "mapName": "Saffron City",
+   "at": [
+    4,
+    11
+   ],
+   "script": 151343898
+  },
+  {
+   "id": "eevee",
+   "kind": "trial",
+   "name": "Day Care man (Eevee)",
+   "what": "Beat him with the six Hisuian Pokémon he lends you (Lv 100 on both sides) for a Lv 5 Eevee.",
+   "takes": "Win the rental battle (try as often as you like)",
+   "map": [
+    17,
+    0
+   ],
+   "mapName": "Route 5",
+   "at": [
+    6,
+    4
+   ],
+   "script": 151339652
+  },
+  {
+   "id": "battle-sim",
+   "kind": "service",
+   "name": "Battle Simulator",
+   "what": "Battles against random boss trainers of the region, with prizes.",
+   "takes": "Nothing",
+   "map": [
+    32,
+    0
+   ],
+   "mapName": "One Island",
+   "at": [
+    15,
+    5
+   ],
+   "script": 151314565
+  },
+  {
+   "id": "starter-tutor",
+   "kind": "trial",
+   "name": "Starter tutor",
+   "what": "Teaches starter-only moves once you beat him in a starter-only battle.",
+   "takes": "Win a battle using only starter Pokémon",
+   "map": [
+    33,
+    0
+   ],
+   "mapName": "Two Island",
+   "at": [
+    11,
+    6
+   ],
+   "script": 151363827
+  },
+  {
+   "id": "pc-services",
+   "kind": "service",
+   "name": "Pokémon Center helper",
+   "what": "Changes a Pokémon's nature for free; swaps the gender of Snorunt, Ralts, Kirlia, Salandit, Burmy, Combee, Espurr, Basculin and Lechonk (their evolutions need one); tells you the mode you play; redeems codes (Mystery Gift); and, with the Rare Candy code on, sets a Pokémon to the level cap.",
+   "takes": "Nothing (in every Pokémon Center)",
+   "map": [
+    5,
+    4
+   ],
+   "mapName": "Viridian City",
+   "at": [
+    8,
+    2
+   ],
+   "script": 151306580,
+   "maps": [
+    [
+     5,
+     4
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     7,
+     3
+    ],
+    [
+     8,
+     0
+    ],
+    [
+     9,
+     1
+    ],
+    [
+     10,
+     12
+    ],
+    [
+     11,
+     5
+    ],
+    [
+     12,
+     5
+    ],
+    [
+     13,
+     0
+    ],
+    [
+     14,
+     6
+    ],
+    [
+     16,
+     0
+    ],
+    [
+     21,
+     0
+    ],
+    [
+     32,
+     0
+    ],
+    [
+     33,
+     2
+    ],
+    [
+     34,
+     1
+    ]
+   ],
+   "mapNames": [
+    "Celadon City",
+    "Cerulean City",
+    "Cinnabar Island",
+    "Fuchsia City",
+    "Indigo Plateau",
+    "Lavender Town",
+    "One Island",
+    "Pewter City",
+    "Route 10",
+    "Route 4",
+    "Saffron City",
+    "Three Island",
+    "Two Island",
+    "Vermilion City",
+    "Viridian City"
+   ]
+  }
+ ],
+ "rematches": [
+  {
+   "map": [
+    3,
+    26
+   ],
+   "mapName": "Route 8",
+   "script": 151339840,
+   "needs": [
+    "Mega Ring"
+   ],
+   "trainer": 18,
+   "gives": [
+    "Rocky Helmet",
+    "Centiskite"
+   ]
+  },
+  {
+   "map": [
+    4,
+    3
+   ],
+   "mapName": "Pallet Town",
+   "script": 151325017,
+   "needs": [
+    "Z-Power Ring"
+   ],
+   "trainer": 210,
+   "gives": [
+    "Eevium Z"
+   ]
+  },
+  {
+   "map": [
+    5,
+    1
+   ],
+   "mapName": "Viridian City",
+   "script": 151368091,
+   "needs": [
+    "Z-Power Ring"
+   ],
+   "trainer": 38,
+   "gives": [
+    "TM72",
+    "Dragapult (Lv 100)"
+   ]
+  },
+  {
+   "map": [
+    6,
+    2
+   ],
+   "mapName": "Pewter City",
+   "script": 151326549,
+   "needs": [
+    "Mega Ring"
+   ],
+   "trainer": 56,
+   "gives": [
+    "Aerodactylite",
+    "TM71"
+   ]
+  },
+  {
+   "map": [
+    7,
+    5
+   ],
+   "mapName": "Cerulean City",
+   "script": 151284393,
+   "needs": [
+    "Mega Ring"
+   ],
+   "trainer": 48,
+   "gives": [
+    "Gyaradosite",
+    "Finizen (Lv 5)"
+   ]
+  },
+  {
+   "map": [
+    7,
+    5
+   ],
+   "mapName": "Cerulean City",
+   "script": 151284393,
+   "needs": [
+    "Mega Ring",
+    "Z-Power Ring"
+   ],
+   "trainer": 32,
+   "gives": [
+    "Waterium Z",
+    "Drednaw (Lv 100)"
+   ]
+  },
+  {
+   "map": [
+    9,
+    6
+   ],
+   "mapName": "Vermilion City",
+   "script": 151364507,
+   "needs": [
+    "Mega Ring"
+   ],
+   "trainer": 51,
+   "gives": [
+    "Manectite"
+   ]
+  },
+  {
+   "map": [
+    10,
+    16
+   ],
+   "mapName": "Celadon City",
+   "script": 151281393,
+   "needs": [
+    "Mega Ring"
+   ],
+   "trainer": 65,
+   "gives": [
+    "Ogerpon (Lv 5)",
+    "TM86"
+   ]
+  }
+ ]
+}

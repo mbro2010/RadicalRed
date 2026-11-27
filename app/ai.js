@@ -1225,7 +1225,7 @@
         const forced = usable(me, st);
         if (me.charging || (me.rampage && me.lock) || me.recharge) return { type: 'move', id: forced[0] };
         const c = context(st, side, rng);
-        const sw = shouldSwitch(c);
+        const sw = o.noSwitch ? null : shouldSwitch(c);      // noSwitch: trainers that never switch by choice (the puzzle battles)
         if (sw) {
           // ConfirmAISwitch with a fast pivot: it U-turns (or Volt Switches...) to that Pokemon instead (PIVOT_IMMEDIATELY)
           if (sw.pivot) { c.goodToPivot = true; c.pivotTarget = sw.to; if (!peek) st[side].pivotTo = { to: sw.to, turn: st.turn, foe: c.foe.key }; }

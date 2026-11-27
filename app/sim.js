@@ -263,8 +263,8 @@
     }
     const hz = st[side].hazards;
     if (itemName(m) !== 'Heavy-Duty Boots' && m.ability !== 'Magic Guard') {
-      if (hz.sr) { const dmg = Math.floor(m.maxHp * 0.125 * E.typeEff('Rock', m.types)); hurt(st, m, dmg, 'Stealth Rock'); }
-      if (hz.spikes && grounded(m)) hurt(st, m, Math.floor(m.maxHp * [0, 1 / 8, 1 / 6, 1 / 4][hz.spikes]), 'Spikes');
+      if (hz.sr) { const eff = E.typeEff('Rock', m.types); if (eff > 0) hurt(st, m, Math.max(1, Math.floor(m.maxHp * 0.125 * eff)), 'Stealth Rock'); }
+      if (hz.spikes && grounded(m)) hurt(st, m, Math.max(1, Math.floor(m.maxHp * [0, 1 / 8, 1 / 6, 1 / 4][hz.spikes])), 'Spikes');
     }
     if (m.fainted) return;
     if (hz.tspikes && grounded(m)) {
@@ -629,7 +629,7 @@
     }
     // once per move: attacker items, recoil, drain
     if (!user.fainted && total > 0) {
-      if (itemName(user) === 'Life Orb' && user.ability !== 'Magic Guard' && user.ability !== 'Sheer Force') hurt(st, user, Math.floor(user.maxHp / 10), 'Life Orb');
+      if (itemName(user) === 'Life Orb' && user.ability !== 'Magic Guard' && user.ability !== 'Sheer Force') hurt(st, user, Math.max(1, Math.floor(user.maxHp / 10)), 'Life Orb');
       if (mm.recoil && !['Rock Head', 'Magic Guard', 'Bad Company'].includes(user.ability)) hurt(st, user, Math.max(1, Math.floor(total * mm.recoil[0] / mm.recoil[1])), 'recoil');
       if (mm.drain && !user.fainted) heal(st, user, Math.max(1, Math.floor(total * mm.drain[0] / mm.drain[1]) * (itemName(user) === 'Big Root' ? 1.3 : 1)), 'drain');
       if (itemName(user) === 'Shell Bell') heal(st, user, Math.floor(total / 8), 'Shell Bell');
@@ -675,7 +675,7 @@
       log(st, `${target.name} protects itself`);
       if (mm.contact) {
         const pt = target.protectKind;
-        if (pt === 'Spiky Shield') hurt(st, user, Math.floor(user.maxHp / 8), 'Spiky Shield');
+        if (pt === 'Spiky Shield') hurt(st, user, Math.max(1, Math.floor(user.maxHp / 8)), 'Spiky Shield');
         if (pt === "King's Shield") applyBoosts(st, user, { atk: -1 }, 'foe');
         if (pt === 'Baneful Bunker' && canStatus(st, user, 'psn', '', target)) inflict(st, user, 'psn', rng, 'Baneful Bunker');
       }
@@ -686,7 +686,7 @@
     if (!zk && FO.o !== 'hit' && FO.o !== 'crit' && (FO.o === 'miss' || !roll(rng, hitChance(st, user, target, mm)))) {
       log(st, `${user.name}'s attack misses ${target.name}`, 'miss', user);
       st.events.push({ turn: st.turn, type: 'outcome', side: user.side, key: user.key, o: 'miss' });
-      if (mm.name === 'High Jump Kick' || mm.name === 'Jump Kick' || mm.name === 'Supercell Slam') hurt(st, user, Math.floor(user.maxHp / 2), 'crash');
+      if (mm.name === 'High Jump Kick' || mm.name === 'Jump Kick' || mm.name === 'Supercell Slam') hurt(st, user, Math.max(1, Math.floor(user.maxHp / 2)), 'crash');
       return none;
     }
     const hits = zk ? 1 : pickHits(rng, user, mm);
@@ -704,9 +704,14 @@
     if (spread < 1) dmg = Math.floor(dmg * spread);
     if (user.helped) dmg = Math.floor(dmg * 1.5);
     if (zk && target.protect) { dmg = Math.floor(dmg / 4); log(st, `${target.name} couldn't fully protect itself`); }
-    // special damage
-    if (mm.name === 'Final Gambit') dmg = user.hp;
-    if (mm.name === 'Endeavor') dmg = Math.max(0, target.hp - user.hp);
+    // special damage (types still apply: Final Gambit can't touch a Ghost, Endeavor can't either)
+    if (mm.name === 'Final Gambit') dmg = rr.eff === 0 ? 0 : user.hp;
+    if (mm.name === 'Endeavor') dmg = rr.eff === 0 ? 0 : Math.max(0, target.hp - user.hp);
+    // Wonder Guard: only super-effective damaging moves land (fixed-damage moves too: they have power 1 in the ROM)
+    if (target.ability === 'Wonder Guard' && mm.power > 0 && (rr.eff || 0) <= 1 && mm.name !== 'Struggle' && !(user.ability === 'Mold Breaker' || user.ability === 'Teravolt' || user.ability === 'Turboblaze')) {
+      log(st, `It doesn't affect ${target.name} (Wonder Guard)`);
+      return none;
+    }
     const absorb = ABSORB[target.ability];
     if (absorb && absorb[0] === rr.type && dmg === 0) {
       if (absorb[1] === 'heal') heal(st, target, target.maxHp / 4, target.ability);
@@ -767,8 +772,8 @@
     }
     // contact punishment
     if (mm.contact && !user.fainted && dealt > 0) {
-      if (tItem === 'Rocky Helmet') hurt(st, user, Math.floor(user.maxHp / 6), 'Rocky Helmet');
-      if (['Rough Skin', 'Iron Barbs'].includes(target.ability)) hurt(st, user, Math.floor(user.maxHp / 8), target.ability);
+      if (tItem === 'Rocky Helmet') hurt(st, user, Math.max(1, Math.floor(user.maxHp / 6)), 'Rocky Helmet');
+      if (['Rough Skin', 'Iron Barbs'].includes(target.ability)) hurt(st, user, Math.max(1, Math.floor(user.maxHp / 8)), target.ability);
       if (!user.fainted) {
         if (target.ability === 'Static' && roll(rng, 0.3) && canStatus(st, user, 'par', '', target)) inflict(st, user, 'par', rng, 'Static');
         if (target.ability === 'Flame Body' && roll(rng, 0.3) && canStatus(st, user, 'brn', '', target)) inflict(st, user, 'brn', rng, 'Flame Body');
@@ -840,7 +845,7 @@
     }
     switch (e) {
       case 142: if (n === 'Belly Drum') { if (user.hp <= user.maxHp / 2) { log(st, 'But it failed'); return; } hurt(st, user, Math.floor(user.maxHp / 2), n); user.boosts.atk = 6; log(st, `${user.name} maxes its Attack`); } else { hurt(st, user, Math.floor(user.maxHp / 2), n); applyBoosts(st, user, SETUP[n] || { atk: 2, spa: 2, spe: 2 }); } return;
-      case 109: if (hasType(user, 'Ghost')) { hurt(st, user, Math.floor(user.maxHp / 2), 'Curse'); } else applyBoosts(st, user, { atk: 1, def: 1, spe: -1 }); return;
+      case 109: if (hasType(user, 'Ghost')) { hurt(st, user, Math.max(1, Math.floor(user.maxHp / 2)), 'Curse'); } else applyBoosts(st, user, { atk: 1, def: 1, spe: -1 }); return;
       case HEAL_HALF: heal(st, user, user.maxHp / 2, n); return;
       case HEAL_WEATHER: { const w = st.weather || ''; heal(st, user, user.maxHp * (/Sun/.test(w) ? 2 / 3 : w ? 1 / 4 : 1 / 2), n); return; }
       case 37: if (user.hp === user.maxHp) { log(st, 'But it failed'); return; } user.hp = user.maxHp; user.status = 'slp'; user.sleep = 2; log(st, `${user.name} sleeps and restores its HP`); return;
@@ -949,8 +954,8 @@
     const hz = st[side].hazards;
     if (itemName(m) === 'Heavy-Duty Boots' || m.ability === 'Magic Guard') return 0;
     let d = 0;
-    if (hz.sr) d += Math.floor(m.maxHp * 0.125 * E.typeEff('Rock', m.types));
-    if (hz.spikes && grounded(m)) d += Math.floor(m.maxHp * [0, 1 / 8, 1 / 6, 1 / 4][hz.spikes]);
+    if (hz.sr && E.typeEff('Rock', m.types) > 0) d += Math.max(1, Math.floor(m.maxHp * 0.125 * E.typeEff('Rock', m.types)));
+    if (hz.spikes && grounded(m)) d += Math.max(1, Math.floor(m.maxHp * [0, 1 / 8, 1 / 6, 1 / 4][hz.spikes]));
     return d;
   }
   const Z_TYPES = { Normalium: 'Normal', Firium: 'Fire', Waterium: 'Water', Electrium: 'Electric', Grassium: 'Grass', Icium: 'Ice',
@@ -1123,20 +1128,20 @@
       const side = m.side;
       const it = itemName(m);
       if (it === 'Leftovers') heal(st, m, m.maxHp / 16, 'Leftovers');
-      if (it === 'Black Sludge') { if (hasType(m, 'Poison')) heal(st, m, m.maxHp / 16, 'Black Sludge'); else hurt(st, m, Math.floor(m.maxHp / 8), 'Black Sludge'); }
+      if (it === 'Black Sludge') { if (hasType(m, 'Poison')) heal(st, m, m.maxHp / 16, 'Black Sludge'); else hurt(st, m, Math.max(1, Math.floor(m.maxHp / 8)), 'Black Sludge'); }
       if (m.ability === 'Self Sufficient') heal(st, m, m.maxHp / 16, 'Self Sufficient');
       if ((m.ability === 'Rain Dish' && w === 'Rain') || (m.ability === 'Ice Body' && w === 'Snow')) heal(st, m, m.maxHp / 16, m.ability);
       if (m.ability === 'Dry Skin' && w === 'Rain') heal(st, m, m.maxHp / 8, 'Dry Skin');
-      if (m.ability === 'Dry Skin' && w === 'Sun') hurt(st, m, Math.floor(m.maxHp / 8), 'Dry Skin');
+      if (m.ability === 'Dry Skin' && w === 'Sun') hurt(st, m, Math.max(1, Math.floor(m.maxHp / 8)), 'Dry Skin');
       if (st.terrain === 'Grassy' && grounded(m)) heal(st, m, m.maxHp / 16, 'Grassy Terrain');
       if (m.fainted) continue;
-      if (m.seeded) { const by = m.seededBy ? act(st, m.seededBy.side, m.seededBy.slot) : actives(st, other(side))[0]; const d = hurt(st, m, Math.floor(m.maxHp / 8), 'Leech Seed'); if (by && !by.fainted) heal(st, by, d, 'Leech Seed'); }
+      if (m.seeded) { const by = m.seededBy ? act(st, m.seededBy.side, m.seededBy.slot) : actives(st, other(side))[0]; const d = hurt(st, m, Math.max(1, Math.floor(m.maxHp / 8)), 'Leech Seed'); if (by && !by.fainted) heal(st, by, d, 'Leech Seed'); }
       if (m.fainted) continue;
       if (m.ability !== 'Magic Guard') {
         if (m.status === 'brn') hurt(st, m, Math.max(1, Math.floor(m.maxHp / 16)), 'burn');
         else if (m.status === 'frz') hurt(st, m, Math.max(1, Math.floor(m.maxHp / 16)), 'frostbite');
-        else if (m.status === 'psn') { if (m.ability === 'Poison Heal') heal(st, m, m.maxHp / 8, 'Poison Heal'); else hurt(st, m, Math.floor(m.maxHp / 8), 'poison'); }
-        else if (m.status === 'tox') { m.toxic++; if (m.ability === 'Poison Heal') heal(st, m, m.maxHp / 8, 'Poison Heal'); else hurt(st, m, Math.floor(m.maxHp * m.toxic / 16), 'toxic'); }
+        else if (m.status === 'psn') { if (m.ability === 'Poison Heal') heal(st, m, m.maxHp / 8, 'Poison Heal'); else hurt(st, m, Math.max(1, Math.floor(m.maxHp / 8)), 'poison'); }
+        else if (m.status === 'tox') { m.toxic++; if (m.ability === 'Poison Heal') heal(st, m, m.maxHp / 8, 'Poison Heal'); else hurt(st, m, Math.max(1, Math.floor(m.maxHp * m.toxic / 16)), 'toxic'); }
       }
       if (m.fainted) continue;
       if (m.bound) {
@@ -1295,20 +1300,35 @@
       useMove(st, o.side, o.id, rng, { user: m, slot: m.slot, target: resolveTarget(st, o.a.target), z: o.z && !!zKind(st, m, o.id), outcome: o.a.outcome, ko: o.a.ko, noKO: o.a.noKO });
       if (!alive(st, 'p').length || !alive(st, 'a').length) break;
     }
+    // the battle ends with the action that ends it (the game checks after each action: no end of turn)
+    if (battleOver(st)) return;
     endOfTurn(st, rng);
     for (const side of ['p', 'a']) for (const x of actives(st, side)) if (x.swCooldown) x.swCooldown--;
     // replacements after faints (set mode: the player gets no free look before the boss sends its next Pokemon)
+    // one that goes down to hazards as it comes in is replaced at once, until one stands or none are left
     for (const side of ['a', 'p']) {
-      st[side].slots.forEach((idx, slot) => {
-        const m = st[side].team[idx];
-        if (m && m.fainted && bench(st, side).length) {
+      st[side].slots.forEach((_, slot) => {
+        for (let k = 0; k < 6; k++) {
+          const m = st[side].team[st[side].slots[slot]];
+          if (!(m && m.fainted && bench(st, side).length)) break;
           const to = P[side].replace(st, side, rng, 'faint', slot);
-          if (to != null && !st[side].slots.includes(to) && !st[side].team[to].fainted) switchIn(st, side, to, rng, 'replace', slot);
+          if (to == null || st[side].slots.includes(to) || st[side].team[to].fainted) break;
+          switchIn(st, side, to, rng, 'replace', slot);
         }
       });
     }
-    if (!alive(st, 'a').length) { st.over = true; st.winner = 'p'; }
-    else if (!alive(st, 'p').length) { st.over = true; st.winner = 'a'; }
+    battleOver(st);
+  }
+  /** The game's checkteamslost (FireRed atk24, kept by CFRU outside the Battle Frontier): when both sides are out of
+   *  Pokemon after the same action (recoil, Life Orb, Rocky Helmet, Rough Skin, Iron Barbs, Explosion, Destiny Bond,
+   *  Perish Song, end-of-turn damage) the outcome is a draw, and a draw counts as a defeat: you white out. */
+  function battleOver(st) {
+    const p = alive(st, 'p').length, a = alive(st, 'a').length;
+    if (p && a) return false;
+    st.over = true;
+    st.winner = p ? 'p' : 'a';
+    if (!p && !a) { st.draw = true; log(st, 'Both sides are out of Pokemon at once: the game counts a draw as a loss'); }
+    return true;
   }
 
   // ---------------- quick evaluation helpers ----------------
@@ -1579,8 +1599,8 @@
       for (const b of canSwitch(st, me) ? bench(st, side) : []) {
         let entryDmg = 0, pEntry = 0;
         const hz = st[side].hazards;
-        if (hz.sr && itemName(b) !== 'Heavy-Duty Boots') entryDmg += Math.floor(b.maxHp * 0.125 * E.typeEff('Rock', b.types));
-        if (hz.spikes && grounded(b) && itemName(b) !== 'Heavy-Duty Boots') entryDmg += Math.floor(b.maxHp * [0, 1 / 8, 1 / 6, 1 / 4][hz.spikes]);
+        if (hz.sr && itemName(b) !== 'Heavy-Duty Boots') entryDmg += Math.max(1, Math.floor(b.maxHp * 0.125 * E.typeEff('Rock', b.types)));
+        if (hz.spikes && grounded(b) && itemName(b) !== 'Heavy-Duty Boots') entryDmg += Math.max(1, Math.floor(b.maxHp * [0, 1 / 8, 1 / 6, 1 / 4][hz.spikes]));
         if (aiMove.type === 'move' && meta(aiMove.id).cat !== 'X') {
           const fo = fieldOpts(st, side);
           const rr = E.rawRolls(specNow(foe), Object.assign(specNow(b), { hpPct: 100 }), aiMove.id, Object.assign({ hits: meta(aiMove.id).multihit ? 3 : 0 }, fo));
