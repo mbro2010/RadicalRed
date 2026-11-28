@@ -869,7 +869,7 @@
     const mine = () => sheet._owner === owner && !sheet.hidden;
     const close = () => { sheet._owner = null; sheet.hidden = true; sheet.innerHTML = ''; document.body.style.overflow = ''; render(); };
     const nb = D.bosses[nextBoss()];
-    let natureHTML = null, itemHTML = null, busy = false, editing = false, itemsOpen = false, statNote = '', typed = null;
+    let natureHTML = null, itemHTML = null, evoHTML = null, busy = false, editing = false, itemsOpen = false, statNote = '', typed = null;
     let page = S.sumPage || 'info';
     function infoPage(sp) {
       const ab = E.abilityInfo(m.ab), hcAb = m.ab && E.hardcoreAbility(m.ab, m.s) !== m.ab ? ` <span class="tag ban">Hardcore: ${esc(E.hardcoreAbility(m.ab, m.s))}</span>` : '';
@@ -883,6 +883,7 @@
           ${m.met ? `<dt>Caught</dt><dd>${esc(m.met)}</dd>` : ''}
           ${evo.length ? `<dt>Evolves</dt><dd>${evo.map(esc).join('<br>')}${m.noEvo ? '<br><span class="muted">stopped: it won’t evolve</span>' : ''}</dd>` : ''}
         </dl>
+        ${E.evoWays(m.s).length && m.box !== 'dead' ? `<div class="card" id="mo-evo"><div class="lbl">Evolve</div>${evoHTML || '<span class="note">Comparing what it can become for your team…</span>'}</div>` : ''}
         ${itemsOpen ? `<div class="card sum-items"><div class="lbl">Held item for ${esc(nb.cls)} ${esc(nb.n)}</div>
           <div id="mo-item">${itemHTML || '<span class="note">Trying held items against their team…</span>'}</div>
           <div class="lbl">Everything you can give it (${pool.length})</div>
@@ -955,6 +956,11 @@
       $('#mo-up').onclick = () => goTo(m.lv + 1);
       $('#mo-down').onclick = () => goTo(m.lv - 1);
       $('#mo-cap').onclick = () => goTo(capNow());
+      sheet.querySelectorAll('[data-evoway]').forEach(b => b.onclick = async () => {
+        const [to, item] = b.dataset.evoway.split(':').map(Number);
+        if (await evolveWith(m, to, item || null)) { evoHTML = natureHTML = itemHTML = null; compute(); }
+        draw();
+      });
       const ev = $('#mo-evolve'); if (ev) ev.onclick = async () => { const to = await whichEvolution(m, m.lv); if (to && await evolveScene(m, to)) { m.noEvo = false; evolveMon(m, to); for (const id of movesAt(m.s, 0)) await offerMove(m, id, 'on evolving'); await store.saveMon(m); } draw(); };
       $('#mo-edit').onclick = () => { sheet._owner = null; sheet.hidden = true; sheet.innerHTML = ''; openEditor(m); };
       $('#mo-box').onclick = async () => { if (m.box !== 'party' && party().length >= 6) { flash('Your party is full.'); return; } m.box = m.box === 'party' ? 'box' : 'party'; draw(); await store.saveMon(m); };
@@ -1001,6 +1007,14 @@
         itemHTML += `${later ? `<p class="small" style="margin:0">Later: <b>${esc(E.itemName(later.id))}</b> (+${later.g.toFixed(1)}) comes ${esc(later.w)}.</p>` : ''}
           <p class="note" style="margin:0">${fn ? 'Judged ' + esc(fn) + ', the way it will fight. ' : ''}From what you have: ${S.run.care ? 'the care package so far, ' : ''}items you've ticked under Pokémon and what your team holds.</p>`;
         draw();
+        // then what it can become (a stone, another item, friendship...), best for your team first
+        if (E.evoWays(m.s).length && m.box !== 'dead') setTimeout(() => {
+          if (!mine()) return;
+          let ch = null;
+          try { ch = evoChoices(m); } catch (e) { ch = null; }
+          evoHTML = ch ? evoChoicesHTML(m, ch) : '<span class="note">No big fight left to judge it against.</span>';
+          draw();
+        }, 30);
       }, 40);
     }
     draw();
@@ -2855,9 +2869,10 @@
   }
 
   // ---------------- evolutions ----------------
-  /** "Level 36 → Venusaur", "item: Fire Stone → Flareon": every way this species evolves, from the ROM. */
+  /** "Lv 36 → Venusaur", "Use a Fire Stone → Flareon": every way this species evolves, from the ROM (E.evoWays: no
+   *  trade rows where Radical Red gives the evolution an item). */
   function evoSummary(sid) {
-    return (D.evo[sid] || []).map(([to, , , how]) => `${how.replace(/^item: /, '').replace(/^Level /, 'Lv ')} → ${E.sp(to) ? E.sp(to).n : '?'}`);
+    return E.evoWays(sid).map(w => `${w.how.replace(/^Level (\d+)$/, 'Lv $1')} → ${E.sp(w.to).n}`);
   }
   let FAMILY = null;   // species id -> id of the first stage of its evolution family
   function familyOf(sid) {
@@ -2885,6 +2900,122 @@
       s = next[0];
     }
     return s;
+  }
+
+  // ---------------- evolving it yourself: a stone or another item, friendship, a move it knows... ----------------
+  /** Where to get an item (the first places the ROM puts it) and whether your run has been there yet. */
+  function itemSources(id, P) {
+    const list = ((D.itemWhere || {})[id] || []).slice();
+    if (!list.length) for (const [area, f] of Object.entries(D.finds || {})) {
+      if ((f.sh || []).some(sh => sh.includes(id))) list.push([area, 'shop']);
+      else { const it = (f.i || []).find(x => x[0] === id); if (it) list.push([area, { h: 'hidden', g: 'gift' }[it[2]] || 'found']); }
+      if (list.length >= 4) break;
+    }
+    P = P || runProgress();
+    return list.map(([area, how]) => {
+      const k = P.steps.findIndex(st => st.step.kind === 'areas' && st.step.areas.includes(area));
+      return { area, how, now: (k >= 0 && k <= P.current) || !!(S.run.enc || {})[area] };
+    });
+  }
+  const haveItem = id => (S.run.bag || []).includes(id) || careState().now.has(id);
+  /** Each species it can become, judged as a catch is (candidateValue): against the next two big fights, at the level
+   *  cap, with its own nature, moves and your TMs, what it would win or save that the rest of your team doesn't (the
+   *  gain), and its plain total for ties. Staying as it is, and evolving by level on its own, is one of the options.
+   *  An evolution that needs a level it won't have by the first of those fights waits (`later`). */
+  function evoChoices(m) {
+    const ways = E.evoWays(m.s);
+    if (!ways.length) return null;
+    const majors = nextMajors(2);
+    if (!majors.length) return null;
+    const lvFirst = Math.max(m.lv, D.bosses[majors[0]].cap);
+    const opts = [{ to: m.s, ways: [], stay: true }], later = [];
+    for (const w of ways) {
+      if (w.lv && w.lv > lvFirst) { if (!later.some(x => x.to === w.to)) later.push(w); continue; }
+      const o = opts.find(x => x.to === w.to && !x.stay) || (opts.push({ to: w.to, ways: [] }), opts[opts.length - 1]);
+      o.ways.push(w);
+    }
+    const slot = E.sp(m.s).a.indexOf(m.ab);
+    for (const o of opts) {
+      o.gain = 0; o.total = 0; o.fills = []; o.as = [];
+      for (const bi of majors) {
+        const b = D.bosses[bi], lv = Math.max(m.lv, b.cap);
+        const as = o.stay && m.noEvo ? m.s : evolvedBy(o.to, lv), spA = E.sp(as);
+        const f = ADV.fightScore(specOf(Object.assign({}, m, { s: as, lv, ab: spA.a[slot >= 0 ? slot : 0] || spA.a[0] })), bi, S.run.tms || []);
+        const base = teamAnswers(bi, m.key);
+        f.per.forEach((x, k) => {
+          const v = VSV[x.verdict] - x.risk, have = base[k] ? base[k].best : 0;
+          if (v > have + 0.05) { o.gain += v - have; if (have < VSV.ok - 0.05 && v >= VSV.ok - 0.05) o.fills.push(x.foe); }
+        });
+        o.total += f.score; o.as.push(as);
+      }
+    }
+    // a level-up evolution it reaches by these fights on its own is what staying gives
+    const stay = opts[0];
+    const rest = opts.filter(o => !o.stay && !(o.ways.every(w => w.auto) && o.as.join() === stay.as.join()));
+    const ranked = [stay].concat(rest).sort((x, y) => (y.gain - x.gain) || (y.total - x.total));
+    return { opts: ranked, majors, later };
+  }
+  /** The Evolve card on a Pokemon's summary: the options best first, how to make each happen, where its item is. */
+  function evoChoicesHTML(m, ch) {
+    const P = runProgress(), sp = E.sp(m.s);
+    // what you can do now: stay, a way with no item (friendship, a move...), or an item you have or can get where you've been
+    for (const o of ch.opts) o.ready = o.stay || o.ways.some(w => !w.auto && (!w.item || haveItem(w.item) || itemSources(w.item, P).some(x => x.now)));
+    const now = ch.opts.filter(o => o.ready);
+    const top = now[0], second = now[1];
+    const clear = !!second && (top.gain - second.gain > 0.15 || (top.gain - second.gain > -0.01 && top.total - second.total > 0.5));
+    const better = ch.opts.find(o => !o.ready && o.gain > top.gain + 0.15);
+    const fights = ch.majors.map(i => D.bosses[i].n).join(' and ');
+    const uniq = a => [...new Set(a)];
+    const stayName = o => { const last = o.as[o.as.length - 1]; return last !== m.s && E.sp(last) ? `Let it level up: ${E.sp(last).n} on its own` : `Keep it a ${sp.n}`; };
+    const a = n => (/^[AEIOU]/.test(n) ? 'an ' : 'a ') + n;
+    const itemLine = w => {
+      if (!w.item) return '';
+      if (haveItem(w.item)) return `<span class="small">You have ${esc(a(E.itemName(w.item)))}.</span>`;
+      const src = itemSources(w.item, P);
+      if (!src.length) return `<span class="small muted">${esc(E.itemName(w.item))}: not found in the game's maps.</span>`;
+      const now = src.filter(x => x.now), soon = src.filter(x => !x.now);
+      return `<span class="small ${now.length ? '' : 'muted'}">${esc(E.itemName(w.item))}: ${now.length ? `get one at ${esc(now.map(x => `${x.area} (${HOW_LABEL[x.how] || x.how})`).join(', '))}` : `later, at ${esc(soon.slice(0, 2).map(x => `${x.area} (${HOW_LABEL[x.how] || x.how})`).join(', '))}`}</span>`;
+    };
+    const row = (o, k) => {
+      const name = o.stay ? stayName(o) : E.sp(o.to).n;
+      const fills = uniq(o.fills);
+      const why = o.gain > 0.05 ? `+${o.gain.toFixed(1)} against ${esc(fights)}${fills.length ? ` · answers ${esc(fills.slice(0, 3).join(', '))}${fills.length > 3 ? ` and ${fills.length - 3} more` : ''}, which the rest of your team doesn't` : ''}` : `adds nothing your team lacks against ${esc(fights)}`;
+      const acts = o.stay ? '' : o.ways.filter(w => !w.auto).map(w => `<button class="btn small${o === top && clear ? ' primary' : ''}" data-evoway="${o.to}:${w.item || 0}">${w.item ? `I used ${esc(a(E.itemName(w.item)))}` : 'It evolved'}</button>`).join('');
+      return `<div class="answer"><div class="top">${icon(o.stay ? o.as[o.as.length - 1] : o.to)}<b>${esc(name)}</b>${o === top && clear ? '<span class="tag">Best for your team</span>' : o.ready ? '' : '<span class="tag">Later</span>'}<span class="grow"></span>${acts}</div>
+        ${o.stay ? '' : `<span class="small">${esc(o.ways.map(w => w.how).join(', or '))}</span>`}
+        <span class="small muted">${why}</span>${o.stay ? '' : o.ways.map(itemLine).filter(Boolean).join('')}</div>`;
+    };
+    const wayOf = o => o.ways.find(w => !w.auto) || o.ways[0];
+    const head = (!second ? (top.stay ? `<p class="small" style="margin:0"><b>${esc(stayName(top))} for now</b>: nothing you can do yet evolves it.</p>` : '')
+      : clear ? `<p class="small" style="margin:0"><b>${top.stay ? esc(stayName(top)) + ' for now' : `Best for your team: ${esc(E.sp(top.to).n)}`}</b>${top.stay ? `: no evolution you can make now does more against ${esc(fights)}.` : ` (${esc(wayOf(top).how.replace(/^Use /, 'with ').replace(/^Level/, 'level'))}).`}</p>`
+        : `<p class="small" style="margin:0">Against ${esc(fights)} these come out about even: pick the one you like.</p>`)
+      + (better ? (() => {
+        const w = wayOf(better), src = w.item ? itemSources(w.item, P) : [];
+        return `<p class="small" style="margin:0">${second ? 'Even better later' : 'Later'}: <b>${esc(E.sp(better.to).n)}</b> ${esc(w.how.replace(/^Use /, 'with ').replace(/^Level/, 'by leveling'))}${src.length ? ` (${esc(src[0].area)})` : ''}, +${better.gain.toFixed(1)} against ${esc(fights)}.</p>`;
+      })() : '');
+    return `${head}<div class="answers">${ch.opts.map(row).join('')}</div>
+      ${ch.later.length ? `<p class="small muted" style="margin:0">Later: ${esc(uniq(ch.later.map(w => `${E.sp(w.to).n} (${w.how})`)).join('; '))}.</p>` : ''}
+      <p class="note" style="margin:0">Judged like a catch: each form against ${esc(fights)}'s exact teams at the level cap, with ${esc(m.nick || sp.n)}'s nature, its moves, what it learns by then and your TMs, counting what it wins or saves that the rest of your team doesn't. Evolving keeps its moves; what it learns by level from then on is the new form's.</p>`;
+  }
+  /** The next big fights (badges, milestones, the Elite Four), one per fight: the version your run meets. */
+  function nextMajors(n) {
+    const out = [], seen = new Set();
+    for (const i of ADV.upcomingMajor(nextBoss(), n * 4)) {
+      const g = FLOW.groupOf(i), k = g ? g.first : i;
+      if (seen.has(k)) continue;
+      seen.add(k); out.push(g ? fightOf(g) : i);
+      if (out.length >= n) break;
+    }
+    return out;
+  }
+  /** Use an item on it (or say it evolved another way): the game's scene, then its new moves. */
+  async function evolveWith(m, to, item) {
+    if (!(await evolveScene(m, to))) return false;
+    m.noEvo = false; evolveMon(m, to);
+    if (item && (S.run.bag || []).includes(item)) { S.run.bag = S.run.bag.filter(x => x !== item); await store.saveRun(); }
+    for (const id of movesAt(m.s, 0)) await offerMove(m, id, 'on evolving');
+    await store.saveMon(m);
+    return true;
   }
 
   // ---------------- ROUTES: first encounter per area ----------------
@@ -3008,12 +3139,12 @@
   const VSV = { safe: 3, ok: 2, risky: 1, lose: 0 };
   /** How well your living Pokemon answer each Pokemon in a boss fight (the best of your party and box, at the fight's cap). */
   const ANSWERS = new Map();
-  function teamAnswers(bi) {
+  function teamAnswers(bi, skip) {
     const b = D.bosses[bi];
-    const key = JSON.stringify([bi, alive().map(m => [m.key, m.s, m.lv, m.nat, m.ab, m.it || 0, m.mv])]);
+    const key = JSON.stringify([bi, skip || '', alive().map(m => [m.key, m.s, m.lv, m.nat, m.ab, m.it || 0, m.mv])]);
     if (ANSWERS.has(key)) return ANSWERS.get(key);
     const team = E.bossTeam(bi, b.cap);
-    const mine = alive().map(m => ({ m, spec: specOf(fightForm(m, b.cap)) }));
+    const mine = alive().filter(m => m.key !== skip).map(m => ({ m, spec: specOf(fightForm(m, b.cap)) }));
     const out = team.map(foe => {
       let best = 0, who = null;
       for (const x of mine) { const mu = E.matchup(Object.assign({}, x.spec, { entry: true }), Object.assign({}, foe, { entry: true })); const v = VSV[mu.verdict] - mu.risk; if (v > best) { best = v; who = x.m; } }
@@ -3688,10 +3819,14 @@
     if (!p.length) return '';
     const under = p.filter(m => m.lv < cap);
     const evo = p.map(m => ({ m, to: evolvedBy(m.s, m.lv) })).filter(x => x.to !== x.m.s && E.sp(x.to));
-    if (!under.length && !evo.length) return '';
+    // evolutions you make happen with an item you have, or can get where your run has been
+    const P = runProgress();
+    const byItem = p.filter(m => !m.noEvo).map(m => ({ m, ways: E.evoWays(m.s).filter(w => w.item && (haveItem(w.item) || itemSources(w.item, P).some(x => x.now))) })).filter(x => x.ways.length);
+    if (!under.length && !evo.length && !byItem.length) return '';
     return `<div class="card" id="ready"><div class="lbl">Before you plan</div>
       ${under.length ? `<div class="row"><button class="btn small" id="to-cap">Level ${under.length === p.length ? 'everyone' : esc(under.map(monShort).join(', '))} up to ${cap}</button><span class="note">the cap. The plan works with the levels the Coach has; new moves and evolutions come up as you go.</span></div>` : ''}
-      ${evo.map(x => `<div class="evo-row">${icon(x.to)}<span>${esc(monName(x.m))} evolves into <b>${esc(E.sp(x.to).n)}</b> by Lv ${x.m.lv}.</span><button class="btn small" data-evolve="${esc(x.m.key)}" data-to="${x.to}">Evolve</button></div>`).join('')}</div>`;
+      ${evo.map(x => `<div class="evo-row">${icon(x.to)}<span>${esc(monName(x.m))} evolves into <b>${esc(E.sp(x.to).n)}</b> by Lv ${x.m.lv}.</span><button class="btn small" data-evolve="${esc(x.m.key)}" data-to="${x.to}">Evolve</button></div>`).join('')}
+      ${byItem.map(x => `<div class="evo-row">${icon(x.m.s)}<span>${esc(monName(x.m))} can evolve: ${x.ways.map(w => `${esc(E.itemName(w.item))} → <b>${esc(E.sp(w.to).n)}</b>`).join(', ')}.</span><button class="btn small" data-evopick="${esc(x.m.key)}">${x.ways.length > 1 || E.evoWays(x.m.s).length > 1 ? 'Which one?' : 'Should I?'}</button></div>`).join('')}</div>`;
   }
   function resultHTML(g, bi) {
     const b = D.bosses[bi];
@@ -3821,6 +3956,7 @@
     const ff = $('#focus-fight'); if (ff) ff.onchange = () => { if (!ff.value) return; S.focus = +ff.value; S.resultForm = null; render(); scrollToNow(); };
     on('#focus-clear', () => { S.focus = null; S.resultForm = null; render(); scrollToNow(); });
     on('#to-cap', () => levelPartyTo(capNow()));
+    main.querySelectorAll('[data-evopick]').forEach(b => b.onclick = () => { const m = S.roster.find(x => x.key === b.dataset.evopick); if (m) { S.sumPage = 'info'; openMon(m); } });
     main.querySelectorAll('[data-evolve]').forEach(b => b.onclick = async () => {
       const m = S.roster.find(x => x.key === b.dataset.evolve); if (!m) return;
       const from = monName(m); evolveMon(m, +b.dataset.to); flash(`${from} evolved into ${E.sp(m.s).n}. Check its moves and ability.`); render(); await store.saveMon(m);

@@ -722,7 +722,42 @@
     return { picked, bestPer, team, pool };
   }
 
+  // ---------- evolutions ----------
+  // the ROM's evolution methods: plain level-ups (with a branch: Attack vs Defense, Silcoon or Cascoon, male or female,
+  // day or night, Toxel's nature) happen on their own when it levels; the rest you make happen
+  const LEVEL_EVO = new Set([4, 8, 9, 10, 11, 12, 13, 20, 21, 22, 23, 31, 32]);
+  const ITEM_EVO = 7, TRADE_EVO = new Set([5, 6]);
+  /** Every way a species evolves: { to, method, item (a stone or other item you use), auto (a plain level-up), lv, how }.
+   *  Radical Red gives every trade evolution an item you use instead (Link Cable, Metal Coat, King's Rock, Prism
+   *  Scale...), so a trade row is left out when an item reaches the same species. */
+  function evoWays(sid) {
+    const rows = ((D.evo || {})[sid] || []).filter(([to]) => sp(to));
+    const out = [];
+    for (const [to, method, param, how] of rows) {
+      if (TRADE_EVO.has(method) && rows.some(([t2, m2]) => t2 === to && m2 === ITEM_EVO)) continue;
+      const w = { to, method, item: method === ITEM_EVO ? param : null, auto: LEVEL_EVO.has(method), how: evoHow(method, param, how, to) };
+      const lv = LEVEL_EVO.has(method) || [16, 28].includes(method) ? param : method === 18 ? +((/Level (\d+)/.exec(how) || [])[1] || 0) || null : null;
+      if (lv) w.lv = lv;
+      if (!out.some(x => x.to === to && x.how === w.how)) out.push(w);
+    }
+    return out;
+  }
+  /** How to make an evolution happen, in plain words. */
+  function evoHow(method, param, how, to) {
+    const a = n => (/^[AEIOU]/.test(n) ? 'an ' : 'a ') + n;
+    if (method === ITEM_EVO) return `Use ${a(itemName(param) || how.replace(/^item: /, ''))}`;
+    if (method === 28) { const n = (sp(to) || {}).n || ''; return `Level ${param} ${/Midnight/.test(n) ? 'at night' : /Dusk/.test(n) ? 'at dusk' : 'by day'} (the Time Changer sets it)`; }
+    if (method === 1) return 'Level up with high friendship';
+    if (method === 2) return 'Level up with high friendship, by day';
+    if (method === 3) return 'Level up with high friendship, at night';
+    if (method === 17) return 'Level up knowing a ' + how.replace(/^knows an? /, '');
+    if (method === 26) return 'Level up knowing ' + ((mv(param) || {}).f || how.replace(/^knows move: /, ''));
+    if (method === 18) return how.replace(/a \d+-type Pokemon/, 'a Dark-type Pokémon');
+    if (TRADE_EVO.has(method)) return how.replace(/^trade/, 'Trade');
+    return how.charAt(0).toUpperCase() + how.slice(1);
+  }
+
   return { C, gen, D, sp, mv, itemName, hardcoreAbility, natureName, abilityInfo, buildMon, damage, damageDist, faintChance, speedOf, matchup,
-    bossTeam, planBoss, teamWeather, learnable, upcoming, isBanned, suggestMoves, maxHP, rawStats, rawRolls, typeEff, hiddenPowerType, setMode, getMode, critChanceOf, accuracyOf, priorityOfMove, rampPowers, qpStat, canonAbility,
+    evoWays, LEVEL_EVO, bossTeam, planBoss, teamWeather, learnable, upcoming, isBanned, suggestMoves, maxHP, rawStats, rawRolls, typeEff, hiddenPowerType, setMode, getMode, critChanceOf, accuracyOf, priorityOfMove, rampPowers, qpStat, canonAbility,
     STATUS_CODE, WEATHER_SETTERS, HIGH_CRIT, ALWAYS_CRIT, STAT_MULT, clearCache: () => cache.clear() };
 });

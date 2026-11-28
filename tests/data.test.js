@@ -117,3 +117,19 @@ test('data: the world walk reaches the post-game: the Sevii Islands, the Pokémo
   for (const id of ['follower', 'lucario-fan', 'yamper-fan', 'sharpedo-stone', 'mudkip-fan']) assert(ids.has(id), 'follower quest ' + id);
   assert(D.side.rematches.some(r => r.tr === 35 && r.needs.includes('Z-Power Ring') && r.gives.some(g => /Cosmog/.test(g))), "Gian's Z-Power Ring battle gives a Cosmog");
 });
+test('data: evolutions you make happen: stones and items (Radical Red turns every trade into an item), and the branches', () => {
+  const id = n => D.species.find(s => s.n === n).i, nm = sid => E.sp(sid).n;
+  const ways = n => E.evoWays(id(n)).map(w => `${nm(w.to)}:${w.how}`);
+  assert(ways('Clamperl').join() === 'Huntail:Use a Water Stone,Gorebyss:Use a Sun Stone', 'Clamperl: ' + ways('Clamperl'));
+  assert(ways('Haunter').join() === 'Gengar:Use a Link Cable', 'Haunter: the Link Cable, not a trade: ' + ways('Haunter'));
+  assert(E.evoWays(id('Kirlia')).some(w => w.auto && w.lv === 30 && nm(w.to) === 'Gardevoir') && ways('Kirlia').includes('Gallade:Use a Dawn Stone'), 'Kirlia: Lv 30 or a Dawn Stone');
+  assert(ways('Eevee').length === 8 && ways('Eevee').includes('Glaceon:Use an Ice Stone') && ways('Eevee').includes('Sylveon:Level up knowing a Fairy-type move'), 'Eevee: eight ways');
+  assert(E.evoWays(id('Pancham'))[0].lv === 17, 'Pancham: Lv 17 with a Dark type in the party');
+  const trades = Object.keys(D.evo).flatMap(k => E.evoWays(+k).filter(w => /^Trade/.test(w.how)).map(w => nm(+k) + '→' + nm(w.to)));
+  assert(!trades.length, 'evolutions that would still need a trade: ' + trades);
+  // where the stones are: Celadon's department store sells them all
+  for (const st of ['Fire Stone', 'Water Stone', 'Thunder Stone', 'Leaf Stone', 'Sun Stone', 'Moon Stone', 'Dusk Stone', 'Dawn Stone', 'Shiny Stone', 'Ice Stone']) {
+    const iid = +Object.keys(D.items).find(k => E.itemName(+k) === st);
+    assert(iid && (D.itemWhere[iid] || []).length, `${st}: somewhere to get it`);
+  }
+});
