@@ -12,14 +12,14 @@
    {
     "lineup": [
      "Skarmory",
-     "Aron",
-     "Gible"
+     "Gible",
+     "Fletchling"
     ],
     "lead": "Skarmory",
     "odds": 1,
     "guaranteed": true,
-    "turns": 4,
-    "branches": 47,
+    "turns": 3,
+    "branches": 4,
     "play": {
      "turns": [
       {
@@ -33,7 +33,352 @@
        ]
       },
       {
+       "you": "Skarmory: switch to Gible; if it faints, send in Fletchling",
+       "log": [
+        "You send out Gible",
+        "Boss Shedinja uses X-Scissor",
+        "Gible loses 100% (0% left)",
+        "Gible faints (Shedinja's X-Scissor)",
+        "Shedinja loses 100% (Iron Barbs)",
+        "Shedinja faints (Iron Barbs)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Spikes)",
+        "Shedinja faints (Spikes)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Spikes)",
+        "Shedinja faints (Spikes)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Spikes)",
+        "Shedinja faints (Spikes)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Spikes)",
+        "Shedinja faints (Spikes)",
+        "Boss sends out Shedinja",
+        "You send out Fletchling"
+       ]
+      },
+      {
+       "you": "Fletchling: Brave Bird",
+       "log": [
+        "Boss Shedinja uses X-Scissor",
+        "Fletchling hangs on with its Focus Sash",
+        "Fletchling loses 95% (5% left)",
+        "It's not very effective…",
+        "Your Fletchling uses Brave Bird",
+        "Shedinja loses 100% (0% left)",
+        "It's super effective!",
+        "Shedinja faints (Fletchling's Brave Bird)",
+        "Fletchling loses 5% (recoil)",
+        "Fletchling faints (recoil)"
+       ]
+      }
+     ],
+     "winner": "p",
+     "draw": false
+    }
+   },
+   {
+    "lineup": [
+     "Skarmory",
+     "Fletchling",
+     "Gible"
+    ],
+    "lead": "Skarmory",
+    "odds": 1,
+    "guaranteed": true,
+    "turns": 3,
+    "branches": 4,
+    "play": {
+     "turns": [
+      {
        "you": "Skarmory: Spikes",
+       "log": [
+        "Boss Shedinja uses Shadow Sneak",
+        "Skarmory endures with Sturdy",
+        "Skarmory loses 96% (4% left)",
+        "Your Skarmory uses Spikes",
+        "Spikes is laid on their side"
+       ]
+      },
+      {
+       "you": "Skarmory: switch to Gible; if it faints, send in Fletchling",
+       "log": [
+        "You send out Gible",
+        "Boss Shedinja uses X-Scissor",
+        "Gible loses 100% (0% left)",
+        "Gible faints (Shedinja's X-Scissor)",
+        "Shedinja loses 100% (Iron Barbs)",
+        "Shedinja faints (Iron Barbs)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Spikes)",
+        "Shedinja faints (Spikes)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Spikes)",
+        "Shedinja faints (Spikes)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Spikes)",
+        "Shedinja faints (Spikes)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Spikes)",
+        "Shedinja faints (Spikes)",
+        "Boss sends out Shedinja",
+        "You send out Fletchling"
+       ]
+      },
+      {
+       "you": "Fletchling: Brave Bird",
+       "log": [
+        "Boss Shedinja uses X-Scissor",
+        "Fletchling hangs on with its Focus Sash",
+        "Fletchling loses 95% (5% left)",
+        "It's not very effective…",
+        "Your Fletchling uses Brave Bird",
+        "Shedinja loses 100% (0% left)",
+        "It's super effective!",
+        "Shedinja faints (Fletchling's Brave Bird)",
+        "Fletchling loses 5% (recoil)",
+        "Fletchling faints (recoil)"
+       ]
+      }
+     ],
+     "winner": "p",
+     "draw": false
+    }
+   },
+   {
+    "lineup": [
+     "Aron",
+     "Gible",
+     "Fletchling"
+    ],
+    "lead": "Aron",
+    "odds": 1,
+    "guaranteed": true,
+    "turns": 3,
+    "branches": 4,
+    "play": {
+     "turns": [
+      {
+       "you": "Aron: Stealth Rock",
+       "log": [
+        "Boss Shedinja uses Shadow Sneak",
+        "Aron endures with Sturdy",
+        "Aron loses 95% (5% left)",
+        "Your Aron uses Stealth Rock",
+        "Stealth Rock is laid on their side"
+       ]
+      },
+      {
+       "you": "Aron: switch to Gible; if it faints, send in Fletchling",
+       "log": [
+        "You send out Gible",
+        "Boss Shedinja uses X-Scissor",
+        "Gible loses 100% (0% left)",
+        "Gible faints (Shedinja's X-Scissor)",
+        "Shedinja loses 100% (Iron Barbs)",
+        "Shedinja faints (Iron Barbs)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Stealth Rock)",
+        "Shedinja faints (Stealth Rock)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Stealth Rock)",
+        "Shedinja faints (Stealth Rock)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Stealth Rock)",
+        "Shedinja faints (Stealth Rock)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Stealth Rock)",
+        "Shedinja faints (Stealth Rock)",
+        "Boss sends out Shedinja",
+        "You send out Fletchling"
+       ]
+      },
+      {
+       "you": "Fletchling: Brave Bird",
+       "log": [
+        "Boss Shedinja uses X-Scissor",
+        "Fletchling hangs on with its Focus Sash",
+        "Fletchling loses 95% (5% left)",
+        "It's not very effective…",
+        "Your Fletchling uses Brave Bird",
+        "Shedinja loses 100% (0% left)",
+        "It's super effective!",
+        "Shedinja faints (Fletchling's Brave Bird)",
+        "Fletchling loses 5% (recoil)",
+        "Fletchling faints (recoil)"
+       ]
+      }
+     ],
+     "winner": "p",
+     "draw": false
+    }
+   },
+   {
+    "lineup": [
+     "Aron",
+     "Fletchling",
+     "Gible"
+    ],
+    "lead": "Aron",
+    "odds": 1,
+    "guaranteed": true,
+    "turns": 3,
+    "branches": 4,
+    "play": {
+     "turns": [
+      {
+       "you": "Aron: Stealth Rock",
+       "log": [
+        "Boss Shedinja uses Shadow Sneak",
+        "Aron endures with Sturdy",
+        "Aron loses 95% (5% left)",
+        "Your Aron uses Stealth Rock",
+        "Stealth Rock is laid on their side"
+       ]
+      },
+      {
+       "you": "Aron: switch to Gible; if it faints, send in Fletchling",
+       "log": [
+        "You send out Gible",
+        "Boss Shedinja uses X-Scissor",
+        "Gible loses 100% (0% left)",
+        "Gible faints (Shedinja's X-Scissor)",
+        "Shedinja loses 100% (Iron Barbs)",
+        "Shedinja faints (Iron Barbs)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Stealth Rock)",
+        "Shedinja faints (Stealth Rock)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Stealth Rock)",
+        "Shedinja faints (Stealth Rock)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Stealth Rock)",
+        "Shedinja faints (Stealth Rock)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Stealth Rock)",
+        "Shedinja faints (Stealth Rock)",
+        "Boss sends out Shedinja",
+        "You send out Fletchling"
+       ]
+      },
+      {
+       "you": "Fletchling: Brave Bird",
+       "log": [
+        "Boss Shedinja uses X-Scissor",
+        "Fletchling hangs on with its Focus Sash",
+        "Fletchling loses 95% (5% left)",
+        "It's not very effective…",
+        "Your Fletchling uses Brave Bird",
+        "Shedinja loses 100% (0% left)",
+        "It's super effective!",
+        "Shedinja faints (Fletchling's Brave Bird)",
+        "Fletchling loses 5% (recoil)",
+        "Fletchling faints (recoil)"
+       ]
+      }
+     ],
+     "winner": "p",
+     "draw": false
+    }
+   },
+   {
+    "lineup": [
+     "Skarmory",
+     "Gible",
+     "Aron"
+    ],
+    "lead": "Skarmory",
+    "odds": 1,
+    "guaranteed": true,
+    "turns": 4,
+    "branches": 8,
+    "play": {
+     "turns": [
+      {
+       "you": "Skarmory: Spikes",
+       "log": [
+        "Boss Shedinja uses Shadow Sneak",
+        "Skarmory endures with Sturdy",
+        "Skarmory loses 96% (4% left)",
+        "Your Skarmory uses Spikes",
+        "Spikes is laid on their side"
+       ]
+      },
+      {
+       "you": "Skarmory: Spikes; if it faints, send in Gible",
+       "log": [
+        "Boss Shedinja uses X-Scissor",
+        "Skarmory loses 4% (0% left)",
+        "It's not very effective…",
+        "Skarmory faints (Shedinja's X-Scissor)",
+        "You send out Gible"
+       ]
+      },
+      {
+       "you": "Gible: Stealth Rock",
+       "log": [
+        "Boss Shedinja uses X-Scissor",
+        "Gible loses 100% (0% left)",
+        "Gible faints (Shedinja's X-Scissor)",
+        "Shedinja loses 100% (Iron Barbs)",
+        "Shedinja faints (Iron Barbs)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Spikes)",
+        "Shedinja faints (Spikes)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Spikes)",
+        "Shedinja faints (Spikes)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Spikes)",
+        "Shedinja faints (Spikes)",
+        "Boss sends out Shedinja",
+        "Shedinja loses 100% (Spikes)",
+        "Shedinja faints (Spikes)",
+        "Boss sends out Shedinja",
+        "You send out Aron"
+       ]
+      },
+      {
+       "you": "Aron: Metal Burst",
+       "log": [
+        "Boss Shedinja uses Shadow Sneak",
+        "Aron endures with Sturdy",
+        "Aron loses 95% (5% left)",
+        "Your Aron uses Metal Burst",
+        "Shedinja loses 100% (Metal Burst)",
+        "Shedinja faints (Metal Burst)"
+       ]
+      }
+     ],
+     "winner": "p",
+     "draw": false
+    }
+   },
+   {
+    "lineup": [
+     "Skarmory",
+     "Aron",
+     "Gible"
+    ],
+    "lead": "Skarmory",
+    "odds": 1,
+    "guaranteed": true,
+    "turns": 4,
+    "branches": 14,
+    "play": {
+     "turns": [
+      {
+       "you": "Skarmory: Spikes",
+       "log": [
+        "Boss Shedinja uses Shadow Sneak",
+        "Skarmory endures with Sturdy",
+        "Skarmory loses 96% (4% left)",
+        "Your Skarmory uses Spikes",
+        "Spikes is laid on their side"
+       ]
+      },
+      {
+       "you": "Skarmory: Spikes; if it faints, send in Aron",
        "log": [
         "Boss Shedinja uses X-Scissor",
         "Skarmory loses 4% (0% left)",
@@ -82,155 +427,6 @@
      "winner": "p",
      "draw": false
     }
-   },
-   {
-    "lineup": [
-     "Aron",
-     "Skarmory",
-     "Gible"
-    ],
-    "lead": "Aron",
-    "odds": 1,
-    "guaranteed": true,
-    "turns": 4,
-    "branches": 63,
-    "play": {
-     "turns": [
-      {
-       "you": "Aron: Stealth Rock",
-       "log": [
-        "Boss Shedinja uses Shadow Sneak",
-        "Aron endures with Sturdy",
-        "Aron loses 95% (5% left)",
-        "Your Aron uses Stealth Rock",
-        "Stealth Rock is laid on their side"
-       ]
-      },
-      {
-       "you": "Aron: Roar",
-       "log": [
-        "Boss Shedinja uses X-Scissor",
-        "Aron loses 5% (0% left)",
-        "It's not very effective…",
-        "Aron faints (Shedinja's X-Scissor)",
-        "You send out Skarmory"
-       ]
-      },
-      {
-       "you": "Skarmory: switch to Gible",
-       "log": [
-        "You send out Gible",
-        "Boss Shedinja uses Shadow Sneak",
-        "Gible loses 100% (0% left)",
-        "Gible faints (Shedinja's Shadow Sneak)",
-        "Shedinja loses 100% (Iron Barbs)",
-        "Shedinja faints (Iron Barbs)",
-        "Boss sends out Shedinja",
-        "Shedinja loses 100% (Stealth Rock)",
-        "Shedinja faints (Stealth Rock)",
-        "Boss sends out Shedinja",
-        "Shedinja loses 100% (Stealth Rock)",
-        "Shedinja faints (Stealth Rock)",
-        "Boss sends out Shedinja",
-        "Shedinja loses 100% (Stealth Rock)",
-        "Shedinja faints (Stealth Rock)",
-        "Boss sends out Shedinja",
-        "Shedinja loses 100% (Stealth Rock)",
-        "Shedinja faints (Stealth Rock)",
-        "Boss sends out Shedinja",
-        "You send out Skarmory"
-       ]
-      },
-      {
-       "you": "Skarmory: Drill Peck",
-       "log": [
-        "Boss Shedinja uses Shadow Sneak",
-        "Skarmory endures with Sturdy",
-        "Skarmory loses 96% (4% left)",
-        "Your Skarmory uses Drill Peck",
-        "Shedinja loses 100% (0% left)",
-        "It's super effective!",
-        "Shedinja faints (Skarmory's Drill Peck)"
-       ]
-      }
-     ],
-     "winner": "p",
-     "draw": false
-    }
-   },
-   {
-    "lineup": [
-     "Aron",
-     "Gible",
-     "Skarmory"
-    ],
-    "lead": "Aron",
-    "odds": 1,
-    "guaranteed": true,
-    "turns": 4,
-    "branches": 63,
-    "play": {
-     "turns": [
-      {
-       "you": "Aron: Stealth Rock",
-       "log": [
-        "Boss Shedinja uses Shadow Sneak",
-        "Aron endures with Sturdy",
-        "Aron loses 95% (5% left)",
-        "Your Aron uses Stealth Rock",
-        "Stealth Rock is laid on their side"
-       ]
-      },
-      {
-       "you": "Aron: Roar",
-       "log": [
-        "Boss Shedinja uses X-Scissor",
-        "Aron loses 5% (0% left)",
-        "It's not very effective…",
-        "Aron faints (Shedinja's X-Scissor)",
-        "You send out Gible"
-       ]
-      },
-      {
-       "you": "Gible: Stealth Rock",
-       "log": [
-        "Boss Shedinja uses X-Scissor",
-        "Gible loses 100% (0% left)",
-        "Gible faints (Shedinja's X-Scissor)",
-        "Shedinja loses 100% (Iron Barbs)",
-        "Shedinja faints (Iron Barbs)",
-        "Boss sends out Shedinja",
-        "Shedinja loses 100% (Stealth Rock)",
-        "Shedinja faints (Stealth Rock)",
-        "Boss sends out Shedinja",
-        "Shedinja loses 100% (Stealth Rock)",
-        "Shedinja faints (Stealth Rock)",
-        "Boss sends out Shedinja",
-        "Shedinja loses 100% (Stealth Rock)",
-        "Shedinja faints (Stealth Rock)",
-        "Boss sends out Shedinja",
-        "Shedinja loses 100% (Stealth Rock)",
-        "Shedinja faints (Stealth Rock)",
-        "Boss sends out Shedinja",
-        "You send out Skarmory"
-       ]
-      },
-      {
-       "you": "Skarmory: Drill Peck",
-       "log": [
-        "Boss Shedinja uses Shadow Sneak",
-        "Skarmory endures with Sturdy",
-        "Skarmory loses 96% (4% left)",
-        "Your Skarmory uses Drill Peck",
-        "Shedinja loses 100% (0% left)",
-        "It's super effective!",
-        "Shedinja faints (Skarmory's Drill Peck)"
-       ]
-      }
-     ],
-     "winner": "p",
-     "draw": false
-    }
    }
   ]
  },
@@ -243,8 +439,296 @@
   "trainer": 6,
   "kind": "puzzle",
   "searched": 120,
-  "solutions": [],
-  "note": "no line found that wins against every reply within 12 turns; the game hint names Buneary and Fletchling"
+  "solutions": [
+   {
+    "lineup": [
+     "Buneary",
+     "Fletchling",
+     "Phanpy"
+    ],
+    "lead": "Buneary",
+    "odds": 0.975,
+    "guaranteed": true,
+    "turns": 12,
+    "branches": 44,
+    "play": {
+     "turns": [
+      {
+       "you": "Buneary: Fake Out",
+       "log": [
+        "Your Buneary uses Fake Out",
+        "Aron loses 5% (95% left)",
+        "It's not very effective…",
+        "Aron flinched and couldn't move!"
+       ]
+      },
+      {
+       "you": "Buneary: Drain Punch",
+       "log": [
+        "Your Buneary uses Drain Punch",
+        "Aron loses 95% (0% left)",
+        "It's super effective!",
+        "Aron faints (Buneary's Drain Punch)",
+        "Boss sends out Pikachu (Electric/Ice)"
+       ]
+      },
+      {
+       "you": "Buneary: switch to Phanpy",
+       "log": [
+        "You send out Phanpy",
+        "Boss Pikachu (Electric/Ice) uses Volt Tackle",
+        "It doesn't affect Phanpy"
+       ]
+      },
+      {
+       "you": "Phanpy: Earthquake",
+       "log": [
+        "Boss Pikachu (Electric/Ice) uses Freezy Frost",
+        "Phanpy hangs on with its Focus Sash",
+        "Phanpy loses 96% (4% left)",
+        "It's super effective!",
+        "All stat changes were eliminated",
+        "Your Phanpy uses Earthquake",
+        "Pikachu (Electric/Ice) loses 100% (0% left)",
+        "It's super effective!",
+        "Pikachu (Electric/Ice) faints (Phanpy's Earthquake)",
+        "Boss sends out Gastly"
+       ]
+      },
+      {
+       "you": "Phanpy: Earthquake; if it faints, send in Fletchling",
+       "log": [
+        "Boss Gastly uses Shadow Ball",
+        "Phanpy loses 4% (0% left)",
+        "Phanpy faints (Gastly's Shadow Ball)",
+        "Gastly loses 5% (Life Orb)",
+        "You send out Fletchling"
+       ]
+      },
+      {
+       "you": "Fletchling: Brave Bird",
+       "log": [
+        "Your Fletchling uses Brave Bird",
+        "Gastly loses 95% (0% left)",
+        "Gastly faints (Fletchling's Brave Bird)",
+        "Fletchling loses 5% (Life Orb)",
+        "Fletchling loses 32% (recoil)",
+        "Boss sends out Skorupi"
+       ]
+      },
+      {
+       "you": "Fletchling: Brave Bird",
+       "log": [
+        "Your Fletchling uses Brave Bird",
+        "Skorupi loses 100% (0% left)",
+        "It's super effective!",
+        "Skorupi faints (Fletchling's Brave Bird)",
+        "Fletchling loses 5% (Life Orb)",
+        "Fletchling loses 32% (recoil)",
+        "Boss sends out Timburr"
+       ]
+      },
+      {
+       "you": "Fletchling: switch to Buneary",
+       "log": [
+        "You send out Buneary",
+        "Boss Timburr uses Ice Punch",
+        "Buneary loses 43% (57% left)"
+       ]
+      },
+      {
+       "you": "Buneary: Fake Out",
+       "log": [
+        "Your Buneary uses Fake Out",
+        "Timburr loses 33% (67% left)",
+        "Timburr flinched and couldn't move!"
+       ]
+      },
+      {
+       "you": "Buneary: Healing Wish",
+       "log": [
+        "Boss Timburr uses Ice Punch",
+        "Buneary loses 43% (14% left)",
+        "Your Buneary uses Healing Wish",
+        "Buneary faints (Healing Wish)",
+        "You send out Fletchling",
+        "The healing wish came true for Fletchling"
+       ]
+      },
+      {
+       "you": "Fletchling: Brave Bird",
+       "log": [
+        "Your Fletchling uses Brave Bird",
+        "Timburr loses 67% (0% left)",
+        "It's super effective!",
+        "Timburr faints (Fletchling's Brave Bird)",
+        "Fletchling loses 5% (Life Orb)",
+        "Fletchling loses 26% (recoil)",
+        "Boss sends out Larvesta"
+       ]
+      },
+      {
+       "you": "Fletchling: Brave Bird",
+       "log": [
+        "Your Fletchling uses Brave Bird",
+        "Larvesta loses 100% (0% left)",
+        "It's super effective!",
+        "Larvesta faints (Fletchling's Brave Bird)",
+        "Fletchling loses 16% (Rocky Helmet)",
+        "Fletchling loses 5% (Life Orb)",
+        "Fletchling loses 37% (recoil)"
+       ]
+      }
+     ],
+     "winner": "p",
+     "draw": false
+    }
+   },
+   {
+    "lineup": [
+     "Buneary",
+     "Phanpy",
+     "Fletchling"
+    ],
+    "lead": "Buneary",
+    "odds": 0.975,
+    "guaranteed": true,
+    "turns": 12,
+    "branches": 44,
+    "play": {
+     "turns": [
+      {
+       "you": "Buneary: Fake Out",
+       "log": [
+        "Your Buneary uses Fake Out",
+        "Aron loses 5% (95% left)",
+        "It's not very effective…",
+        "Aron flinched and couldn't move!"
+       ]
+      },
+      {
+       "you": "Buneary: Drain Punch",
+       "log": [
+        "Your Buneary uses Drain Punch",
+        "Aron loses 95% (0% left)",
+        "It's super effective!",
+        "Aron faints (Buneary's Drain Punch)",
+        "Boss sends out Pikachu (Electric/Ice)"
+       ]
+      },
+      {
+       "you": "Buneary: switch to Phanpy",
+       "log": [
+        "You send out Phanpy",
+        "Boss Pikachu (Electric/Ice) uses Volt Tackle",
+        "It doesn't affect Phanpy"
+       ]
+      },
+      {
+       "you": "Phanpy: Earthquake",
+       "log": [
+        "Boss Pikachu (Electric/Ice) uses Freezy Frost",
+        "Phanpy hangs on with its Focus Sash",
+        "Phanpy loses 96% (4% left)",
+        "It's super effective!",
+        "All stat changes were eliminated",
+        "Your Phanpy uses Earthquake",
+        "Pikachu (Electric/Ice) loses 100% (0% left)",
+        "It's super effective!",
+        "Pikachu (Electric/Ice) faints (Phanpy's Earthquake)",
+        "Boss sends out Gastly"
+       ]
+      },
+      {
+       "you": "Phanpy: Return; if it faints, send in Fletchling",
+       "log": [
+        "Boss Gastly uses Shadow Ball",
+        "Phanpy loses 4% (0% left)",
+        "Phanpy faints (Gastly's Shadow Ball)",
+        "Gastly loses 5% (Life Orb)",
+        "You send out Fletchling"
+       ]
+      },
+      {
+       "you": "Fletchling: Brave Bird",
+       "log": [
+        "Your Fletchling uses Brave Bird",
+        "Gastly loses 95% (0% left)",
+        "Gastly faints (Fletchling's Brave Bird)",
+        "Fletchling loses 5% (Life Orb)",
+        "Fletchling loses 32% (recoil)",
+        "Boss sends out Skorupi"
+       ]
+      },
+      {
+       "you": "Fletchling: Brave Bird",
+       "log": [
+        "Your Fletchling uses Brave Bird",
+        "Skorupi loses 100% (0% left)",
+        "It's super effective!",
+        "Skorupi faints (Fletchling's Brave Bird)",
+        "Fletchling loses 5% (Life Orb)",
+        "Fletchling loses 32% (recoil)",
+        "Boss sends out Timburr"
+       ]
+      },
+      {
+       "you": "Fletchling: switch to Buneary",
+       "log": [
+        "You send out Buneary",
+        "Boss Timburr uses Ice Punch",
+        "Buneary loses 43% (57% left)"
+       ]
+      },
+      {
+       "you": "Buneary: Fake Out",
+       "log": [
+        "Your Buneary uses Fake Out",
+        "Timburr loses 33% (67% left)",
+        "Timburr flinched and couldn't move!"
+       ]
+      },
+      {
+       "you": "Buneary: Healing Wish",
+       "log": [
+        "Boss Timburr uses Ice Punch",
+        "Buneary loses 43% (14% left)",
+        "Your Buneary uses Healing Wish",
+        "Buneary faints (Healing Wish)",
+        "You send out Fletchling",
+        "The healing wish came true for Fletchling"
+       ]
+      },
+      {
+       "you": "Fletchling: Brave Bird",
+       "log": [
+        "Your Fletchling uses Brave Bird",
+        "Timburr loses 67% (0% left)",
+        "It's super effective!",
+        "Timburr faints (Fletchling's Brave Bird)",
+        "Fletchling loses 5% (Life Orb)",
+        "Fletchling loses 26% (recoil)",
+        "Boss sends out Larvesta"
+       ]
+      },
+      {
+       "you": "Fletchling: Brave Bird",
+       "log": [
+        "Your Fletchling uses Brave Bird",
+        "Larvesta loses 100% (0% left)",
+        "It's super effective!",
+        "Larvesta faints (Fletchling's Brave Bird)",
+        "Fletchling loses 16% (Rocky Helmet)",
+        "Fletchling loses 5% (Life Orb)",
+        "Fletchling loses 37% (recoil)"
+       ]
+      }
+     ],
+     "winner": "p",
+     "draw": false
+    }
+   }
+  ]
  },
  {
   "map": [
@@ -254,7 +738,7 @@
   "mapName": "Route 5",
   "trainer": 5,
   "kind": "rental",
-  "odds": 0.565,
+  "odds": 0.575,
   "note": "all six are yours; the planner plays it"
  },
  {
@@ -266,6 +750,6 @@
   "trainer": 14,
   "kind": "rental",
   "odds": null,
-  "note": "every Pokémon on both sides only knows Metronome: luck (the simulator does not play Metronome)"
+  "note": "Metronome on both sides: luck"
  }
 ]

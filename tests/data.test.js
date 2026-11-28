@@ -88,6 +88,11 @@ test('data: trials, side quests and boss rules from the ROM scripts', () => {
   const vial = t.find(x => x.tr === 7);
   assert(vial.kind === 'puzzle' && vial.pick === 3 && vial.rentals.length === 6 && vial.opp.length === 6, 'Viridian: pick 3 of 6 against six Shedinja');
   assert(vial.sol.length && vial.sol[0].odds === 1, 'a line that wins against anything the Shedinja do');
+  // Cerulean: the game's hint (lead Buneary, with Fletchling); after Phanpy faints you send in Fletchling, not Buneary
+  const relearner = t.find(x => x.tr === 6);
+  assert(relearner.sol.length && relearner.sol[0].lineup[0] === 'Buneary' && relearner.sol[0].lineup.includes('Fletchling') && relearner.sol[0].odds >= 0.9,
+    'Cerulean: a line led by Buneary, with Fletchling, that wins 90%+ with real dice');
+  assert(relearner.sol[0].turns.some(x => /send in Fletchling/.test(x.you)), 'and it says who to send in after a faint');
   assert(t.find(x => x.tr === 5).prize.mons[0].s === 133, 'the Day Care man gives an Eevee');
   const ids = new Set(D.side.extras.map(e => e.id));
   for (const id of ['inf-repel', 'time-changer', 'pc-services', 'codes', 'egg-seller', 'hp-ivs', 'ability-swap']) assert(ids.has(id), 'extra ' + id);

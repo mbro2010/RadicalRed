@@ -3537,7 +3537,7 @@
       const how = solved
         ? `<div class="lbl" style="margin-top:6px">How to win${solved.odds != null ? ` (won ${Math.round(100 * solved.odds)}% of replays with real dice)` : ''}</div>
           <p class="small" style="margin:0">Take <b>${solved.lineup.map(esc).join(', ')}</b>, leading with ${esc(solved.lineup[0])}. It wins whatever he picks each turn:</p>
-          <ol class="small">${solved.turns.map(tt => `<li><b>${esc(tt.you)}</b><div class="muted">${tt.log.slice(0, 6).map(esc).join(' · ')}</div></li>`).join('')}</ol>`
+          <ol class="small">${solved.turns.map(tt => `<li><b>${esc(tt.you)}</b><div class="muted">${tt.log.map(esc).join(' · ')}</div></li>`).join('')}</ol>`
         : t.bets && t.bets.length ? '<p class="small">Every Pokémon on both sides only knows Metronome: it is luck, so save before you bet.</p>'
           : t.odds != null ? `<p class="small">With all six, the Coach's planner wins about ${Math.round(100 * t.odds)}% of the time. Nothing of yours is at stake: try again as often as you like.</p>` : '';
       h += `<details class="card more"><summary><b>${esc(trialName(t))}</b> · ${esc(t.area)}${trialPrize(t) ? ` · ${esc(trialPrize(t))}` : ''}<div class="small muted">${esc(opensText(t.open))}</div></summary>
