@@ -652,6 +652,13 @@ table.moves-out td.n { font-family: var(--font-data); white-space: nowrap; }
 .rec { border-left: 4px solid var(--accent); }
 .note { font-size: 12.5px; color: var(--muted); }
 .notes { display: grid; gap: 3px; font-size: 12.5px; color: var(--risky); }
+.hows { display: grid; gap: 10px; margin-top: 8px; }
+.hows ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13.5px; line-height: 1.4; }
+.hows li.k-ai { font-weight: 600; }
+.hows li.k-form { color: var(--accent); font-weight: 600; }
+.hows li.k-cheese::marker { color: var(--accent); }
+.hows h3 { margin: 4px 0 0; font-size: 14px; }
+.hows .mon-h { display: flex; align-items: center; gap: 8px; }
 footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; padding-top: 6px; }
 footer p { margin: 0; max-width: 72ch; }
 @media (min-width: 720px) { .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } }
@@ -763,6 +770,7 @@ input.search { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--l
 <script src="sim.js"></script>
 <script src="save.js"></script>
 <script src="advice.js"></script>
+<script src="strategy.js"></script>
 <script src="flow.js"></script>
 <script src="stage.js"></script>
 <script src="app.js"></script>

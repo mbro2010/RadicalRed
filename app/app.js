@@ -10,7 +10,7 @@
   const main = $('#main');
   const sheet = $('#sheet');
 
-  let D = null, E = null, SIM = null, ADV = null, SR = null, FLOW = null;
+  let D = null, E = null, SIM = null, ADV = null, SR = null, FLOW = null, STR = null;
   /** A fresh run's state: beaten bosses, skipped fights, areas moved past, the team picked in fights with versions. */
   function newRun(no, keep) {
     keep = keep || {};
@@ -1297,6 +1297,7 @@
     if (!roster.length) {
       html += `<div class="empty">Add your Pokémon (Menu → Pokémon) and the Coach will plan this fight.<button class="btn" id="plan-ex">Try an example team</button></div>`;
       html += `<section class="section"><h2>Their team</h2>${D.bosses[bi].party.map((_, j) => `<div class="card">${theirSetHTML(E.bossTeam(bi, b.cap)[j])}</div>`).join('')}</section>`;
+      html += howTheyFightHTML(bi, true);
       main.innerHTML = html; wirePlan(); return;
     }
     main.innerHTML = html + '<div class="empty">Working out every matchup…</div>';
@@ -1304,7 +1305,7 @@
     setTimeout(() => {
       if (S.screen !== 'fight' || S.planBoss !== bi) return;   // you moved on meanwhile
       const P = matchups();
-      main.innerHTML = html + battlePlanHTML(planKey()) + theaterHTML() + planExtrasHTML(P, false)
+      main.innerHTML = html + howTheyFightHTML(bi) + battlePlanHTML(planKey()) + theaterHTML() + planExtrasHTML(P, false)
         + `<section class="section" id="live"><div class="head"><h2>Play it live</h2></div>${liveBlockHTML(bi)}</section>`;
       wirePlan(P);
       wireTheater();
@@ -3464,7 +3465,7 @@
   }
   function fightPanelHTML(key, tab, bi, cap, result) {
     const nextBtn = (t, l) => `<div class="pnav"><span></span><button class="btn primary" data-ftab="${t}" data-fkey="${esc(String(key))}">${l} →</button></div>`;
-    if (tab === 'plan') return readyHTML(cap) + (alive().length ? battlePlanHTML(planKey(), true) + theaterHTML() + '<div id="fight-more" class="section"><div class="note">Working out every matchup…</div></div>' : '<div class="empty">Add your Pokémon first.</div>') + nextBtn('battle', 'Next: the battle');
+    if (tab === 'plan') return readyHTML(cap) + howTheyFightHTML(bi) + (alive().length ? battlePlanHTML(planKey(), true) + theaterHTML() + '<div id="fight-more" class="section"><div class="note">Working out every matchup…</div></div>' : '<div class="empty">Add your Pokémon first.</div>') + nextBtn('battle', 'Next: the battle');
     if (tab === 'battle') return `<section class="section" id="live">${liveBlockHTML(bi)}</section>` + (S.live && S.live.bi === bi && !S.live.st.over ? '' : nextBtn('result', 'Next: log the result'));
     return `<div id="result">${result}</div>`;
   }
@@ -3669,6 +3670,19 @@
   }
   /** Before you plan: party Pokemon under the level cap and evolutions that are due (nothing when all is set).
    *  Natures and held items come with the plan, for the six it picks. */
+  /** How their AI plays this fight, and what to exploit (strategy.js): the fight as a whole, then each of their Pokemon. */
+  function howTheyFightHTML(bi, open) {
+    if (!STR) return '';
+    let r;
+    try { r = STR.bossNotes(bi, topLevel()); } catch (e) { return ''; }
+    const li = n => `<li class="k-${n.k}">${esc(n.t)}</li>`;
+    return `<details class="more card" id="how-they-fight"${open ? ' open' : ''}><summary>How they fight, and what to exploit</summary><div class="hows">
+      <ul>${r.team.map(li).join('')}</ul>
+      ${r.mons.map(m => `<div><div class="mon-h">${icon(m.s)}<b>${esc(m.name)}</b><span class="lv">Lv ${m.lv}</span></div><ul>${m.notes.map(li).join('')}</ul></div>`).join('')}
+      <h3>Exploits: how their AI decides</h3><ul>${r.exploits.map(li).join('')}</ul>
+      <p class="note" style="margin:0">From their sets and the boss AI's own rules (the engine Radical Red is built on); Radical Red may change details its public source doesn't show.</p>
+    </div></details>`;
+  }
   function readyHTML(cap) {
     const p = party();
     if (!p.length) return '';
@@ -4130,6 +4144,7 @@
     E = window.createEngine(window.calc, D);
     SIM = window.createSim(E);
     ADV = window.createAdvice(E, SIM);
+    STR = window.createStrategy ? window.createStrategy(E, SIM) : null;
     SR = window.createSaveReader ? window.createSaveReader(D) : null;
     FLOW = window.createFlow(D);
     addRouteTrainers();
