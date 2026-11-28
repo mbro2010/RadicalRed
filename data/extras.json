@@ -69,6 +69,23 @@
    "script": 151370544
   },
   {
+   "id": "lucario-fan",
+   "kind": "gift",
+   "name": "Lucario fan",
+   "what": "Come back with a Lucario following you and answer the questions about Lucario sets for the Lucarionite.",
+   "takes": "A Lucario following you, after your fifth badge",
+   "map": [
+    3,
+    6
+   ],
+   "mapName": "Celadon City",
+   "at": [
+    38,
+    14
+   ],
+   "script": 151282303
+  },
+  {
    "id": "codes",
    "kind": "codes",
    "name": "Cheat codes",
@@ -120,6 +137,23 @@
    "script": 151329471
   },
   {
+   "id": "follower",
+   "kind": "service",
+   "name": "Pokémon follower",
+   "what": "Lets one of your Pokémon out of its ball to walk behind you; talk again to put it back. Four people want to see a certain Pokémon following you: a Lucario (Celadon City), a Yamper (Vermilion City), a Sharpedo (Route 12) and a Swampert (Saffron City).",
+   "takes": "Nothing",
+   "map": [
+    5,
+    4
+   ],
+   "mapName": "Viridian City",
+   "at": [
+    10,
+    6
+   ],
+   "script": 151296200
+  },
+  {
    "id": "egg-seller",
    "kind": "gift",
    "name": "Egg seller",
@@ -169,6 +203,23 @@
     4
    ],
    "script": 151302820
+  },
+  {
+   "id": "yamper-fan",
+   "kind": "gift",
+   "name": "Yamper lover",
+   "what": "Come back with a Yamper following you and the two Yampers play: 5 Wish Pieces.",
+   "takes": "A Yamper following you",
+   "map": [
+    9,
+    3
+   ],
+   "mapName": "Vermilion City",
+   "at": [
+    4,
+    5
+   ],
+   "script": 151364894
   },
   {
    "id": "metronome",
@@ -237,6 +288,23 @@
     5
    ],
    "script": 151298790
+  },
+  {
+   "id": "mudkip-fan",
+   "kind": "gift",
+   "name": "Mudkip fan",
+   "what": "Answer no twice and the kid battles you (a Swampert team, cap 68) for TM26 (Earthquake). Come back with a Swampert following you for the Swampertite, then with the Z-Power Ring for a second battle (Gian, cap 85) and a Lv 50 Cosmog.",
+   "takes": "Answer no twice; then a Swampert following you; then the Z-Power Ring",
+   "map": [
+    14,
+    0
+   ],
+   "mapName": "Saffron City",
+   "at": [
+    5,
+    4
+   ],
+   "script": 151292568
   },
   {
    "id": "ev-reducer",
@@ -373,6 +441,23 @@
     4
    ],
    "script": 151339652
+  },
+  {
+   "id": "sharpedo-stone",
+   "kind": "gift",
+   "name": "Stone finder",
+   "what": "Show a Sharpedo following you and the stone reacts: the Sharpedonite.",
+   "takes": "A Sharpedo following you",
+   "map": [
+    23,
+    2
+   ],
+   "mapName": "Route 12",
+   "at": [
+    4,
+    4
+   ],
+   "script": 151334993
   },
   {
    "id": "battle-sim",
@@ -631,6 +716,21 @@
    "gives": [
     "Ogerpon (Lv 5)",
     "TM86"
+   ]
+  },
+  {
+   "map": [
+    14,
+    0
+   ],
+   "mapName": "Saffron City",
+   "script": 151292568,
+   "needs": [
+    "Z-Power Ring"
+   ],
+   "trainer": 35,
+   "gives": [
+    "Cosmog (Lv 50)"
    ]
   }
  ]

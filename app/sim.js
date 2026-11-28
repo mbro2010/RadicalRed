@@ -96,7 +96,8 @@
       multihit: base && Array.isArray(base.multihit) ? base.multihit : null,
       drain: base && base.drain ? base.drain : (r && r.e === 3 && r.k !== 'X' ? [1, 2] : null),
       // recoil, contact and sound: the game's own move flags and lists (Volt Tackle is 25% recoil here, Chloroblast 50%)
-      recoil: ROM_RECOIL25.has(id) ? [1, 4] : ROM_RECOIL33.has(id) ? [33, 100] : ROM_RECOIL50.has(id) ? [1, 2] : (base && base.recoil ? base.recoil : null),
+      // (CFRU divides the damage dealt by 4, 3 or 2: ATK49_MOVE_RECOIL's gPercent25/33/50RecoilMoves)
+      recoil: ROM_RECOIL25.has(id) ? [1, 4] : ROM_RECOIL33.has(id) ? [1, 3] : ROM_RECOIL50.has(id) ? [1, 2] : (base && base.recoil ? base.recoil : null),
       contact: r && r.fl != null ? !!(r.fl & 1) : base ? !!(base.flags && base.flags.contact) : (r && r.k === 'P'),
       sound: ROM_SOUND.size ? ROM_SOUND.has(id) : base ? !!(base.flags && base.flags.sound) : false,
       highCrit: E.HIGH_CRIT.has(r && r.f), alwaysCrit: E.ALWAYS_CRIT.has(r && r.f),
@@ -437,6 +438,11 @@
     gasCheck(st);
     primalCheck(st);
     onEntry(st, side, rng, slot);
+    // the engine's isFirstTurn: 2 when it comes in during a turn (a switch, a pivot, a forced switch), counted down at
+    // each turn's end, so Fake Out still works the next turn; a replacement at the end of a turn gets its count taken
+    // down at once (1), as the battle's leads do: Fake Out works on its first turn, and Speed Boost waits a turn only
+    // for one that came in during the turn
+    if (!m.fainted) m.firstTurn = why === 'replace' ? 1 : 2;
   }
 
   /** What leaves with a Pokemon when it switches out or comes in: locks, traps, Disable, Torment, Defense Curl... */
@@ -1615,7 +1621,7 @@
         if (m.perish <= 0) { m.perish = null; log(st, `${m.name}'s perish count fell to 0`, 'perish', m); faint(st, m, 'Perish Song'); continue; }
         log(st, `${m.name}'s perish count fell to ${m.perish}`, 'perish', m); m.perish--;
       }
-      if (m.ability === 'Speed Boost' && !m.firstTurn) applyBoosts(st, m, { spe: 1 });
+      if (m.ability === 'Speed Boost' && m.firstTurn !== 2) applyBoosts(st, m, { spe: 1 });
       if (!m.status && it === 'Flame Orb' && !hasType(m, 'Fire')) inflict(st, m, 'brn', rng, 'Flame Orb');
       if (!m.status && it === 'Toxic Orb' && !hasType(m, 'Poison') && !hasType(m, 'Steel')) inflict(st, m, 'tox', rng, 'Toxic Orb');
       berryCheck(st, m);
@@ -1644,7 +1650,7 @@
       for (const cur of actives(st, side)) {
         if (cur.taunt && --cur.taunt === 0) log(st, `${cur.name}'s taunt wears off`);
         if (cur.encore && --cur.encore === 0) { cur.encoreMove = null; log(st, `${cur.name}'s encore ends`); }
-        cur.firstTurn = false;
+        cur.firstTurn = cur.firstTurn === 2 ? 1 : false;
       }
     }
   }

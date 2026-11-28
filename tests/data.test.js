@@ -94,3 +94,26 @@ test('data: trials, side quests and boss rules from the ROM scripts', () => {
   assert(D.side.rematches.some(r => r.tr === 48 && r.needs.includes('Mega Ring') && r.gives.some(g => /Finizen/.test(g))), "Misty's Mega Ring rematch gives a Finizen");
   assert(D.rules && D.rules[74] && D.rules[74].noTypes.includes('Fairy'), "Hardcore Clair's no-Fairy rule");
 });
+test('data: the world walk reaches the post-game: the Sevii Islands, the Pokémon Tower top floor, Gian; and the follower quests', () => {
+  if (!D.world || !D.world.hardcore) return;
+  const maps = require('../data/maps.json');
+  for (const mode of ['hardcore', 'normal']) {
+    const w = D.world[mode], walk = require(`../data/world_${mode}.json`);
+    // every fight of the run is reached but two no map script starts (Sheila, Ariana's first fight)
+    const missed = walk.neverReached.flat().sort((a, b) => a - b);
+    assert(missed.join() === '54,269', `${mode}: fights never reached ${missed}`);
+    const met = new Set(w.taken);
+    // the post-game Pokemon Tower floor behind the patrolling Gengar, with Runan, Samantha, Symes and Morty
+    assert(w.maps['1.126'] && [124, 82, 113, 28].every(id => met.has(id)), `${mode}: the tower's top floor and its four trainers`);
+    // the Sevii Islands open after the Champion (the ferry is C code: special 0x17B)
+    for (const isl of ['One Island', 'Two Island', 'Three Island']) {
+      const m = maps.find(x => x.name === isl);
+      assert(m && w.maps[m.group + '.' + m.num], `${mode}: ${isl} is reached`);
+    }
+    // Gian's battle in Saffron needs a Swampert walking behind you (flag 0x1055, var 0x5130) and the Z-Power Ring
+    assert(met.has(35), `${mode}: Gian is met`);
+  }
+  const ids = new Set(D.side.extras.map(e => e.id));
+  for (const id of ['follower', 'lucario-fan', 'yamper-fan', 'sharpedo-stone', 'mudkip-fan']) assert(ids.has(id), 'follower quest ' + id);
+  assert(D.side.rematches.some(r => r.tr === 35 && r.needs.includes('Z-Power Ring') && r.gives.some(g => /Cosmog/.test(g))), "Gian's Z-Power Ring battle gives a Cosmog");
+});

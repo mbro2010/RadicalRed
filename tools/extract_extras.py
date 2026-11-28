@@ -67,6 +67,21 @@ SIGNS = [
      'Teaches starter-only moves once you beat him in a starter-only battle.', 'Win a battle using only starter Pokémon'),
     ('battle-sim', 'service', 'Battle Simulator', r"One Island Battle Simulator",
      'Battles against random boss trainers of the region, with prizes.', 'Nothing'),
+    ('follower', 'service', 'Pokémon follower', r"would like to come out of its ball",
+     'Lets one of your Pokémon out of its ball to walk behind you; talk again to put it back. Four people want to see a '
+     'certain Pokémon following you: a Lucario (Celadon City), a Yamper (Vermilion City), a Sharpedo (Route 12) and a '
+     'Swampert (Saffron City).', 'Nothing'),
+    ('lucario-fan', 'gift', 'Lucario fan', r"This is my trusted pal",
+     'Come back with a Lucario following you and answer the questions about Lucario sets for the Lucarionite.',
+     'A Lucario following you, after your fifth badge'),
+    ('yamper-fan', 'gift', 'Yamper lover', r"I just adore my",
+     'Come back with a Yamper following you and the two Yampers play: 5 Wish Pieces.', 'A Yamper following you'),
+    ('sharpedo-stone', 'gift', 'Stone finder', r"I found this stone one day",
+     'Show a Sharpedo following you and the stone reacts: the Sharpedonite.', 'A Sharpedo following you'),
+    ('mudkip-fan', 'gift', 'Mudkip fan', r"Herd U Liek Mudkipz",
+     'Answer no twice and the kid battles you (a Swampert team, cap 68) for TM26 (Earthquake). Come back with a Swampert '
+     'following you for the Swampertite, then with the Z-Power Ring for a second battle (Gian, cap 85) and a Lv 50 Cosmog.',
+     'Answer no twice; then a Swampert following you; then the Z-Power Ring'),
     ('codes', 'codes', 'Cheat codes', r"put in a(\s|\{FA\})*cheat code",
      'Woyaopp: Rare Candy cheat (the youngster in Viridian City sells them; the Pokémon Center helper sets a Pokémon to the level '
      'cap). DexAll: DexNav cheat. SO2Toxic: care packages. TeamPreview: see the opponent\'s team before a battle. EZCatch: easy catching.',
@@ -120,7 +135,7 @@ def rematches():
             todo, seen = [(sp - G, ())], set()
             while todo:
                 o, need = todo.pop()
-                v8000, battle, gives = None, None, []
+                v8000, battle, gives, stack = None, None, [], []
                 for _ in range(500):
                     if not (0 <= o < len(rom) - 20) or (o, need) in seen:
                         break
@@ -149,6 +164,9 @@ def rematches():
                         gives.append(ITEMS.get(v8000, str(v8000)))
                     if op == 0x79 and battle:
                         gives.append(f'{SPECIES.get(u16(o + 1), u16(o + 1))} (Lv {rom[o + 3]})')
+                    if op == 0x03 and stack:
+                        o = stack.pop()         # return from a call (Saffron's Mudkip fan sets a variable in one first)
+                        continue
                     if op in (0x02, 0x03, 0x0C, 0x0D):
                         break
                     if op == 0x05:
@@ -157,6 +175,7 @@ def rematches():
                         o = u32(o + 1) - G
                         continue
                     if op == 0x04 and isptr(u32(o + 1)):
+                        stack.append(o + 5)
                         o = u32(o + 1) - G
                         continue
                     o += 1 + L[op]

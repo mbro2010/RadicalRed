@@ -807,10 +807,10 @@
    "hidden": "Damp",
    "bst": 535,
    "nature": "Adamant",
-   "first": 1.449,
+   "first": 1.458,
    "early": 0.061,
    "late": 0.622,
-   "overall": 0.813,
+   "overall": 0.816,
    "best": [
     {
      "name": "Terry",
@@ -866,7 +866,7 @@
      -0.171,
      0,
      3,
-     0.333
+     0.358
     ],
     [
      "Brock",
@@ -2747,10 +2747,10 @@
    "hidden": "Solar Power",
    "bst": 534,
    "nature": "Timid",
-   "first": 1.267,
+   "first": 1.248,
    "early": 0.069,
    "late": 0.578,
-   "overall": 0.726,
+   "overall": 0.719,
    "best": [
     {
      "name": "Terry",
@@ -2806,7 +2806,7 @@
      2.328,
      3,
      3,
-     0.2
+     0.15
     ],
     [
      "Brock",
@@ -4298,10 +4298,10 @@
    "hidden": "Intimidate",
    "bst": 530,
    "nature": "Jolly",
-   "first": 1.437,
+   "first": 1.44,
    "early": -0.022,
    "late": 0.305,
-   "overall": 0.676,
+   "overall": 0.677,
    "best": [
     {
      "name": "Terry",
@@ -4357,7 +4357,7 @@
      2.322,
      3,
      3,
-     0.242
+     0.25
     ],
     [
      "Brock",

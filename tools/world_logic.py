@@ -59,8 +59,9 @@ WARP_BEH = {0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x69, 0x6A, 0x6B, 0x
 GRASS = {0x02, 0x03, 0x07}
 # objects: Cut tree, Rock Smash rock, Strength boulder (graphics ids)
 CUT_TREE, SMASH_ROCK, BOULDER = 95, 96, 97
-# movement types that don't stand still (they don't hold a tile)
-WANDERS = {2, 3, 4, 5, 6, 0x19, 0x1A, 0x1B, 0x1C}
+# movement types that don't stand still (they don't hold a tile): wandering, walking back and forth, and the walk
+# sequences 0x1D-0x34 that patrol a small loop (the Gengar on the post-game Pokemon Tower floor)
+WANDERS = {2, 3, 4, 5, 6} | set(range(0x19, 0x35))
 FACING = {7: 'N', 8: 'S', 9: 'W', 10: 'E', 13: 'SN', 14: 'WE', 15: 'NW', 16: 'NE', 17: 'SW', 18: 'SE', 19: 'SNW', 20: 'SNE', 21: 'NWE', 22: 'SWE'}
 HM = {'cut': 0x153, 'surf': 0x155, 'strength': 0x156, 'smash': 0x158, 'waterfall': 0x159, 'dive': 0x15A}
 BADGE = {'cut': 0x821, 'surf': 0x824, 'strength': 0x823, 'smash': 0x825}
@@ -111,7 +112,9 @@ class State:
         return HM[what] in self.items
 
     def key(self):
-        return (frozenset(self.flags), frozenset(self.vars.items()), frozenset(self.items), frozenset(self.beaten), frozenset(self.tiles.items()))
+        # (the start points too: a ferry trip adds one and nothing else)
+        return (frozenset(self.flags), frozenset(self.vars.items()), frozenset(self.items), frozenset(self.beaten), frozenset(self.tiles.items()),
+                len(self.starts))
 
 
 # ---------------- scripts ----------------
@@ -162,8 +165,13 @@ def objflag(mapkey, local):
 
 
 # callnatives that check your party before a battle (Hardcore Clair: no Fairy types, no Altaria, Absol or Audino with its
-# Mega Stone, at 0x9077E3C): the walk assumes you bring a party that passes
-PARTY_CHECKS = {0x9077E3D}
+# Mega Stone, at 0x9077E3C) or for a scene (the Viridian helper who lets a Pokemon out of its ball to walk behind you,
+# 0x909921C): the walk assumes you bring a party that passes
+PARTY_CHECKS = {0x9077E3D, 0x909921D}
+# the species walking behind you (set in code once that helper lets one out, flag 0x1055). Four people want to see a
+# certain one: a Lucario (Celadon: the Lucarionite), a Yamper (Vermilion: Wish Pieces), a Sharpedo (Route 12: the
+# Sharpedonite) and a Swampert (Saffron: the Swampertite, then Gian's battle). You pick it, so both answers are followed
+FOLLOWER = 0x5130
 # set from the start; cutscenes clear it for a moment to show their extras, then set it again: it stays set
 CUTSCENE_FLAGS = {0x200}
 MENU_OPS = {0x6F, 0x70, 0x71}       # multichoice, multichoicedefault, multichoicegrid
@@ -373,8 +381,16 @@ def _path(o, ctx, S, mapkey, fight, max_steps, budget, todo):
                 vars_[0x800D] = 1
                 if std == 1:
                     out.found = True       # an item ball: the standard script removes it (its flag is set)
-            elif go and std == 5:      # MSGBOX_YESNO: you say yes
-                vars_[0x800D] = 1
+            elif go and std == 5:      # MSGBOX_YESNO: follow both answers (Saffron's kid only battles if you say no twice)
+                if o in ctx.menus:
+                    break
+                for v in (1, 0):
+                    c2 = ctx.fork()
+                    c2.vars[0x800D] = v
+                    c2.menus = ctx.menus | {o}
+                    c2.r = r
+                    todo.append((o + 1 + n, c2))
+                return True
             if op == 0x08 and go:
                 break
             o += 1 + n
@@ -391,6 +407,13 @@ def _path(o, ctx, S, mapkey, fight, max_steps, budget, todo):
             vars_[a1] = vars_.get(a2, 0)
         elif op == 0x1A:
             vars_[a1] = val(a2)
+        elif op == 0x21 and a1 == FOLLOWER and o not in ctx.menus:
+            for v in (1, 0):
+                c2 = ctx.fork()
+                c2.menus = ctx.menus | {o}
+                c2.r = v
+                todo.append((o + 1 + n, c2))
+            return True
         elif op == 0x21:
             x = val(a1)
             r = 0 if x < a2 else 1 if x == a2 else 2
@@ -415,6 +438,16 @@ def _path(o, ctx, S, mapkey, fight, max_steps, budget, todo):
             vars_[0x800D] = 1          # a party check you can meet (Hardcore Clair: no Fairy types): you meet it
         elif op == 0x25 and a1 == 0xF5:
             vars_[0x800D] = 1          # special 0xF5: you pick your Pokemon for a tag or puzzle battle (0 means you backed out)
+        elif op == 0x25 and a1 == 0x187:
+            vars_[0x800D] = 0          # special 0x187: the ferry can sail (2 would turn it back)
+        elif op == 0x25 and a1 == 0x17B:
+            # special 0x17B, the Seagallop ferry scene: it lands you at sSeagallopSpawnLocations[VAR_0x8006] (0x46AEFC) in
+            # code, not by a script warp. Every Seagallop trip ends here (the sailors at Vermilion's harbor and on each island).
+            d = vars_.get(0x8006, 0)
+            if 0 <= d < len(SEAGALLOP):
+                g, n, x, y = SEAGALLOP[d]
+                out.warp = ((g, n), 0xFF, x, y)
+                out.warps.append(out.warp)
         elif op == 0x7C:
             vars_[0x800D] = 0
         elif op == 0x43:
@@ -438,7 +471,8 @@ def _path(o, ctx, S, mapkey, fight, max_steps, budget, todo):
         elif op == 0x26:
             # specialvar: GetBattleOutcome (special 0xB4) says you won the battle that just ran (a ghost Marowak, a
             # Snorlax); the rest answer 0
-            vars_[a1] = 1 if a2 == 0xB4 else 0
+            # special 13 reads your lead's friendship (Morty's Mega Stone wants it maxed: you can get there)
+            vars_[a1] = 1 if a2 == 0xB4 else 255 if a2 == 0x0D else 0
         elif op == 0x79:
             out.mons.append((u16(o + 1), rom[o + 3], 'gift'))
             vars_[0x800D] = 0
@@ -618,9 +652,10 @@ def tile(m, S, mk, x, y):
 
 
 def objects_view(mk, S):
-    """Blocking objects (x, y) -> object, and boss sight tiles (x, y) -> trainer id, for this state."""
+    """Blocking objects (x, y) -> object, boss sight tiles (x, y) -> trainer id, and the objects that walk around
+    (x, y) -> object (they hold no tile; you talk to them where they roam), for this state."""
     m = MAP(mk)
-    block, sight = {}, {}
+    block, sight, roam = {}, {}, {}
     for ob in m['objects']:
         if ob['flag'] and ob['flag'] in S.flags:
             continue
@@ -636,6 +671,8 @@ def objects_view(mk, S):
             continue
         if ob['move'] not in WANDERS:
             block[(x, y)] = ob
+        else:
+            roam[(x, y)] = ob
         tid = trainer_of(ob)
         if tid is not None and tid in BOSS_IDS:
             WHERE.setdefault(tid, set()).add((ob['script'], mk))
@@ -647,7 +684,7 @@ def objects_view(mk, S):
                     if not (0 <= tx < m['w'] and 0 <= ty < m['h']) or m['grid'][ty][tx][1]:
                         break
                     sight[(tx, ty)] = tid
-    return block, sight
+    return block, sight, roam
 
 
 _trainer_cache = {}
@@ -741,7 +778,7 @@ def walk(S):
         if not m:
             continue
         reached[mk].add((x, y))
-        block, sight = view(mk)
+        block, sight, _ = view(mk)
         # warps on this tile (only on a door, ladder, stair, arrow mat... tile)
         here = tile(m, S, mk, x, y)
         for w in (m['warp_at'].get((x, y), ()) if here[3] in WARP_BEH else ()):
@@ -784,7 +821,7 @@ def walk(S):
                 nm = MAP(nk)
             cur = tile(m, S, mk, x, y)
             nt = tile(nm, S, nk, nx, ny)
-            nblock, nsight = view(nk)
+            nblock, nsight, _ = view(nk)
             # walls on one side
             if cur[3] in WALL[d] or nt[3] in WALL[OPP[d]]:
                 continue
@@ -838,6 +875,10 @@ def walk(S):
     # bg events (hidden items, signs with scripts) on reached tiles or in front of them
     for mk, tiles in reached.items():
         m = MAP(mk)
+        # people who walk around: you can talk to them when you reach where they roam
+        for (ox, oy), ob in view(mk)[2].items():
+            if isptr(ob['script']) and any((ox + dx, oy + dy) in tiles for dx, dy in ((0, 0), (0, 1), (0, -1), (1, 0), (-1, 0))):
+                events[('talk', mk, ob['id'])] = ob['script']
         for i, b in enumerate(m['bgs']):
             near = any((b['x'] + dx, b['y'] + dy) in tiles for dx, dy in ((0, 0), (0, 1), (0, -1), (1, 0), (-1, 0)))
             if not near:
@@ -1007,6 +1048,9 @@ def solve(order):
         pending = [list(g) for g in order]
     done_now = 0
     while pending and done_now < limit:
+        # a trial (a puzzle or rental battle, fought with Pokemon they lend you) is no fight of your run: once you can
+        # reach it, it leaves the list (data/trials.json has it, with its solution)
+        pending = [g for g in pending if not all(t in PUZZLES_SEEN for t in g)]
         k = pick_next(pending, seen)
         if k is None:
             break
@@ -1038,6 +1082,7 @@ def solve(order):
 
 
 SOLVED = {}
+SEAGALLOP = [tuple(rom[0x46AEFC + 4 * i: 0x46AEFC + 4 * i + 4]) for i in range(11)]   # Vermilion, One-Seven Island, Cinnabar, Navel Rock, Birth Island
 ROD_IDS = {v: int(k) for k, v in ITEMS.items() if v in ('Old Rod', 'Good Rod', 'Super Rod')}
 
 

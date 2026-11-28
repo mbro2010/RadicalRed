@@ -62,8 +62,8 @@ python3 tools/extract_finds.py data          # gifts, one-time encounters, items
 python3 tools/extract_trials.py data app/rrdata.json   # puzzle and rental battles (after build_app_data.js once)
 python3 tools/extract_extras.py data app/rrdata.json   # skills, services, gifts, codes, leader rematches
 node tools/fight_order.js app/rrdata.json hardcore > order_hardcore.json
-python3 tools/world_logic.py data app/rrdata.json hardcore order_hardcore.json data/world_hardcore.json > report.txt   # ~10 s; normal likewise
-node tools/solve_trials.js data/trials.json app/rrdata.json > data/trial_solutions.json   # TRIAL=7 for one; slow for Cerulean
+python3 tools/world_logic.py data app/rrdata.json hardcore order_hardcore.json data/world_hardcore.json > report.txt   # ~2 min, post-game and Sevii included; normal likewise
+node tools/solve_trials.js data/trials.json app/rrdata.json > data/trial_solutions.json   # TRIAL=7 for one; Cerulean takes about half an hour
 python3 tools/extract_fight_places.py data   # where each scripted fight starts, and who hands over key items
 python3 tools/extract_care_package.py data   # the care package cheat (SO2Toxic): items per checkpoint
 python3 tools/extract_starters.py data

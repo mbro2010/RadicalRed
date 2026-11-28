@@ -169,3 +169,16 @@ test('moves: Spit Up hits by its Stockpile and fails without; Swallow heals by i
   const st2 = battle([mew(['Spit Up'])], [slowMew(['Splash'])], { p: ['Spit Up'], a: ['Splash'] });
   assert(A(st2).hp === A(st2).maxHp, 'Spit Up with nothing stored fails');
 });
+
+test('moves: Fake Out works the turn after a Pokemon switches in (the engine counts isFirstTurn down from 2), not later', () => {
+  const st = battle([spec('Mew', 100, ['Splash']), spec('Buneary', 100, ['Fake Out', 'Return'], { key: 'Bun' })], [slowMew(['Splash'])],
+    { p: ['switch:1', 'Fake Out', 'Fake Out'], a: ['Splash'] }, { turns: 3 });
+  const t2 = st.log.filter(l => l.turn === 2).map(l => l.text).join(' '), t3 = st.log.filter(l => l.turn === 3).map(l => l.text).join(' ');
+  assert(/flinched/.test(t2), 'Fake Out the turn after switching in: ' + t2);
+  assert(/But it failed/.test(t3), 'and not the turn after that: ' + t3);
+});
+
+test('moves: Brave Bird and the other third-recoil moves cost a third of the damage dealt, rounded down (CFRU divides by 3)', () => {
+  const st = battle([spec('Fletchling', 5, ['Brave Bird'])], [spec('Timburr', 5, ['Splash'], { key: 'Foe' })], { p: ['Brave Bird'], a: ['Splash'] }, { dice: NEVER, setup: s => { A(s).hp = 16; } });
+  assert(P(st).maxHp - P(st).hp === Math.floor(16 / 3), 'recoil ' + (P(st).maxHp - P(st).hp));
+});

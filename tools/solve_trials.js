@@ -2,8 +2,9 @@
 //
 // A puzzle battle (data/trials.json, tools/extract_trials.py) lends you six Pokemon; you pick three. The opponent
 // sends its Pokemon out in party order and never switches by choice. Every pick of three, in every order, is searched
-// turn by turn (each move and switch you could choose) against the boss AI with the expected dice (middle damage roll,
-// no crits, hits that are likely land), until a line wins. A win must leave you a Pokemon standing: if your last
+// turn by turn (each move and switch you could choose, and who you send in after a faint, which the game asks you
+// once you have seen the turn) against the moves the boss AI would pick (all those tied for its top score) with the
+// expected dice (middle damage roll, no crits, hits that are likely land), until a line wins. A win must leave you a Pokemon standing: if your last
 // Pokemon and theirs go down together, the game counts a draw, and a draw is a loss (sim.js battleOver).
 // Each winning line is then replayed with real dice: at every turn the search runs again from where the battle stands
 // (so a different AI pick or a miss is answered), and the share of wins is its odds.
@@ -11,6 +12,9 @@
 // A rental battle (all six lent to you) has nothing to pick: its odds come from the Coach's planner, as for a boss.
 //
 // usage: NODE_PATH=... node tools/solve_trials.js data/trials.json app/rrdata.json > data/trial_solutions.json
+//   (TRIAL=<trainer id> for one trial, DEPTH=<turns> (13), RUNS=<replays> (40), SEARCH_NODES=<turns searched per
+//   lineup> (2,000,000), LINEUP=<names> for one lineup, ALL=1 for every lineup, not just the ones the game's hint
+//   names, WORST=1 to answer every move the opponent has, not just its AI's picks)
 'use strict';
 const path = require('path');
 const C = require('@smogon/calc');
@@ -40,13 +44,28 @@ function trialAI() {
     replace: (st, side) => { const i = st[side].team.findIndex((m, k) => !m.fainted && !st[side].slots.includes(k)); return i >= 0 ? i : null; },
   };
 }
-/** You: this turn's action, and replacements in your lineup order (the first one still standing). */
-function you(action) {
+/** You: this turn's action, and who comes in if yours faints (the game asks you): rep, or a function of the state
+ *  that names one, else the first one still standing in your lineup. */
+function you(action, rep) {
   return {
     choose: () => action,
-    replace: (st, side) => { const i = st[side].team.findIndex((m, k) => !m.fainted && !st[side].slots.includes(k)); return i >= 0 ? i : null; },
+    replace: (st, side) => {
+      const ok = k => k != null && k >= 0 && !st[side].team[k].fainted && !st[side].slots.includes(k);
+      const want = typeof rep === 'function' ? rep(st) : rep;
+      if (ok(want)) return want;
+      const i = st[side].team.findIndex((m, k) => ok(k));
+      return i >= 0 ? i : null;
+    },
   };
 }
+/** Who could come in after a faint this turn: everyone standing but the one that will be out. One choice (or none)
+ *  is no choice. */
+function repsFor(st, a) {
+  const out = a.type === 'switch' ? a.to : st.p.slots[0];
+  const bench = st.p.team.map((m, i) => i).filter(i => !st.p.team[i].fainted && i !== out);
+  return bench.length >= 2 ? bench : [null];
+}
+const replaced = (st, from) => st.events.slice(from).some(e => e.type === 'switch' && e.side === 'p' && e.why === 'replace');
 function actions(st) {
   const me = SIM.act(st, 'p');
   const out = SIM.usable(me, st).map(id => ({ type: 'move', id }));
@@ -54,13 +73,51 @@ function actions(st) {
   return out;
 }
 const AI = trialAI();
-let nodes = 0;
-/** The opponent's possible actions this turn: each move it can use (the search must beat every one), and with a
- *  Roar-like move of yours, each Pokemon it could drag in. */
+let nodes = 0, limit = Infinity;
+const BUDGET = new Error('node budget');
+const moveId = n => (D.moves.find(m => (m.f || m.n) === n) || {}).i;
+// Lines found by hand, tried first (the search still has to show that they win against every move the AI could pick,
+// so a known line only saves time). Per trial: the lineup, and each turn's action: a move, '>Name' to switch, and
+// 'Move/Name' to send Name in if yours faints that turn.
+// Cerulean: Fake Out takes Aron off full HP, so its Focus Sash can't save it from Drain Punch; Phanpy comes in on
+// Pikachu's Volt Tackle (immune), lives through Freezy Frost on its own Focus Sash and Earthquakes Pikachu; Gastly knocks
+// Phanpy out and Fletchling (Gale Wings: Brave Bird goes first at full HP) takes Gastly and Skorupi; Buneary comes back
+// in on Timburr's Ice Punch, flinches it with Fake Out the next turn (it came in during the turn before) and Healing
+// Wishes Fletchling back to full, which Brave Birds Timburr and Larvesta.
+const KNOWN = {
+  6: { lineup: 'Buneary,Fletchling,Phanpy',
+    line: 'Fake Out;Drain Punch;>Phanpy;Earthquake;Earthquake/Fletchling;Brave Bird;Brave Bird;>Buneary;Fake Out;Healing Wish;Brave Bird;Brave Bird' },
+};
+let HINT = null;    // the known line for the lineup being searched: turn -> action
+function hintFor(t, team) {
+  const k = KNOWN[t.trainer];
+  if (!k || k.lineup !== team.map(m => m.label.split(' ')[0]).join(',')) return null;
+  const idx = n => team.findIndex(m => m.label.startsWith(n));
+  return k.line.split(';').map(x => {
+    if (x.startsWith('>')) return { type: 'switch', to: idx(x.slice(1)) };
+    const [mv, rep] = x.split('/');
+    return { type: 'move', id: moveId(mv), rep: rep ? idx(rep) : null };
+  });
+}
+const same = (a, h) => !!h && a.type === h.type && (a.type === 'switch' ? a.to === h.to : a.id === h.id);
+/** The opponent's possible actions this turn: what its AI would pick here (every move tied for the top score, since
+ *  the AI breaks ties at random), or with WORST=1 every move it has; and with a Roar-like move of yours, each Pokemon
+ *  it could drag in. */
+const TIE_DICE = [0, 0.2, 0.4, 0.6, 0.8, 0.999].map(v => { const d = () => v; d.expected = false; return d; });
+function aiPicks(st) {
+  const out = new Set();
+  for (const d of TIE_DICE) {
+    const c = SIM.cloneState(st);
+    try { const a = AI.choose(c, 'a', d, false, true); if (a && a.type === 'move') out.add(a.id); } catch (e) { /* fall back below */ }
+  }
+  return [...out];
+}
 function replies(st, a) {
   const foe = SIM.act(st, 'a');
   if (!foe || foe.fainted) return [{ move: null }];
-  const moves = SIM.usable(foe, st);
+  const all = SIM.usable(foe, st);
+  const picks = process.env.WORST ? [] : aiPicks(st).filter(id => all.includes(id));
+  const moves = picks.length ? picks : all;
   const phaze = a.type === 'move' && [28, 234].includes((E.mv(a.id) || {}).e);
   const drags = phaze ? st.a.team.map((m, i) => i).filter(i => !st.a.team[i].fainted && !st.a.slots.includes(i)) : [null];
   const out = [];
@@ -89,17 +146,28 @@ function guaranteed(st, depth) {
   if (memo.has(k)) return memo.get(k);
   memo.set(k, null);
   let found = null;
-  for (const a of actions(st)) {
+  const h = HINT && HINT[st.turn];
+  let acts = actions(st);
+  if (h) acts = acts.filter(a => same(a, h)).concat(acts.filter(a => !same(a, h)));
+  for (const a of acts) {
     const then = [];
     let ok = true;
+    let reps = repsFor(st, a);
+    if (same(a, h) && h.rep != null && reps.includes(h.rep)) reps = [h.rep].concat(reps.filter(x => x !== h.rep));
     for (const r of replies(st, a)) {
-      nodes++;
-      const nx = SIM.cloneState(st);
-      nx.policies = { p: you(a), a: fixed(r) };
-      SIM.playTurn(nx, SIM.expectedDice());
-      const sub = guaranteed(nx, depth - 1);
+      // if yours faints, you pick who comes in once you have seen what happened: any one that wins will do
+      let sub = null, used = null;
+      for (const rep of reps) {
+        if (++nodes > limit) throw BUDGET;
+        const nx = SIM.cloneState(st);
+        nx.policies = { p: you(a, rep), a: fixed(r) };
+        SIM.playTurn(nx, SIM.expectedDice());
+        sub = guaranteed(nx, depth - 1);
+        if (sub) { used = rep; break; }
+        if (!replaced(nx, 0)) break;            // nothing fainted: the choice made no difference
+      }
       if (!sub) { ok = false; break; }
-      then.push([r, sub]);
+      then.push([r, sub, used]);
     }
     if (ok) { found = { a, then }; break; }
   }
@@ -111,10 +179,10 @@ function lineOf(st, strat) {
   const acts = [];
   let cur = SIM.cloneState(st), node = strat;
   while (node && !node.done) {
-    acts.push(node.a);
     const pick = AI.choose(cur, 'a', SIM.expectedDice(), false, true);
     const r = node.then.find(([x]) => x.move === pick.id) || node.then[0];
-    cur.policies = { p: you(node.a), a: fixed(r[0]) };
+    acts.push(r[2] != null ? Object.assign({}, node.a, { rep: r[2] }) : node.a);
+    cur.policies = { p: you(node.a, r[2]), a: fixed(r[0]) };
     SIM.playTurn(cur, SIM.expectedDice());
     node = r[1];
   }
@@ -130,11 +198,12 @@ function replay(team, opp, acts) {
   SIM.begin(st, rng);
   const turns = [];
   for (const a of acts) {
-    const from = st.log.length;
+    const from = st.log.length, ev = st.events.length;
     const me = SIM.act(st, 'p');
-    st.policies = { p: you(a), a: AI };
+    st.policies = { p: you(a, a.rep), a: AI };
     SIM.playTurn(st, rng);
-    turns.push({ you: a.type === 'switch' ? `${me.name}: switch to ${st.p.team[a.to].name}` : `${me.name}: ${name(a.id)}`,
+    const sent = replaced(st, ev) && a.rep != null ? `; if it faints, send in ${st.p.team[a.rep].name}` : '';
+    turns.push({ you: (a.type === 'switch' ? `${me.name}: switch to ${st.p.team[a.to].name}` : `${me.name}: ${name(a.id)}`) + sent,
       log: st.log.slice(from).map(l => l.text) });
   }
   return { turns, winner: st.winner, draw: !!st.draw };
@@ -145,20 +214,38 @@ function newState(team, opp) {
   SIM.begin(st, SIM.expectedDice());
   return st;
 }
-/** Replay with real dice, searching again each turn from the real state. */
-function odds(team, opp, runs, depth, budget) {
+/** Replay with real dice. Each turn the search runs again from where the battle stands (a node budget), so a
+ *  different AI pick, a miss or a crit is answered; when it finds nothing in time, you keep to the strategy you were
+ *  following (its move for the move the boss used), and off it the Coach's planner plays on. */
+const bossMoves = (st, from) => st.events.slice(from).filter(e => e.type === 'move' && e.side === 'a').map(e => e.move);
+function odds(team, opp, runs, depth, budget, root) {
   let wins = 0;
+  const planner = SIM.plannerPolicy();
   for (let r = 0; r < runs; r++) {
     const rng = SIM.mulberry32(1000 + r * 7919);
     const st = SIM.newBattle(team, opp, { lead: 0 });
     st.policies = { p: you(null), a: AI };
     SIM.begin(st, rng);
+    let plan = root;
     while (!st.over && st.turn < 40) {
-      nodes = 0; memo.clear();
-      const strat = guaranteed(st, depth);
-      const a = strat && !strat.done ? strat.a : actions(st)[0];
-      st.policies = { p: you(a), a: AI };
-      SIM.playTurn(st, rng);
+      nodes = 0; memo.clear(); limit = budget;
+      let strat = null;
+      try { strat = guaranteed(st, depth); } catch (e) { if (e !== BUDGET) throw e; }
+      limit = Infinity;
+      if (strat && !strat.done) plan = strat;
+      const ev = st.events.length;
+      if (plan && !plan.done) {
+        const node = plan;
+        // after a faint, send in the one the strategy picked for the move the boss actually used
+        const pick = now => { const used = bossMoves(now, ev); return node.then.find(([x]) => used.includes(x.move)); };
+        st.policies = { p: you(node.a, now => { const hit = pick(now); return hit ? hit[2] : null; }), a: AI };
+        SIM.playTurn(st, rng);
+        const next = pick(st);
+        plan = next ? next[1] : null;
+      } else {
+        st.policies = { p: planner, a: AI };
+        SIM.playTurn(st, rng);
+      }
     }
     if (st.winner === 'p') wins++;
   }
@@ -187,17 +274,24 @@ for (const t of TRIALS) {
   for (const pick of combos(t.rentals.length, t.pick)) for (const lineup of perms(pick)) lineups.push(lineup);
   const first = lineups.filter(l => (lead < 0 || l[0] === lead) && (mate < 0 || l.includes(mate)));
   const rest = lineups.filter(l => !first.includes(l));
-  const todo = first.length ? first.concat(process.env.ALL ? rest : []) : lineups;
-  for (const lineup of todo) {
-    {
-      const team = lineup.map(i => spec(t.rentals[i], 'r' + i));
-      const st = newState(team, opp);
-      nodes = 0; memo.clear();
-      const strat = guaranteed(st, +(process.env.DEPTH || 12));
-      if (strat) found.push({ lineup, team, strat, line: lineOf(st, strat), nodes });
-    }
+  // LINEUP=Buneary,Fletchling,Phanpy searches just that lineup (to check a line found by hand)
+  const want = process.env.LINEUP ? process.env.LINEUP.split(',').map(n => t.rentals.findIndex(m => m.n.startsWith(n))) : null;
+  const todo = want ? [want] : first.length ? first.concat(process.env.ALL ? rest : []) : lineups;
+  // a known line's lineup first
+  const known = todo.filter(l => hintFor(t, l.map(i => spec(t.rentals[i], 'r' + i))));
+  for (const lineup of known.concat(todo.filter(l => !known.includes(l)))) {
+    const team = lineup.map(i => spec(t.rentals[i], 'r' + i));
+    HINT = hintFor(t, team);
+    const st = newState(team, opp);
+    nodes = 0; memo.clear(); limit = +(process.env.SEARCH_NODES || 2e6);
+    let strat = null;
+    try { strat = guaranteed(st, +(process.env.DEPTH || 13)); } catch (e) { if (e !== BUDGET) throw e; process.stderr.write(`  ${team.map(m => m.label).join('/')}: no line within ${limit} turns searched\n`); }
+    limit = Infinity;
+    if (strat) found.push({ lineup, team, strat, line: lineOf(st, strat), nodes, hint: HINT });
+    process.stderr.write(`  ${team.map(m => m.label).join('/')}: ${strat ? 'wins' : 'no line'} (${nodes} turns searched)\n`);
   }
-  const scored = found.map(f => Object.assign(f, { odds: odds(f.team, opp, +(process.env.RUNS || 40), 10, 20000) }));
+  const scored = found.map(f => { HINT = f.hint; return Object.assign(f, { odds: odds(f.team, opp, +(process.env.RUNS || 40), 10, 20000, f.strat) }); });
+  HINT = null;
   scored.sort((x, y) => y.odds - x.odds || x.line.length - y.line.length);
   out.push({
     map: t.map, mapName: t.mapName, trainer: t.trainer, kind: t.kind, searched: combos(t.rentals.length, t.pick).length * 6,
