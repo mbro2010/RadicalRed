@@ -257,6 +257,11 @@ const only = process.env.TRIAL ? +process.env.TRIAL : null;
 for (const t of TRIALS) {
   if (only != null && t.trainer !== only) continue;
   const opp = t.opponent.map((m, i) => spec(m, 'b' + i));
+  if ((t.bets || []).length) {
+    // the Metronome bet: every Pokemon on both sides only knows Metronome, so nothing to plan: luck
+    out.push({ map: t.map, mapName: t.mapName, trainer: t.trainer, kind: t.kind, odds: null, note: 'Metronome on both sides: luck' });
+    continue;
+  }
   if (t.pick === 6) {
     // a rental battle: no picks; the planner plays it like a boss fight
     const team = t.rentals.map((m, i) => spec(m, 'r' + i));
