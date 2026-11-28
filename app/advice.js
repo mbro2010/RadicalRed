@@ -298,7 +298,7 @@
       const k = spec.key + '|' + nat + '|' + (it || 0);
       if (memo.has(k)) return memo.get(k);
       let s = Object.assign({}, spec, { nat, it: it || null, entry: true });
-      const mega = it && SIM && SIM.megaTarget ? SIM.megaTarget({ spec: s, item: it }) : null;
+      const mega = it && SIM && SIM.heldForm ? SIM.heldForm({ spec: s, item: it }) : null;
       if (mega) s = Object.assign(s, { s: mega, ab: (E.sp(mega).a || [])[0] || s.ab });
       let v = 0, c = 0;
       for (const t of foes) {

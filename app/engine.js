@@ -48,7 +48,7 @@
 
   // ---- memoization: damage rolls don't depend on current HP except for a few abilities and moves ----
   const HP_SENSITIVE_AB = new Set(['Blaze', 'Torrent', 'Overgrow', 'Swarm', 'Defeatist', 'Multiscale', 'Shadow Shield', 'Tera Shell', 'Berserk', 'Anger Shell']);
-  const HP_SENSITIVE_MV = /^(Eruption|Water Spout|Dragon Energy|Flail|Reversal|Brine|Wring Out|Crush Grip|Hard Press|Final Gambit|Endeavor)$/;
+  const HP_SENSITIVE_MV = /^(Eruption|Water Spout|Dragon Energy|Flail|Reversal|Brine|Wring Out|Crush Grip|Hard Press|Final Gambit|Endeavor|Super Fang|Ruination|Nature's Madness)$/;
   const cache = new Map();
   function memo(key, fn) { let v = cache.get(key); if (v === undefined) { v = fn(); if (cache.size > 200000) cache.clear(); cache.set(key, v); } return v; }
   // frozen specs (the AI builds one per battler per decision) keep their key, so it's built once
@@ -84,7 +84,8 @@
     const b = spec.boosts || {};
     return [spec.s, spec.lv, spec.nat, spec.ab, spec.it || 0, spec.iv ? spec.iv.join('.') : '', spec.ev ? spec.ev.join('.') : '', b.atk || 0, b.def || 0, b.spa || 0, b.spd || 0, b.spe || 0,
       spec.status || (spec.st ? STATUS_CODE[spec.st] : ''), spec.firstTurn ? 1 : 0, spec.entry === false ? 0 : 1, spec.movesFirst ? 1 : 0, spec.movesLast ? 1 : 0,
-      hpRelevant ? hpPart(spec, hpRelevant) : ''].join(',');
+      hpRelevant ? hpPart(spec, hpRelevant) : '', spec.fr == null ? '' : spec.fr, spec.types ? spec.types.join('/') : '', spec.grounded ? 'g' : '', spec.floating ? 'f' : '',
+      spec.charged ? 'c' : '', spec.faintedAllies || ''].join(',');
   }
   const HP_TYPES = ['Fighting', 'Flying', 'Poison', 'Ground', 'Rock', 'Bug', 'Ghost', 'Steel', 'Fire', 'Water', 'Grass', 'Electric', 'Psychic', 'Ice', 'Dragon', 'Dark'];
   /** Hidden Power's type from IVs (order hp, atk, def, spa, spd, spe). Perfect IVs give Dark. */
@@ -132,6 +133,7 @@
   }
   function sp(id) { return species.get(id); }
   function mv(id) { return moves.get(id); }
+  const FRUSTRATION = (D.moves.find(m => (m.f || m.n) === 'Frustration') || {}).i;
   // the full name where the calculator has one (the ROM shortens 58 of them: "HeavyDBoots", "WeaknessPol."), so every
   // check by name works and the page shows the real name
   function itemName(id) { return id && D.items[id] ? D.items[id].c || D.items[id].n : null; }
@@ -231,6 +233,8 @@
     const key = ['R', specKey(attSpec, hpRel), specKey(defSpec, hpRel), moveId, o.weather || '', o.terrain || '',
       ds ? [ds.isReflect ? 1 : 0, ds.isLightScreen ? 1 : 0, ds.isAuroraVeil ? 1 : 0].join('') : '', o.crit ? 1 : 0, o.hits || 0, o.z ? 'Z' : '', o.bp || ''].join('|');
     return memo(key, () => {
+      const fixed = fixedRolls(attSpec, defSpec, m);
+      if (fixed) return fixed;
       const game = gameRolls(attSpec, defSpec, moveId, o, ds);
       if (game) return game;
       const att = buildMon(attSpec), def = buildMon(defSpec);
@@ -260,6 +264,30 @@
     });
   }
 
+  /** Moves whose damage the battle script sets outright (the game's effect scripts 40, 41, 87, 88 and 130): half the
+   *  target's HP (Super Fang, Ruination, Nature's Madness; at least 1), 40 (Dragon Rage), 20 (Sonic Boom), the user's
+   *  level (Seismic Toss, Night Shade), level x 50-150% (Psywave). Type immunities still apply (typecalc2). */
+  function fixedRolls(attSpec, defSpec, m) {
+    const n = m.f;
+    let rolls = null;
+    const defMax = rawStats(defSpec).hp;
+    const defHp = defSpec.hpPct == null || defSpec.hpPct >= 100 ? defMax : Math.max(1, Math.round(defMax * defSpec.hpPct / 100));
+    const lv = attSpec.lv || 50;
+    if (n === 'Super Fang' || n === 'Ruination' || n === "Nature's Madness") rolls = [Math.max(1, Math.floor(defHp / 2))];
+    else if (n === 'Dragon Rage') rolls = [40];
+    else if (n === 'Sonic Boom') rolls = [20];
+    else if (n === 'Seismic Toss' || n === 'Night Shade') rolls = [lv];
+    else if (n === 'Psywave') rolls = Array.from({ length: 16 }, (_, i) => Math.max(1, Math.floor(lv * (50 + Math.round(i * 100 / 15)) / 100)));
+    if (!rolls) return null;
+    const type = m.t;
+    let eff = typeEff(type, defSpec.types || sp(defSpec.s).t);
+    if (eff === 0 && type === 'Ghost' && defSpec.ab === 'Scrappy') eff = 1;
+    if (eff === 0 && (type === 'Normal' || type === 'Fighting') && attSpec.ab === 'Scrappy') eff = 1;
+    if (defSpec.ab === 'Wonder Guard' && eff <= 1) eff = 0;
+    if (eff === 0) rolls = [0];
+    return { rolls, eff: eff === 0 ? 0 : 1, type, hits: 1, priority: m.r || 0, contact: !!((m.fl || 0) & 1), punch: false, sound: false, notes: ['fixed damage'] };
+  }
+
   // The game's damage, step for step (app/damage.js), for one use of a move; null when it doesn't handle the move
   let rrd = null;
   const PB_BANNED = new Set((D.moveLists && D.moveLists.parentalBondBanned) || []);
@@ -274,8 +302,10 @@
     if (spec.ab === 'Intrepid Sword' && spec.entry !== false) b.atk = Math.min(6, (b.atk || 0) + 1);
     if (spec.ab === 'Dauntless Shield' && spec.entry !== false) b.def = Math.min(6, (b.def || 0) + 1);
     return { sp: s, lv: spec.lv, st, b, ab: canonAbility(spec.ab), it: spec.it ? D.items[spec.it] || null : null, itId: spec.it || 0,
-      status: spec.status || (spec.st ? STATUS_CODE[spec.st] || '' : ''), hp, maxHP, types: s.t, iv: spec.iv,
-      firstTurn: !!spec.firstTurn, movesLast: !!spec.movesLast, movesFirst: !!spec.movesFirst, disguised: !!spec.disguised, charged: !!spec.charged, flashFire: !!spec.flashFire };
+      status: spec.status || (spec.st ? STATUS_CODE[spec.st] || '' : ''), hp, maxHP, types: spec.types || s.t, iv: spec.iv,
+      grounded: !!spec.grounded, floating: !!spec.floating, faintedAllies: spec.faintedAllies || 0,
+      firstTurn: !!spec.firstTurn, movesLast: !!spec.movesLast, movesFirst: !!spec.movesFirst, disguised: !!spec.disguised, charged: !!spec.charged, flashFire: !!spec.flashFire,
+      fr: spec.fr };
   }
   function gameRolls(attSpec, defSpec, moveId, o, ds) {
     if (!RRD || o.z) return null;
@@ -283,7 +313,7 @@
     const m = mv(moveId);
     const base = m.c ? gen.moves.get(toID(m.c)) : null;
     if (base && (base.ohko || base.damage)) return null;                 // fixed damage and one-hit KOs: the calculator's
-    if (/^(Seismic Toss|Night Shade|Super Fang|Ruination|Nature's Madness|Endeavor|Final Gambit|Psywave|Counter|Mirror Coat|Metal Burst|Comeuppance|Bide|Beat Up|Spit Up|Present|Magnitude|Fling|Natural Gift|Triple Kick|Triple Axel|Multi-Attack|Techno Blast|Aura Wheel|Raging Bull|Ivy Cudgel|Tera Blast)$/.test(m.f)) return null;
+    if (/^(Seismic Toss|Night Shade|Super Fang|Ruination|Nature's Madness|Endeavor|Final Gambit|Psywave|Counter|Mirror Coat|Metal Burst|Comeuppance|Bide|Beat Up|Spit Up|Present|Fling|Natural Gift|Triple Kick|Triple Axel|Multi-Attack|Techno Blast|Aura Wheel|Raging Bull|Ivy Cudgel|Tera Blast)$/.test(m.f)) return null;
     const att = rrBattler(attSpec), def = rrBattler(defSpec);
     att.spe = speedOf(attSpec, o.weather, o.terrain); def.spe = speedOf(defSpec, o.weather, o.terrain);
     att.qp = qpStat(attSpec, o.weather, o.terrain); def.qp = qpStat(defSpec, o.weather, o.terrain);
@@ -596,6 +626,7 @@
       lv: m.lv != null ? m.lv : Math.max(1, Math.min(100, (playerTop || b.cap) + m.rel + REL)),
       nat: m.nat != null ? m.nat : 0,
       ab: canonAbility(m.ab || ((sp(m.s) || {}).a || [])[0] || null),
+      fr: (m.mv || []).includes(FRUSTRATION) ? 0 : 255,     // CFRU: trainer Pokemon get full friendship, or none with Frustration
     }));
   }
 

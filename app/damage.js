@@ -51,7 +51,8 @@
   const isSun = w => w === 'Sun' || w === 'Harsh Sunshine';
 
   function grounded(m) {
-    if (heOf(m.it) === HE.IRON_BALL) return true;
+    if (heOf(m.it) === HE.IRON_BALL || m.grounded) return true;   // grounded: Smack Down, Thousand Arrows, Ingrain, Gravity
+    if (m.floating) return false;                                   // Magnet Rise
     if (m.types.includes('Flying') || m.ab === 'Levitate' || heOf(m.it) === HE.AIR_BALLOON) return false;
     return true;
   }
@@ -139,8 +140,12 @@
       case 'Stored Power': case 'Power Trip': p = 20 + 20 * positiveStages(att); break;
       case 'Punishment': p = Math.min(200, 60 + 20 * positiveStages(def)); break;
       case 'Wring Out': case 'Crush Grip': p = Math.max(1, Math.floor(120 * def.hp / def.maxHP)); break;
-      case 'Return': p = 102; break;
-      case 'Frustration': p = 0; break;                                   // (255 - friendship) * 10 / 25, at full friendship
+      // friendship: yours is assumed full; a trainer's Pokemon has full friendship, or none if it knows Frustration
+      // (CFRU's ShouldGiveTrainerMonMaxFriendship), so a boss's Frustration hits at full power
+      case 'Return': p = Math.max(1, Math.floor((att.fr == null ? 255 : att.fr) * 10 / 25)); break;
+      case 'Frustration': p = Math.max(1, Math.floor((255 - (att.fr == null ? 255 : att.fr)) * 10 / 25)); break;
+      case 'Magnitude': p = 70; break;                                    // a battle rolls it (o.bp); 70 is the middle magnitude
+      case 'Trump Card': p = 40; break;                                   // 40 until its PP runs low (PP isn't tracked)
       default:
         if (has('statusDouble', move.i) && anyStatus(def)) p *= 2;   // Hex, Infernal Parade, Bitter Malice
     }
@@ -203,6 +208,7 @@
       case HE.GEM: if (TYPE_NO[moveType] === hq) { power = mul(power, 15, 10); ctx.notes.push('Gem: ×1.5 (Radical Red), used up'); } break;
     }
     if (att.charged && moveType === 'Electric') power *= 2;
+    if (att.ab === 'Supreme Overlord' && att.faintedAllies) power = mul(power, 10 + Math.min(5, att.faintedAllies), 10);   // +10% per fainted ally (Gen 9)
     if (o.terrain) {
       if (o.terrain === 'Electric' && moveType === 'Electric' && grounded(att)) power = mul(power, 13, 10);
       else if (o.terrain === 'Grassy') {
@@ -404,6 +410,7 @@
         else if (heOf(def.it) === HE.RING_TARGET) e = 1;
         else if (ground && move.f === 'Thousand Arrows') e = 1;
         else if (ground && heOf(def.it) === HE.IRON_BALL) e = 1;
+        else if (ground && def.grounded && dt === 'Flying') e = 1;
       }
       if (move.f === 'Freeze-Dry' && dt === 'Water') e = 2;
       if (dt === 'Flying' && e === 2 && o.weather === 'Strong Winds') e = 1;
@@ -415,7 +422,7 @@
       for (const dt of seen) { const e = eff1('Flying', dt); if (e === 2) steps.push(20); else if (e === 0.5) steps.push(5); else if (e === 0) steps.push(0); total *= e; }
     }
     // a Ground move misses a target in the air (Levitate, Air Balloon), unless it's grounded some other way
-    if (ground && move.f !== 'Thousand Arrows' && heOf(def.it) !== HE.IRON_BALL && (def.ab === 'Levitate' || heOf(def.it) === HE.AIR_BALLOON)) total = 0;
+    if (ground && move.f !== 'Thousand Arrows' && heOf(def.it) !== HE.IRON_BALL && !def.grounded && (def.ab === 'Levitate' || heOf(def.it) === HE.AIR_BALLOON || def.floating)) total = 0;
     return { total, steps };
   }
 

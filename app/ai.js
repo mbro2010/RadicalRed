@@ -481,7 +481,22 @@
       if (e === 168 && !bench(st, me.side).length) return -10;   // Final Gambit, the Memento effect: no one to come in after
       if (!mold && ABSORBS[foe.ability] === mm.type && !(foe.ability === 'Levitate')) return -20;
       if (c.dmg(me, foe, id) === 0 && !(mm.power <= 1)) return -10;   // no effect (type immunity, Levitate, Wonder Guard)
-      if (e === 8 && foe.status !== 'slp') return -10;
+      if (mm.power <= 1 && E.typeEff(mm.type, foe.types) === 0 && me.ability !== 'Scrappy') return -10;   // fixed damage into an immunity
+      if (e === 8 && foe.status !== 'slp' && foe.ability !== 'Comatose') return -10;
+      // moves that would fail (the engine's own checks: EFFECT_POLTERGEIST, EFFECT_LAST_RESORT, EFFECT_RECYCLE for Belch,
+      // EFFECT_DAMAGE_SET_TERRAIN for Steel Roller, EFFECT_BURN_UP, EFFECT_SNORE, EFFECT_SPIT_UP, EFFECT_COUNTER, EFFECT_ENDEAVOR)
+      if (n === 'Poltergeist' && !foe.item) return -10;
+      if (n === 'Last Resort') { const others = me.moves.filter(x => x !== id), used = me.usedMoves || []; if (!others.length || others.some(x => !used.includes(x))) return -10; }
+      if (n === 'Belch' && !me.ateBerry) return -10;
+      if (n === 'Steel Roller' && !st.terrain) return -10;
+      if ((n === 'Burn Up' && !hasType(me, 'Fire')) || (n === 'Double Shock' && !hasType(me, 'Electric'))) return -10;
+      if (n === 'Snore' && me.status !== 'slp' && me.ability !== 'Comatose') return -10;
+      if (n === 'Spit Up' && !me.stockpile) return -10;
+      if (/^(Counter|Mirror Coat|Metal Burst|Comeuppance)$/.test(n)) {
+        if (!c.predicted || meta(c.predicted).cat === 'X') return -10;
+        if ((n === 'Metal Burst' || n === 'Comeuppance') && c.hitsFirst(id)) return -10;   // no negative priority: it goes first and fails
+      }
+      if (e === 189 && me.hp > (me.hp + foe.hp) / 2) return -10;   // Endeavor
       if (e === 237 && (!c.predicted || meta(c.predicted).cat === 'X')) return -10;
       if (e === 170 && c.foeStrongest && !c.hitsFirst(id)) return -10;
       if (e === 7) return -10;   // the explosion check; the positives add some back when it's the right call
@@ -530,7 +545,7 @@
     if (e === 111) return me.protectStreak > 0 ? -10 : 0;
     if (e === 84) return hasType(foe, 'Grass') || foe.seeded ? -10 : 0;
     if (e === 228 && n === 'Trick Room') return (st.trickRoom ? c.meSpe < c.foeSpe : c.meSpe > c.foeSpe) ? -10 : 0;
-    if (e === 239 && n === 'Tailwind') return st[me.side].tailwind ? -10 : 0;
+    if (e === 239 && n === 'Tailwind') return st[me.side].tailwind || st.trickRoom > 1 ? -10 : 0;
     if (e === 98) return me.destinyBond ? -10 : 0;
     if (e === 79) return me.sub || me.hp <= me.maxHp / 4 ? -10 : 0;
     if (e === 28) return !bench(st, foe.side).length || foe.ability === 'Suction Cups' ? -10 : 0;
@@ -544,7 +559,37 @@
     if (e === 164) return /Snow|Hail/.test(st.weather || '') ? -10 : 0;
     if (e === 153) return !bench(st, me.side).length ? -10 : 0;
     if (e === 142 && n === 'Belly Drum') return me.hp <= me.maxHp / 2 || me.boosts.atk >= 6 ? -10 : 0;
-    return 0;
+    // the engine's checks for status moves that would do nothing (ai_negatives.c, by effect)
+    switch (n) {
+      case 'Charge': return me.charged ? -10 : 0;
+      case 'Transform': return me.orig || foe.orig || foe.sub ? -10 : 0;
+      case 'Pain Split': return me.hp > (me.hp + foe.hp) / 2 ? -10 : 0;
+      case 'Heal Bell': case 'Aromatherapy': return st[me.side].team.some(x => !x.fainted && x.status) ? 0 : -10;
+      case 'Swallow': return !me.stockpile || me.hp >= me.maxHp ? -10 : 0;
+      case 'Trick': case 'Switcheroo': return (!me.item && !foe.item) || me.item === foe.item || foe.ability === 'Sticky Hold' ? -10 : 0;
+      case 'Bestow': return !me.item || foe.item ? -10 : 0;
+      case 'Assist': return st[me.side].team.some(x => x !== me) ? 0 : -10;
+      case 'Ingrain': return me.ingrain ? -10 : 0;
+      case 'Aqua Ring': return me.aquaRing ? -10 : 0;
+      case 'Recycle': return !me.lastItem || me.item ? -10 : 0;
+      case 'Refresh': return /psn|tox|brn|par|frz/.test(me.status || '') ? 0 : -10;   // (frostbite counts: CFRU's FROSTBITE)
+      case 'Psycho Shift': return me.status && !foe.status ? 0 : -10;
+      case 'Psych Up': return Object.values(foe.boosts).some(v => v > 0) ? 0 : -10;
+      case 'Worry Seed': return foe.ability === 'Insomnia' ? -10 : 0;
+      case 'Gastro Acid': return !foe.ability ? -10 : 0;
+      case 'Electric Terrain': case 'Grassy Terrain': case 'Misty Terrain': case 'Psychic Terrain': return st.terrain === n.split(' ')[0] ? -10 : 0;
+      case 'Magic Room': return st.magicRoom ? -10 : 0;
+      case 'Wonder Room': return st.wonderRoom ? -10 : 0;
+      case 'Gravity': return st.gravity ? -10 : 0;
+      case 'Soak': return foe.types.length === 1 && foe.types[0] === 'Water' ? -10 : 0;
+      case 'Trick-or-Treat': return hasType(foe, 'Ghost') ? -10 : 0;
+      case "Forest's Curse": return hasType(foe, 'Grass') ? -10 : 0;
+      case 'Lucky Chant': return st[me.side].luckyChant ? -10 : 0;
+      case 'Magnet Rise': return st.gravity || me.magnetRise || me.ingrain || me.grounded || !grounded(me) || itemName(me) === 'Iron Ball' ? -10 : 0;
+      case 'Mist': return st[me.side].mist ? -10 : 0;
+      case 'Sleep Talk': return me.status !== 'slp' && me.ability !== 'Comatose' ? -10 : 0;
+      default: return 0;
+    }
   }
 
   /** AIScript_Positives for one move, given the score so far. Returns the new score and why. */

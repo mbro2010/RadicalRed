@@ -753,7 +753,7 @@
   function itemScore(m, it, team) {
     const VS = { safe: 3, ok: 2, risky: 1, lose: 0 };
     let spec = specOf(m, { it });
-    const mega = it && SIM.megaTarget({ spec, item: it });
+    const mega = it && SIM.heldForm({ spec, item: it });
     if (mega) spec = Object.assign({}, spec, { s: mega, ab: (E.sp(mega).a || [])[0] || spec.ab });
     return team.reduce((sum, t) => { const mu = E.matchup(Object.assign({}, spec, { entry: true }), Object.assign({}, t, { entry: true })); return sum + VS[mu.verdict] - mu.risk; }, 0);
   }
@@ -1229,8 +1229,8 @@
   }
   function theirSetHTML(t) {
     const s = E.sp(t.s);
-    const mega = SIM.megaTarget({ spec: t, item: t.it }) ;
-    return `<div class="slot">${icon(t.s, 'x2')}<div class="who"><b>${esc(s.n)}</b><div class="row" style="gap:6px">${typesHTML(s.t)}<span class="lv">Lv ${t.lv}</span>${t.rel != null ? `<span class="tag">your top ${t.rel ? (t.rel > 0 ? '+' : '−') + Math.abs(t.rel) : ''}</span>` : ''}${mega ? `<span class="tag ban">Mega Evolves: ${esc(E.sp(mega).n)}</span>` : ''}${/ Z$/.test(E.itemName(t.it) || '') ? '<span class="tag ban">Z-Move</span>' : ''}</div></div></div>
+    const mega = SIM.heldForm({ spec: t, item: t.it });
+    return `<div class="slot">${icon(t.s, 'x2')}<div class="who"><b>${esc(s.n)}</b><div class="row" style="gap:6px">${typesHTML(s.t)}<span class="lv">Lv ${t.lv}</span>${t.rel != null ? `<span class="tag">your top ${t.rel ? (t.rel > 0 ? '+' : '−') + Math.abs(t.rel) : ''}</span>` : ''}${mega ? `<span class="tag ban">${/Mega/.test(E.sp(mega).n) ? 'Mega Evolves' : 'Changes form in battle'}: ${esc(E.sp(mega).n)}</span>` : ''}${/ Z$/.test(E.itemName(t.it) || '') ? '<span class="tag ban">Z-Move</span>' : ''}</div></div></div>
       <div class="small muted">${t.abr ? `${esc(t.abr.join(' or '))} (the game rolls it each battle)` : esc(t.ab)} · ${esc(E.itemName(t.it) || 'no item')} · ${esc(D.natures[t.nat].n)}${t.st ? ' · starts ' + esc({ 8: 'poisoned', 16: 'burned', 64: 'paralyzed', 128: 'badly poisoned' }[t.st] || 'statused') : ''}</div>
       <div class="moves">${t.mv.map(id => moveChip(id)).join('')}</div>`;
   }
